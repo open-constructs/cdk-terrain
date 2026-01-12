@@ -1,5 +1,27 @@
 # Frequently Asked Questions
 
+## Table of Contents
+
+- [What is CDK Terrain?](#what-is-cdk-terrain)
+- [Why the name "CDK Terrain"?](#why-the-name-cdk-terrain)
+- [What is the relationship between CDK Terrain and CDKTF?](#what-is-the-relationship-between-cdk-terrain-and-cdktf)
+- [Who will maintain CDK Terrain?](#who-will-maintain-cdk-terrain)
+- [What is the relationship between CDK Terrain and OpenTofu?](#what-is-the-relationship-between-cdk-terrain-and-opentofu)
+- [Does CDK Terrain support OpenTofu?](#does-cdk-terrain-support-opentofu)
+- [Is CDK Terrain compatible with existing CDKTF projects?](#is-cdk-terrain-compatible-with-existing-cdktf-projects)
+- [What Terraform providers will be supported?](#what-terraform-providers-will-be-supported)
+- [What programming languages will be supported?](#what-programming-languages-will-be-supported)
+- [How will CDK Terrain be licensed?](#how-will-cdk-terrain-be-licensed)
+- [What is the development roadmap?](#what-is-the-development-roadmap)
+- [How can I migrate my existing CDKTF project to CDK Terrain?](#how-can-i-migrate-my-existing-cdktf-project-to-cdk-terrain)
+- [How can developers contribute to CDK Terrain?](#how-can-developers-contribute-to-cdk-terrain)
+- [Where can I find CDK Terrain documentation?](#where-can-i-find-cdk-terrain-documentation)
+- [How can I stay updated on CDK Terrain developments?](#how-can-i-stay-updated-on-cdk-terrain-developments)
+- [Will HashiCorp be involved in CDK Terrain?](#will-hashicorp-be-involved-in-cdk-terrain)
+- [What is the TerraConstructs/terraform-cdk Fork?](#what-is-the-terraconstructsterraform-cdk-fork)
+- [Can companies offer commercial support for CDK Terrain?](#can-companies-offer-commercial-support-for-cdk-terrain)
+- [What happens to existing CDKTF provider packages?](#what-happens-to-existing-cdktf-provider-packages)
+
 ### What is CDK Terrain?
 
 CDK Terrain (cdktn - [cdktn.io](http://cdktn.io)) is a community-driven continuation of the Cloud Development Kit for Terraform (CDKTF). It allows developers to define Terraform infrastructure using familiar programming languages like TypeScript and Python, synthesizing that code into standard Terraform JSON configuration.
@@ -14,7 +36,27 @@ CDK Terrain is a community-driven fork of CDKTF, created with HashiCorp's blessi
 
 ### Who will maintain CDK Terrain?
 
-[The Open Construct Foundation](https://the-ocf.org) is actively forming a maintainer group consisting of experienced CDKTF users and contributors [from the community](https://cdk.dev). Maintainers will be selected based on their expertise, commitment, and alignment with the project's goals. The foundation provides oversight to ensure consistent governance and quality standards.
+[The Open Construct Foundation](https://the-ocf.org) is actively forming a maintainer group consisting of experienced CDKTF users and contributors from [the community](https://cdk.dev). Maintainers will be selected based on their expertise, commitment, and alignment with the project's goals. The foundation provides oversight to ensure consistent governance and quality standards.
+
+### What is the relationship between CDK Terrain and OpenTofu?
+
+[OpenTofu](https://opentofu.org) is an independent, [CNCF](https://cncf.io)-hosted project focused on providing an open-source, Terraform-compatible CLI and ecosystem. CDK Terrain is governed by the Open Construct Foundation and is developed independently. 
+
+The two projects are not formally affiliated. However, the relationship is open and constructive. The OpenTofu team has offered its guidance and expertise and is a helpful resource for discussions around compatibility, workflows, and ecosystem considerations.
+
+Any interaction between CDK Terrain and OpenTofu is informal, community-driven, and non-exclusive. There are no commitments around feature prioritization, roadmap alignment, or long-term integration on either side.
+
+### Does CDK Terrain support OpenTofu?
+
+Yes. CDK Terrain is designed to remain compatible with both Terraform and OpenTofu.
+
+CDK Terrain synthesizes standard Terraform configuration, allowing users to choose their preferred execution engine. At present, users can run CDK Terrain–generated output with either Terraform or OpenTofu without special configuration or feature gaps compared to the last CDKTF release.
+
+One of the long-term goals of the CDK Terrain fork is to remove historical constraints that limited evolution in the original project, including slow adoption of newer Terraform features. Decisions about which features, versions, or execution engines to support will be guided by community needs, maintainer capacity, and ecosystem stability rather than fixed assumptions.
+
+The Open Construct Foundation intends to remain pragmatic and transparent in these decisions, with the goal of supporting both ecosystems where it is feasible and sustainable to do so.
+
+> CDK Terrain aims to remain execution-engine agnostic, enabling users to choose between Terraform and OpenTofu based on their operational and licensing preferences.
 
 ### Is CDK Terrain compatible with existing CDKTF projects?
 
