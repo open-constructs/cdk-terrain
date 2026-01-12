@@ -108,7 +108,7 @@ or through [Visual Studio Code Remote - Containers](https://code.visualstudio.co
 Clone the repository:
 
 ```shell
-$ git clone https://github.com/hashicorp/terraform-cdk.git
+$ git clone https://github.com/open-constructs/cdk-terrain.git
 ```
 
 To compile the `terraform-cdk` binary for your local machine:
@@ -314,13 +314,13 @@ created through `cdktf init`.
 The pattern is simple:
 
 1. Define a new const under
-   [cdktf/lib/features.ts](https://github.com/hashicorp/terraform-cdk/blob/main/packages/cdktf/lib/features.ts)
+   [cdktf/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktf/lib/features.ts)
    with the name of the context key that **enables** this new feature (for
    example, `EXCLUDE_STACK_ID_FROM_LOGICAL_IDS`).
 2. Use `node.tryGetContext(ENABLE_XXX)` to check if this feature is enabled
    in your code. If it is not defined, revert to the legacy behavior.
 3. Add your feature flag to the `FUTURE_FLAGS` map in
-   [cdktf/lib/features.ts](https://github.com/hashicorp/terraform-cdk/blob/main/packages/cdktf/lib/features.ts).
+   [cdktf/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktf/lib/features.ts).
    This map is inserted to generated `cdktf.json` files for new projects created
    through `cdktf init`.
 4. In your PR title (which goes into CHANGELOG), add a `(under feature flag)` suffix. e.g:
@@ -408,7 +408,7 @@ Just run the following script before bumping the version, it'll create a ready t
 ./tools/create-changelog.sh
 ```
 
-Other than that, you can get a list of commits since the last release you can e.g. visit a link like this: `https://github.com/hashicorp/terraform-cdk/compare/v0.4.1...main`. You'll find the PR numbers there as links.
+Other than that, you can get a list of commits since the last release you can e.g. visit a link like this: `https://github.com/open-constructs/cdk-terrain/compare/v0.4.1...main`. You'll find the PR numbers there as links.
 
 ## Backporting releases
 
@@ -458,7 +458,7 @@ To bring the version number back in sync with the main branch, post a PR against
 
 ### Example
 
-You can have a look at this branch and its commits / PRs for an example: [backport-release-0.10.4](https://github.com/hashicorp/terraform-cdk/commits/backport-release-0.10.4)
+You can have a look at this branch and its commits / PRs for an example: [backport-release-0.10.4](https://github.com/open-constructs/cdk-terrain/commits/backport-release-0.10.4)
 
 ## Issue Grooming
 
@@ -466,9 +466,9 @@ To ensure we can properly prioritize new features and bugs we aim to keep our is
 
 Here are GitHub links that help this process:
 
-- [All new issues](https://github.com/hashicorp/terraform-cdk/issues?q=is%3Aopen+is%3Aissue+label%3Anew)
-- [All unprioritized issues (that are not waiting for an answer)](https://github.com/hashicorp/terraform-cdk/issues?q=is%3Aopen+is%3Aissue+-label%3Apriority%2Fawaiting-more-evidence+-label%3Apriority%2Fbacklog+-label%3Apriority%2Fcritical-urgent+-label%3Apriority%2Fimportant-longterm+-label%3Apriority%2Fimportant-soon+-label%3Aneeds-priority+-label%3Awaiting-on-answer+-label%3Anew)
-- [Issues to follow up on](https://github.com/hashicorp/terraform-cdk/issues?q=is%3Aopen+is%3Aissue+label%3Awaiting-on-answer+updated%3A%3C2021-11-01) (Query needs manual adjustment of the date)
+- [All new issues](https://github.com/open-constructs/cdk-terrain/issues?q=is%3Aopen+is%3Aissue+label%3Anew)
+- [All unprioritized issues (that are not waiting for an answer)](https://github.com/open-constructs/cdk-terrain/issues?q=is%3Aopen+is%3Aissue+-label%3Apriority%2Fawaiting-more-evidence+-label%3Apriority%2Fbacklog+-label%3Apriority%2Fcritical-urgent+-label%3Apriority%2Fimportant-longterm+-label%3Apriority%2Fimportant-soon+-label%3Aneeds-priority+-label%3Awaiting-on-answer+-label%3Anew)
+- [Issues to follow up on](https://github.com/open-constructs/cdk-terrain/issues?q=is%3Aopen+is%3Aissue+label%3Awaiting-on-answer+updated%3A%3C2021-11-01) (Query needs manual adjustment of the date)
 
 ## Reproducing Bugs on Windows
 
