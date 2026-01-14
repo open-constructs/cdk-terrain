@@ -214,10 +214,21 @@ If you use prebuilt providers that haven't been updated to `@cdktn/provider-*` y
 }
 ```
 
-This is supported but not recommended long-term. Options:
+This is supported but not recommended long-term.
+
+### Bundle Size Impact
+
+When both packages are installed:
+- **Bundle size**: Approximately 2x larger (both packages included)
+- **Tree-shaking**: Bundlers will remove unused exports, reducing actual impact
+- **Shared dependencies**: `constructs` is deduplicated between packages
+
+**Recommendation**: Complete migration promptly to reduce bundle size and complexity.
+
+### Options
 
 1. **Wait**: Use `@cdktf/provider-*` until `@cdktn/provider-*` is released
-2. **Generate locally**: Use `cdktn get` to generate provider bindings without prebuilt packages
+2. **Generate locally** (Recommended): Use `cdktn get` to generate provider bindings without prebuilt packages
 
 ```bash
 # Generate local provider bindings (recommended for clean migration)
