@@ -106,3 +106,10 @@ Use [conventional commits](https://www.conventionalcommits.org/):
 CDKTF_LOG_LEVEL=debug cdktf synth  # Verbose CDKTF output
 JSII_DEBUG=1 yarn build            # JSII debug output
 ```
+
+## Active Technologies
+- TypeScript 5.4.5 (strict mode, target ES2018, CommonJS) (001-cdktn-package-rename)
+- N/A (no database; file-based config via `cdktf.json`) (001-cdktn-package-rename)
+
+## Recent Changes
+- 001-cdktn-package-rename: Added TypeScript 5.4.5 (strict mode, target ES2018, CommonJS)
