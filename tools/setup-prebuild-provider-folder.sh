@@ -58,5 +58,5 @@ done
 wait # Wait for all the processes to finish
 
 # Removing is easier than filtering
-rm -rf cdktf-provider-project
-rm -rf cdktf-repository-manager
+rm -rf cdktn-provider-project
+rm -rf cdktn-repository-manager

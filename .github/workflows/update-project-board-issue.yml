@@ -20,7 +20,7 @@ on:
 
 jobs:
   trigger-external-update:
-    if: github.repository == 'hashicorp/terraform-cdk'
+    if: github.repository == 'open-constructs/cdk-terrain'
     runs-on: ubuntu-latest
     steps:
       - name: Update project board

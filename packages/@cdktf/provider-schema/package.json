@@ -1,5 +1,5 @@
 {
-  "name": "@cdktf/provider-schema",
+  "name": "@cdktn/provider-schema",
   "version": "0.0.0",
   "publishConfig": {
     "access": "public"
@@ -23,12 +23,12 @@
   "types": "src/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git://github.com/hashicorp/terraform-cdk.git",
+    "url": "git://github.com/open-constructs/cdk-terrain.git",
     "directory": "packages/@cdktf/provider-schema"
   },
   "author": {
-    "name": "HashiCorp",
-    "url": "https://hashicorp.com"
+    "name": "OpenConstructs",
+    "url": "https://github.com/open-constructs"
   },
   "keywords": [
     "cdk",
@@ -37,8 +37,8 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "@cdktf/commons": "0.0.0",
-    "@cdktf/hcl2json": "0.0.0",
+    "@cdktn/commons": "0.0.0",
+    "@cdktn/hcl2json": "0.0.0",
     "deepmerge": "4.3.1",
     "fs-extra": "11.3.0"
   },

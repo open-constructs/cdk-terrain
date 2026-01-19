@@ -61,5 +61,5 @@ jobs:
           webhook-type: webhook-trigger
           payload: |
             {
-              "run_url": "https://github.com/hashicorp/terraform-cdk/actions/runs/${{ github.run_id }}"
+              "run_url": "https://github.com/open-constructs/cdk-terrain/actions/runs/${{ github.run_id }}"
             }

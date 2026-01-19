@@ -1,6 +1,6 @@
 # tools/generate-function-bindings
 
-This package contains two tools that work together to generate the bindings for Terraform functions that are part of the `cdktf` package. This is currently a manual process and not yet automated through CI.
+This package contains two tools that work together to generate the bindings for Terraform functions that are part of the `cdktn` package. This is currently a manual process and not yet automated through CI.
 
 ## Fetching function metadata
 

@@ -1,5 +1,5 @@
 {
-  "name": "@cdktf/hcl2json",
+  "name": "@cdktn/hcl2json",
   "version": "0.0.0",
   "description": "Transform HCL into JSON",
   "main": "lib/index.js",
@@ -20,12 +20,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/hashicorp/terraform-cdk.git",
+    "url": "git://github.com/open-constructs/cdk-terrain.git",
     "directory": "packages/@cdktf/hcl2json"
   },
   "author": {
-    "name": "HashiCorp",
-    "url": "https://hashicorp.com"
+    "name": "OpenConstructs",
+    "url": "https://github.com/open-constructs"
   },
   "keywords": [
     "cdk",

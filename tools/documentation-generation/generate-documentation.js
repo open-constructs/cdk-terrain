@@ -27,7 +27,7 @@ import { Documentation, Language } from "jsii-docgen";
     throw new Error(
       "Expected " +
         sourceFolder +
-        " to be the source directory of the cdktf package, but it does not exist"
+        " to be the source directory of the cdktn package, but it does not exist"
     );
   }
 

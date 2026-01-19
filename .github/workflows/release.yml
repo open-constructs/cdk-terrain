@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   prepare-release:
-    if: github.repository == 'hashicorp/terraform-cdk'
+    if: github.repository == 'open-constructs/cdk-terrain'
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.build-test-matrix.outputs.tests }}
@@ -367,5 +367,5 @@ jobs:
           payload: |
             {
               "name": "main",
-              "run_url": "https://github.com/hashicorp/terraform-cdk/actions/runs/${{ github.run_id }}"
+              "run_url": "https://github.com/open-constructs/cdk-terrain/actions/runs/${{ github.run_id }}"
             }

@@ -8,14 +8,14 @@ import * as glob from "glob";
 
 const PROJECT_ROOT = path.join(__dirname, "..", "..");
 const ignoredDependencies = [
-  "@cdktf/cli-core",
-  "@cdktf/commons",
-  "@cdktf/hcl2cdk",
-  "@cdktf/hcl2json",
-  "@cdktf/provider-generator",
-  "@cdktf/provider-schema",
-  "cdktf",
-  "cdktf-cli",
+  "@cdktn/cli-core",
+  "@cdktn/commons",
+  "@cdktn/hcl2cdk",
+  "@cdktn/hcl2json",
+  "@cdktn/provider-generator",
+  "@cdktn/provider-schema",
+  "cdktn",
+  "cdktn-cli",
 ];
 
 // Read yarn.lock
@@ -28,7 +28,7 @@ if (type !== "success") {
 // Go through all package.json files and pin dependencies
 
 const packageJsons = glob.sync(
-  "{packages/*/package.json,packages/@cdktf/*/package.json,examples/*/*/package.json}",
+  "{packages/*/package.json,packages/@cdktn/*/package.json,examples/*/*/package.json}",
   {
     cwd: PROJECT_ROOT,
   },
