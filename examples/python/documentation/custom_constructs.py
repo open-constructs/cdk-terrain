@@ -9,7 +9,7 @@ from imports.aws.s3_bucket import S3Bucket, S3BucketWebsite
 
 # DOCS_BLOCK_START:constructs-scope
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 
 class PublicS3Bucket(Construct):
 

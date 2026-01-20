@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack } from "cdktn";
 import { UcloudProvider } from "./.gen/providers/ucloud/provider";
 import { DataUcloudImages } from "./.gen/providers/ucloud/data-ucloud-images";
 import { Instance } from "./.gen/providers/ucloud/instance";

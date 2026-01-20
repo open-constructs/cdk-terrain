@@ -5,7 +5,7 @@
 
 package com.mycompany.app.dataSources;
 
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.TerraformStack;
 import software.constructs.Construct;
 
 // DOCS_BLOCK_START:data-sources-define-data-sources

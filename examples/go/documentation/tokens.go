@@ -7,15 +7,15 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/terraform-aws-modules/aws/eks"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/terraform-aws-modules/aws/vpc"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/terraform-aws-modules/aws/eks"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/terraform-aws-modules/aws/vpc"
 )
 
-func NewTokensStack(scope constructs.Construct, name string, vpcName string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewTokensStack(scope constructs.Construct, name string, vpcName string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
-	logRetention := cdktf.NewTerraformVariable(stack, jsii.String("logRetentionInDays"), &cdktf.TerraformVariableConfig{
+	logRetention := cdktn.NewTerraformVariable(stack, jsii.String("logRetentionInDays"), &cdktn.TerraformVariableConfig{
 		Type: jsii.String("number"),
 	})
 
@@ -26,7 +26,7 @@ func NewTokensStack(scope constructs.Construct, name string, vpcName string) cdk
 
 	eks.NewEks(stack, jsii.String("EksModule"), &eks.EksConfig{
 		ClusterName:                       jsii.String("my-kubernetes-cluster"),
-		SubnetIds:                         cdktf.Token_AsList(vpc.PublicSubnetsOutput(), nil),
+		SubnetIds:                         cdktn.Token_AsList(vpc.PublicSubnetsOutput(), nil),
 		CloudwatchLogGroupRetentionInDays: logRetention.NumberValue(),
 	})
 

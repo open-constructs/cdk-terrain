@@ -6,7 +6,7 @@
 from os import getenv
 
 from constructs import Construct
-from cdktf import App, TerraformOutput, TerraformStack
+from cdktn import App, TerraformOutput, TerraformStack
 
 from imports.upcloud.provider import UpcloudProvider
 from imports.upcloud.server import Server, ServerLogin, ServerNetworkInterface, ServerTemplate

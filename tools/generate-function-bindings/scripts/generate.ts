@@ -5,7 +5,7 @@
 
 import fs from "fs/promises";
 import * as path from "path";
-import { AttributeType } from "@cdktf/commons";
+import { AttributeType } from "@cdktn/commons";
 import generate from "@babel/generator";
 import template from "@babel/template";
 import { parseExpression } from "@babel/parser";
@@ -21,7 +21,7 @@ const FUNCTION_BINDINGS_OUTPUT_FILE = path.resolve(
   "..",
   "..",
   "packages",
-  "cdktf",
+  "cdktn",
   "lib",
   "functions",
   "terraform-functions.generated.ts",
@@ -33,7 +33,7 @@ const FUNCTIONS_MAP_OUTPUT_FILE = path.resolve(
   "..",
   "..",
   "packages",
-  "@cdktf",
+  "@cdktn",
   "hcl2cdk",
   "lib",
   "function-bindings",
@@ -82,7 +82,7 @@ t.addComment(
 // these are overwritten in terraform-functions.ts
 const INTERNAL_METHODS = ["join", "bcrypt", "range", "lookup"];
 
-// the resulting file is used in the cdktf core library
+// the resulting file is used in the cdktn core library
 async function generateFunctionBindings() {
   const file = path.join(__dirname, FUNCTIONS_METADATA_FILE);
   const json = JSON.parse((await fs.readFile(file)).toString())

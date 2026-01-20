@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 using docker.Provider;
 using docker.Container;
 using docker.Image;

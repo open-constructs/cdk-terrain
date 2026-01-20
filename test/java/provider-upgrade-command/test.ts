@@ -17,13 +17,13 @@ describe("provider upgrade command", () => {
     });
 
     test("installs pre-built provider using gradle", async () => {
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
       ]);
 
-      await driver.exec("cdktf", ["provider", "upgrade", "random@=3.2.0"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
 
       expect(driver.readLocalFile("build.gradle")).not.toContain(
         "cdktf-provider-random:0.2.55",

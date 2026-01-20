@@ -15,13 +15,13 @@ import {
   TerraformStack,
   TerraformVariable,
   Token,
-} from "cdktf";
+} from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
 
 // DOCS_BLOCK_END:iterators,iterators-complex-types
-import { TerraformAsset } from "cdktf";
+import { TerraformAsset } from "cdktn";
 import { S3BucketObject } from "@cdktf/provider-aws/lib/s3-bucket-object";
 // DOCS_BLOCK_START:iterators,iterators-complex-types
 export class IteratorsStack extends TerraformStack {

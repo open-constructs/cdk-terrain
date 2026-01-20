@@ -17,13 +17,13 @@ describe("provider list command", () => {
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
       ]);
 
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "local@=2.2.3",
@@ -32,7 +32,7 @@ describe("provider list command", () => {
     });
 
     test("with json output", async () => {
-      const res = await driver.exec("cdktf", ["provider", "list", "--json"]);
+      const res = await driver.exec("cdktn", ["provider", "list", "--json"]);
 
       const output = JSON.parse(res.stdout);
 
@@ -50,7 +50,7 @@ describe("provider list command", () => {
       );
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "@cdktf/provider-random",
+          packageName: "@cdktn/provider-random",
           packageVersion: "0.2.55",
           providerName: "random",
           providerVersion: "3.1.3",
@@ -60,7 +60,7 @@ describe("provider list command", () => {
     }, 120_000);
 
     test("with tabular output", async () => {
-      const res = await driver.exec("cdktf", ["provider", "list"]);
+      const res = await driver.exec("cdktn", ["provider", "list"]);
 
       expect(res.stdout).toMatchSnapshot();
     }, 120_000);

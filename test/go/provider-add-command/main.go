@@ -6,16 +6,16 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 	return stack
 }
 
 func main() {
-	app := cdktf.Testing_StubVersion(cdktf.NewApp(&cdktf.AppConfig{StackTraces: jsii.Bool(false)}))
+	app := cdktn.Testing_StubVersion(cdktn.NewApp(&cdktn.AppConfig{StackTraces: jsii.Bool(false)}))
 
 	NewMyStack(app, "go-simple")
 

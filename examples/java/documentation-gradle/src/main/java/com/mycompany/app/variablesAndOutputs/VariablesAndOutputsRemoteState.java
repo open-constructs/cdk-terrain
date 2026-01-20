@@ -10,16 +10,16 @@ import imports.random.provider.RandomProvider;
 import imports.random.pet.Pet;
 
 import software.constructs.Construct;
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformOutputConfig;
-import com.hashicorp.cdktf.CloudBackend;
-import com.hashicorp.cdktf.CloudBackendConfig;
-import com.hashicorp.cdktf.NamedCloudWorkspace;
-import com.hashicorp.cdktf.NamedRemoteWorkspace;
-import com.hashicorp.cdktf.DataTerraformRemoteState;
-import com.hashicorp.cdktf.DataTerraformRemoteStateRemoteConfig;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformOutputConfig;
+import io.cdktn.cdktn.CloudBackend;
+import io.cdktn.cdktn.CloudBackendConfig;
+import io.cdktn.cdktn.NamedCloudWorkspace;
+import io.cdktn.cdktn.NamedRemoteWorkspace;
+import io.cdktn.cdktn.DataTerraformRemoteState;
+import io.cdktn.cdktn.DataTerraformRemoteStateRemoteConfig;
 
 public class VariablesAndOutputsRemoteState {
 

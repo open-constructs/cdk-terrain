@@ -10,10 +10,10 @@ Install project dependencies
 yarn install
 ```
 
-Generate CDK for Terraform constructs for Terraform provides and modules used in the project.
+Generate CDK Terrain constructs for Terraform provides and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```
 
 Compile the TypeScript application
@@ -25,16 +25,16 @@ tsc
 Generate Terraform configuration
 
 ```bash
-cdktf synth
+cdktn synth
 ```
 
 The above command will create a folder called `cdktf.out` that contains all Terraform JSON configuration that was generated.
 
-Run cdktf-cli commands
+Run cdktn-cli commands
 
 ```bash
-cdktf diff
-cdktf deploy
+cdktn diff
+cdktn deploy
 ```
 
 > At this step your Function App is deployed but not the application code

@@ -3,7 +3,7 @@
 
 # DOCS_BLOCK_START:remote-backend-define
 from constructs import Construct
-from cdktf import App, CloudBackend, NamedCloudWorkspace, TerraformStack, TerraformOutput
+from cdktn import App, CloudBackend, NamedCloudWorkspace, TerraformStack, TerraformOutput
 # DOCS_BLOCK_END:remote-backend-define
 
 class Stack(TerraformStack):

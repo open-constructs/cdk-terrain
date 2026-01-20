@@ -12,7 +12,7 @@ using Providers.Edge.MapResource;
 using Providers.Edge.SetBlockResource;
 using Providers.Edge.RequiredAttributeResource;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 
 namespace MyCompany.MyApp
 {

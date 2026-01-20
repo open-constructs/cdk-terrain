@@ -11,11 +11,11 @@ import (
 	"cdk.tf/go/stack/generated/scaleway/scaleway/provider"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	provider.NewScalewayProvider(stack, jsii.String("scaleway"), &provider.ScalewayProviderConfig{
 		Region:    jsii.String("fr-par"),
@@ -35,7 +35,7 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewMyStack(app, "go-scaleway")
 

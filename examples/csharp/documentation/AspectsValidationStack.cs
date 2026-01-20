@@ -4,7 +4,7 @@
 // DOCS_BLOCK_START:aspect-validation
 using System.Collections.Generic;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 using aws.S3Bucket;
 using aws.Provider;
 using Amazon.JSII.Runtime;

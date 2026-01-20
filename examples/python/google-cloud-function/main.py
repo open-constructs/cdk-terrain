@@ -3,7 +3,7 @@
 
 from abc import get_cache_token
 from constructs import Construct
-from cdktf import App
+from cdktn import App
 
 from cloud_function_stack import CloudFunctionStack
 

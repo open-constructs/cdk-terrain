@@ -4,17 +4,17 @@
 package main
 
 import (
-	"github.com/hashicorp/terraform-cdk/examples/go/aws/generated/eks"
-	"github.com/hashicorp/terraform-cdk/examples/go/aws/generated/hashicorp/aws/instance"
-	"github.com/hashicorp/terraform-cdk/examples/go/aws/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/aws/generated/eks"
+	"github.com/open-constructs/cdk-terrain/examples/go/aws/generated/hashicorp/aws/instance"
+	"github.com/open-constructs/cdk-terrain/examples/go/aws/generated/hashicorp/aws/provider"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewExampleCdktfGoAwsStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewExampleCdktfGoAwsStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	provider.NewAwsProvider(stack, jsii.String("aws"), &provider.AwsProviderConfig{
 		Region: jsii.String("us-east-1"),
@@ -39,7 +39,7 @@ func NewExampleCdktfGoAwsStack(scope constructs.Construct, id string) cdktf.Terr
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewExampleCdktfGoAwsStack(app, "ExampleCdktfGoAwsStack")
 

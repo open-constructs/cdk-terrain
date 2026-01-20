@@ -27,17 +27,17 @@ jobs:
     outputs:
       tests: ${{ steps.build-provider-test-matrix.outputs.tests }}
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform
     env:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktf/hcl2json fails without this
-        run: git config --global --add safe.directory /__w/terraform-cdk/terraform-cdk
+      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       # Setup caches for yarn, and go
       - name: Get cache directory paths
         id: global-cache-dir-path
@@ -88,7 +88,7 @@ jobs:
       fail-fast: false
       matrix: ${{fromJSON(needs.prepare-provider-tests.outputs.tests)}}
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform
     env:
       CHECKPOINT_DISABLE: "1"
       TERRAFORM_VERSION: ${{ inputs.terraform_version }}
@@ -103,7 +103,7 @@ jobs:
           name: dist
           path: dist
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |

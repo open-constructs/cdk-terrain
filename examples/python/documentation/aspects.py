@@ -8,7 +8,7 @@ from imports.random.pet import Pet
 # DOCS_BLOCK_START:define-aspects
 import jsii
 from constructs import Construct, IConstruct
-from cdktf import TerraformStack, Aspects, IAspect
+from cdktn import TerraformStack, Aspects, IAspect
 from imports.aws.instance import Instance
 from imports.aws.provider import AwsProvider
 
@@ -42,7 +42,7 @@ class MySingleStack(TerraformStack):
 
 # DOCS_BLOCK_START:aspects-validation
 from constructs import IConstruct
-from cdktf import Aspects, IAspect, Annotations
+from cdktn import Aspects, IAspect, Annotations
 from imports.aws.s3_bucket import S3Bucket
 
 @jsii.implements(IAspect)

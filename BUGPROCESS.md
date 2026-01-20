@@ -1,4 +1,4 @@
-# CDK for Terraform Issue Triage & Labeling
+# CDK Terrain Issue Triage & Labeling
 
 New issues are labeled with `new`. Bugs and feature requests filed by other engineers on the team can bypass this process; engineers should generally triage their own self-reports.
 

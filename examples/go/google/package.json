@@ -6,8 +6,8 @@
   "license": "MPL-2.0",
   "scripts": {
     "reinstall": "rm go.sum",
-    "build": "cdktf get",
+    "build": "cdktn get",
     "beforeSynth": "go mod tidy",
-    "synth": "cdktf synth"
+    "synth": "cdktn synth"
   }
 }

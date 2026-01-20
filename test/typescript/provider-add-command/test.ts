@@ -21,12 +21,12 @@ describe("provider add command", () => {
     }, 500_000);
 
     it("detects correct cdktf version", async () => {
-      const res = await driver.exec("cdktf", ["debug"]);
+      const res = await driver.exec("cdktn", ["debug"]);
       expect(res.stdout).toContain("cdktf: 0.10.4");
     });
 
     test("installs pre-built provider using npm", async () => {
-      const res = await driver.exec("cdktf", [
+      const res = await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
@@ -40,15 +40,15 @@ describe("provider add command", () => {
       expect(res.stdout).toContain(`cdktf   : 0.10.4`);
       expect(res.stdout).toContain(`Found pre-built provider.`);
       expect(res.stdout).toContain(
-        `Adding package @cdktf/provider-random @ 0.2.55`,
+        `Adding package @cdktn/provider-random @ 0.2.55`,
       );
       expect(res.stdout).toContain(
-        `Installing package @cdktf/provider-random @ 0.2.55 using npm.`,
+        `Installing package @cdktn/provider-random @ 0.2.55 using npm.`,
       );
       expect(res.stdout).toContain(`Package installed.`);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random"),
+        packageJsonWithDependency("@cdktn/provider-random"),
       );
     }, 120_000);
   });
@@ -63,7 +63,7 @@ describe("provider add command", () => {
     onPosix(
       "adds local provider on posix",
       async () => {
-        const res = await driver.exec("cdktf", [
+        const res = await driver.exec("cdktn", [
           "provider",
           "add",
           "local@=2.2.3",
@@ -94,7 +94,7 @@ describe("provider add command", () => {
     onWindows(
       "adds local provider on windows",
       async () => {
-        const res = await driver.exec("cdktf", [
+        const res = await driver.exec("cdktn", [
           "provider",
           "add",
           "local@=2.2.3",

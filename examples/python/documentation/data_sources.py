@@ -4,9 +4,9 @@
 from imports.aws.instance import Instance
 from imports.aws.provider import AwsProvider
 # DOCS_BLOCK_START:data-sources-define-data-sources,data-sources-remote-state-data-source
-from cdktf import TerraformStack, App
+from cdktn import TerraformStack, App
 # DOCS_BLOCK_END:data-sources-define-data-sources
-from cdktf import DataTerraformRemoteState, NamedRemoteWorkspace
+from cdktn import DataTerraformRemoteState, NamedRemoteWorkspace
 # DOCS_BLOCK_END:data-sources-remote-state-data-source
 from constructs import Construct
 

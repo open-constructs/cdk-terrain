@@ -1,15 +1,15 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 // DOCS_BLOCK_START:functions
-import { TerraformStack, TerraformVariable } from "cdktf";
+import { TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 // DOCS_BLOCK_END:functions
 // DOCS_BLOCK_START:operators,functions,functions-raw
-import { Fn, TerraformOutput } from "cdktf";
+import { Fn, TerraformOutput } from "cdktn";
 // DOCS_BLOCK_END:operators,functions,functions-raw
 // DOCS_BLOCK_START:operators,functions-raw
-import { Op } from "cdktf";
+import { Op } from "cdktn";
 // DOCS_BLOCK_END:operators,functions-raw
 // DOCS_BLOCK_START:functions-raw,functions
 import { DataAwsAvailabilityZones } from "@cdktf/provider-aws/lib/data-aws-availability-zones";

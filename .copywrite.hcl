@@ -7,7 +7,7 @@ project {
   header_ignore = [
     "**node_modules**",
     ".github/ISSUE_TEMPLATE/*.yml",
-    "packages/@cdktf/cli-core/templates/**",
+    "packages/@cdktn/cli-core/templates/**",
     "test/verdaccio.yaml",
     "test/local-registry.sh"
   ]

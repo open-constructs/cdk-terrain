@@ -9,7 +9,7 @@ import {
   TerraformOutput,
   AssetType,
   LocalBackend,
-} from "cdktf";
+} from "cdktn";
 import * as path from "path";
 import { NullProvider } from "./.gen/providers/null/provider";
 import { Resource as NullResource } from "./.gen/providers/null/resource";

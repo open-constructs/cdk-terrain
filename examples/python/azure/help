@@ -1,6 +1,6 @@
 ========================================================================================================
 
-  Your cdktf Python project is ready!
+  Your cdktn Python project is ready!
 
   cat help                Prints this message
 
@@ -8,15 +8,15 @@
     pipenv run ./main.py  Compile and run the python code.
 
   Synthesize:
-    cdktf synth           Synthesize Terraform resources to cdktf.out/
+    cdktn synth           Synthesize Terraform resources to cdktf.out/
   
   Diff:
-    cdktf diff            Perform a diff (terraform plan) for the given stack
+    cdktn diff            Perform a diff (terraform plan) for the given stack
 
   Deploy:
-    cdktf deploy          Deploy the given stack
+    cdktn deploy          Deploy the given stack
 
   Destroy:
-    cdktf destroy         Destroy the given stack
+    cdktn destroy         Destroy the given stack
 
 ========================================================================================================

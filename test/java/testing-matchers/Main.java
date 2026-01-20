@@ -10,8 +10,8 @@ import java.util.List;
 
 import software.constructs.Construct;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
 
 import imports.docker.provider.DockerProvider;
 import imports.docker.image.Image;

@@ -6,11 +6,11 @@
 package com.mycompany.app.constructs;
 
 
-import com.hashicorp.cdktf.App;
+import io.cdktn.cdktn.App;
 import com.mycompany.app.assets.MyAssetStack;
 
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.TerraformStack;
 
 // DOCS_BLOCK_START:constructs-use-constructs
 import java.nio.file.Paths;

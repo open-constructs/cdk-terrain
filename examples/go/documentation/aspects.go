@@ -7,9 +7,9 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/s3bucket"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/s3bucket"
 	"golang.org/x/exp/maps"
 )
 
@@ -35,8 +35,8 @@ func NewTagsAddingAspect(tags *map[string]*string) *TagsAddingAspect {
 	return &TagsAddingAspect{Tags: tags}
 }
 
-func NewAspectsStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewAspectsStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("us-east-1"),
@@ -49,7 +49,7 @@ func NewAspectsStack(scope constructs.Construct, name string) cdktf.TerraformSta
 		},
 	})
 
-	cdktf.Aspects_Of(stack).Add(
+	cdktn.Aspects_Of(stack).Add(
 		NewTagsAddingAspect(&map[string]*string{"createdBy": jsii.String("cdktf")}),
 	)
 

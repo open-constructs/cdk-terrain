@@ -7,10 +7,10 @@ package com.mycompany.app.variablesAndOutputs;
 
 // DOCS_BLOCK_START:var-out-output-values
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformOutputConfig;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformOutputConfig;
 
 public class VariablesAndOutputsValues extends TerraformStack {
 

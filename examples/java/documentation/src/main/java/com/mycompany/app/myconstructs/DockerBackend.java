@@ -5,7 +5,7 @@
 
 package com.mycompany.app.myconstructs;
 
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.TerraformStack;
 import software.constructs.Construct;
 
 public class DockerBackend{

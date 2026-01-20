@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, TerraformOutput } from "cdktf";
+import { App, TerraformStack, TerraformOutput } from "cdktn";
 import * as path from "path";
 import * as fs from "fs";
 import { GoogleProvider } from "./.gen/providers/google/provider";

@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-from cdktf import TerraformStack, TerraformVariable, Token
+from cdktn import TerraformStack, TerraformVariable, Token
 from constructs import Construct
 from imports.vpc import Vpc
 from imports.eks import Eks

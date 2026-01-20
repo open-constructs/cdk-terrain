@@ -7,17 +7,17 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/random/pet"
-	random "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/random/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/random/pet"
+	random "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/random/provider"
 )
 
-func NewHclInteropStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewHclInteropStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	random.NewRandomProvider(stack, jsii.String("default"), &random.RandomProviderConfig{})
 
-	petNameLength := cdktf.NewTerraformVariable(stack, jsii.String("petNameLength"), &cdktf.TerraformVariableConfig{
+	petNameLength := cdktn.NewTerraformVariable(stack, jsii.String("petNameLength"), &cdktn.TerraformVariableConfig{
 		Type:        jsii.String("number"),
 		Default:     jsii.Number(2),
 		Description: jsii.String("Pet name length"),
@@ -27,7 +27,7 @@ func NewHclInteropStack(scope constructs.Construct, name string) cdktf.Terraform
 		Length: petNameLength.NumberValue(),
 	})
 
-	cdktf.NewTerraformOutput(stack, jsii.String("name"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("name"), &cdktn.TerraformOutputConfig{
 		Value: myPet.Id(),
 	})
 

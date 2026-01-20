@@ -7,21 +7,21 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 
 	// DOCS_BLOCK_END:modules-local
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 	// DOCS_BLOCK_END:modules-create
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/terraform-aws-modules/aws/vpc"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/terraform-aws-modules/aws/vpc"
 	// DOCS_BLOCK_END:modules-install
 	// DOCS_BLOCK_START:modules-local
 	// This module can come from a registry or through a local / remote reference
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/my_local_module"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/my_local_module"
 	// DOCS_BLOCK_START:modules-install,modules-create
 )
 
-func NewModulesStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewModulesStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	// DOCS_BLOCK_END:modules-local
 	provider := aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
@@ -42,7 +42,7 @@ func NewModulesStack(scope constructs.Construct, name string) cdktf.TerraformSta
 	// create a list with the AWS provider construct to pass to the module
 	providers := append(make([]interface{}, 0), provider)
 
-	cdktf.NewTerraformHclModule(stack, jsii.String("Vpc"), &cdktf.TerraformHclModuleConfig{
+	cdktn.NewTerraformHclModule(stack, jsii.String("Vpc"), &cdktn.TerraformHclModuleConfig{
 		Source: jsii.String("terraform-aws-modules/vpc/aws"),
 		// Note: Variables has no types for its inputs.
 		// When using this for other modules consult the docs of the module
@@ -64,7 +64,7 @@ func NewModulesStack(scope constructs.Construct, name string) cdktf.TerraformSta
 		IpAddress: jsii.String("127.0.0.1"),
 	})
 
-	cdktf.NewTerraformOutput(stack, jsii.String("dns-server"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("dns-server"), &cdktn.TerraformOutputConfig{
 		Value: localModule.DnsServerOutput(),
 	})
 	// DOCS_BLOCK_START:modules-install,modules-create

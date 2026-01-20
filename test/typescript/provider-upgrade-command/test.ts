@@ -22,7 +22,7 @@ describe("provider upgrade command", () => {
 
   describe("pre-built", () => {
     beforeEach(async () => {
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
@@ -31,50 +31,50 @@ describe("provider upgrade command", () => {
 
     it("can update withing the same cdktf version to a specific version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktn/provider-random", "0.2.55"),
       );
 
-      await driver.exec("cdktf", ["provider", "upgrade", "random@=3.2.0"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktn/provider-random", "0.2.64"),
       );
     });
 
     it("can update within the same cdktf version to the latest version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktn/provider-random", "0.2.55"),
       );
 
-      await driver.exec("cdktf", ["provider", "upgrade", "random"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
       // Assert that we have version 0.2.64
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktn/provider-random", "0.2.64"),
       );
     });
 
     it("can update withing the same cdktf version to the latest version in yarn", async () => {
       // Pin random provider version so that the upgrade can do anything
-      await driver.exec("yarn", ["add", "@cdktf/provider-random@0.2.55"]);
+      await driver.exec("yarn", ["add", "@cdktn/provider-random@0.2.55"]);
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktn/provider-random", "0.2.55"),
       );
       await driver.exec("rm", ["-rf", "node_modules"]);
       await driver.exec("rm", ["package-lock.json"]);
       await driver.exec("yarn", ["install"]); // yarn install to update the lockfile
-      await driver.exec("cdktf", ["provider", "upgrade", "random"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
       // Assert that we have version 0.2.64
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktn/provider-random", "0.2.64"),
       );
     });
   });
 
   describe("local", () => {
     beforeEach(async () => {
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
@@ -83,7 +83,7 @@ describe("provider upgrade command", () => {
     });
 
     onPosix("can update to a specific version", async () => {
-      await driver.exec("cdktf", ["provider", "upgrade", "random@=3.2.0"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
 
       // Assert that we have version 3.2.0 in the cdktf.json and get ran
       const genVersionsFile = JSON.parse(
@@ -98,7 +98,7 @@ describe("provider upgrade command", () => {
     onWindows(
       "upgrade local provider on windows",
       async () => {
-        await driver.exec("cdktf", ["provider", "upgrade", "random@=3.2.0"]);
+        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
         const config = JSON.parse(driver.readLocalFile("cdktf.json"));
         expect(config.terraformProviders).toMatchInlineSnapshot(`
         [

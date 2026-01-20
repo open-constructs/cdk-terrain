@@ -11,11 +11,11 @@ from imports.kubernetes.deployment import Deployment, DeploymentMetadata, Deploy
 from imports.kubernetes.namespace import Namespace
 from imports.kubernetes.provider import KubernetesProvider
 from imports.aws.provider import AwsProvider
-from cdktf import TerraformVariable
+from cdktn import TerraformVariable
 
 # DOCS_BLOCK_START:resources-define
 from constructs import Construct
-from cdktf import TerraformStack
+from cdktn import TerraformStack
 
 class ResourceStack(TerraformStack):
     def __init__(self, scope: Construct, id: str):

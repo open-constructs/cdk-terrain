@@ -11,11 +11,12 @@
         "package:java": "lerna run package:java && tools/collect-dist.sh",
         "package:dotnet": "lerna run package:dotnet && tools/collect-dist.sh",
         "package:js": "lerna run package:js && tools/collect-dist.sh",
+        "package:go": "lerna run package:go && tools/collect-dist.sh",
         "package-windows": "lerna run package && tools\\collect-dist.bat",
         "pretest": "yarn lint:workspace && yarn lint:prettier",
-        "test": "lerna run --scope 'cdktn*' --scope @cdktn/* test",
+        "test": "lerna run --scope 'cdktn*' --scope @cdktn/* --concurrency 2 test",
         "test:ci": "lerna run --scope 'cdktn*' --scope @cdktn/* test:ci",
-        "test:update": "npx lerna exec --parallel --no-bail --scope 'cdktn*' --scope '@cdktn/*' npx 'jest -u'",
+        "test:update": "lerna run --concurrency 2 --no-bail --scope 'cdktn*' --scope '@cdktn/*' test:update",
         "watch": "lerna run --parallel  --stream --scope @cdktn/* --scope 'cdktn*' watch-preserve-output",
         "lint:workspace": "eslint --flag unstable_config_lookup_from_file .",
         "lint:prettier": "prettier --check .",
@@ -36,8 +37,8 @@
         "integration:windows:java": "cd test && run-against-dist.bat \"npx jest --runInBand java\"",
         "integration:windows:go": "cd test && run-against-dist.bat \"npx jest --runInBand go\"",
         "release-github": "tools/release-github.sh",
-        "build-docker-jsii": "docker build -t hashicorp/jsii-terraform .",
-        "push-docker-jsii": "docker push hashicorp/jsii-terraform",
+        "build-docker-jsii": "docker build --platform linux/amd64 --build-arg DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default') --build-arg AVAILABLE_TERRAFORM_VERSIONS=\"$(cat .terraform.versions.json | jq -r '.available | join(\" \")')\" -t terraconstructs/jsii-terraform .",
+        "push-docker-jsii": "docker push terraconstructs/jsii-terraform",
         "dist-clean": "lerna run dist-clean --stream && rm -rf dist",
         "prepare": "husky install",
         "prepare-next-release": "standard-version --prerelease pre --release-as minor --skip.changelog=true --skip.commit=true",
@@ -85,10 +86,12 @@
         "lerna": "^8.2.1",
         "lint-staged": "^15.5.2",
         "prettier": "^3.5.3",
-        "standard-version": "^9.5.0"
+        "standard-version": "^9.5.0",
+        "tsc-files": "^1.1.4"
     },
     "resolutions": {
-        "**/@types/react": "18.3.18"
+        "**/@types/react": "18.3.18",
+        "**/jsii": "5.8.9"
     },
     "lint-staged": {
         "**/*.{ts,tsx,js,css,md}": "prettier --write",

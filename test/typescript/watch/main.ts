@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing } from "cdktf";
+import { App, TerraformStack, Testing } from "cdktn";
 import * as NullProvider from "./.gen/providers/null";
 
 export class HelloTerra extends TerraformStack {

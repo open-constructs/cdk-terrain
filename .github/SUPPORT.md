@@ -1,6 +1,6 @@
 # Support
 
-If you have questions about CDK for Terraform (CDKTF) usage, please feel free to create a topic on [the official community forum](https://discuss.hashicorp.com/c/terraform-core/cdk-for-terraform/).
+If you have questions about CDK Terrain (CDKTN) usage, please feel free to create a topic on [the cdk.dev - #cdk-terrain channel](https://cdk.dev).
 
 ## Enterprise/Commercial Support
 

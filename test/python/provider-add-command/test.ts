@@ -17,12 +17,12 @@ describe("provider add command", () => {
       });
 
       it("detects correct cdktf version", async () => {
-        const res = await driver.exec("cdktf", ["debug"]);
+        const res = await driver.exec("cdktn", ["debug"]);
         expect(res.stdout).toContain("cdktf: 0.10.4");
       });
 
       test("installs pre-built provider using pipenv", async () => {
-        const res = await driver.exec("cdktf", [
+        const res = await driver.exec("cdktn", [
           "provider",
           "add",
           "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
@@ -60,12 +60,12 @@ describe("provider add command", () => {
       });
 
       it("detects correct cdktf version", async () => {
-        const res = await driver.exec("cdktf", ["debug"]);
+        const res = await driver.exec("cdktn", ["debug"]);
         expect(res.stdout).toContain("cdktf: 0.10.4");
       });
 
       test("installs pre-built provider using pipenv", async () => {
-        const res = await driver.exec("cdktf", [
+        const res = await driver.exec("cdktn", [
           "provider",
           "add",
           "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package

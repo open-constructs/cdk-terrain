@@ -5,10 +5,10 @@
 
 package com.mycompany.app;
 
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformVariable;
-import com.hashicorp.cdktf.TerraformVariableConfig;
-import com.hashicorp.cdktf.Token;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformVariable;
+import io.cdktn.cdktn.TerraformVariableConfig;
+import io.cdktn.cdktn.Token;
 import imports.eks.Eks;
 import imports.eks.EksConfig;
 import imports.vpc.VpcConfig;

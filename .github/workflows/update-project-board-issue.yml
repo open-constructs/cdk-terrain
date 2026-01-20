@@ -1,16 +1,16 @@
 name: Update project board on issue changes
 
 on:
-  issues:
-    types:
-      - opened
-      - edited
-      - closed
-      - reopened
-      - labeled
-      - unlabeled
-      - milestoned
-      - demilestoned
+  # issues:
+  #   types:
+  #     - opened
+  #     - edited
+  #     - closed
+  #     - reopened
+  #     - labeled
+  #     - unlabeled
+  #     - milestoned
+  #     - demilestoned
   workflow_dispatch:
     inputs:
       issue:
@@ -27,6 +27,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROJECT_BOARD_UPDATE_GH_TOKEN }}
           ISSUE: ${{ inputs.issue || github.event.issue.number }}
+        # TODO: Migrate hashicorp/update-project-board
         run: |
           sleep 5
-          gh workflow run update-project-board-issue.yml -R hashicorp/update-project-board -f issue=$ISSUE -f repository=terraform-cdk -f project=125
+          gh workflow run update-project-board-issue.yml -R hashicorp/update-project-board -f issue=$ISSUE -f repository=cdk-terrain -f project=125

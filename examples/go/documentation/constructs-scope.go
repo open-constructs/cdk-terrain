@@ -7,9 +7,9 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
-	s3bucket "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/s3bucket"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
+	s3bucket "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/s3bucket"
 )
 
 type PublicS3Bucket struct {
@@ -32,8 +32,8 @@ func NewPublicS3Bucket(scope constructs.Construct, name *string) *PublicS3Bucket
 	}
 }
 
-func NewConstructsScopingStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewConstructsScopingStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("us-east-1"),
@@ -54,7 +54,7 @@ DOCS_BLOCK_END:constructs-scope
 */
 func SynthConstructsScope() {
 	// DOCS_BLOCK_START:constructs-scope
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewConstructsScopingStack(app, "constructs-scope")
 

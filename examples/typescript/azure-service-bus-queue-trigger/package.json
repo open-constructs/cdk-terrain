@@ -5,21 +5,22 @@
   "types": "main.ts",
   "license": "MPL-2.0",
   "scripts": {
-    "build": "cdktf get",
-    "synth": "cdktf synth",
+    "build": "cdktn get",
+    "synth": "cdktn synth",
     "compile": "tsc --pretty",
     "watch": "tsc -w",
     "test": "jest",
     "test:watch": "jest --watch",
-    "upgrade": "npm i cdktf@latest cdktf-cli@latest",
-    "upgrade:next": "npm i cdktf@next cdktf-cli@next"
+    "upgrade": "npm i cdktn@latest cdktn-cli@latest",
+    "upgrade:next": "npm i cdktn@next cdktn-cli@next"
   },
   "engines": {
     "node": ">=20.9"
   },
   "dependencies": {
     "@cdktf/provider-azurerm": "9.0.6",
-    "cdktf": "^0.0.0",
+    "cdktf": "^0.21.0",
+    "cdktn": "^0.0.0",
     "constructs": "10.4.2"
   },
   "devDependencies": {

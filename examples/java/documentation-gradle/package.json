@@ -5,7 +5,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "reinstall": "./reinstall.sh",
-    "build": "cdktf get --parallelism 1 --show-performance-info",
-    "synth": "cdktf synth --show-performance-info"
+    "build": "cdktn get --parallelism 1 --show-performance-info",
+    "synth": "cdktn synth --show-performance-info"
   }
 }

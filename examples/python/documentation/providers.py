@@ -3,7 +3,7 @@
 
 # DOCS_BLOCK_START:providers-import-providers
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.aws.provider import AwsProvider
 from imports.aws.instance import Instance
 
@@ -32,7 +32,7 @@ DOCS_BLOCK_END:providers-import-providers
 # DOCS_BLOCK_START:providers-import-classes
 import os
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformVariable, Token
+from cdktn import App, TerraformStack, TerraformVariable, Token
 from imports.aws.provider import AwsProvider
 from imports.dnsimple.provider import DnsimpleProvider
 from imports.dnsimple.zone_record import ZoneRecord

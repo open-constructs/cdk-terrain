@@ -43,7 +43,7 @@ const lines = Object.entries(typeMap).map(([type, prsPerType]) => {
     .filter((num) => commitHashes.includes(mergeCommitMap[num]))
     .map((num) => {
       if (titleMap[num])
-        return `- ${titleMap[num]} [\\#${num}](https://github.com/hashicorp/terraform-cdk/pull/${num})`;
+        return `- ${titleMap[num]} [\\#${num}](https://github.com/open-constructs/cdk-terrain/pull/${num})`;
       else throw new Error(`no json data for PR #${num}`);
     })
     .join("\n");

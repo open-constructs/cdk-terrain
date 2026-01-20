@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, TerraformStack, Testing, LocalBackend
+from cdktn import App, TerraformStack, Testing, LocalBackend
 from imports.null.provider import NullProvider
 from imports.null.resource import Resource
 

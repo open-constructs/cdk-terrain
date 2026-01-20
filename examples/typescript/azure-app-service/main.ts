@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, TerraformOutput } from "cdktf";
+import { App, TerraformStack, TerraformOutput } from "cdktn";
 import { AzurermProvider } from "./.gen/providers/azurerm/provider";
 import { ResourceGroup } from "./.gen/providers/azurerm/resource-group";
 import { AppServicePlan } from "./.gen/providers/azurerm/app-service-plan";

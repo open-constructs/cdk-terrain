@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.Fn;
-import com.hashicorp.cdktf.Token;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.Fn;
+import io.cdktn.cdktn.Token;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformStack;
 
 import imports.ucloud.provider.UcloudProvider;
 import imports.ucloud.data_ucloud_images.DataUcloudImages;;

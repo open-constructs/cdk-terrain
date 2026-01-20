@@ -8,9 +8,9 @@ package com.mycompany.app;
 import java.util.Arrays;
 import java.util.ArrayList;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformStack;
 
 import imports.azurerm.provider.*;
 import imports.azurerm.virtual_network.*;

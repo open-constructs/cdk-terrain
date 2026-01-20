@@ -3,7 +3,7 @@
 
 using System;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 
 namespace MyCompany.MyApp
 {

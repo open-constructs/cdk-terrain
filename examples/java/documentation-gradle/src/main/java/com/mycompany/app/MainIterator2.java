@@ -5,7 +5,7 @@
 
 package com.mycompany.app;
 
-import com.hashicorp.cdktf.*;
+import io.cdktn.cdktn.*;
 import imports.aws.s3_bucket.S3Bucket;
 import imports.aws.s3_bucket.S3BucketConfig;
 import software.constructs.Construct;

@@ -8,14 +8,14 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/ucloud/generated/ucloud/ucloud/dataucloudimages"
-	"github.com/hashicorp/terraform-cdk/examples/go/ucloud/generated/ucloud/ucloud/instance"
-	ucloudprovider "github.com/hashicorp/terraform-cdk/examples/go/ucloud/generated/ucloud/ucloud/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/ucloud/generated/ucloud/ucloud/dataucloudimages"
+	"github.com/open-constructs/cdk-terrain/examples/go/ucloud/generated/ucloud/ucloud/instance"
+	ucloudprovider "github.com/open-constructs/cdk-terrain/examples/go/ucloud/generated/ucloud/ucloud/provider"
 )
 
-func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	ucloudprovider.NewUcloudProvider(stack, jsii.String("ucloud"), &ucloudprovider.UcloudProviderConfig{
 		Region:    jsii.String("cn-bj2"),
@@ -41,7 +41,7 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewMyStack(app, "go-ucloud")
 

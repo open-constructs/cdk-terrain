@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing } from "cdktf";
+import { App, TerraformStack, Testing } from "cdktn";
 import { Constants } from "./.gen/modules/constants";
 import { Register } from "./.gen/modules/register";
 

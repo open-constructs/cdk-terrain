@@ -402,7 +402,7 @@ export class TestDriver {
       path.resolve(
         __dirname,
         "..",
-        "packages/@cdktf/cli-core/templates/typescript",
+        "packages/@cdktn/cli-core/templates/typescript",
       ),
     );
     try {

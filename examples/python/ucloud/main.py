@@ -3,7 +3,7 @@
 
 import os
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.ucloud.provider import UcloudProvider
 from imports.ucloud.data_ucloud_images import DataUcloudImages
 from imports.ucloud.instance import Instance

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // DOCS_BLOCK_START:outputs,outputs-usage,remote-state
-import { TerraformLocal, TerraformStack, TerraformVariable } from "cdktf";
+import { TerraformLocal, TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { App, TerraformOutput } from "cdktf";
+import { App, TerraformOutput } from "cdktn";
 // DOCS_BLOCK_END:outputs,outputs-usage,remote-state
 
 // DOCS_BLOCK_START:remote-state
@@ -12,7 +12,7 @@ import {
   CloudBackend,
   DataTerraformRemoteState,
   NamedCloudWorkspace,
-} from "cdktf";
+} from "cdktn";
 // DOCS_BLOCK_END:remote-state
 
 // DOCS_BLOCK_START:outputs-usage
@@ -21,7 +21,7 @@ import { Pet } from "@cdktf/provider-random/lib/pet";
 // DOCS_BLOCK_END:outputs-usage
 
 import { Instance } from "@cdktf/provider-aws/lib/instance";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 
 export class VariablesStack extends TerraformStack {
   constructor(scope: Construct, id: string) {

@@ -5,10 +5,10 @@
 
 package com.mycompany.app.stacks;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.Fn;
-import com.hashicorp.cdktf.TerraformLocal;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.Fn;
+import io.cdktn.cdktn.TerraformLocal;
+import io.cdktn.cdktn.TerraformStack;
 import software.constructs.Construct;
 
 import java.util.Arrays;

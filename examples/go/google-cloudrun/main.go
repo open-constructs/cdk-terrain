@@ -8,10 +8,13 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 
-	// Google provider.
-	"github.com/hashicorp/cdktf-provider-google-go/google"
+	// Google provider packages.
+	"github.com/cdktf/cdktf-provider-google-go/google/v16/cloudrunservice"
+	"github.com/cdktf/cdktf-provider-google-go/google/v16/cloudrunserviceiampolicy"
+	"github.com/cdktf/cdktf-provider-google-go/google/v16/datagoogleiampolicy"
+	"github.com/cdktf/cdktf-provider-google-go/google/v16/provider"
 )
 
 // See https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_service#containers
@@ -24,8 +27,8 @@ type Binding struct {
 	Members []string `json:"members"`
 }
 
-func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	// Set your project details.
 	region := "europe-west1"
@@ -39,18 +42,18 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 	if err != nil {
 		panic("failed to load credentials: " + err.Error())
 	}
-	google.NewGoogleProvider(stack, jsii.String("GoogleAuth"), &google.GoogleProviderConfig{
+	provider.NewGoogleProvider(stack, jsii.String("GoogleAuth"), &provider.GoogleProviderConfig{
 		Region:      &region,
 		Zone:        jsii.String(region + "-c"),
 		Project:     &projectID,
 		Credentials: jsii.String(string(credentials)),
 	})
 
-	crs := google.NewCloudRunService(stack, jsii.String("cloudRun"), &google.CloudRunServiceConfig{
+	crs := cloudrunservice.NewCloudRunService(stack, jsii.String("cloudRun"), &cloudrunservice.CloudRunServiceConfig{
 		Location: &region,
 		Name:     jsii.String("gcpcdktfcloudrunsvc2020"),
-		Template: &google.CloudRunServiceTemplate{
-			Spec: &google.CloudRunServiceTemplateSpec{
+		Template: &cloudrunservice.CloudRunServiceTemplate{
+			Spec: &cloudrunservice.CloudRunServiceTemplateSpec{
 				// The "Containers" parameter type is just an interface{}.
 				// So we have to provide our own type based on the documentation at:
 				// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_service#containers
@@ -63,7 +66,7 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 		},
 	})
 
-	policyData := google.NewDataGoogleIamPolicy(stack, jsii.String("datanoauth"), &google.DataGoogleIamPolicyConfig{
+	policyData := datagoogleiampolicy.NewDataGoogleIamPolicy(stack, jsii.String("datanoauth"), &datagoogleiampolicy.DataGoogleIamPolicyConfig{
 		Binding: []Binding{
 			{
 				Role:    "roles/run.invoker",
@@ -72,14 +75,14 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 		},
 	})
 
-	google.NewCloudRunServiceIamPolicy(stack, jsii.String("runsvciampolicy"), &google.CloudRunServiceIamPolicyConfig{
+	cloudrunserviceiampolicy.NewCloudRunServiceIamPolicy(stack, jsii.String("runsvciampolicy"), &cloudrunserviceiampolicy.CloudRunServiceIamPolicyConfig{
 		Location:   &region,
 		Project:    crs.Project(),
 		Service:    crs.Name(),
 		PolicyData: policyData.PolicyData(),
 	})
 
-	cdktf.NewTerraformOutput(stack, jsii.String("cdktfcloudrunUrl"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("cdktfcloudrunUrl"), &cdktn.TerraformOutputConfig{
 		Value: *crs.Fqn(),
 	})
 
@@ -87,7 +90,7 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 	NewMyStack(app, "learn-cdktf-docker")
 	app.Synth()
 }

@@ -26,7 +26,7 @@ describe("provider upgrade command", () => {
           `cdktf-cdktf-provider-random = "==0.2.55"`,
         );
 
-        await driver.exec("cdktf", ["provider", "upgrade", "random@=3.2.0"]);
+        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
         expect(driver.readLocalFile("Pipfile")).toContain(
           `cdktf-cdktf-provider-random = "~=0.2.64"`,
         );
@@ -64,7 +64,7 @@ describe("provider upgrade command", () => {
         );
         await driver.exec("pip", ["install", "-r", "requirements.txt"]);
 
-        await driver.exec("cdktf", ["provider", "upgrade", "random@=3.2.0"]);
+        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
         expect(driver.readLocalFile("requirements.txt")).toContain(
           `cdktf-cdktf-provider-random~=0.2.64`,
         );

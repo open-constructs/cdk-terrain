@@ -9,7 +9,7 @@ import { ServicebusNamespace } from "@cdktf/provider-azurerm/lib/servicebus-name
 import { ServicebusQueue } from "@cdktf/provider-azurerm/lib/servicebus-queue";
 import { ServicebusQueueAuthorizationRule } from "@cdktf/provider-azurerm/lib/servicebus-queue-authorization-rule";
 import { StorageAccount } from "@cdktf/provider-azurerm/lib/storage-account";
-import { App, TerraformStack, Fn } from "cdktf";
+import { App, TerraformStack, Fn } from "cdktn";
 import { Construct } from "constructs";
 
 const uid = () => {

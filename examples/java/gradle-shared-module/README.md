@@ -1,6 +1,6 @@
 # Shared Common Module CDKTF Example
 
-This project serves as an example of how to build and share cdktf modules using gradle.
+This project serves as an example of how to build and share cdktn modules using gradle.
 
 ## Setup Github Credentials
 

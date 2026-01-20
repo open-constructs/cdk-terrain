@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing } from "cdktf";
-import { RandomProvider, Password } from "@cdktf/provider-random";
+import { App, TerraformStack, Testing } from "cdktn";
+import { RandomProvider, Password } from "@cdktn/provider-random";
 
 export class HelloTerra extends TerraformStack {
   constructor(scope: Construct, id: string) {

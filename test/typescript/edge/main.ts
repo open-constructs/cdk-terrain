@@ -8,7 +8,7 @@ import {
   TerraformOutput,
   TerraformStack,
   Token,
-} from "cdktf";
+} from "cdktn";
 import * as edge from "./.gen/providers/edge";
 
 // Using references to resource attributes as resource arguments

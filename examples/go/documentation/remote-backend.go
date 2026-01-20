@@ -7,19 +7,19 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewCloudBackendStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewCloudBackendStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
-	cdktf.NewCloudBackend(stack, &cdktf.CloudBackendConfig{
+	cdktn.NewCloudBackend(stack, &cdktn.CloudBackendConfig{
 		Hostname:     jsii.String("app.terraform.io"),
 		Organization: jsii.String("company"),
-		Workspaces:   cdktf.NewNamedCloudWorkspace(jsii.String("my-app-prod"), nil),
+		Workspaces:   cdktn.NewNamedCloudWorkspace(jsii.String("my-app-prod"), nil),
 	})
 
-	cdktf.NewTerraformOutput(stack, jsii.String("dns-server"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("dns-server"), &cdktn.TerraformOutputConfig{
 		Value: "hello-world",
 	})
 
@@ -30,10 +30,10 @@ func NewCloudBackendStack(scope constructs.Construct, name string) cdktf.Terrafo
 
 // DOCS_BLOCK_START:remote-backend-migrate
 
-func NewLocalBackendStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewLocalBackendStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
-	cdktf.NewTerraformOutput(stack, jsii.String("dns-server"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("dns-server"), &cdktn.TerraformOutputConfig{
 		Value: "local",
 	})
 
@@ -50,13 +50,13 @@ DOCS_BLOCK_END:remote-backend-migrate
 */
 func SynthLocalBackend() {
 	// DOCS_BLOCK_START:remote-backend-migrate
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	stack := NewLocalBackendStack(app, "hello-terraform")
-	cdktf.NewCloudBackend(stack, &cdktf.CloudBackendConfig{
+	cdktn.NewCloudBackend(stack, &cdktn.CloudBackendConfig{
 		Hostname:     jsii.String("app.terraform.io"),
 		Organization: jsii.String("company"),
-		Workspaces:   cdktf.NewNamedCloudWorkspace(jsii.String("my-app-prod"), nil),
+		Workspaces:   cdktn.NewNamedCloudWorkspace(jsii.String("my-app-prod"), nil),
 	})
 
 	// DOCS_BLOCK_END:remote-backend-migrate

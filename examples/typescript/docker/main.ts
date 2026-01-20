@@ -7,16 +7,16 @@ Starts a Docker container with an Nginx server.
 Steps:
 
 - Start Docker on your machine
-- Run `cdktf get` to install dependencies
-- Run `cdktf deploy` to run the Nginx container
+- Run `cdktn get` to install dependencies
+- Run `cdktn deploy` to run the Nginx container
 - Visit http://localhost:8000/ to view the Nginx default page
 - Optional: `docker ps` will show the running container
-- Destroy with `cdktf destroy`
+- Destroy with `cdktn destroy`
 
 */
 
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack } from "cdktn";
 import { Image } from "./.gen/providers/docker/image";
 import { DockerProvider } from "./.gen/providers/docker/provider";
 import { Container } from "./.gen/providers/docker/container";

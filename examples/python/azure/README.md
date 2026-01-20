@@ -1,6 +1,6 @@
 # python-azure
 
-A CDK for Terraform application in Python.
+A CDK Terrain application in Python.
 
 ## Usage
 
@@ -18,10 +18,10 @@ Install project dependencies
 pipenv install
 ```
 
-Generate CDK for Terraform constructs for Terraform provides and modules used in the project.
+Generate CDK Terrain constructs for Terraform provides and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```
 
 You can now edit the `main.py` file if you want to modify any code.
@@ -30,7 +30,7 @@ You can now edit the `main.py` file if you want to modify any code.
 vim main.py
 #!/usr/bin/env python
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput, Token
+from cdktn import App, TerraformStack, TerraformOutput, Token
 from imports.azurerm import AzurermProvider, ResourceGroup, VirtualNetwork
 
 class MyStack(TerraformStack):
@@ -74,14 +74,14 @@ app.synth()
 Compile and generate Terraform configuration
 
 ```bash
-cdktf synth
+cdktn synth
 ```
 
 The above command will create a folder called `cdktf.out` that contains all Terraform JSON configuration that was generated.
 
-Run cdktf-cli commands
+Run cdktn-cli commands
 
 ```bash
-cdktf diff
-cdktf deploy
+cdktn diff
+cdktn deploy
 ```

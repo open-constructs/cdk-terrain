@@ -15,8 +15,8 @@ or [GCP K8S](https://github.com/hashicorp/kubernetes-on-gcp-with-terraform-cdk).
 
 ## Preface
 
-This guide assumes basic familiarity with the CDK for Terraform and that you have
-it installed already. If you are new to the CDKTF it is recommended to first
+This guide assumes basic familiarity with the CDK Terrain and that you have
+it installed already. If you are new to the CDKTN it is recommended to first
 have a look at the [getting started guide](../getting-started/typescript.md)
 which explains the CDK for Terraform itself in more detail and the commands used
 to deploy infrastructure. This guide will mainly explain the codebase of the
@@ -32,10 +32,10 @@ For a simpler serverless example there is also a step by step tutorial on
 
 ## Init
 
-The project was initialized using the following `cdktf init` command:
+The project was initialized using the following `cdktn init` command:
 
 ```
-cdktf init --local --template=typescript
+cdktn init --local --template=typescript
 ```
 
 You can either clone the whole
@@ -94,7 +94,7 @@ The frontend is located inside the `frontend` directory. It is hosted via an AWS
 S3 Bucket and AWS CloudFront.
 
 The infrastructure for the frontend is defined in `frontend/index.ts`. That file
-exports a `Frontend` class which extends the `Resource` construct from CDKTF. We
+exports a `Frontend` class which extends the `Resource` construct from CDKTN. We
 use this pattern to create new building blocks, that can be added to a
 `TerraformStack` (see root `main.ts` that uses our new `Frontend` resource).
 
@@ -182,7 +182,7 @@ In the constructor the following resources are defined for the infrastructure:
 This resource is a custom one that is defined in `lib/nodejs-function.ts` and
 described in the section "Posts API deployment" below. It compiles and bundles
 the TypeScript code for the AWS Lambda function and makes it available to
-Terraform via the `cdktf.Asset` construct.
+Terraform via the `cdktn.Asset` construct.
 
 **`aws.IamRole`**  
 Creates an IAM role for the AWS Lambda function which allows it to access the
@@ -229,10 +229,10 @@ via some "cloud native" / serverless cron definition.
 There is no additional script required as is for the frontend. The AWS Lambda
 function which handles the api requests and connects to DynamoDB to store and
 retrieve posts is deployed automatically via the CDK for Terraform
-(`cdktf deploy`).  
+(`cdktn deploy`).  
 For this to work, we have defined a utility in `lib/nodejs-function.ts` that
 uses [`esbuild`](https://github.com/evanw/esbuild) to compile the function
-synchronously while the TypeScript code is synthesized (`cdktf synth`) to the
+synchronously while the TypeScript code is synthesized (`cdktn synth`) to the
 JSON output (`cdk.tf.json`) that is later used with Terraform.  
 The build output is uploaded and linked to the Lambda function by Terraform.
 
@@ -245,12 +245,9 @@ business domain was inspired by the style of the
 If you encounter any issues with the CDK for Terraform don't hesitate to get in
 touch with us:
 
-- Ask a question on the HashiCorp [Discuss](https://discuss.hashicorp.com/)
-  using the
-  [terraform-cdk](https://discuss.hashicorp.com/c/terraform-core/cdk-for-terraform/)
-  category.
+- Ask a question on the [the cdk.dev - #cdk-terrain channel](https://cdk.dev).
 - Report a
-  [bug](https://github.com/hashicorp/terraform-cdk/issues/new?assignees=&labels=bug&template=bug-report.md&title=)
+  [bug](https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug&template=bug-report.md&title=)
   or request a new
-  [feature](https://github.com/hashicorp/terraform-cdk/issues/new?assignees=&labels=enhancement&template=feature-request.md&title=).
-- Browse all [open issues](https://github.com/hashicorp/terraform-cdk/issues).
+  [feature](https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=enhancement&template=feature-request.md&title=).
+- Browse all [open issues](https://github.com/open-constructs/cdk-terrain/issues).

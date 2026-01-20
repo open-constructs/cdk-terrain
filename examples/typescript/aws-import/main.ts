@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack } from "cdktn";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { S3Bucket } from "./.gen/providers/aws/s3-bucket";
 

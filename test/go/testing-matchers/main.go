@@ -11,11 +11,11 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	// The code that defines your stack goes here
 	docker.NewDockerProvider(stack, jsii.String("provider"), &docker.DockerProviderConfig{})
@@ -41,8 +41,8 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 	return stack
 }
 
-func NewMyStackInvalid(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStackInvalid(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	// The code that defines your stack goes here
 	docker.NewDockerProvider(stack, jsii.String("provider"), &docker.DockerProviderConfig{})
@@ -71,7 +71,7 @@ func NewMyStackInvalid(scope constructs.Construct, id string) cdktf.TerraformSta
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewMyStack(app, "test-go")
 

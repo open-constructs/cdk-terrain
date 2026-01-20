@@ -1,14 +1,16 @@
 # Contributing
 
-This repository contains CDK for Terraform (CDKTF)– this includes the CDKTF CLI, CDKTF package, CDKTF Convert, and Provider Generator. Prebuilt providers are housed in separate repositories under the [HashiCorp CDKTF organization](https://github.com/cdktf)
+This repository contains CDK Terrain (CDKTN), a fork of CDK for Terraform (CDKTF) – this includes the CDKTN CLI, CDKTN package, CDKTN Convert, and Provider Generator. Prebuilt providers are housed in separate repositories under the [CDKTN-IO organization](https://github.com/cdktn-io)
 
 This document aims to provide guidance on recommended contribution practices as well as an introduction to common workflows when contributing.
+
+<!-- TODO: link Open Constructs CoC -->
 
 Note: All communication on GitHub, the community forum, and other HashiCorp-provided communication channels is subject to the [HashiCorp community guidelines](https://www.hashicorp.com/community-guidelines).
 
 ## Questions
 
-For general problems you encounter that may not require a core maintainer to answer, post your question in our [community forum]("https://discuss.hashicorp.com/c/terraform-core/cdk-for-terraform/"). Otherwise if you believe the problem stems from a bug, please feel free to create a new issue describing the problem.
+For general problems you encounter that may not require a core maintainer to answer, post your question in our [the cdk.dev - #cdk-terrain channel](https://cdk.dev). Otherwise if you believe the problem stems from a bug, please feel free to create a new issue describing the problem.
 
 ## Issues
 
@@ -20,7 +22,7 @@ If you encounter a bug you can help us by submitting an issue, though make sure 
 
 When reporting a bug we ask that you include:
 
-- CDKTF & language versions being used
+- CDKTF/CDKTN & language versions being used
 - Affected Resource(s)
 - Github Gist containing the Debug output
 - Expected Behavior vs. Actual Behavior
@@ -52,7 +54,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 ### Pull Request Lifecycle
 
 1. You are welcome to submit an initial draft pull request for commentary before it is fully completed. It's also helpful to include comments on items you'd like feedback on or feel needs further discussion. Once you believe your pull request is ready to be merged you can set your pull request to open.
-2. When time permits and all checks have passed, Terraform CDK team members will review your PR. From here the pull request will either be merged, or additional changed may be requested in comments. We may also have questions that we need answered about the code, due to something that needs greater clarification or just because we want to better understand your thought process Please note that the responsibility for passing tests belongs to the author of the PR. If you're having significant trouble with getting tests to pass, please write `@hashicorp/cdktf` in a comment on the PR to request assistance.
+2. When time permits and all checks have passed, Terraform CDK team members will review your PR. From here the pull request will either be merged, or additional changed may be requested in comments. We may also have questions that we need answered about the code, due to something that needs greater clarification or just because we want to better understand your thought process Please note that the responsibility for passing tests belongs to the author of the PR. If you're having significant trouble with getting tests to pass, please write `@open-constructs/cdktf-maintainers` in a comment on the PR to request assistance.
 3. When we request changes, you have two options. You can either make those changes or, if you disagree with the suggested changes, a conversation can be had about our respective reasonings where we can then agree on a path forward. In many instances this may be a multi-step process. Pull requests are a great venue for the team and our community to collaborate, and we welcome conversations about how to improve things.
 4. Once all outstanding comments and checklist items have been addressed, your contribution will be merged!
 
@@ -87,18 +89,34 @@ Ensuring your PR titles follow this format helps us quickly identify the purpose
 
 ## Prerequisites
 
-To build and install `terraform-cdk` locally you need to install:
+To build and install `cdk-terrain` locally you need to install:
 
-- Node version 20.0+
-- Go 1.18
-- dotnet (v6.0)
-- mvn
-- pipenv
+- Node version (20.0+ - pinned in mise)
+- Go (1.18 - pinned in mise)
+- dotnet (v6.0 - pinned in mise)
+- pipenv (pinned in mise)
 
-Alternatively you can work on the CDK from within a docker container with the image `docker.mirror.hashicorp.services/hashicorp/jsii-terraform`, e.g.:
+**Required for `yarn package` (building distributions):**
+
+- Maven (`mvn`) - Install via your system package manager (not managed by mise):
+
+  ```shell
+  # Debian/Ubuntu
+  sudo apt install maven
+
+  # macOS
+  brew install maven
+
+  # Fedora
+  sudo dnf install maven
+  ```
+
+- rsync
+
+Alternatively you can work on the CDK from within a docker container with the image `terraconstructs/jsii-terraform`, e.g.:
 
 ```shell
-$ docker run -it --rm -w=/home -v (pwd):/home docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+$ docker run -it --rm -w=/home -v (pwd):/home terraconstructs/jsii-terraform
 ```
 
 or through [Visual Studio Code Remote - Containers](https://code.visualstudio.com/docs/remote/containers).
@@ -111,7 +129,7 @@ Clone the repository:
 $ git clone https://github.com/open-constructs/cdk-terrain.git
 ```
 
-To compile the `terraform-cdk` binary for your local machine:
+To compile the `cdk-terrain` binary for your local machine:
 
 ```shell
 $ yarn install
@@ -147,17 +165,17 @@ $ yarn watch
 
 This will watch for changes in all packages.
 
-**Note (for cdktf-cli only):** We're using [esbuild](https://esbuild.github.io/) for transpilation and bundling of the Typescript code. However, `esbuild` only transpiles, but doesn't do any type checking. That's why we've added an extra step as a pre-commit hook which transpiles the code with `tsc` to ensure commits don't have type errors.
+**Note (for cdktn-cli only):** We're using [esbuild](https://esbuild.github.io/) for transpilation and bundling of the Typescript code. However, `esbuild` only transpiles, but doesn't do any type checking. That's why we've added an extra step as a pre-commit hook which transpiles the code with `tsc` to ensure commits don't have type errors.
 
 ### CLI changes
 
 If your changes target only CLI and packages used by the CLI, running `yarn watch` will be sufficient. Although it's technically a bit different from what we ship you should be able to use a direct path to our binary entry point to execute commands. You can put this in a shell alias like this:
 
 ```shell
-alias cdktfl='/path/to/terraform-cdk/packages/cdktf-cli/bundle/bin/cdktf' # For running cdktf locally
-alias cdktfld='node --inspect-brk /path/to/terraform-cdk/packages/cdktf-cli/bundle/bin/cdktf.js' # For running cdktf locally with debugging
+alias cdktnl='/path/to/cdk-terrain/packages/cdktn-cli/bundle/bin/cdktn' # For running cdktn locally
+alias cdktnld='node --inspect-brk /path/to/cdk-terrain/packages/cdktn-cli/bundle/bin/cdktn.js' # For running cdktf locally with debugging
 
-$ cdktfl get
+$ cdktnl get
 ```
 
 ### Library changes
@@ -166,28 +184,53 @@ If you make changes to the library you need to run `yarn build && yarn package` 
 
 ## Tests
 
-If you just want to run the tests:
+### Unit Tests
+
+Most unit tests can be run without any prerequisites:
 
 ```shell
 $ yarn test # to run all tests at once
 $ yarn test:watch # to run all tests in watch mode
 ```
 
-To run integration tests, package and run integration tests.
+> [!TIP]
+> Tests create many temporary directories in `/tmp`. If you have limited tmpfs space (common on Linux where `/tmp` is mounted as tmpfs with ~16GB), use `/var/tmp` instead:
+>
+> ```shell
+> $ TMPDIR=/var/tmp yarn test
+> $ TMPDIR=/var/tmp yarn test:update
+> ```
+>
+> You can also set this in your shell profile (`.bashrc`, `.zshrc`) to make it permanent:
+>
+> ```shell
+> export TMPDIR=/var/tmp
+> ```
+
+**Note:** Some unit tests (particularly in `@cdktn/cli-core`, `cdktn-cli`, and `@cdktn/hcl2cdk`) require distribution packages to be built first. These tests will automatically skip themselves if the dist files are not available:
 
 ```shell
-$ yarn package
-$ yarn integration # For all integration tests
-$ yarn integration:single -- typescript/synth-app # For a single integration test
+$ yarn package  # Build distribution packages for all languages (requires mvn)
+$ yarn test     # Now all tests will run
 ```
-
-````
 
 If you need to update the snapshot tests, please run this for the unit tests:
 
 ```shell
 $ yarn test:update
-````
+```
+
+**Important:** The `yarn package` command requires Maven (`mvn`) to be installed, which is not managed by mise. See [Prerequisites](#prerequisites) for installation instructions.
+
+### Integration Tests
+
+Integration tests **require** distribution packages to be built first:
+
+```shell
+$ yarn package  # Required - builds dist files for all languages
+$ yarn integration # For all integration tests
+$ yarn integration:single -- typescript/synth-app # For a single integration test
+```
 
 To update the integration tests, please run this:
 
@@ -303,7 +346,7 @@ rebase the branch on main, fixing any conflicts along the way before the code ca
 ## Feature Flags
 
 Sometimes we want to introduce new breaking behavior because we believe this is
-the correct default behavior for the CDK for Terraform. The problem of course is that breaking
+the correct default behavior for the CDK Terrain. The problem of course is that breaking
 changes are only allowed in major versions and those are rare.
 
 To address this need, we have a feature flags pattern/mechanism. It allows us to

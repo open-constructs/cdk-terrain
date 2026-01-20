@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.kubernetes.provider import KubernetesProvider
 from imports.kubernetes.namespace import Namespace
 from imports.kubernetes.deployment import Deployment

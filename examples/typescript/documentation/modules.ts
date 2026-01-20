@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // DOCS_BLOCK_START:modules-install,modules-create,modules-local
 import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { TerraformStack } from "cdktn";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 // DOCS_BLOCK_END:modules-install,modules-create,modules-local
 
 // DOCS_BLOCK_START:modules-create
-import { TerraformHclModule } from "cdktf";
+import { TerraformHclModule } from "cdktn";
 // DOCS_BLOCK_END:modules-create
 
 // DOCS_BLOCK_START:modules-install
@@ -15,7 +15,7 @@ import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
 // DOCS_BLOCK_END:modules-install
 
 // DOCS_BLOCK_START:modules-local
-import { TerraformOutput } from "cdktf";
+import { TerraformOutput } from "cdktn";
 
 // This module can come from a registry or through a local / remote reference
 import { MyLocalModule } from "./.gen/modules/my-local-module";

@@ -5,9 +5,9 @@
 
 package com.example.cdktf.common;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformVariable;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformVariable;
 import imports.vsphere.provider.VsphereProvider;
 import software.constructs.Construct;
 

@@ -15,8 +15,8 @@ yarn docker:token # returns the Root Vault token
 Set that token in the provider config in [main.ts](./main.ts)
 
 ```
-cdktf get
-cdktf deploy
+cdktn get
+cdktn deploy
 ```
 
 ### Teardown

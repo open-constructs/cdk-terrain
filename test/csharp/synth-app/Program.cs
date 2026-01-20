@@ -5,7 +5,7 @@ using System;
 using Providers.Null.Provider;
 using NullResource = Providers.Null.Resource;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 
 namespace MyCompany.MyApp
 {

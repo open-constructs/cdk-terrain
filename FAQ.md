@@ -40,7 +40,7 @@ CDK Terrain is a community-driven fork of CDKTF, created with HashiCorp's blessi
 
 ### What is the relationship between CDK Terrain and OpenTofu?
 
-[OpenTofu](https://opentofu.org) is an independent, [CNCF](https://cncf.io)-hosted project focused on providing an open-source, Terraform-compatible CLI and ecosystem. CDK Terrain is governed by the Open Construct Foundation and is developed independently. 
+[OpenTofu](https://opentofu.org) is an independent, [CNCF](https://cncf.io)-hosted project focused on providing an open-source, Terraform-compatible CLI and ecosystem. CDK Terrain is governed by the Open Construct Foundation and is developed independently.
 
 The two projects are not formally affiliated. However, the relationship is open and constructive. The OpenTofu team has offered its guidance and expertise and is a helpful resource for discussions around compatibility, workflows, and ecosystem considerations.
 

@@ -5,8 +5,8 @@
 
 package com.mycompany.app;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
 
 import imports.kubernetes.deployment.*;
 import imports.kubernetes.provider.KubernetesProvider;

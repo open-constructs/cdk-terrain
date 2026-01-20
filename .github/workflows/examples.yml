@@ -35,21 +35,21 @@ jobs:
   examples:
     needs: build-example-matrix
     # Go documentation example generates bindings for AWS and other providers and hence requires a lot of memory
-    runs-on: ${{ matrix.target == '@examples/go-documentation' && 'custom-linux-large' || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.target == '@examples/go-documentation' && 'depot-ubuntu-24.04-16' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.build-example-matrix.outputs.examples)}}
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform
     env:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktf/hcl2json fails without this
-        run: git config --global --add safe.directory /__w/terraform-cdk/terraform-cdk
+      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       # Setup caches for yarn, terraform, and go
       - name: Get cache directory paths
         id: global-cache-dir-path

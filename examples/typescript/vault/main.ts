@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, TerraformOutput } from "cdktf";
+import { App, TerraformStack, TerraformOutput } from "cdktn";
 import { VaultProvider } from "./.gen/providers/vault/provider";
 import { Mount } from "./.gen/providers/vault/mount";
 import { TransitSecretBackendKey } from "./.gen/providers/vault/transit-secret-backend-key";

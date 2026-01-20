@@ -7,3 +7,6 @@ verify_ssl = true
 python_version = "3"
 
 [packages]
+cdktn = {file = "../../../dist/python/cdktn-0.0.0-py3-none-any.whl"}
+
+[dev-packages]

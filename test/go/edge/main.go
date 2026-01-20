@@ -12,11 +12,11 @@ import (
 	"cdk.tf/go/stack/generated/hashicorp/edge/setblockresource"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewReferenceStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewReferenceStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	provider.NewEdgeProvider(stack, jsii.String("edge"), &provider.EdgeProviderConfig{
 		Reqstr:  jsii.String("reqstr"),
@@ -25,7 +25,7 @@ func NewReferenceStack(scope constructs.Construct, id string) cdktf.TerraformSta
 	})
 
 	optionalattributeresource.NewOptionalAttributeResource(stack, jsii.String("null"), &optionalattributeresource.OptionalAttributeResourceConfig{
-		Bool: cdktf.Token_NullValue(),
+		Bool: cdktn.Token_NullValue(),
 	})
 
 	res := optionalattributeresource.NewOptionalAttributeResource(stack, jsii.String("test"), &optionalattributeresource.OptionalAttributeResourceConfig{})
@@ -81,12 +81,12 @@ func NewReferenceStack(scope constructs.Construct, id string) cdktf.TerraformSta
 
 	// required values FROM required multi item lists
 	requiredattributeresource.NewRequiredAttributeResource(stack, jsii.String("from_list"), &requiredattributeresource.RequiredAttributeResourceConfig{
-		Bool:     cdktf.Token_AsAny(cdktf.Fn_Lookup(cdktf.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqbool"), jsii.Bool(false))),
+		Bool:     cdktn.Token_AsAny(cdktn.Fn_Lookup(cdktn.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqbool"), jsii.Bool(false))),
 		Str:      list.Req().Get(jsii.Number(0)).Reqstr(),
-		Num:      cdktf.Token_AsNumber(cdktf.Fn_Lookup(cdktf.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqnum"), jsii.Number(0))),
+		Num:      cdktn.Token_AsNumber(cdktn.Fn_Lookup(cdktn.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqnum"), jsii.Number(0))),
 		StrList:  &[]*string{list.Req().Get(jsii.Number(0)).Reqstr()},
-		NumList:  &[]*float64{cdktf.Token_AsNumber(cdktf.Fn_Lookup(cdktf.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqnum"), jsii.Number(0)))},
-		BoolList: &[]interface{}{cdktf.Token_AsAny(cdktf.Fn_Lookup(cdktf.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqbool"), jsii.Bool(false)))},
+		NumList:  &[]*float64{cdktn.Token_AsNumber(cdktn.Fn_Lookup(cdktn.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqnum"), jsii.Number(0)))},
+		BoolList: &[]interface{}{cdktn.Token_AsAny(cdktn.Fn_Lookup(cdktn.Fn_Element(list.Req(), jsii.Number(0)), jsii.String("reqbool"), jsii.Bool(false)))},
 	})
 
 	// passing a reference to a complete list
@@ -106,12 +106,12 @@ func NewReferenceStack(scope constructs.Construct, id string) cdktf.TerraformSta
 
 	// required values FROM map
 	requiredattributeresource.NewRequiredAttributeResource(stack, jsii.String("from_map"), &requiredattributeresource.RequiredAttributeResourceConfig{
-		Bool:     cdktf.Token_AsAny(cdktf.Fn_Lookup(mapRes.ReqMap(), jsii.String("key1"), jsii.Bool(false))),
-		Str:      cdktf.Token_AsString(cdktf.Fn_Lookup(mapRes.OptMap(), jsii.String("key1"), jsii.String("missing")), &cdktf.EncodingOptions{}),
-		Num:      cdktf.Token_AsNumber(cdktf.Fn_Lookup(mapRes.ComputedMap(), jsii.String("key1"), jsii.Number(0))),
-		StrList:  &[]*string{cdktf.Token_AsString(cdktf.Fn_Lookup(mapRes.OptMap(), jsii.String("key1"), jsii.String("missing")), &cdktf.EncodingOptions{})},
-		NumList:  &[]*float64{cdktf.Token_AsNumber(cdktf.Fn_Lookup(mapRes.ComputedMap(), jsii.String("key1"), jsii.Number(0)))},
-		BoolList: &[]interface{}{cdktf.Token_AsAny(cdktf.Fn_Lookup(mapRes.ReqMap(), jsii.String("key1"), jsii.Bool(false)))},
+		Bool:     cdktn.Token_AsAny(cdktn.Fn_Lookup(mapRes.ReqMap(), jsii.String("key1"), jsii.Bool(false))),
+		Str:      cdktn.Token_AsString(cdktn.Fn_Lookup(mapRes.OptMap(), jsii.String("key1"), jsii.String("missing")), &cdktn.EncodingOptions{}),
+		Num:      cdktn.Token_AsNumber(cdktn.Fn_Lookup(mapRes.ComputedMap(), jsii.String("key1"), jsii.Number(0))),
+		StrList:  &[]*string{cdktn.Token_AsString(cdktn.Fn_Lookup(mapRes.OptMap(), jsii.String("key1"), jsii.String("missing")), &cdktn.EncodingOptions{})},
+		NumList:  &[]*float64{cdktn.Token_AsNumber(cdktn.Fn_Lookup(mapRes.ComputedMap(), jsii.String("key1"), jsii.Number(0)))},
+		BoolList: &[]interface{}{cdktn.Token_AsAny(cdktn.Fn_Lookup(mapRes.ReqMap(), jsii.String("key1"), jsii.Bool(false)))},
 	})
 
 	// passing a reference to a complete map
@@ -132,7 +132,7 @@ func NewReferenceStack(scope constructs.Construct, id string) cdktf.TerraformSta
 	})
 
 	// passing a list ref of a complex list type (no block) into an output
-	cdktf.NewTerraformOutput(stack, jsii.String("list_from_list_type_ref"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("list_from_list_type_ref"), &cdktn.TerraformOutputConfig{
 		Value:    list.ComputedListOfObject(),
 		StaticId: jsii.Bool(true),
 	})
@@ -145,8 +145,8 @@ func NewReferenceStack(scope constructs.Construct, id string) cdktf.TerraformSta
 	return stack
 }
 
-func NewProviderStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewProviderStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	providerOpt := provider.NewEdgeProvider(stack, jsii.String("edge"), &provider.EdgeProviderConfig{
 		Reqstr:  jsii.String("reqstr"),
@@ -212,8 +212,8 @@ func NewProviderStack(scope constructs.Construct, id string) cdktf.TerraformStac
 	return stack
 }
 
-func NewIteratorStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewIteratorStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	provider.NewEdgeProvider(stack, jsii.String("edge"), &provider.EdgeProviderConfig{
 		Reqstr:  jsii.String("reqstr"),
@@ -246,14 +246,14 @@ func NewIteratorStack(scope constructs.Construct, id string) cdktf.TerraformStac
 		ReqMap: &map[string]interface{}{"key1": jsii.Bool(true)},
 	})
 
-	stringListIterator := cdktf.TerraformIterator_FromList(simpleList.StrList())
-	complexListIterator := cdktf.TerraformIterator_FromList(complexList.Req())
-	stringMapIterator := cdktf.TerraformIterator_FromMap(stringMap.OptMap())
+	stringListIterator := cdktn.TerraformIterator_FromList(simpleList.StrList())
+	complexListIterator := cdktn.TerraformIterator_FromList(complexList.Req())
+	stringMapIterator := cdktn.TerraformIterator_FromMap(stringMap.OptMap())
 
 	// iterating over a list of strings
 	optionalattributeresource.NewOptionalAttributeResource(stack, jsii.String("string_list_target"), &optionalattributeresource.OptionalAttributeResourceConfig{
 		ForEach: &stringListIterator,
-		Str:     cdktf.Token_AsString(stringListIterator.Value(), &cdktf.EncodingOptions{}),
+		Str:     cdktn.Token_AsString(stringListIterator.Value(), &cdktn.EncodingOptions{}),
 	})
 
 	// iterating over a list of complex objects
@@ -266,7 +266,7 @@ func NewIteratorStack(scope constructs.Construct, id string) cdktf.TerraformStac
 	// iterating over entries of a map of strings
 	optionalattributeresource.NewOptionalAttributeResource(stack, jsii.String("string_map_target"), &optionalattributeresource.OptionalAttributeResourceConfig{
 		ForEach: &stringMapIterator,
-		Str:     cdktf.Token_AsString(stringMapIterator.Value(), &cdktf.EncodingOptions{}),
+		Str:     cdktn.Token_AsString(stringMapIterator.Value(), &cdktn.EncodingOptions{}),
 	})
 
 	// passing an iterator to a block property
@@ -287,7 +287,7 @@ func NewIteratorStack(scope constructs.Construct, id string) cdktf.TerraformStac
 }
 
 func main() {
-	app := cdktf.Testing_StubVersion(cdktf.NewApp(&cdktf.AppConfig{StackTraces: jsii.Bool(false)}))
+	app := cdktn.Testing_StubVersion(cdktn.NewApp(&cdktn.AppConfig{StackTraces: jsii.Bool(false)}))
 
 	NewReferenceStack(app, "reference")
 	NewProviderStack(app, "provider")

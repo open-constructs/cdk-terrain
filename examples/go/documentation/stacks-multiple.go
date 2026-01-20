@@ -8,9 +8,9 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
 type MultiStackConfig struct {
@@ -18,8 +18,8 @@ type MultiStackConfig struct {
 	Region      *string
 }
 
-func NewMultiStack(scope constructs.Construct, name string, config MultiStackConfig) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewMultiStack(scope constructs.Construct, name string, config MultiStackConfig) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	region := config.Region
 	if region == nil {
@@ -51,7 +51,7 @@ DOCS_BLOCK_END:multiple-stacks
 */
 func SynthMultiStack() {
 	// DOCS_BLOCK_START:multiple-stacks
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewMultiStack(app, "multiple-stacks-dev", MultiStackConfig{
 		Environment: "dev",

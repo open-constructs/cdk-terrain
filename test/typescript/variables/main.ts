@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing, TerraformVariable } from "cdktf";
+import { App, TerraformStack, Testing, TerraformVariable } from "cdktn";
 import * as local from "./.gen/providers/local";
 import * as path from "path";
 

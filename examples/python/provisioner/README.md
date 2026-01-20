@@ -18,8 +18,8 @@ Install project dependencies
 pipenv install
 ```
 
-Generate CDK for Terraform constructs for Terraform providers and modules used in the project.
+Generate CDK Terrain constructs for Terraform providers and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // DOCS_BLOCK_START:tokens
-import { TerraformStack, TerraformVariable, Token } from "cdktf";
+import { TerraformStack, TerraformVariable, Token } from "cdktn";
 import { Construct } from "constructs";
 import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
 import { Eks } from "./.gen/modules/terraform-aws-modules/aws/eks";

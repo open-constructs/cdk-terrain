@@ -7,7 +7,7 @@ Shows how provisioners can be used, requires docker and vagrant to be installed 
 */
 
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack } from "cdktn";
 import { DockerProvider } from "./.gen/providers/docker/provider";
 import { NullProvider } from "./.gen/providers/null/provider";
 import { Resource } from "./.gen/providers/null/resource";

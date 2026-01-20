@@ -12,8 +12,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
 
 import imports.google.compute_instance.*;
 import imports.google.compute_network.*;
@@ -30,7 +30,7 @@ public class Main extends TerraformStack {
         GoogleProvider.Builder.create(this, "Google")
             .region("us-central1")
             .zone("us-central1-c")
-            .project("terraform-cdk")
+            .project("cdk-terrain")
             .credentials(credentials)
             .build();
 

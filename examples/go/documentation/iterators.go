@@ -6,45 +6,45 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/acmcertificate"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/acmcertificatevalidation"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/dataawsroute53zone"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/route53record"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/acmcertificate"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/acmcertificatevalidation"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/dataawsroute53zone"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/route53record"
 
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/s3bucket"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/s3bucketobject"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/s3bucket"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/s3bucketobject"
 
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/integrations/github/datagithuborganization"
-	github "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/integrations/github/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/integrations/github/team"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/integrations/github/teammembers"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/integrations/github/datagithuborganization"
+	github "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/integrations/github/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/integrations/github/team"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/integrations/github/teammembers"
 )
 
-func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewIteratorsStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("us-west-2"),
 	})
 
 	// DOCS_BLOCK_START:iterators
-	list := cdktf.NewTerraformVariable(stack, jsii.String("list"), &cdktf.TerraformVariableConfig{
-		Type: cdktf.VariableType_LIST_STRING(),
+	list := cdktn.NewTerraformVariable(stack, jsii.String("list"), &cdktn.TerraformVariableConfig{
+		Type: cdktn.VariableType_LIST_STRING(),
 	})
 
-	simpleIterator := cdktf.TerraformIterator_FromList(list.ListValue())
+	simpleIterator := cdktn.TerraformIterator_FromList(list.ListValue())
 
 	s3bucket.NewS3Bucket(stack, jsii.String("iterator-bucket"), &s3bucket.S3BucketConfig{
 		ForEach: simpleIterator,
-		Bucket:  cdktf.Token_AsString(simpleIterator.Value(), nil),
+		Bucket:  cdktn.Token_AsString(simpleIterator.Value(), nil),
 	})
 	// DOCS_BLOCK_END:iterators
 
 	// DOCS_BLOCK_START:iterators-complex-types
-	complexList := cdktf.NewTerraformLocal(stack, jsii.String("complex-list-local"), []map[string]interface{}{
+	complexList := cdktn.NewTerraformLocal(stack, jsii.String("complex-list-local"), []map[string]interface{}{
 		{
 			"name": "website-static-files",
 			"tags": map[string]string{"app": "website"},
@@ -55,7 +55,7 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 		},
 	})
 
-	complexIterator := cdktf.TerraformIterator_FromList(complexList.Expression())
+	complexIterator := cdktn.TerraformIterator_FromList(complexList.Expression())
 
 	s3bucket.NewS3Bucket(stack, jsii.String("complex-iterator-bucket"), &s3bucket.S3BucketConfig{
 		ForEach: complexIterator,
@@ -79,7 +79,7 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 		Name: &orgName,
 	})
 
-	orgMemberIterator := cdktf.TerraformIterator_FromList(orgMembers.Members())
+	orgMemberIterator := cdktn.TerraformIterator_FromList(orgMembers.Members())
 
 	teammembers.NewTeamMembers(stack, jsii.String("members"), &teammembers.TeamMembersConfig{
 		TeamId: team.Id(),
@@ -91,16 +91,16 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 	// DOCS_BLOCK_END:iterators-list-attributes
 
 	// DOCS_BLOCK_START:iterators-count
-	servers := cdktf.NewTerraformVariable(stack, jsii.String("servers"), &cdktf.TerraformVariableConfig{
-		Type: cdktf.VariableType_NUMBER(),
+	servers := cdktn.NewTerraformVariable(stack, jsii.String("servers"), &cdktn.TerraformVariableConfig{
+		Type: cdktn.VariableType_NUMBER(),
 	})
-	count := cdktf.TerraformCount_Of(servers.NumberValue())
+	count := cdktn.TerraformCount_Of(servers.NumberValue())
 	instance.NewInstance(stack, jsii.String("server"), &instance.InstanceConfig{
 		Count:        count,
 		Ami:          jsii.String("ami-a1b2c3d4"),
 		InstanceType: jsii.String("t2.micro"),
 		Tags: &map[string]*string{
-			"Name": jsii.String("Server ${" + *cdktf.Token_AsString(count.Index(), nil) + "}"),
+			"Name": jsii.String("Server ${" + *cdktn.Token_AsString(count.Index(), nil) + "}"),
 		},
 	})
 	// DOCS_BLOCK_END:iterators-count
@@ -116,7 +116,7 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 		PrivateZone: jsii.Bool(false),
 	})
 
-	exampleForEachIterator := cdktf.TerraformIterator_FromComplexList(cert.DomainValidationOptions(), jsii.String("domain_name"))
+	exampleForEachIterator := cdktn.TerraformIterator_FromComplexList(cert.DomainValidationOptions(), jsii.String("domain_name"))
 
 	records := route53record.NewRoute53Record(stack, jsii.String("record"), &route53record.Route53RecordConfig{
 		ForEach:        exampleForEachIterator,
@@ -128,16 +128,16 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 		ZoneId:         dataAwsRoute53ZoneExample.ZoneId(),
 	})
 
-	recordsIterator := cdktf.TerraformIterator_FromResources(records)
+	recordsIterator := cdktn.TerraformIterator_FromResources(records)
 
 	acmcertificatevalidation.NewAcmCertificateValidation(stack, jsii.String("validation"), &acmcertificatevalidation.AcmCertificateValidationConfig{
 		CertificateArn:        cert.Arn(),
-		ValidationRecordFqdns: cdktf.Token_AsList(recordsIterator.PluckProperty(jsii.String("fqdn")), nil),
+		ValidationRecordFqdns: cdktn.Token_AsList(recordsIterator.PluckProperty(jsii.String("fqdn")), nil),
 	})
 	// DOCS_BLOCK_END:iterators-complex-lists
 
 	// DOCS_BLOCK_START:iterators-chain
-	config := cdktf.NewTerraformLocal(stack, jsii.String("config-local"), []map[string]interface{}{
+	config := cdktn.NewTerraformLocal(stack, jsii.String("config-local"), []map[string]interface{}{
 		{
 			"name": "website-static-files",
 			"tags": map[string]string{"app": "website"},
@@ -148,15 +148,15 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 		},
 	})
 
-	s3BucketConfigurationIterator := cdktf.TerraformIterator_FromList(config.Expression())
+	s3BucketConfigurationIterator := cdktn.TerraformIterator_FromList(config.Expression())
 	s3Buckets := s3bucket.NewS3Bucket(stack, jsii.String("complex-iterator-buckets"), &s3bucket.S3BucketConfig{
 		ForEach: s3BucketConfigurationIterator,
 		Bucket:  s3BucketConfigurationIterator.GetString(jsii.String("name")),
 		Tags:    s3BucketConfigurationIterator.GetStringMap(jsii.String("tags")),
 	})
 
-	s3BucketsIterator := cdktf.TerraformIterator_FromResources(s3Buckets)
-	helpFile := cdktf.NewTerraformAsset(stack, jsii.String("help"), &cdktf.TerraformAssetConfig{
+	s3BucketsIterator := cdktn.TerraformIterator_FromResources(s3Buckets)
+	helpFile := cdktn.NewTerraformAsset(stack, jsii.String("help"), &cdktn.TerraformAssetConfig{
 		Path: jsii.String("./help"),
 	})
 	s3bucketobject.NewS3BucketObject(stack, jsii.String("object"), &s3bucketobject.S3BucketObjectConfig{
@@ -168,7 +168,7 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 	// DOCS_BLOCK_END:iterators-chain
 
 	// DOCS_BLOCK_START:iterators-for-expression
-	values := cdktf.NewTerraformLocal(stack, jsii.String("values"), []map[string]interface{}{
+	values := cdktn.NewTerraformLocal(stack, jsii.String("values"), []map[string]interface{}{
 		{
 			"name": "website-static-files",
 			"tags": map[string]string{"app": "website"},
@@ -179,12 +179,12 @@ func NewIteratorsStack(scope constructs.Construct, name string) cdktf.TerraformS
 		},
 	})
 
-	mapIterator := cdktf.TerraformIterator_FromList(values.Expression())
-	cdktf.NewTerraformLocal(stack, jsii.String("list-of-keys"), mapIterator.Keys())
-	cdktf.NewTerraformLocal(stack, jsii.String("list-of-values"), mapIterator.Values())
-	cdktf.NewTerraformLocal(stack, jsii.String("list-of-names"), mapIterator.PluckProperty(jsii.String("name")))
-	cdktf.NewTerraformLocal(stack, jsii.String("list-of-names-of-included"), mapIterator.ForExpressionForList(jsii.String("val.name if val.included")))
-	cdktf.NewTerraformLocal(stack, jsii.String("map-with-names-as-key-and-tags-as-value-of-included"), mapIterator.ForExpressionForMap(jsii.String("val.name"), jsii.String("val.tags if val.included")))
+	mapIterator := cdktn.TerraformIterator_FromList(values.Expression())
+	cdktn.NewTerraformLocal(stack, jsii.String("list-of-keys"), mapIterator.Keys())
+	cdktn.NewTerraformLocal(stack, jsii.String("list-of-values"), mapIterator.Values())
+	cdktn.NewTerraformLocal(stack, jsii.String("list-of-names"), mapIterator.PluckProperty(jsii.String("name")))
+	cdktn.NewTerraformLocal(stack, jsii.String("list-of-names-of-included"), mapIterator.ForExpressionForList(jsii.String("val.name if val.included")))
+	cdktn.NewTerraformLocal(stack, jsii.String("map-with-names-as-key-and-tags-as-value-of-included"), mapIterator.ForExpressionForMap(jsii.String("val.name"), jsii.String("val.tags if val.included")))
 	// DOCS_BLOCK_END:iterators-for-expression
 
 	return stack

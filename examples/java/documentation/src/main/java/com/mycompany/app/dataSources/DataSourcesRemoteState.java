@@ -5,16 +5,16 @@
 
 package com.mycompany.app.dataSources;
 
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.NamedRemoteWorkspace;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.NamedRemoteWorkspace;
 import software.constructs.Construct;
 
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 
 // DOCS_BLOCK_START:data-sources-remote-state-data-source
-import com.hashicorp.cdktf.DataTerraformRemoteState;
-import com.hashicorp.cdktf.DataTerraformRemoteStateRemoteConfig;
+import io.cdktn.cdktn.DataTerraformRemoteState;
+import io.cdktn.cdktn.DataTerraformRemoteStateRemoteConfig;
 import imports.aws.instance.Instance;
 import imports.aws.instance.InstanceConfig;
 

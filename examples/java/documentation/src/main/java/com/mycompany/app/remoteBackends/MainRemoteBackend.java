@@ -5,7 +5,7 @@
 
 package com.mycompany.app.remoteBackends;
 
-import com.hashicorp.cdktf.*;
+import io.cdktn.cdktn.*;
 import software.constructs.Construct;
 
 import java.util.HashMap;

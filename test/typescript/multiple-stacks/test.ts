@@ -71,7 +71,7 @@ describe("multiple stacks", () => {
     // so this test must be run after something that synthesizes and
     // thus writes a Manifest (like e.g. cdktf list)
     test("shell completions complete stacks", async () => {
-      const { stdout, stderr } = await driver.exec("cdktf", [
+      const { stdout, stderr } = await driver.exec("cdktn", [
         "--get-yargs-completions",
         "cdktf",
         "diff",

@@ -3,7 +3,7 @@
 
 # DOCS_BLOCK_START:hcl-interop
 from constructs import Construct
-from cdktf import App, TerraformOutput, TerraformStack, TerraformVariable
+from cdktn import App, TerraformOutput, TerraformStack, TerraformVariable
 from imports.random.pet import Pet
 from imports.random.provider import RandomProvider
 

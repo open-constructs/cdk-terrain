@@ -33,19 +33,27 @@ uplinks:
       maxFreeSockets: 10
 
 packages:
-  # not handled by us
-  "@cdktf/node-pty-prebuilt-multiarch":
+  "cdktf**":
+    # scoped packages
+    # legacy packages (for backward compatibility testing)
     proxy: npmjs
     access: $all
 
-  "cdktf**":
+  "@cdktf/*":
+    # includes "@cdktf/node-pty-prebuilt-multiarch":
+    # not handled by us
+    # legacy scoped packages (for backward compatibility testing)
+    proxy: npmjs
+    access: $all
+
+  "cdktn**":
     # scoped packages
     access: $all
     publish: $all
     proxy: ""
     # no proxy, so we can publish v0.0.0
 
-  "@cdktf/*":
+  "@cdktn/*":
     # scoped packages
     access: $all
     publish: $all
@@ -72,8 +80,8 @@ packages:
     # if package is not available locally, proxy requests to 'npmjs' registry
     proxy: npmjs
 
-# log settings
-logs:
+# log settings (renamed from 'logs' to 'log' in v6)
+log:
   - { type: stdout, format: pretty, level: warn }
   #- {type: file, path: verdaccio.log, level: info}
 

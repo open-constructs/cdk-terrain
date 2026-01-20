@@ -22,7 +22,7 @@ import { Documentation, Language } from "jsii-docgen";
     );
   }
 
-  const sourceFolder = path.resolve(rootFolder, "packages", "cdktf");
+  const sourceFolder = path.resolve(rootFolder, "packages", "cdktn");
   if (!fs.existsSync(sourceFolder)) {
     throw new Error(
       "Expected " +
@@ -35,7 +35,7 @@ import { Documentation, Language } from "jsii-docgen";
     rootFolder,
     "website",
     "docs",
-    "cdktf",
+    "cdktn",
     "api-reference"
   );
   if (!fs.existsSync(targetFolder)) {

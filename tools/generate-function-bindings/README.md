@@ -5,7 +5,7 @@ This package contains two tools that work together to generate the bindings for 
 ## Fetching function metadata
 
 Terraform v1.4.0-beta2 introduced the `terraform metadata functions -json` command which returns a JSON specification of the function signatures supported by Terraform.
-CDKTF generates its function bindings based on that schema.
+CDKTN generates its function bindings based on that schema.
 
 To update the function definitions (stored in `scripts/functions.json`), run the following command:
 
@@ -29,11 +29,11 @@ To do so, run:
 yarn run generate
 ```
 
-This will update the generated file in `packages/cdktf/lib/functions/terraform-functions.generated.ts`
+This will update the generated file in `packages/cdktn/lib/functions/terraform-functions.generated.ts`
 
 ### Overriding functions
 
-The `scripts/generate.ts` file contains a constant named `INTERNAL_METHODS` that will cause those functions to be internalized (by adding a `_` prefix and the `@internal` docstring required by JSII). This allows to either skip exposing a function or (which we currently use it for) to export that function with a slightly different signature through `packages/cdktf/lib/terraform-functions.ts`. We currently do this for some functions that Terraform uses variadic parameters for that would otherwise have a poor UX in CDKTF. Refer to the aforementioned file for examples and more background information.
+The `scripts/generate.ts` file contains a constant named `INTERNAL_METHODS` that will cause those functions to be internalized (by adding a `_` prefix and the `@internal` docstring required by JSII). This allows to either skip exposing a function or (which we currently use it for) to export that function with a slightly different signature through `packages/cdktn/lib/terraform-functions.ts`. We currently do this for some functions that Terraform uses variadic parameters for that would otherwise have a poor UX in CDKTN. Refer to the aforementioned file for examples and more background information.
 
 ## Running both commands at once
 

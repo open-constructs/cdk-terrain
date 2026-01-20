@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing, LocalBackend } from "cdktf";
+import { App, TerraformStack, Testing, LocalBackend } from "cdktn";
 import { OurLocalModule } from "./.gen/modules/our-local-module";
 import { Gcloud } from "./.gen/modules/gcloud";
 import { IamAccount } from "./.gen/modules/terraform-aws-modules/aws/iam/modules/iam-account";

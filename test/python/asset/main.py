@@ -4,7 +4,7 @@
 
 import os
 from constructs import Construct
-from cdktf import App, TerraformStack, Testing, TerraformAsset, AssetType, TerraformOutput, LocalBackend
+from cdktn import App, TerraformStack, Testing, TerraformAsset, AssetType, TerraformOutput, LocalBackend
 from imports.null.provider import NullProvider
 from imports.null.resource import Resource
 

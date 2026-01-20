@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Current Priority: CDKTN Rename (Release 1)
 
 See `RFCs/RENAME-PLAN.md` for the active rename effort from `cdktf` to `cdktn`. Key constraints:
+
 - Package names change (`@cdktf/*` → `@cdktn/*`, `cdktf` → `cdktn`, `cdktf-cli` → `cdktn-cli`)
 - Internal symbols and logical IDs remain unchanged (`Symbol.for("cdktf/*")`, `__cdktf_*`)
 - Legacy config/env keys still supported (`cdktf.json`, `CDKTF_*`)
@@ -59,16 +60,16 @@ This is a **JSII monorepo** that compiles TypeScript to Python, Go, Java, and C#
 
 ### Core Packages
 
-| Package | Purpose |
-|---------|---------|
-| `packages/cdktf` | Core library - defines constructs (TerraformStack, TerraformResource, etc.) |
-| `packages/cdktf-cli` | CLI entry point - thin wrapper around cli-core, uses esbuild |
-| `packages/@cdktf/cli-core` | CLI implementation - commands, project management, Terraform execution |
-| `packages/@cdktf/provider-generator` | Generates TypeScript bindings from Terraform provider schemas |
-| `packages/@cdktf/hcl2cdk` | Converts HCL to CDK code (`cdktf convert`) |
-| `packages/@cdktf/hcl2json` | WASM-based HCL parser (Go compiled to WASM) |
-| `packages/@cdktf/provider-schema` | Fetches and parses Terraform provider schemas |
-| `packages/@cdktf/commons` | Shared utilities across packages |
+| Package                              | Purpose                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------- |
+| `packages/cdktf`                     | Core library - defines constructs (TerraformStack, TerraformResource, etc.) |
+| `packages/cdktf-cli`                 | CLI entry point - thin wrapper around cli-core, uses esbuild                |
+| `packages/@cdktf/cli-core`           | CLI implementation - commands, project management, Terraform execution      |
+| `packages/@cdktf/provider-generator` | Generates TypeScript bindings from Terraform provider schemas               |
+| `packages/@cdktf/hcl2cdk`            | Converts HCL to CDK code (`cdktf convert`)                                  |
+| `packages/@cdktf/hcl2json`           | WASM-based HCL parser (Go compiled to WASM)                                 |
+| `packages/@cdktf/provider-schema`    | Fetches and parses Terraform provider schemas                               |
+| `packages/@cdktf/commons`            | Shared utilities across packages                                            |
 
 ### Key Flows
 
@@ -96,6 +97,7 @@ See `.specify/memory/constitution.md` for project principles (YAGNI, KISS, cross
 ## Commit Style
 
 Use [conventional commits](https://www.conventionalcommits.org/):
+
 - `feat(cli):` / `feat(lib):` / `feat(provider-generator):`
 - `fix(cli):` / `fix(lib):`
 - `chore:` for docs, CI, non-code changes
@@ -108,8 +110,10 @@ JSII_DEBUG=1 yarn build            # JSII debug output
 ```
 
 ## Active Technologies
+
 - TypeScript 5.4.5 (strict mode, target ES2018, CommonJS) (001-cdktn-package-rename)
 - N/A (no database; file-based config via `cdktf.json`) (001-cdktn-package-rename)
 
 ## Recent Changes
+
 - 001-cdktn-package-rename: Added TypeScript 5.4.5 (strict mode, target ES2018, CommonJS)

@@ -8,7 +8,7 @@ package com.mycompany.app;
 import java.util.*;
 import software.constructs.Construct;
 
-import com.hashicorp.cdktf.*;
+import io.cdktn.cdktn.*;
 import imports.edgeprovider.provider.*;
 import imports.edgeprovider.optional_attribute_resource.*;
 import imports.edgeprovider.list_block_resource.*;

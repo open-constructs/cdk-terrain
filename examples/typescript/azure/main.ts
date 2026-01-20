@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack } from "cdktn";
 import { AzurermProvider } from "./.gen/providers/azurerm/provider";
 import { VirtualNetwork } from "./.gen/providers/azurerm/virtual-network";
 

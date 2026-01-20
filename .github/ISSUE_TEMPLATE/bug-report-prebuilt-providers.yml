@@ -13,7 +13,7 @@ body:
     attributes:
       value: |
         **Note**
-        We use GitHub issues for tracking bugs and enhancements. For questions, please use [the community forum](https://discuss.hashicorp.com/c/terraform-core/cdk-for-terraform/47) where there are more people ready to help.
+        We use GitHub issues for tracking bugs and enhancements. For questions, please use [the cdk.dev - #cdk-terrain channel](https://cdk.dev) where there are more people ready to help.
 
   - type: textarea
     id: expected
@@ -52,13 +52,13 @@ body:
     attributes:
       label: Versions
       description: |
-        Please run `cdktf debug` on the command line and paste the output in here. Alternatively, manually list your cdktf and OS/language versions.
+        Please run `cdktn debug` on the command line and paste the output in here. Alternatively, manually list your cdktn and OS/language versions.
         If you are not running the latest versions, please upgrade because your issue may have already been fixed.
       placeholder: |
         language: typescript
-        cdktf-cli: 0.16.1
+        cdktn-cli: 0.16.1
         node: v18.16.0
-        cdktf: 0.16.1
+        cdktn: 0.16.1
         constructs: 10.2.14
         jsii: 1.82.0
         terraform: 1.4.6
@@ -72,17 +72,17 @@ body:
     attributes:
       label: Providers
       description: |
-        Please run `cdktf provider list` on the command line and paste the output in here. Or, manually list the versions of all providers you are using.
+        Please run `cdktn provider list` on the command line and paste the output in here. Or, manually list the versions of all providers you are using.
         If you are not running the latest versions, please upgrade because your issue may have already been fixed.
       placeholder: |
         ┌────────────────────┬──────────────────┬─────────┬────────────┬────────────────────────┬─────────────────┐
-        │ Provider Name      │ Provider Version │ CDKTF   │ Constraint │ Package Name           │ Package Version │
+        │ Provider Name      │ Provider Version │ CDKTN   │ Constraint │ Package Name           │ Package Version │
         ├────────────────────┼──────────────────┼─────────┼────────────┼────────────────────────┼─────────────────┤
-        │ aws                │ 4.65.0           │ ^0.16.0 │            │ @cdktf/provider-aws    │ 14.0.2          │
+        │ aws                │ 4.65.0           │ ^0.16.0 │            │ @cdktn/provider-aws    │ 14.0.2          │
         ├────────────────────┼──────────────────┼─────────┼────────────┼────────────────────────┼─────────────────┤
-        │ kreuzwerker/docker │ 3.0.2            │ ^0.16.0 │            │ @cdktf/provider-docker │ 7.0.0           │
+        │ kreuzwerker/docker │ 3.0.2            │ ^0.16.0 │            │ @cdktn/provider-docker │ 7.0.0           │
         ├────────────────────┼──────────────────┼─────────┼────────────┼────────────────────────┼─────────────────┤
-        │ tls                │ 4.0.4            │ ^0.16.0 │            │ @cdktf/provider-tls    │ 6.0.0           │
+        │ tls                │ 4.0.4            │ ^0.16.0 │            │ @cdktn/provider-tls    │ 6.0.0           │
         └────────────────────┴──────────────────┴─────────┴────────────┴────────────────────────┴─────────────────┘
     validations:
       required: false

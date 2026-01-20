@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing, LocalBackend } from "cdktf";
+import { App, TerraformStack, Testing, LocalBackend } from "cdktn";
 import { OurLocalModule } from "./.gen/modules/our-local-module";
 
 export class StackWithModule extends TerraformStack {

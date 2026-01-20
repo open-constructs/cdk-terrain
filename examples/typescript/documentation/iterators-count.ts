@@ -1,9 +1,9 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 
-import { TerraformCount, TerraformStack, TerraformVariable } from "cdktf";
+import { TerraformCount, TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { Instance } from "@cdktf/provider-aws/lib/instance";
 
 export class IteratorsCountStack extends TerraformStack {

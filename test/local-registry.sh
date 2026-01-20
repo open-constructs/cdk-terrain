@@ -5,7 +5,7 @@
 custom_registry_url=localhost:4873
 original_npm_registry_url=`npm get registry`
 original_yarn_registry_url=`yarn config get registry`
-default_verdaccio_package=verdaccio@^5.26.1
+default_verdaccio_package=verdaccio@^6.2.4
 
 function startLocalRegistry {
   # Start local registry

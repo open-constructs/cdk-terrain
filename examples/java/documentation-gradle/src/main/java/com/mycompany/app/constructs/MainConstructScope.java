@@ -14,8 +14,8 @@ import imports.aws.s3_bucket.S3BucketWebsite;
 
 // DOCS_BLOCK_START:constructs-scope
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.App;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.App;
 public class MainConstructScope extends TerraformStack {
 
     public MainConstructScope(Construct scope, String name){

@@ -9,7 +9,7 @@ using aws.DataAwsRegion;
 using aws.DynamodbTable;
 using aws.SnsTopic;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 
 
 namespace MyCompany.MyApp

@@ -1,26 +1,26 @@
-# terraform-cdk-example
+# cdk-terrain-example
 
 ## Prerequisite
 
-Install cdktf
+Install cdktn
 
 ```
-~$ npm install --global cdktf-cli
+~$ npm install --global cdktn-cli
 ```
 
 Verify the installation
 
 ```
-~$ cdktf
+~$ cdktn
 
 Commands:
-  cdktf deploy [OPTIONS]   Deploy the given stack
-  cdktf destroy [OPTIONS]  Destroy the given stack
-  cdktf diff [OPTIONS]     Perform a diff (terraform plan) for the given stack
-  cdktf get [OPTIONS]      Generate CDK Constructs for Terraform providers and modules.
-  cdktf init [OPTIONS]     Create a new cdktf project from a template.
-  cdktf login              Retrieves an API token to connect to HCP Terraform.
-  cdktf synth [OPTIONS]    Synthesizes Terraform code for the given app in a directory.
+  cdktn deploy [OPTIONS]   Deploy the given stack
+  cdktn destroy [OPTIONS]  Destroy the given stack
+  cdktn diff [OPTIONS]     Perform a diff (terraform plan) for the given stack
+  cdktn get [OPTIONS]      Generate CDK Constructs for Terraform providers and modules.
+  cdktn init [OPTIONS]     Create a new cdktn project from a template.
+  cdktn login              Retrieves an API token to connect to HCP Terraform.
+  cdktn synth [OPTIONS]    Synthesizes Terraform code for the given app in a directory.
 ```
 
 Install Pipenv
@@ -37,23 +37,23 @@ Install Dependency Library
 
 ## Get Started
 
-Generate CDK for Terraform constructs for Terraform provides and modules used in the project.
+Generate CDK Terrain constructs for Terraform provides and modules used in the project.
 
 ```
-~$ cdktf get
+~$ cdktn get
 ```
 
 Compile and generate Terraform configuration
 
 ```
-~$ cdktf synth
+~$ cdktn synth
 ```
 
 The above command will create a folder called `cdktf.out` that contains all Terraform JSON configuration that was generated.
 
-Run cdktf-cli commands
+Run cdktn-cli commands
 
 ```bash
-cdktf diff
-cdktf deploy
+cdktn diff
+cdktn deploy
 ```
