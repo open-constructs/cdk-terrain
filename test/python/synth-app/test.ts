@@ -12,8 +12,8 @@ describe("python full integration test synth", () => {
 
   test("debug command", async () => {
     const { stdout } = await driver.exec(`cdktn debug --json`);
-    const { cdktf, constructs } = JSON.parse(stdout);
-    expect(cdktf.length).not.toBe(0);
+    const { cdktn, constructs } = JSON.parse(stdout);
+    expect(cdktn.length).not.toBe(0);
     expect(constructs.length).not.toBe(0);
   });
 

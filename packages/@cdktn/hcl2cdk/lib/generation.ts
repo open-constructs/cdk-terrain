@@ -1019,6 +1019,13 @@ export function addImportForCodeContainer(
         constructName: "TerraformStack",
       });
       break;
+
+    case "cdktf.TerraformStack":
+      scope.importables.push({
+        provider: "cdktf",
+        constructName: "TerraformStack",
+      });
+      break;
     default:
       throw Errors.Internal("Unsupported code container: " + codeContainer);
   }
@@ -1113,7 +1120,9 @@ export function buildImports(importables: ImportableConstruct[]) {
           ? "1"
           : importable.provider === "cdktn"
             ? "2"
-            : "3";
+            : importable.provider === "cdktf"
+              ? "3"
+              : "4";
       const groupName = `${prefix}.${importable.provider}.${ns}`;
       const fullName = `${importable.provider}.${ns}.${importable.constructName}`;
 
@@ -1145,7 +1154,7 @@ export function buildImports(importables: ImportableConstruct[]) {
         groupedImportables[groupName],
       );
 
-      if (groupName.startsWith("3.") && !commentAdded) {
+      if (groupName.startsWith("4.") && !commentAdded) {
         commentAdded = true;
         t.addComment(
           importStatement,

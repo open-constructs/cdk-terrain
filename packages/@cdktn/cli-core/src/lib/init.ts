@@ -130,7 +130,7 @@ export async function determineDeps(
       mvn_cdktf: path.resolve(
         dist,
         "java",
-        `io/cdktn/${version}/cdktn-${version}.jar`,
+        `io/cdktn/cdktn/${version}/cdktn-${version}.jar`,
       ),
       nuget_cdktf: path.resolve(dist, "dotnet", `Io.Cdktn.${version}.nupkg`),
       go_cdktf: path.resolve(dist, "go", `cdktn`),

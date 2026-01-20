@@ -17,7 +17,7 @@ export function checkDistFilesExist(fromTestFile: string): boolean {
     path.join(distPath, "js", "cdktn@0.0.0.jsii.tgz"),
     path.join(distPath, "js", "cdktn-cli-0.0.0.tgz"),
     path.join(distPath, "python", "cdktn-0.0.0-py3-none-any.whl"),
-    path.join(distPath, "java", "io/cdktn/0.0.0/cdktn-0.0.0.jar"),
+    path.join(distPath, "java", "io/cdktn/cdktn/0.0.0/cdktn-0.0.0.jar"),
     path.join(distPath, "dotnet", "Io.Cdktn.0.0.0.nupkg"),
     path.join(distPath, "go", "cdktn"),
   ];

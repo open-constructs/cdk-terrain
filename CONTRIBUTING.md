@@ -147,8 +147,8 @@ We run the examples as part of our integration tests for each Pull Request. To s
   "license": "MPL-2.0",
   "scripts": {
     "reinstall": "rm Pipfile.lock && pipenv --rm && pipenv install", // Python only
-    "build": "cdktf get",
-    "synth": "cdktf synth"
+    "build": "cdktn get",
+    "synth": "cdktn synth"
   }
 }
 ```

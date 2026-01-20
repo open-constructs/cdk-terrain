@@ -2,7 +2,7 @@
 
 exports[`modules all module types snapshot typescript 1`] = `
 "import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 import * as Consul from "./.gen/modules/consul";
 import * as TerraformConsulAws from "./.gen/modules/hashicorp/terraform-consul-aws";
 import * as Example from "./.gen/modules/hashicorp/example";
@@ -29,7 +29,7 @@ class MyConvertedCode extends TerraformStack {
 
 exports[`modules duplicate modules snapshot typescript 1`] = `
 "import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 import * as Vpc from "./.gen/modules/terraform-aws-modules/aws/vpc";
 class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
@@ -47,7 +47,7 @@ class MyConvertedCode extends TerraformStack {
 
 exports[`modules local module snapshot typescript 1`] = `
 "import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 import * as AwsVpc from "./.gen/modules/aws_vpc";
 class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
@@ -60,7 +60,7 @@ class MyConvertedCode extends TerraformStack {
 
 exports[`modules modules snapshot typescript 1`] = `
 "import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 import * as Vpc from "./.gen/modules/terraform-aws-modules/aws/vpc";
 class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
@@ -85,7 +85,7 @@ class MyConvertedCode extends TerraformStack {
 
 exports[`modules referenced modules snapshot typescript 1`] = `
 "import { Construct } from "constructs";
-import { TerraformOutput, TerraformStack } from "cdktf";
+import { TerraformOutput, TerraformStack } from "cdktn";
 import * as Vpc from "./.gen/modules/terraform-aws-modules/aws/vpc";
 class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
@@ -113,7 +113,7 @@ class MyConvertedCode extends TerraformStack {
 
 exports[`modules terraform workspace snapshot typescript 1`] = `
 "import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 import * as MyModule from "./.gen/modules/my-module";
 class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {

@@ -15,8 +15,8 @@ describe("java full integration", () => {
     await driver.exec(`cdktn debug --json`);
     driver.setEnv("CDKTF_LOG_LEVEL", "warning");
     const { stdout } = await driver.exec(`cdktn debug --json`);
-    const { cdktf, constructs } = JSON.parse(stdout);
-    expect(cdktf.length).not.toBe(0);
+    const { cdktn, constructs } = JSON.parse(stdout);
+    expect(cdktn.length).not.toBe(0);
     expect(constructs.length).not.toBe(0);
   });
 

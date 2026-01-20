@@ -257,7 +257,11 @@ const preSynth: Record<
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="HashiCorp.Cdktf" Version="0.0.0" />
+      <PackageReference Include="HashiCorp.Cdktf" Version="0.21.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Io.Cdktn" Version="0.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -464,7 +468,7 @@ const createTestCase =
         providerSchema: providerSchema || {
           format_version: "0.1",
         },
-        codeContainer: "cdktf.TerraformStack",
+        codeContainer: "cdktn.TerraformStack",
       });
     }
 

@@ -16,4 +16,5 @@ module.exports = {
     "ts",
     "tsx"
   ],
+  prettierPath: "<rootDir>/node_modules/prettier",
 }

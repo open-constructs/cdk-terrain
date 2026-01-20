@@ -50,7 +50,6 @@ packages:
     # scoped packages
     access: $all
     publish: $all
-    proxy: ""
     # no proxy, so we can publish v0.0.0
 
   "@cdktn/*":

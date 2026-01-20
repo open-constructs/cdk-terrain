@@ -111,6 +111,7 @@ export function getDependencyInformationFromLine(
  * Example output:
   implementation - Implementation dependencies for the 'main' feature. (n)
   +--- com.hashicorp:cdktf:0.18.0 (n)
+  +--- io.cdktn:cdktn:0.18.0 (n)
   +--- software.constructs:constructs:10.0.25 (n)
   +--- junit:junit:4.13.2 (n)
   \--- org.junit.jupiter:junit-jupiter:5.8.0 (n)

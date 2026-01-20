@@ -16,9 +16,9 @@ describe("provider add command", () => {
       });
     });
 
-    it("detects correct cdktf version", async () => {
+    it("detects correct cdktn version", async () => {
       const res = await driver.exec("cdktn", ["debug"]);
-      expect(res.stdout).toContain("cdktf: 0.10.4");
+      expect(res.stdout).toContain("cdktn: 0.10.4");
     });
 
     test("installs pre-built provider using gradle", async () => {
@@ -32,7 +32,7 @@ describe("provider add command", () => {
           provider: random
           version : =3.1.3
           language: java
-          cdktf   : 0.10.4
+          cdktn   : 0.10.4
 
 
         [<TIMESTAMP>] [INFO] default - Found pre-built provider.

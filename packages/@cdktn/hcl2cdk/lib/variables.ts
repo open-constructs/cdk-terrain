@@ -34,8 +34,12 @@ function validVarName(name: string) {
 
 function getUniqueName(scope: ProgramScope, provider: string, type: string) {
   // early abort on cdktf
+  if (provider === "cdktf") {
+    return pascalCase(type.replace("cdktf_", ""));
+  }
+  // early abort on cdktn
   if (provider === "cdktn") {
-    return pascalCase(type.replace("cdktf_", "")); // TODO: should drop cdktn_ ?
+    return pascalCase(type.replace("cdktn_", ""));
   }
 
   if (provider === "NullProvider") {

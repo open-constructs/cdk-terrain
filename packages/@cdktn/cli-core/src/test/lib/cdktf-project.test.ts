@@ -25,11 +25,11 @@ function installFixturesInWorkingDirectory(
     workingDirectory: string;
   },
 
-  fixtureName: string,
+  fixtureName: string
 ) {
   fs.copyFileSync(
     path.resolve(__dirname, `fixtures/${fixtureName}/main.ts.fixture`),
-    path.resolve(workingDirectory, "main.ts"),
+    path.resolve(workingDirectory, "main.ts")
   );
   return { outDir, workingDirectory };
 }
@@ -56,11 +56,11 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     fs.copyFileSync(
       path.resolve(__dirname, "fixtures/default/main.ts.fixture"),
-      path.resolve(workingDirectory, "main.ts"),
+      path.resolve(workingDirectory, "main.ts")
     );
     fs.copyFileSync(
       path.resolve(__dirname, "fixtures/default/cdktf.json"),
-      path.resolve(workingDirectory, "cdktf.json"),
+      path.resolve(workingDirectory, "cdktf.json")
     );
 
     await get({
@@ -145,9 +145,9 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(logs).toContainEqual(
         expect.objectContaining({
           message: expect.stringContaining(
-            "1 to add, 0 to change, 0 to destroy",
+            "1 to add, 0 to change, 0 to destroy"
           ),
-        }),
+        })
       );
     });
 
@@ -162,7 +162,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       return expect(cdktfProject.diff()).rejects.toMatchInlineSnapshot(
-        `[Error: Usage Error: Found more than one stack, please specify a target stack. Run cdktf diff <stack> with one of these stacks: fifth, first, fourth, second, third ]`,
+        `[Error: Usage Error: Found more than one stack, please specify a target stack. Run cdktn diff <stack> with one of these stacks: fifth, first, fourth, second, third ]`
       );
     });
   });
@@ -304,9 +304,9 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       await expect(
-        cdktfProject.deploy({ stackNames: ["not-found"], parallelism: 1 }),
+        cdktfProject.deploy({ stackNames: ["not-found"], parallelism: 1 })
       ).rejects.toMatchInlineSnapshot(
-        `[Error: Usage Error: Could not find stack for pattern 'not-found']`,
+        `[Error: Usage Error: Could not find stack for pattern 'not-found']`
       );
     });
 
@@ -321,9 +321,9 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       await expect(
-        cdktfProject.deploy({ stackNames: ["third"], parallelism: 1 }),
+        cdktfProject.deploy({ stackNames: ["third"], parallelism: 1 })
       ).rejects.toMatchInlineSnapshot(
-        `[Error: Usage Error: The following dependencies are not included in the stacks to run: first. Either add them or add the --ignore-missing-stack-dependencies flag.]`,
+        `[Error: Usage Error: The following dependencies are not included in the stacks to run: first. Either add them or add the --ignore-missing-stack-dependencies flag.]`
       );
     });
 
@@ -370,7 +370,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`),
+          .map((e) => `${e.stackName || "global"}: ${e.type}`)
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -398,7 +398,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         synthCommand: "npx ts-node ./main.ts",
         ...installFixturesInWorkingDirectory(
           inNewWorkingDirectory(),
-          "parallel-error",
+          "parallel-error"
         ),
         onUpdate: (event) => {
           events.push(event);
@@ -420,7 +420,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         throw new Error("This error should not be thrown");
       } catch (e) {
         expect(e).toMatchInlineSnapshot(
-          `"Invoking Terraform CLI failed with exit code 1"`,
+          `"Invoking Terraform CLI failed with exit code 1"`
         );
       }
 
@@ -447,11 +447,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       // the middle events can occur in any order as the duration
       // they take to plan is not guaranteed
       expect(new Set(relevantEvents.slice(5, -3))).toEqual(
-        new Set([
-          "stack1: deploying",
-          "stack2: deploying",
-          "stack3: deploying",
-        ]),
+        new Set(["stack1: deploying", "stack2: deploying", "stack3: deploying"])
       );
     }, 120_000);
 
@@ -475,7 +471,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`),
+          .map((e) => `${e.stackName || "global"}: ${e.type}`)
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -518,7 +514,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`),
+          .map((e) => `${e.stackName || "global"}: ${e.type}`)
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -575,7 +571,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`),
+          .map((e) => `${e.stackName || "global"}: ${e.type}`)
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -636,7 +632,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`),
+          .map((e) => `${e.stackName || "global"}: ${e.type}`)
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -671,7 +667,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         synthCommand: "npx ts-node ./main.ts",
         ...installFixturesInWorkingDirectory(
           inNewWorkingDirectory(),
-          "parallel",
+          "parallel"
         ),
         onUpdate: (event) => {
           events.push(event);
@@ -728,7 +724,7 @@ describe("getMultipleStacks", () => {
       ] as SynthesizedStack[];
 
       expect(
-        getMultipleStacks(synthesizedStacks, ["StackB", "StackC"]),
+        getMultipleStacks(synthesizedStacks, ["StackB", "StackC"])
       ).toEqual([{ name: "StackB" }, { name: "StackC" }]);
     });
 
@@ -740,7 +736,7 @@ describe("getMultipleStacks", () => {
       ] as SynthesizedStack[];
 
       expect(() =>
-        getMultipleStacks(synthesizedStacks, ["StackD", "StackC"]),
+        getMultipleStacks(synthesizedStacks, ["StackD", "StackC"])
       ).toThrow();
     });
   });

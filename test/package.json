@@ -2,7 +2,7 @@
   "name": "end2end-tests",
   "private": true,
   "version": "0.0.0",
-  "description": "This directory contains integration tests for the cdktf project.",
+  "description": "This directory contains integration tests for the cdktn project.",
   "scripts": {
     "edge:install": "rm -rf ./edge-provider-bindings && cp -R ../packages/@cdktn/provider-generator/edge-provider-bindings/ ./edge-provider-bindings",
     "edge:translateTests": "node ./translate-edge-tests.js",

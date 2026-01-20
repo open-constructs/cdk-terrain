@@ -213,6 +213,7 @@ async function getCSharpPackageVersion(packageName: string) {
     jsii: "Amazon.JSII.Runtime",
     constructs: "Constructs",
     cdktf: "HashiCorp.Cdktf",
+    cdktn: "Io.Cdktn",
   };
   const cSharpPackageName = translationMap[packageName] || packageName;
 
@@ -253,7 +254,8 @@ async function getCSharpPackageVersion(packageName: string) {
 async function getGoPackageVersion(packageName: string) {
   const translationMap: Record<string, string> = {
     jsii: "jsii-runtime-go",
-    cdktf: "github.com/open-constructs/cdk-terrain-cdk-go",
+    cdktf: "github.com/hashicorp/terraform-cdk-go",
+    cdktn: "github.com/open-constructs/cdk-terrain-go",
   };
   const goPackageName = translationMap[packageName] || packageName;
 

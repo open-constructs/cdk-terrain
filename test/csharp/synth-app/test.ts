@@ -12,8 +12,8 @@ describe("csharp full integration test synth", () => {
 
   test("debug command", async () => {
     const { stdout } = await driver.exec(`cdktn debug --json`);
-    const { cdktf, jsii, constructs } = JSON.parse(stdout);
-    expect(cdktf).toBeDefined();
+    const { cdktn, jsii, constructs } = JSON.parse(stdout);
+    expect(cdktn).toBeDefined();
     expect(jsii).toBeDefined();
     expect(constructs).toBeDefined();
   });
