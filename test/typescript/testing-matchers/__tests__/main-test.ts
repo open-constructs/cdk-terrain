@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import "cdktf/lib/testing/adapters/jest";
+import "cdktn/lib/testing/adapters/jest";
 import { Testing } from "cdktn";
 import { DockerProvider } from "../.gen/providers/docker/provider";
 import { MyStack } from "../main"; // Could be a class extending from Construct

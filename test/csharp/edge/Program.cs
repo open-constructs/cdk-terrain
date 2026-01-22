@@ -128,7 +128,7 @@ namespace MyCompany.MyApp
         }
     }
 
-    // CDKTF supports referencing inputs from providers (Terraform does not)
+    // CDKTN supports referencing inputs from providers (Terraform does not)
     class ProviderStack : TerraformStack
     {
         public ProviderStack(Construct scope, string id) : base(scope, id)

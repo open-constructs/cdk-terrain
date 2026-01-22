@@ -150,7 +150,7 @@ export class ReferenceStack extends TerraformStack {
   }
 }
 
-// CDKTF supports referencing inputs from providers (Terraform does not)
+// CDKTN supports referencing inputs from providers (Terraform does not)
 export class ProviderStack extends TerraformStack {
   constructor(scope: Construct, id: string) {
     super(scope, id);

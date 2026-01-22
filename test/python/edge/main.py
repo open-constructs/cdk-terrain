@@ -135,7 +135,7 @@ class ReferenceStack(TerraformStack):
                                                                        5).str,
                                                                    )
 
-# CDKTF supports referencing inputs from providers (Terraform does not)
+# CDKTN supports referencing inputs from providers (Terraform does not)
 
 
 class ProviderStack(TerraformStack):

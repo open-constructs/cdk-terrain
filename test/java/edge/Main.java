@@ -138,7 +138,7 @@ class ReferenceStack extends TerraformStack {
     }
 }
 
-// CDKTF supports referencing inputs from providers (Terraform does not)
+// CDKTN supports referencing inputs from providers (Terraform does not)
 class ProviderStack extends TerraformStack {
     public ProviderStack(Construct scope, String id) {
         super(scope, id);
