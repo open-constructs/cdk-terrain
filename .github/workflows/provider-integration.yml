@@ -27,7 +27,7 @@ jobs:
     outputs:
       tests: ${{ steps.build-provider-test-matrix.outputs.tests }}
     container:
-      image: terraconstructs/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     env:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
@@ -88,7 +88,7 @@ jobs:
       fail-fast: false
       matrix: ${{fromJSON(needs.prepare-provider-tests.outputs.tests)}}
     container:
-      image: terraconstructs/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     env:
       CHECKPOINT_DISABLE: "1"
       TERRAFORM_VERSION: ${{ inputs.terraform_version }}
