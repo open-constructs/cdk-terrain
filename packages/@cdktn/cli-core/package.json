@@ -12,7 +12,7 @@
     "pretest:ci": "yarn build",
     "test": "yarn lint && jest",
     "test:ci": "yarn lint && jest --ci",
-    "test:update": "jest -u",
+    "test:update": "jest -u --maxWorkers=50%",
     "jest-watch": "jest --watch",
     "package": "./package.sh",
     "dist-clean": "rm -rf dist",

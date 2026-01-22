@@ -97,7 +97,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
     const cdktfProject = new CdktfProject({
       synthCommand: "npx ts-node main.ts",
       ...inNewWorkingDirectory(),
-      onUpdate: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
+      onUpdate: () => {},
     });
     expect(cdktfProject).toBeTruthy();
   });
@@ -554,7 +554,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       new CdktfProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
-        onUpdate: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
+        onUpdate: () => {},
       }).deploy({
         stackNames: ["third", "first", "second", "fourth", "fifth"],
         autoApprove: true,
