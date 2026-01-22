@@ -59,10 +59,10 @@ Refer to query semantics and...
 - Use beads queries to extract Task list
 - Use beads queries to extract Phase grouping
 - Use beads show command for tasks to extract
-   - Title + Description
-   - Design + Acceptance Criteria
-   - Referenced file paths
-   - Labels referencing requirements or stories
+  - Title + Description
+  - Design + Acceptance Criteria
+  - Referenced file paths
+  - Labels referencing requirements or stories
 - Use beads to verify cross task dependencies
 
 **From constitution:**
@@ -131,16 +131,16 @@ Output a Markdown report (no file writes) with the following structure:
 
 ## Specification Analysis Report
 
-| ID | Category | Severity | Location(s) | Summary | Recommendation |
-|----|----------|----------|-------------|---------|----------------|
-| A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+| ID  | Category    | Severity | Location(s)      | Summary                      | Recommendation                       |
+| --- | ----------- | -------- | ---------------- | ---------------------------- | ------------------------------------ |
+| A1  | Duplication | HIGH     | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
 
 (Add one row per finding; generate stable IDs prefixed by category initial.)
 
 **Coverage Summary Table:**
 
 | Requirement Key | Has Task? | Task IDs | Notes |
-|-----------------|-----------|----------|-------|
+| --------------- | --------- | -------- | ----- |
 
 **Constitution Alignment Issues:** (if any)
 

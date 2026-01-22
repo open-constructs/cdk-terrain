@@ -24,6 +24,7 @@ Detailed step-by-step workflows for common bd usage patterns with checklists.
 ## Session Start Workflow {#session-start}
 
 **bd is available when**:
+
 - Project has `.beads/` directory (project-local), OR
 - `~/.beads/` exists (global fallback for any directory)
 
@@ -66,6 +67,7 @@ After Compaction:
 **Writing comments for compaction survival:**
 
 **Good comment (enables recovery):**
+
 ```
 bd comments add bd-123 "COMPLETED: User authentication - added JWT token
 generation with 1hr expiry, implemented refresh token endpoint using rotating
@@ -76,12 +78,14 @@ recommendations, tech lead concerned about response time but benchmarks show <10
 ```
 
 **Bad comment (insufficient for recovery):**
+
 ```
 bd comments add bd-123 "Working on auth feature. Made some progress.
 More to do later."
 ```
 
 The good comment contains:
+
 - Specific accomplishments (what was implemented/configured)
 - Current state (which part is working, what's in progress)
 - Next concrete step (not just "continue")
@@ -108,11 +112,13 @@ Discovery Workflow:
 **Pattern**: Proactively file issues as you discover work. Context captured immediately instead of lost when session ends.
 
 **When to ask first**:
+
 - Knowledge work with fuzzy scope
 - User intent unclear
 - Multiple valid approaches
 
 **When to create directly**:
+
 - Clear bug found
 - Obvious follow-up work
 - Technical debt with clear scope
@@ -136,6 +142,7 @@ Issue Lifecycle:
 **Pattern**: Keep bd status current so project state is always accurate.
 
 **Status transitions**:
+
 - `open` → `in_progress` when starting work
 - `in_progress` → `blocked` if blocker discovered
 - `blocked` → `in_progress` when unblocked
@@ -285,6 +292,7 @@ Updated some stuff. Will continue later.
 ```
 
 **Rules for handoff notes:**
+
 - Current state only (overwrite previous notes, not append)
 - Specific accomplishments (not vague progress)
 - Concrete next step (not "continue working")
@@ -323,6 +331,7 @@ User Tips:
 **Scenario:** Implementing markdown→Docs feature (workspace-mcp-server-2)
 
 **At End of Session 1:**
+
 ```bash
 bd update workspace-mcp-server-2 --notes "COMPLETED: Set up skeleton with Docs
 API connection verified. Markdown parsing logic 80% done (handles *, _ modifiers).
@@ -332,6 +341,7 @@ docs/markdown-to-docs-reference.md. No blockers, moving well."
 ```
 
 **At Start of Session 2:**
+
 ```bash
 bd show workspace-mcp-server-2
 # Output includes notes field showing exactly where we left off
@@ -512,17 +522,20 @@ Research or investigation work:
 ## Troubleshooting Workflows
 
 **"I can't find any ready work"**
+
 1. Run bd blocked
 2. Identify what's blocking progress
 3. Either work on blockers or create new work
 
 **"I created an issue but it's not showing in ready"**
+
 1. Run bd show on the issue
 2. Check dependencies field
 3. If blocked, resolve blocker first
 4. If incorrectly blocked, remove dependency
 
 **"Work is more complex than expected"**
+
 1. Transition from TodoWrite to bd mid-session
 2. Create bd issue with current context
 3. Note: "Discovered complexity during implementation"
@@ -530,14 +543,15 @@ Research or investigation work:
 5. Continue with bd tracking
 
 **"I closed an issue but work isn't done"**
+
 1. Reopen with bd update status=open
 2. Or create new issue linking to closed one
 3. Note what's still needed
 4. Closed issues can't be reopened in some systems, so create new if needed
 
 **"Too many issues, can't find what matters"**
+
 1. Use bd list with filters (priority, issue_type)
 2. Use bd ready to focus on unblocked work
 3. Consider closing old issues that no longer matter
 4. Use labels for organization
-

@@ -12,12 +12,14 @@ Guidance on when and how to create bd issues for maximum effectiveness.
 ## When to Ask First vs Create Directly {#when-to-ask}
 
 ### Ask the user before creating when:
+
 - Knowledge work with fuzzy boundaries
 - Task scope is unclear
 - Multiple valid approaches exist
 - User's intent needs clarification
 
 ### Create directly when:
+
 - Clear bug discovered during implementation
 - Obvious follow-up work identified
 - Technical debt with clear scope
@@ -32,11 +34,13 @@ Use clear, specific titles and include sufficient context in descriptions to res
 ### Field Usage
 
 **Use --design flag for:**
+
 - Implementation approach decisions
 - Architecture notes
 - Trade-offs considered
 
 **Use --acceptance flag for:**
+
 - Definition of done
 - Testing requirements
 - Success metrics
@@ -46,6 +50,7 @@ Use clear, specific titles and include sufficient context in descriptions to res
 For complex technical features spanning multiple sessions, enhance notes field with implementation details.
 
 ### Optional but valuable for technical work:
+
 - Working API query code (tested, with response structure)
 - Sample API responses showing actual data
 - Desired output format examples (show, don't describe)
@@ -70,18 +75,21 @@ CONTEXT: text/markdown support added July 2024, not in static docs"
 Common mistake: Putting implementation details in acceptance criteria. Here's the difference:
 
 ### DESIGN field (HOW to build it):
+
 - "Use two-phase batchUpdate approach: insert text first, then apply formatting"
-- "Parse with regex to find * and _ markers"
+- "Parse with regex to find \* and \_ markers"
 - "Use JWT tokens with 1-hour expiry"
 - Trade-offs: "Chose batchUpdate over streaming API for atomicity"
 
 ### ACCEPTANCE CRITERIA (WHAT SUCCESS LOOKS LIKE):
+
 - "Bold and italic markdown formatting renders correctly in the Doc"
 - "Solution accepts markdown input and creates Doc with specified title"
 - "Returns doc_id and webViewLink to caller"
 - "User tokens persist across sessions and refresh automatically"
 
 ### Why this matters:
+
 - Design can change during implementation (e.g., use library instead of regex)
 - Acceptance criteria should remain stable across sessions
 - Criteria should be **outcome-focused** ("what must be true?") not **step-focused** ("do these steps")
@@ -100,6 +108,7 @@ If you rewrote the solution using a different approach, would the acceptance cri
 ### Example of correct structure
 
 ✅ **Design field:**
+
 ```
 Two-phase Docs API approach:
 1. Parse markdown to positions
@@ -109,6 +118,7 @@ Rationale: Atomic operations, easier to debug formatting separately
 ```
 
 ✅ **Acceptance criteria:**
+
 ```
 - [ ] Markdown formatting renders in Doc (bold, italic, headings)
 - [ ] Lists preserve order and nesting
@@ -117,6 +127,7 @@ Rationale: Atomic operations, easier to debug formatting separately
 ```
 
 ❌ **Wrong (design masquerading as criteria):**
+
 ```
 - [ ] Use two-phase batchUpdate approach
 - [ ] Apply formatting in second batchUpdate call
