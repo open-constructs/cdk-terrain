@@ -9,7 +9,6 @@ This is a [Claude Code](https://claude.com/claude-code) skill - a markdown-based
 ## What Does It Provide?
 
 **Main skill file:**
-
 - Core workflow patterns (discovery, execution, planning phases)
 - Decision criteria for when to use bd vs TodoWrite/markdown
 - Session start protocols and ready work checks
@@ -18,7 +17,6 @@ This is a [Claude Code](https://claude.com/claude-code) skill - a markdown-based
 - Integration patterns with other tools
 
 **Reference documentation:**
-
 - `references/BOUNDARIES.md` - Detailed decision criteria for bd vs TodoWrite with examples
 - `references/CLI_REFERENCE.md` - Complete command reference with all flags
 - `references/DEPENDENCIES.md` - Deep dive into dependency types and relationship patterns
@@ -44,7 +42,6 @@ The skill helps Claude understand:
 ### Prerequisites
 
 1. Install beads CLI:
-
    ```bash
    curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/install.sh | bash
    ```
@@ -126,7 +123,6 @@ This skill complements the [beads plugin](../../.claude-plugin/):
 - **Skill** (this directory): Teaches Claude the patterns, philosophy, and decision-making for effective beads usage
 
 You can use both together for the best experience:
-
 - Plugin for quick operations
 - Skill for intelligent workflow decisions
 

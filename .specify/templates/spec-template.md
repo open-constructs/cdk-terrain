@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "$ARGUMENTS"
 
-## User Scenarios & Testing _(mandatory)_
+## User Scenarios & Testing *(mandatory)*
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
@@ -75,7 +75,7 @@
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
-## Requirements _(mandatory)_
+## Requirements *(mandatory)*
 
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
@@ -90,17 +90,17 @@
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
 
-_Example of marking unclear requirements:_
+*Example of marking unclear requirements:*
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
-### Key Entities _(include if feature involves data)_
+### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
-## Success Criteria _(mandatory)_
+## Success Criteria *(mandatory)*
 
 <!--
   ACTION REQUIRED: Define measurable success criteria.

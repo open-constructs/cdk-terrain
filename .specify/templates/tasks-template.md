@@ -9,12 +9,12 @@ This index does **not contain tasks directly**—those are fully managed through
 
 ## Feature Tracking
 
-- **Beads Epic ID**: `sl-[epic-id]`
-- **User Stories Source**: `specs/[###-feature-name]/spec.md`
-- **Research Inputs**: `specs/[###-feature-name]/research.md`
-- **Planning Details**: `specs/[###-feature-name]/plan.md`
-- **Data Model**: `specs/[###-feature-name]/data-model.md`
-- **Contract Definitions**: `specs/[###-feature-name]/contracts/`
+* **Beads Epic ID**: `sl-[epic-id]`
+* **User Stories Source**: `specs/[###-feature-name]/spec.md`
+* **Research Inputs**: `specs/[###-feature-name]/research.md`
+* **Planning Details**: `specs/[###-feature-name]/plan.md`
+* **Data Model**: `specs/[###-feature-name]/data-model.md`
+* **Contract Definitions**: `specs/[###-feature-name]/contracts/`
 
 ## Beads Query Hints
 
@@ -46,10 +46,10 @@ bd list --type feature --label 'spec:[epic-id]'
 
 This feature follows Beads' 2-level graph structure:
 
-- **Epic**: sl-[epic-id] → represents the whole feature
-- **Phases**: Beads issues of type `feature`, child of the epic
-  - Phase = a user story group or technical milestone (e.g., setup, auth, backend integration)
-- **Tasks**: Issues of type `task`, children of each feature issue (phase)
+* **Epic**: sl-[epic-id] → represents the whole feature
+* **Phases**: Beads issues of type `feature`, child of the epic
+  * Phase = a user story group or technical milestone (e.g., setup, auth, backend integration)
+* **Tasks**: Issues of type `task`, children of each feature issue (phase)
 
 ## Convention Summary
 
@@ -105,10 +105,10 @@ bd update sl-xyz123 --status closed --notes "Completed with bcrypt, 12 rounds, <
 
 Status is tracked only in Beads:
 
-- **Open** → default
-- **In Progress** → task being worked on
-- **Blocked** → dependency unresolved
-- **Closed** → complete
+* **Open** → default
+* **In Progress** → task being worked on
+* **Blocked** → dependency unresolved
+* **Closed** → complete
 
 Use `bd ready`, `bd blocked`, `bd stats` with appropriate filters to query progress.
 
@@ -116,24 +116,26 @@ Use `bd ready`, `bd blocked`, `bd stats` with appropriate filters to query progr
 
 > This file is intentionally light and index-only. Implementation data lives in Beads. Update this file only to point humans and agents to canonical query paths and feature references.
 
-<!--
+
+<!-- 
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-
+  
   The /specledger.tasks command MUST use Beads to track these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
-
+  
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
   - Tested independently
   - Delivered as an MVP increment
-
+  
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
 -->
+
 
 ## Phase 1: Setup (Shared Infrastructure)
 
@@ -174,8 +176,8 @@ Examples of foundational tasks (adjust based on your project):
 
 **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test\_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test\_[name].py
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 1
 
@@ -198,8 +200,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test\_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test\_[name].py
+- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 2
 
@@ -220,8 +222,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test\_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test\_[name].py
+- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 3
 

@@ -37,7 +37,6 @@
 Only implement features when there is a current, concrete use case. Speculative abstractions, premature optimizations, and "future-proofing" are prohibited.
 
 **Rules:**
-
 - Every code addition MUST have an immediate, demonstrable need
 - "We might need this later" is NOT a valid justification
 - Remove unused code paths immediately; do not comment them out
@@ -51,7 +50,6 @@ Only implement features when there is a current, concrete use case. Speculative 
 Prefer simple, readable solutions over clever ones. Minimize layers of abstraction. Code should be understandable by newcomers within minutes, not hours.
 
 **Rules:**
-
 - Choose boring technology over novel solutions
 - Limit inheritance depth to 3 levels maximum
 - Prefer composition over inheritance
@@ -66,7 +64,6 @@ Prefer simple, readable solutions over clever ones. Minimize layers of abstracti
 Each PR/change MUST do one thing well. Avoid bundling unrelated improvements.
 
 **Rules:**
-
 - Bug fixes do NOT include surrounding code cleanup
 - Feature additions do NOT include unrelated refactoring
 - One logical change per commit
@@ -80,7 +77,6 @@ Each PR/change MUST do one thing well. Avoid bundling unrelated improvements.
 Feature specifications MUST be reviewed and approved in collaboration with the community before implementation begins.
 
 **Rules:**
-
 - Major features require RFC or discussion issue before implementation
 - Breaking changes MUST have a migration path documented
 - Deprecations MUST include timeline and alternatives
@@ -96,7 +92,6 @@ Feature specifications MUST be reviewed and approved in collaboration with the c
 Similar operations MUST have similar interfaces across all supported languages.
 
 **Rules:**
-
 - Method names MUST follow language-specific conventions while preserving semantic meaning
 - Parameter order MUST be consistent: required before optional, context before specifics
 - Return types MUST be predictable: similar operations return similar structures
@@ -110,7 +105,6 @@ Similar operations MUST have similar interfaces across all supported languages.
 No surprises. Users MUST be able to reason about system behavior from documentation and type signatures.
 
 **Rules:**
-
 - Side effects MUST be documented in method signatures or names
 - Default values MUST prioritize safety over convenience
 - Error messages MUST be actionable: include what went wrong, why, and how to fix it
@@ -124,7 +118,6 @@ No surprises. Users MUST be able to reason about system behavior from documentat
 Simple use cases require simple code. Advanced features available but not in the way.
 
 **Rules:**
-
 - Hello-world examples MUST work with minimal configuration
 - Sensible defaults MUST cover 80% of use cases
 - Advanced options available via explicit opt-in, not required understanding
@@ -138,7 +131,6 @@ Simple use cases require simple code. Advanced features available but not in the
 Features available in one language MUST be available in all supported languages (TypeScript, Python, Go).
 
 **Rules:**
-
 - New features MUST NOT ship until available in all supported languages
 - Language-specific limitations MUST be documented with workarounds
 - Test coverage MUST be equivalent across all language bindings
@@ -154,7 +146,6 @@ Features available in one language MUST be available in all supported languages 
 All changes to core libraries require appropriate test coverage.
 
 **Rules:**
-
 - Core library changes MUST include unit tests
 - Public API changes MUST include integration tests
 - Bug fixes MUST include regression tests
@@ -176,7 +167,6 @@ All changes to core libraries require appropriate test coverage.
 ### Versioning Policy
 
 Constitution versions follow semantic versioning:
-
 - **MAJOR**: Principle removal, redefinition, or backward-incompatible governance change
 - **MINOR**: New principle added or existing principle materially expanded
 - **PATCH**: Clarifications, typo fixes, non-semantic refinements
@@ -190,7 +180,6 @@ Constitution versions follow semantic versioning:
 ### Principle Hierarchy
 
 When principles conflict, apply in this order:
-
 1. **YAGNI** - Do not build what is not needed
 2. **KISS** - Keep the solution simple
 3. **UX Consistency** - Maintain user experience standards

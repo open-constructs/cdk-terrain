@@ -6,7 +6,6 @@
 ## Prior Work
 
 No previous Beads issues or tasks found for this feature. This is the initial implementation of the rename effort documented in:
-
 - `RFCs/RENAME.md` - Detailed renaming protocol and decision points
 - `RFCs/RENAME-PLAN.md` - Release 1 focused implementation plan
 
@@ -29,25 +28,23 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 
 ### New Configuration
 
-| Language   | Property    | Current                                 | New                                         |
-| ---------- | ----------- | --------------------------------------- | ------------------------------------------- |
-| **Python** | distName    | `cdktf`                                 | `cdktn`                                     |
-| **Python** | module      | `cdktf`                                 | `cdktn`                                     |
-| **Java**   | package     | `com.hashicorp.cdktf`                   | `io.cdktn.cdktn`                            |
-| **Java**   | groupId     | `com.hashicorp`                         | `io.cdktn`                                  |
-| **Java**   | artifactId  | `cdktf`                                 | `cdktn`                                     |
-| **.NET**   | packageId   | `HashiCorp.Cdktf`                       | `Io.Cdktn`                                  |
-| **.NET**   | namespace   | `HashiCorp.Cdktf`                       | `Io.Cdktn`                                  |
-| **Go**     | moduleName  | `github.com/hashicorp/terraform-cdk-go` | `github.com/open-constructs/cdk-terrain-go` |
-| **Go**     | packageName | `cdktf`                                 | `cdktn`                                     |
+| Language | Property | Current | New |
+|----------|----------|---------|-----|
+| **Python** | distName | `cdktf` | `cdktn` |
+| **Python** | module | `cdktf` | `cdktn` |
+| **Java** | package | `com.hashicorp.cdktf` | `io.cdktn.cdktn` |
+| **Java** | groupId | `com.hashicorp` | `io.cdktn` |
+| **Java** | artifactId | `cdktf` | `cdktn` |
+| **.NET** | packageId | `HashiCorp.Cdktf` | `Io.Cdktn` |
+| **.NET** | namespace | `HashiCorp.Cdktf` | `Io.Cdktn` |
+| **Go** | moduleName | `github.com/hashicorp/terraform-cdk-go` | `github.com/open-constructs/cdk-terrain-go` |
+| **Go** | packageName | `cdktf` | `cdktn` |
 
 ### Rationale
-
 - Per `RFCs/RENAME.md` section 2: Package Renaming & Publication Targets
 - JSII will automatically generate correct language-specific distributions
 
 ### Alternatives Considered
-
 - Keep some namespaces unchanged (rejected: creates confusion, partial migration)
 - Use different naming conventions per language (rejected: KISS - use consistent `cdktn` everywhere)
 
@@ -60,52 +57,46 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 ### Complete Symbol Inventory
 
 #### Core Type Markers (`cdktf/*` namespace)
-
-| Symbol                          | File                              | Purpose                 |
-| ------------------------------- | --------------------------------- | ----------------------- |
-| `"cdktf/App"`                   | lib/app.ts:12                     | App construct identity  |
-| `"cdktf/TerraformStack"`        | lib/terraform-stack.ts:17         | Stack identity          |
-| `"cdktf/TerraformElement"`      | lib/terraform-element.ts:10       | Base element identity   |
-| `"cdktf/TerraformResource"`     | lib/terraform-resource.ts:40      | Resource identity       |
-| `"cdktf/TerraformProvider"`     | lib/terraform-provider.ts:14      | Provider identity       |
-| `"cdktf/TerraformDataSource"`   | lib/terraform-data-source.ts:28   | Data source identity    |
-| `"cdktf/TerraformOutput"`       | lib/terraform-output.ts:13        | Output identity         |
-| `"cdktf/TerraformBackend"`      | lib/terraform-backend.ts:8        | Backend identity        |
-| `"cdktf/TerraformCount"`        | lib/terraform-count.ts:5          | Count identity          |
-| `"cdktf/TerraformDynamicBlock"` | lib/terraform-dynamic-block.ts:9  | Dynamic block identity  |
-| `"cdktf/customSynthesis"`       | lib/synthesize/synthesizer.ts:182 | Custom synthesis marker |
+| Symbol | File | Purpose |
+|--------|------|---------|
+| `"cdktf/App"` | lib/app.ts:12 | App construct identity |
+| `"cdktf/TerraformStack"` | lib/terraform-stack.ts:17 | Stack identity |
+| `"cdktf/TerraformElement"` | lib/terraform-element.ts:10 | Base element identity |
+| `"cdktf/TerraformResource"` | lib/terraform-resource.ts:40 | Resource identity |
+| `"cdktf/TerraformProvider"` | lib/terraform-provider.ts:14 | Provider identity |
+| `"cdktf/TerraformDataSource"` | lib/terraform-data-source.ts:28 | Data source identity |
+| `"cdktf/TerraformOutput"` | lib/terraform-output.ts:13 | Output identity |
+| `"cdktf/TerraformBackend"` | lib/terraform-backend.ts:8 | Backend identity |
+| `"cdktf/TerraformCount"` | lib/terraform-count.ts:5 | Count identity |
+| `"cdktf/TerraformDynamicBlock"` | lib/terraform-dynamic-block.ts:9 | Dynamic block identity |
+| `"cdktf/customSynthesis"` | lib/synthesize/synthesizer.ts:182 | Custom synthesis marker |
 
 #### Token Map Cache Symbols (`@cdktf/core.TokenMap.*` namespace)
-
-| Symbol                               | File                               | Purpose                 |
-| ------------------------------------ | ---------------------------------- | ----------------------- |
-| `"@cdktf/core.TokenMap.STRING"`      | lib/tokens/private/token-map.ts:20 | String token cache      |
-| `"@cdktf/core.TokenMap.LIST"`        | lib/tokens/private/token-map.ts:21 | List token cache        |
-| `"@cdktf/core.TokenMap.NUMBER"`      | lib/tokens/private/token-map.ts:22 | Number token cache      |
+| Symbol | File | Purpose |
+|--------|------|---------|
+| `"@cdktf/core.TokenMap.STRING"` | lib/tokens/private/token-map.ts:20 | String token cache |
+| `"@cdktf/core.TokenMap.LIST"` | lib/tokens/private/token-map.ts:21 | List token cache |
+| `"@cdktf/core.TokenMap.NUMBER"` | lib/tokens/private/token-map.ts:22 | Number token cache |
 | `"@cdktf/core.TokenMap.NUMBER_LIST"` | lib/tokens/private/token-map.ts:23 | Number list token cache |
-| `"@cdktf/core.TokenMap.MAP"`         | lib/tokens/private/token-map.ts:24 | Map token cache         |
+| `"@cdktf/core.TokenMap.MAP"` | lib/tokens/private/token-map.ts:24 | Map token cache |
 
 #### Module Asset Symbol (different notation)
-
-| Symbol                         | File                             | Purpose               |
-| ------------------------------ | -------------------------------- | --------------------- |
+| Symbol | File | Purpose |
+|--------|------|---------|
 | `"cdktf.TerraformModuleAsset"` | lib/terraform-module-asset.ts:14 | Module asset identity |
 
 #### External Reference (DO NOT MODIFY)
-
-| Symbol                            | File                                | Purpose         |
-| --------------------------------- | ----------------------------------- | --------------- |
+| Symbol | File | Purpose |
+|--------|------|---------|
 | `"@aws-cdk/core.DependableTrait"` | lib/tokens/private/dependency.ts:54 | AWS CDK interop |
 
 ### Rationale
-
 - Per `RFCs/RENAME-PLAN.md` Phase 1: "Keep symbols and logical IDs unchanged"
 - Changing symbols would break runtime type checking across existing projects
 - Symbol.for() creates global registry - changing breaks mixed cdktf/cdktn projects
 - Release 2 may consider symbol rename with migration tooling
 
 ### Alternatives Considered
-
 - Rename symbols to `cdktn/*` (rejected: breaks transitional dual-dependency support, FR-025)
 - Add dual symbols (rejected: complexity, maintenance burden, violates KISS)
 
@@ -118,7 +109,6 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 ### Template Files by Language
 
 **TypeScript** (6 files):
-
 - `package.json` - Script commands (`cdktn get`, `cdktn synth`), dependencies
 - `main.ts` - Import `from "cdktn"`
 - `__tests__/main-test.ts` - Import `"cdktn/lib/testing/adapters/jest"`
@@ -127,14 +117,12 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 - `help` - Command references, provider URLs
 
 **Python** (pipenv and pip templates) (8 files total):
-
 - `main.py` - `from cdktn import App, TerraformStack`
 - `main-test.py` - `from cdktn import Testing`
 - `.hooks.sscaff.js` - `pypi_cdktn` context variable
 - `help` - PyPI URLs (`cdktn-provider-*`)
 
 **Go** (5 files):
-
 - `main.go` - `"github.com/open-constructs/cdk-terrain-go/cdktn"`
 - `main_test.go` - Same import path
 - `go.mod` - Module dependency
@@ -142,7 +130,6 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 - `help` - Command references
 
 **Java** (5 files):
-
 - `build.gradle` - `implementation "io.cdktn:cdktn:..."`
 - `Main.java` - `import io.cdktn.cdktn.*`
 - `MainStack.java` - Same imports
@@ -150,7 +137,6 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 - `.hooks.sscaff.js` - `mvn_cdktn` context variable
 
 **C#** (5 files):
-
 - `Program.cs` - `using Io.Cdktn;`
 - `MainStack.cs` - Same using directive
 - `TestProgram.cs` - Same using directive
@@ -158,12 +144,10 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 - `.hooks.sscaff.js` - `nuget_cdktn` context variable
 
 ### Rationale
-
 - Templates define new user experience (User Story 1)
 - Must reference correct package names for each language ecosystem
 
 ### Alternatives Considered
-
 - Dual templates for cdktf/cdktn (rejected: maintenance burden, user confusion)
 - Template generation at runtime (rejected: adds complexity, no benefit)
 
@@ -175,24 +159,22 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 
 ### Items to Preserve
 
-| Item        | Current                 | Change    | Rationale     |
-| ----------- | ----------------------- | --------- | ------------- |
-| Config file | `cdktf.json`            | No change | FR-008        |
-| Output dir  | `cdktf.out/`            | No change | FR-009        |
-| Env vars    | `CDKTF_*`               | No change | FR-010        |
-| Home dir    | `~/.cdktf`              | No change | FR-011        |
-| Log file    | `cdktf.log`             | No change | Legacy compat |
-| Symbols     | `Symbol.for("cdktf/*")` | No change | FR-012        |
-| Logical IDs | `__cdktf_*`             | No change | FR-013        |
+| Item | Current | Change | Rationale |
+|------|---------|--------|-----------|
+| Config file | `cdktf.json` | No change | FR-008 |
+| Output dir | `cdktf.out/` | No change | FR-009 |
+| Env vars | `CDKTF_*` | No change | FR-010 |
+| Home dir | `~/.cdktf` | No change | FR-011 |
+| Log file | `cdktf.log` | No change | Legacy compat |
+| Symbols | `Symbol.for("cdktf/*")` | No change | FR-012 |
+| Logical IDs | `__cdktf_*` | No change | FR-013 |
 
 ### Rationale
-
 - Enables migration without breaking existing projects
 - Users can adopt `cdktn` CLI with existing config
 - Reduces friction in transitional period
 
 ### Alternatives Considered
-
 - Support both `cdktf.json` and `cdktn.json` (rejected: clarification session - Release 2)
 - Rename everything (rejected: breaks existing projects)
 
@@ -205,7 +187,6 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 ### Migration Command Scope
 
 **Supported Operations:**
-
 1. Update `package.json` / `requirements.txt` / `go.mod` / `build.gradle` / `.csproj` dependencies
 2. Update import statements in source files
 3. Dry-run mode (preview changes)
@@ -213,23 +194,21 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 
 **Language-Specific Patterns:**
 
-| Language   | Old Import                                    | New Import                                        |
-| ---------- | --------------------------------------------- | ------------------------------------------------- |
-| TypeScript | `from "cdktf"`                                | `from "cdktn"`                                    |
-| TypeScript | `from "@cdktf/*"`                             | `from "@cdktn/*"`                                 |
-| Python     | `from cdktf`                                  | `from cdktn`                                      |
-| Go         | `github.com/hashicorp/terraform-cdk-go/cdktf` | `github.com/open-constructs/cdk-terrain-go/cdktn` |
-| Java       | `import com.hashicorp.cdktf.*`                | `import io.cdktn.cdktn.*`                         |
-| C#         | `using HashiCorp.Cdktf`                       | `using Io.Cdktn`                                  |
+| Language | Old Import | New Import |
+|----------|------------|------------|
+| TypeScript | `from "cdktf"` | `from "cdktn"` |
+| TypeScript | `from "@cdktf/*"` | `from "@cdktn/*"` |
+| Python | `from cdktf` | `from cdktn` |
+| Go | `github.com/hashicorp/terraform-cdk-go/cdktf` | `github.com/open-constructs/cdk-terrain-go/cdktn` |
+| Java | `import com.hashicorp.cdktf.*` | `import io.cdktn.cdktn.*` |
+| C# | `using HashiCorp.Cdktf` | `using Io.Cdktn` |
 
 ### Rationale
-
 - FR-028 through FR-032 require migration tooling
 - Built-in CLI provides immediate availability
 - Existing patterns in CLI for file manipulation can be reused
 
 ### Alternatives Considered
-
 - Separate `@cdktn/migrate` package (noted for future per clarification)
 - No tooling, documentation only (rejected: too much manual work for users)
 
@@ -244,25 +223,21 @@ No previous Beads issues or tasks found for this feature. This is the initial im
 **Location**: `@cdktf/cli-core/src/lib/error-reporting.ts`
 
 **Existing Features:**
-
 - Opt-in model via `cdktf.json` `sendCrashReports` boolean
 - CI detection (skip reporting in CI)
 - Release tag: `cdktf-cli-${DISPLAY_VERSION}`
 - Breadcrumb logging for all log levels
 
 ### Changes Needed
-
 - Update release tag to `cdktn-cli-${DISPLAY_VERSION}`
 - Add migration-specific event tracking (FR-033, FR-034)
 
 ### Rationale
-
 - Existing infrastructure is well-tested
 - YAGNI - don't build new telemetry system
 - Per clarification: re-use Sentry patterns
 
 ### Alternatives Considered
-
 - New telemetry system (rejected: YAGNI, existing system works)
 - No telemetry (rejected: need migration observability per FR-034)
 
@@ -290,7 +265,6 @@ const TERRAFORM_RESOURCE_SYMBOL = Symbol.for("cdktf/TerraformResource");
 ```
 
 **Type-Checking Pattern in Codebase**:
-
 ```typescript
 // From packages/cdktf/lib/terraform-resource.ts
 export class TerraformResource extends TerraformElement {
@@ -305,7 +279,6 @@ export class TerraformResource extends TerraformElement {
 ```
 
 **Cross-Package Behavior**:
-
 ```typescript
 import { TerraformResource as CdktnResource } from "cdktn";
 import { TerraformResource as CdktfResource } from "cdktf";
@@ -318,12 +291,12 @@ CdktfResource.isTerraformResource(cdktnInstance); // TRUE
 
 **Risk Assessment**:
 
-| Aspect              | Risk Level | Notes                                                                     |
-| ------------------- | ---------- | ------------------------------------------------------------------------- |
-| Runtime crashes     | **None**   | Symbol.for() always succeeds                                              |
-| Type check failures | **None**   | Both packages register to same symbol                                     |
-| False positives     | **Medium** | cdktn objects pass cdktf type checks (by design for transitional support) |
-| Mixed environments  | **Low**    | Actually beneficial - allows gradual migration                            |
+| Aspect | Risk Level | Notes |
+|--------|------------|-------|
+| Runtime crashes | **None** | Symbol.for() always succeeds |
+| Type check failures | **None** | Both packages register to same symbol |
+| False positives | **Medium** | cdktn objects pass cdktf type checks (by design for transitional support) |
+| Mixed environments | **Low** | Actually beneficial - allows gradual migration |
 
 **Conclusion**: **NO BLOCKING ISSUES**. The shared Symbol.for() strings are a feature, not a bug - they enable the transitional dual-dependency support (FR-025).
 
@@ -340,7 +313,6 @@ CdktfResource.isTerraformResource(cdktnInstance); // TRUE
 2. **No automatic deduplication**: Unlike multiple versions of the same package, `cdktf` and `cdktn` are distinct packages. Bundlers will not deduplicate them.
 
 3. **Bundle size impact**: Approximately 2x the code if both packages are fully used. However:
-
    - Tree-shaking removes unused exports
    - Shared dependency (`constructs`) is deduplicated
    - Gzip compression reduces redundancy
@@ -349,14 +321,13 @@ CdktfResource.isTerraformResource(cdktnInstance); // TRUE
 
 **Mitigation Strategies**:
 
-| Bundler | Configuration         | Effect                                              |
-| ------- | --------------------- | --------------------------------------------------- |
-| webpack | `resolve.alias`       | Can redirect `cdktf` → `cdktn` after full migration |
-| esbuild | `external: ["cdktf"]` | Exclude legacy package if not needed                |
-| rollup  | `external` option     | Same as esbuild                                     |
+| Bundler | Configuration | Effect |
+|---------|---------------|--------|
+| webpack | `resolve.alias` | Can redirect `cdktf` → `cdktn` after full migration |
+| esbuild | `external: ["cdktf"]` | Exclude legacy package if not needed |
+| rollup | `external` option | Same as esbuild |
 
 **Recommendations**:
-
 - Document that dual dependencies increase bundle size
 - Recommend completing migration to remove legacy package
 - Users can use `npm dedupe` to optimize shared dependencies
@@ -364,7 +335,6 @@ CdktfResource.isTerraformResource(cdktnInstance); // TRUE
 **Risk Assessment**: **LOW** - Bundle size increase is temporary during migration; no functional issues.
 
 Sources:
-
 - [Reduce webpack bundle size by eliminating duplicates](https://www.jakepusateri.com/blog/remove-webpack-duplicates/)
 - [webpack and yarn magic against duplicates](https://www.developerway.com/posts/webpack-and-yarn-magic-against-duplicates-in-bundles)
 - [duplicate-package-checker-webpack-plugin](https://www.npmjs.com/package/duplicate-package-checker-webpack-plugin)
@@ -379,12 +349,12 @@ Sources:
 
 **FQN Separation by Language**:
 
-| Language | cdktf FQN                                       | cdktn FQN                                             | Conflict? |
-| -------- | ----------------------------------------------- | ----------------------------------------------------- | --------- |
-| Python   | `cdktf.TerraformStack`                          | `cdktn.TerraformStack`                                | **No**    |
-| Java     | `com.hashicorp.cdktf.TerraformStack`            | `io.cdktn.cdktn.TerraformStack`                       | **No**    |
-| C#       | `HashiCorp.Cdktf.TerraformStack`                | `Io.Cdktn.TerraformStack`                             | **No**    |
-| Go       | `github.com/hashicorp/.../cdktf.TerraformStack` | `github.com/open-constructs/.../cdktn.TerraformStack` | **No**    |
+| Language | cdktf FQN | cdktn FQN | Conflict? |
+|----------|-----------|-----------|-----------|
+| Python | `cdktf.TerraformStack` | `cdktn.TerraformStack` | **No** |
+| Java | `com.hashicorp.cdktf.TerraformStack` | `io.cdktn.cdktn.TerraformStack` | **No** |
+| C# | `HashiCorp.Cdktf.TerraformStack` | `Io.Cdktn.TerraformStack` | **No** |
+| Go | `github.com/hashicorp/.../cdktf.TerraformStack` | `github.com/open-constructs/.../cdktn.TerraformStack` | **No** |
 
 **Cross-Language Type Handling**:
 
@@ -405,7 +375,6 @@ io.cdktn.cdktn.TerraformStack cdktnStack;
 ```
 
 **.jsii Manifest Uniqueness**:
-
 - Each package generates its own `.jsii` manifest during `jsii-pacmak`
 - Manifest contains unique assembly name (from `package.json` `name` field)
 - No conflict because `cdktf` and `cdktn` have different assembly names
@@ -434,11 +403,10 @@ cdktn.TerraformStack vs cdktf.TerraformStack
 ```
 
 **tsconfig.json Consideration**:
-
 ```json
 {
   "compilerOptions": {
-    "skipLibCheck": true // May help if deep type conflicts occur
+    "skipLibCheck": true  // May help if deep type conflicts occur
   }
 }
 ```
@@ -452,19 +420,16 @@ cdktn.TerraformStack vs cdktf.TerraformStack
 **Investigation**: How do package managers handle conflicting peer dependencies?
 
 **Scenario**:
-
 - `@cdktf/provider-aws@19.x` → `peerDependency: cdktf`
 - `cdktn@0.x` → new core package
 - User wants both installed during transition
 
 **Behavior**:
-
 - **npm 7+**: Automatically installs peer dependencies; warns on conflicts but allows install
 - **yarn**: Warns but allows installation
 - **pnpm**: Strict by default; may need `--shamefully-hoist`
 
 **Transitional Period Support**:
-
 ```json
 {
   "dependencies": {
@@ -472,8 +437,6 @@ cdktn.TerraformStack vs cdktf.TerraformStack
     "@cdktf/provider-aws": "^19.0.0"
   }
 }
-
-
 // Package manager installs both cdktn AND cdktf (via provider peer dep)
 ```
 
@@ -483,20 +446,19 @@ cdktn.TerraformStack vs cdktf.TerraformStack
 
 ### Spike Conclusion
 
-| Area                   | Risk Level | Blocking? | Notes                                      |
-| ---------------------- | ---------- | --------- | ------------------------------------------ |
-| Symbol.for() conflicts | None       | **No**    | Shared symbols enable transitional support |
-| Bundler behavior       | Low        | **No**    | Temporary bundle size increase             |
-| JSII cross-language    | None       | **No**    | FQNs completely separate types             |
-| TypeScript types       | Low        | **No**    | Aliased imports resolve conflicts          |
-| Peer dependencies      | Low        | **No**    | Package managers handle gracefully         |
+| Area | Risk Level | Blocking? | Notes |
+|------|------------|-----------|-------|
+| Symbol.for() conflicts | None | **No** | Shared symbols enable transitional support |
+| Bundler behavior | Low | **No** | Temporary bundle size increase |
+| JSII cross-language | None | **No** | FQNs completely separate types |
+| TypeScript types | Low | **No** | Aliased imports resolve conflicts |
+| Peer dependencies | Low | **No** | Package managers handle gracefully |
 
 **Overall Assessment**: **NO CRITICAL RISK ITEMS IDENTIFIED**
 
 The dual-dependency coexistence approach is validated. Proceed with implementation.
 
 **Recommendations**:
-
 1. Add runtime warning when both packages detected (optional enhancement)
 2. Document bundle size implications in migration guide
 3. Recommend completing migration promptly to reduce complexity
@@ -507,17 +469,17 @@ The dual-dependency coexistence approach is validated. Proceed with implementati
 
 ### Files to Modify (Package Identity)
 
-| Package                     | File           | Changes            |
-| --------------------------- | -------------- | ------------------ |
-| `cdktf`                     | `package.json` | name, JSII targets |
-| `cdktf-cli`                 | `package.json` | name, bin entry    |
-| `@cdktf/cli-core`           | `package.json` | name               |
-| `@cdktf/commons`            | `package.json` | name               |
-| `@cdktf/hcl-tools`          | `package.json` | name               |
-| `@cdktf/hcl2cdk`            | `package.json` | name               |
-| `@cdktf/hcl2json`           | `package.json` | name               |
-| `@cdktf/provider-generator` | `package.json` | name               |
-| `@cdktf/provider-schema`    | `package.json` | name               |
+| Package | File | Changes |
+|---------|------|---------|
+| `cdktf` | `package.json` | name, JSII targets |
+| `cdktf-cli` | `package.json` | name, bin entry |
+| `@cdktf/cli-core` | `package.json` | name |
+| `@cdktf/commons` | `package.json` | name |
+| `@cdktf/hcl-tools` | `package.json` | name |
+| `@cdktf/hcl2cdk` | `package.json` | name |
+| `@cdktf/hcl2json` | `package.json` | name |
+| `@cdktf/provider-generator` | `package.json` | name |
+| `@cdktf/provider-schema` | `package.json` | name |
 
 ### Files to Preserve (Internal Symbols)
 
