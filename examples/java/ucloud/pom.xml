@@ -20,8 +20,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.hashicorp</groupId>
-      <artifactId>cdktf</artifactId>
+      <groupId>io.cdktn</groupId>
+      <artifactId>cdktn</artifactId>
       <version>0.0.0</version>
     </dependency>
     <dependency>
