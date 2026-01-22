@@ -30,6 +30,10 @@ export default [
       "**/coverage",
       "**/*.d.ts",
       "**/*.js",
+      // prettier v2 managed inline snapshots
+      "src/test/lib/cdktf-project.test.ts",
+      "src/test/lib/terraform-logs.test.ts",
+      "src/test/lib/execution-logs.test.ts",
     ],
   },
   ...tseslint.config(eslint.configs.recommended, tseslint.configs.recommended),
