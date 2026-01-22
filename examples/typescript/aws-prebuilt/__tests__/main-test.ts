@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 // import { Testing } from "cdktn";
-// import "cdktfn/lib/testing/adapters/jest";
+// import "cdktn/lib/testing/adapters/jest";
 
 describe("My CDKTN Application", () => {
   it.todo("should be tested");
