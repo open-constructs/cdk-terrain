@@ -37,7 +37,7 @@ exports.post = options => {
   }
 
   // dist package
-  if (go_cdktf.endsWith('cdktf')) {
+  if (go_cdktf.endsWith('cdktn')) {
     const gomod = readFileSync('./go.mod', 'utf-8');
 
     // set the version of the package to the version of the CDKTN CLI as the package itself
