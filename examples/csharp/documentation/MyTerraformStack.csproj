@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HashiCorp.Cdktf" Version="0.0.0" />
+    <PackageReference Include="Io.Cdktn" Version="0.0.0" />
   </ItemGroup>
 
   <ItemGroup>

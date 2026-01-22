@@ -46,8 +46,8 @@ type SchemaFilter = {
   dataSources?: string[];
 };
 
-const cdktfBin = path.join(__dirname, "../../../../cdktn-cli/bundle/bin/cdktn");
-const cdktfDist = path.join(__dirname, "../../../../../dist");
+const cdktnBin = path.join(__dirname, "../../../../cdktn-cli/bundle/bin/cdktn");
+const cdktnDist = path.join(__dirname, "../../../../../dist");
 
 export const binding = {
   aws: {
@@ -133,7 +133,7 @@ async function generateBindings(
         binding.type === ProviderType.module ? [binding.fqn] : [],
     }),
   );
-  await execa(cdktfBin, ["get"], { cwd: tempDir });
+  await execa(cdktnBin, ["get"], { cwd: tempDir });
 
   return path.resolve(tempDir, ".gen", binding.path);
 }
@@ -163,11 +163,11 @@ const prepareBaseProject = (language: string) =>
       path.join(os.tmpdir(), "cdktf-convert-base-"),
     );
     await execa(
-      cdktfBin,
+      cdktnBin,
       [
         "init",
         "--local",
-        `--dist=${cdktfDist}`,
+        `--dist=${cdktnDist}`,
         "--project-name='hello'",
         "--project-description='world'",
         `--template=${language}`,
@@ -284,7 +284,7 @@ const preSynth: Record<
       `<?xml version="1.0" encoding="utf-8"?>
       <configuration>
         <packageSources>
-          <add key="Locally Distributed Packages" value="${cdktfDist}/dotnet/" />
+          <add key="Locally Distributed Packages" value="${cdktnDist}/dotnet/" />
           <add key="NuGet official package source" value="https://api.nuget.org/v3/index.json" />
         </packageSources>
       </configuration>
@@ -320,7 +320,7 @@ async function synthForLanguage(
   }
 
   const { all } = await execa(
-    cdktfBin,
+    cdktnBin,
     [
       "synth",
       "-a",
@@ -361,7 +361,7 @@ async function getProjectDirectory(
     ),
   ]);
 
-  // We only copy the TS bindings, but we need to run cdktf get for the language specific ones
+  // We only copy the TS bindings, but we need to run cdktn get for the language specific ones
   if (language !== "typescript") {
     await fs.writeFile(
       path.resolve(projectDir, "cdktf.json"),
@@ -380,7 +380,7 @@ async function getProjectDirectory(
         2,
       ),
     );
-    await execa(cdktfBin, ["get", "--force"], { cwd: projectDir });
+    await execa(cdktnBin, ["get", "--force"], { cwd: projectDir });
   }
 
   return projectDir;
