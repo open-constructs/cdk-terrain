@@ -89,7 +89,7 @@ describe("multiple stacks", () => {
       );
 
       expect(driver.deploy()).rejects.toThrowError(
-        "Found more than one stack, please specify a target stack. Run cdktf deploy <stack> with one of these stacks: first, second",
+        "Found more than one stack, please specify a target stack. Run cdktn deploy <stack> with one of these stacks: first, second",
       );
     });
 
@@ -99,7 +99,7 @@ describe("multiple stacks", () => {
       );
 
       expect(() => driver.destroy()).toThrowError(
-        "Found more than one stack, please specify a target stack. Run cdktf destroy <stack> with one of these stacks: first, second",
+        "Found more than one stack, please specify a target stack. Run cdktn destroy <stack> with one of these stacks: first, second",
       );
     });
   });
