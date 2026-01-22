@@ -30,12 +30,12 @@ Use Providers:
   You can find all prebuilt providers on PyPI: https://pypi.org/user/cdktn-team/
   You can also install these providers directly through pipenv:
 
-  pipenv install cdktf-cdktf-provider-aws
-  pipenv install cdktf-cdktf-provider-google
-  pipenv install cdktf-cdktf-provider-azurerm
-  pipenv install cdktf-cdktf-provider-docker
-  pipenv install cdktf-cdktf-provider-github
-  pipenv install cdktf-cdktf-provider-null
+  pipenv install cdktn-provider-aws
+  pipenv install cdktn-provider-google
+  pipenv install cdktn-provider-azurerm
+  pipenv install cdktn-provider-docker
+  pipenv install cdktn-provider-github
+  pipenv install cdktn-provider-null
 
   You can also build any module or provider locally. Learn more: https://cdk.tf/modules-and-providers
 

@@ -39,7 +39,7 @@ exports.post = options => {
   if (mvn_cdktf.endsWith('.jar')) {
     writeFileSync('./build.gradle',
       readFileSync('./build.gradle', 'utf-8').replace(
-        `implementation "com.hashicorp:cdktf:${cdktf_version}"`, 
+        `implementation "io.cdktn:cdktn:${cdktf_version}"`,
         `implementation files("${mvn_cdktf}")`
       )
     );
@@ -53,10 +53,10 @@ exports.post = options => {
 function terraformCloudConfig(baseName, organizationName, workspaceName, terraformRemoteHostname) {
   template = readFileSync('./src/main/java/com/mycompany/app/Main.java', 'utf-8');
 
-  result = template.replace(`import com.hashicorp.cdktf.App;`, `import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.NamedCloudWorkspace;
-import com.hashicorp.cdktf.CloudBackend;
-import com.hashicorp.cdktf.CloudBackendConfig;`);
+  result = template.replace(`import io.cdktn.cdktn.App;`, `import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.NamedCloudWorkspace;
+import io.cdktn.cdktn.CloudBackend;
+import io.cdktn.cdktn.CloudBackendConfig;`);
   result = result.replace(`new MainStack(app, "${baseName}");`, `MainStack stack = new MainStack(app, "${baseName}");
         new CloudBackend(stack, CloudBackendConfig.builder().hostname("${terraformRemoteHostname}").organization("${organizationName}").workspaces(new NamedCloudWorkspace("${workspaceName}")).build());`);
 

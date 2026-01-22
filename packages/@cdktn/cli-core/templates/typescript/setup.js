@@ -1,2 +1,2 @@
-const cdktf = require("cdktf");
-cdktf.Testing.setupJest();
+const cdktn = require("cdktn");
+cdktn.Testing.setupJest();

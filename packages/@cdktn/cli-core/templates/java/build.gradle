@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation "com.hashicorp:cdktf:{{ cdktf_version }}"
+    implementation "io.cdktn:cdktn:{{ cdktf_version }}"
     implementation "software.constructs:constructs:{{ constructs_version }}"
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.junit.jupiter:junit-jupiter:5.8.0"

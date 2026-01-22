@@ -40,7 +40,7 @@ exports.post = options => {
   if (go_cdktf.endsWith('cdktf')) {
     const gomod = readFileSync('./go.mod', 'utf-8');
 
-    // set the version of the package to the version of the CDKTF CLI as the package itself
+    // set the version of the package to the version of the CDKTN CLI as the package itself
     // will be replaced and have no version on its own
     let result = gomod.replace(go_cdktf, `v${cdktf_version}`);
     result += `\n\nreplace github.com/open-constructs/cdk-terrain-go/cdktn => ${go_cdktf}\n`;
@@ -57,10 +57,10 @@ function terraformCloudConfig(baseName, organizationName, workspaceName, terrafo
   template = readFileSync('./main.go', 'utf-8');
 
   result = template.replace(`NewMyStack(app, "${baseName}")`, `stack := NewMyStack(app, "${baseName}")
-	cdktf.NewCloudBackend(stack, &cdktf.CloudBackendConfig{
+	cdktn.NewCloudBackend(stack, &cdktn.CloudBackendConfig{
 		Hostname:     jsii.String("${terraformRemoteHostname}"),
 		Organization: jsii.String("${organizationName}"),
-		Workspaces:   cdktf.NewNamedCloudWorkspace(jsii.String("${workspaceName}"), nil),
+		Workspaces:   cdktn.NewNamedCloudWorkspace(jsii.String("${workspaceName}"), nil),
 	})`);
 
   // add import for jsii helper used above
