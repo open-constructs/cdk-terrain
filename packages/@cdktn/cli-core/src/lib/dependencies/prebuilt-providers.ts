@@ -15,7 +15,10 @@ if (proxy) {
 }
 
 // uses https://github.com/hashicorp/cdktf-repository-manager/blob/main/provider.json
-const providersMapUrl = `https://www.cdk.tf/.well-known/prebuilt-providers.json`;
+// However, it got cleared out. We'll need to host the existing list somewhere
+// const providersMapUrl = `https://www.cdk.tf/.well-known/prebuilt-providers.json`;
+const providersMapUrl =
+  "https://raw.githubusercontent.com/cdktn-io/cdktn-repository-manager/refs/heads/main/provider.json";
 type ProvidersMap = {
   [name: string]: string;
 };
