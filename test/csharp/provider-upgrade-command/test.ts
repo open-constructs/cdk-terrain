@@ -7,12 +7,17 @@ describe("provider upgrade command", () => {
     let driver: TestDriver;
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTF_DIST: "",
         DISABLE_VERSION_CHECK: "true",
       }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-      await driver.setupCsharpProject({
-        init: { additionalOptions: "--cdktf-version 0.12.2" },
-      });
+      await driver.setupCsharpProject();
+
+      await driver.exec("dotnet", [
+        "add",
+        "package",
+        "cdktf",
+        "--version",
+        "0.12.2",
+      ]);
     }, 500_000);
 
     onPosix(
