@@ -170,7 +170,7 @@ async function getPythonPackageVersion(
 ): Promise<string | undefined> {
   let output;
   try {
-    output = await exec("pipenv", ["run", "pip", "show", "-q", packageName], {
+    output = await exec("pipenv", ["run", "pip", "show", "-qq", packageName], {
       env: process.env,
     });
   } catch (e) {
@@ -180,7 +180,7 @@ async function getPythonPackageVersion(
   // If we couldn't get the output using pipenv, try to get it using pip directly
   if (!output) {
     try {
-      output = await exec("pip", ["show", "-q", packageName], {
+      output = await exec("pip", ["show", "-qq", packageName], {
         env: process.env,
       });
     } catch (e) {
