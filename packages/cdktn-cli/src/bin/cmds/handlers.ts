@@ -553,19 +553,17 @@ export async function debug(argv: any) {
   // Ideally the provider info gathering happens in `collectDebugInformation()` but the inclusion of `CdktfConfig.read()` in @cdktn/commons causes the build to fail with "error TS5055"
   const config = CdktfConfig.read();
   const language = config.language;
-  let cdktnVersion = await getPackageVersion(language, "cdktn");
-  if (!cdktnVersion) {
-    // Fall back to cdktf version
-    cdktnVersion = await getPackageVersion(language, "cdktf");
-  }
-  if (!cdktnVersion)
+  const cdktnVersion = await getPackageVersion(language, "cdktn");
+  const cdktfVersion = await getPackageVersion(language, "cdktf");
+
+  if (!cdktnVersion && !cdktfVersion)
     throw Errors.External(
       "Could not determine cdktf/cdktn version. Please make sure you are in a directory containing a cdktn project and have all dependencies installed.",
     );
 
   const manager = new DependencyManager(
     language,
-    cdktnVersion,
+    cdktfVersion ?? cdktnVersion!,
     config.projectDirectory,
   );
   const allProviders = await manager.allProviders();
@@ -626,21 +624,19 @@ export async function providerAdd(argv: any) {
   const config = CdktfConfig.read();
   const language = config.language;
 
-  let cdktnVersion = await getPackageVersion(language, "cdktn");
-  if (!cdktnVersion) {
-    // Fall back to cdktf version
-    cdktnVersion = await getPackageVersion(language, "cdktf");
-  }
+  const cdktnVersion = await getPackageVersion(language, "cdktn");
+  const cdktfVersion = await getPackageVersion(language, "cdktf");
 
-  if (!cdktnVersion)
+  if (!cdktnVersion && !cdktfVersion)
     throw Errors.External(
       "Could not determine cdktf/cdktn version. Please make sure you are in a directory containing a cdktn project and have all dependencies installed.",
     );
+
   const needsGet = await providerAddLib({
     providers: argv.provider,
     language: language,
     projectDirectory: config.projectDirectory,
-    cdktfVersion: cdktnVersion,
+    cdktfVersion: cdktfVersion ?? cdktnVersion,
     forceLocal: argv.forceLocal,
   });
 
@@ -668,20 +664,17 @@ export async function providerUpgrade(argv: any) {
 
   const language = config.language;
 
-  let cdktnVersion = await getPackageVersion(language, "cdktn");
-  if (!cdktnVersion) {
-    // Fall back to cdktf version
-    cdktnVersion = await getPackageVersion(language, "cdktf");
-  }
+  const cdktnVersion = await getPackageVersion(language, "cdktn");
+  const cdktfVersion = await getPackageVersion(language, "cdktf");
 
-  if (!cdktnVersion)
+  if (!cdktnVersion && !cdktfVersion)
     throw Errors.External(
       "Could not determine CDKTF/CDKTN version. Please make sure you are in a directory containing a CDKTN project and have all dependencies installed.",
     );
 
   const manager = new DependencyManager(
     language,
-    cdktnVersion,
+    cdktfVersion ?? cdktnVersion!,
     config.projectDirectory,
   );
 
@@ -738,20 +731,17 @@ export async function providerList(argv: any) {
   const config = CdktfConfig.read();
   const language = config.language;
 
-  let cdktnVersion = await getPackageVersion(language, "cdktn");
-  if (!cdktnVersion) {
-    // Fall back to cdktf version
-    cdktnVersion = await getPackageVersion(language, "cdktf");
-  }
+  const cdktnVersion = await getPackageVersion(language, "cdktn");
+  const cdktfVersion = await getPackageVersion(language, "cdktf");
 
-  if (!cdktnVersion)
+  if (!cdktnVersion && !cdktfVersion)
     throw Errors.External(
       "Could not determine cdktf/cdktn version. Please make sure you are in a directory containing a cdktn project and have all dependencies installed.",
     );
 
   const manager = new DependencyManager(
     language,
-    cdktnVersion,
+    cdktfVersion ?? cdktnVersion!,
     config.projectDirectory,
   );
   const allProviders = await manager.allProviders();
