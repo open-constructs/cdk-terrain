@@ -6,13 +6,15 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      CDKTF_DIST: "",
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
     }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-    await driver.setupGoProject({
-      init: { additionalOptions: "--cdktf-version 0.13.0" },
-    });
+    await driver.setupGoProject();
+
+    await driver.exec("go", [
+      "get",
+      "github.com/hashicorp/terraform-cdk-go/cdktf@v0.13.0",
+    ]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
