@@ -8,12 +8,11 @@ describe("provider add command", () => {
     describe("pipenv", () => {
       beforeAll(async () => {
         driver = new TestDriver(__dirname, {
-          CDKTF_DIST: "",
           DISABLE_VERSION_CHECK: "true",
         }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-        await driver.setupPythonProject({
-          init: { additionalOptions: "--cdktf-version 0.10.4" },
-        });
+        await driver.setupPythonProject();
+
+        await driver.exec("pipenv", ["install", "cdktf~=0.10.4"]);
       });
 
       it("detects correct cdktf version", async () => {
@@ -42,12 +41,9 @@ describe("provider add command", () => {
     describe("pip", () => {
       beforeAll(async () => {
         driver = new TestDriver(__dirname, {
-          CDKTF_DIST: "",
           DISABLE_VERSION_CHECK: "true",
         }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-        await driver.setupPythonProject({
-          init: { additionalOptions: "--cdktf-version 0.10.4" },
-        });
+        await driver.setupPythonProject();
         // Supress warning that Pipenv is running within a virtual environment
         driver.setEnv("PIPENV_VERBOSITY", "-1");
         driver.removeFile("Pipfile");
