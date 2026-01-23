@@ -173,6 +173,11 @@ async function getPythonPackageVersion(
     output = await exec("pipenv", ["run", "pip", "show", "-qq", packageName], {
       env: process.env,
     });
+
+    // Running with `-qq` suppresses both missing packages and actual package
+    output = await exec("pipenv", ["run", "pip", "show", packageName], {
+      env: process.env,
+    });
   } catch (e) {
     logger.debug(`Unable to run 'pipenv run pip show ${packageName}': ${e}`);
   }
@@ -181,6 +186,11 @@ async function getPythonPackageVersion(
   if (!output) {
     try {
       output = await exec("pip", ["show", "-qq", packageName], {
+        env: process.env,
+      });
+
+      // Running with `-qq` suppresses both missing packages and actual package
+      output = await exec("pip", ["show", packageName], {
         env: process.env,
       });
     } catch (e) {
