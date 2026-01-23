@@ -6,13 +6,12 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      CDKTF_DIST: "",
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
     }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-    await driver.setupTypescriptProject({
-      init: { additionalOptions: "--cdktf-version 0.10.4" },
-    });
+    await driver.setupTypescriptProject();
+
+    await driver.exec("npm", ["install", "cdktf@0.10.4"]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
@@ -50,7 +49,7 @@ describe("provider list command", () => {
       );
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "@cdktn/provider-random",
+          packageName: "@cdktf/provider-random",
           packageVersion: "0.2.55",
           providerName: "random",
           providerVersion: "3.1.3",

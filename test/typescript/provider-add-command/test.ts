@@ -12,12 +12,11 @@ describe("provider add command", () => {
     let driver: TestDriver;
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTF_DIST: "",
         DISABLE_VERSION_CHECK: "true",
       }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-      await driver.setupTypescriptProject({
-        init: { additionalOptions: "--cdktf-version 0.10.4" },
-      });
+      await driver.setupTypescriptProject();
+
+      await driver.exec("npm", ["install", "cdktf@0.10.4"]);
     }, 500_000);
 
     it("detects correct cdktf version", async () => {
@@ -40,15 +39,15 @@ describe("provider add command", () => {
       expect(res.stdout).toContain(`cdktf   : 0.10.4`);
       expect(res.stdout).toContain(`Found pre-built provider.`);
       expect(res.stdout).toContain(
-        `Adding package @cdktn/provider-random @ 0.2.55`,
+        `Adding package @cdktf/provider-random @ 0.2.55`,
       );
       expect(res.stdout).toContain(
-        `Installing package @cdktn/provider-random @ 0.2.55 using npm.`,
+        `Installing package @cdktf/provider-random @ 0.2.55 using npm.`,
       );
       expect(res.stdout).toContain(`Package installed.`);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random"),
+        packageJsonWithDependency("@cdktf/provider-random"),
       );
     }, 120_000);
   });
@@ -77,7 +76,7 @@ describe("provider add command", () => {
         `);
 
         expect(res.stdout).toContain(
-          `Local providers have been updated. Running cdktf get to update...`,
+          `Local providers have been updated. Running cdktn get to update...`,
         );
 
         const genVersionsFile = JSON.parse(
@@ -108,7 +107,7 @@ describe("provider add command", () => {
               `);
 
         expect(res.stdout).toContain(
-          `Local providers have been updated. Running cdktf get to update...`,
+          `Local providers have been updated. Running cdktn get to update...`,
         );
 
         const genVersionsFile = JSON.parse(

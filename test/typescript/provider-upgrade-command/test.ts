@@ -11,13 +11,12 @@ describe("provider upgrade command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      CDKTF_DIST: "",
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
     }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-    await driver.setupTypescriptProject({
-      init: { additionalOptions: "--cdktf-version 0.10.4" },
-    });
+    await driver.setupTypescriptProject();
+
+    await driver.exec("yarn", ["add", "cdktf@0.10.4"]);
   }, 500_000);
 
   describe("pre-built", () => {
@@ -31,34 +30,34 @@ describe("provider upgrade command", () => {
 
     it("can update withing the same cdktf version to a specific version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
       );
 
       await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
       );
     });
 
     it("can update within the same cdktf version to the latest version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
       );
 
       await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
       // Assert that we have version 0.2.64
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
       );
     });
 
     it("can update withing the same cdktf version to the latest version in yarn", async () => {
       // Pin random provider version so that the upgrade can do anything
-      await driver.exec("yarn", ["add", "@cdktn/provider-random@0.2.55"]);
+      await driver.exec("yarn", ["add", "@cdktf/provider-random@0.2.55"]);
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
       );
       await driver.exec("rm", ["-rf", "node_modules"]);
       await driver.exec("rm", ["package-lock.json"]);
@@ -67,7 +66,7 @@ describe("provider upgrade command", () => {
 
       // Assert that we have version 0.2.64
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
       );
     });
   });
