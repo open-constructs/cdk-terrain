@@ -154,7 +154,8 @@ describe("prebuilt-providers", () => {
     });
   });
 
-  describe("getNpmPackageName", () => {
+  // TODO rebuild these tests when final url is known
+  describe.skip("getNpmPackageName", () => {
     it("fails when connection error", async () => {
       nock("https://www.cdk.tf/")
         .get("/.well-known/prebuilt-providers.json")
@@ -197,7 +198,7 @@ describe("prebuilt-providers", () => {
     });
   });
 
-  describe("getPrebuiltProviderVersion", () => {
+  describe.skip("getPrebuiltProviderVersion", () => {
     it("returns null on connection error with github", async () => {
       nock("https://www.cdk.tf/")
         .get("/.well-known/prebuilt-providers.json")
