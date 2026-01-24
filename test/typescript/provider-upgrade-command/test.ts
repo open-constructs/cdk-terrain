@@ -16,7 +16,7 @@ describe("provider upgrade command", () => {
     }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
     await driver.setupTypescriptProject();
 
-    await driver.exec("yarn", ["add", "cdktf@0.10.4"]);
+    await driver.exec("npm", ["install", "cdktf@0.10.4"]);
   }, 500_000);
 
   describe("pre-built", () => {
@@ -55,13 +55,17 @@ describe("provider upgrade command", () => {
 
     it("can update withing the same cdktf version to the latest version in yarn", async () => {
       // Pin random provider version so that the upgrade can do anything
-      await driver.exec("yarn", ["add", "@cdktf/provider-random@0.2.55"]);
+      await driver.exec("npm", [
+        "install",
+        "--save-exact",
+        "@cdktf/provider-random@0.2.55",
+      ]);
       expect(driver.packageJson()).toEqual(
         packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
       );
       await driver.exec("rm", ["-rf", "node_modules"]);
       await driver.exec("rm", ["package-lock.json"]);
-      await driver.exec("yarn", ["install"]); // yarn install to update the lockfile
+      await driver.exec("npm", ["install"]); // npm install to update the lockfile
       await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
       // Assert that we have version 0.2.64
