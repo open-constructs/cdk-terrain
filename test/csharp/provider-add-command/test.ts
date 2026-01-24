@@ -19,7 +19,7 @@ describe("provider add command", () => {
       await driver.exec("dotnet", [
         "add",
         "package",
-        "cdktf",
+        "HashiCorp.Cdktf",
         "--version",
         "0.12.2",
       ]);
