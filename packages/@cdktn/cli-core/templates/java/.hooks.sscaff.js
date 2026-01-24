@@ -40,7 +40,7 @@ exports.post = options => {
     writeFileSync('./build.gradle',
       readFileSync('./build.gradle', 'utf-8').replace(
         `implementation "io.cdktn:cdktn:${cdktf_version}"`,
-        `implementation files("${mvn_cdktf}")`
+        `implementation files("${mvn_cdktf.replaceAll('\\', '/')}")`
       )
     );
   }

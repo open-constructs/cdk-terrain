@@ -6,13 +6,11 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      CDKTF_DIST: "",
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
     }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-    await driver.setupJavaProject({
-      init: { additionalOptions: "--cdktf-version 0.10.4" },
-    });
+    await driver.setupJavaProject();
+    await driver.addGradleDependency("com.hashicorp:cdktf:0.10.4");
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {

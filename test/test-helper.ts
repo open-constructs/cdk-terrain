@@ -433,6 +433,18 @@ export class TestDriver {
   readLocalFile = (fileName: string): string => {
     return fs.readFileSync(path.join(this.workingDirectory, fileName), "utf8");
   };
+
+  addGradleDependency = async (dependencyString: string) => {
+    fs.writeFileSync(
+      path.join(this.workingDirectory, "./build.gradle"),
+      this.readLocalFile("./build.gradle").replace(
+        `dependencies {`,
+        `dependencies {\nimplementation "${dependencyString}"\n`,
+      ),
+    );
+
+    await this.exec(`./gradlew install`);
+  };
 }
 
 const isWindows = process.platform === "win32";
