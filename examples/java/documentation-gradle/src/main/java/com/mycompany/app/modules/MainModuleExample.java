@@ -6,9 +6,9 @@
 package com.mycompany.app.modules;
 
 // DOCS_BLOCK_START:modules-examples
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformOutputConfig;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformOutputConfig;
+import io.cdktn.cdktn.TerraformStack;
 import software.constructs.Construct;
 import imports.my_local_module.MyLocalModule;
 import imports.my_local_module.MyLocalModuleConfig;

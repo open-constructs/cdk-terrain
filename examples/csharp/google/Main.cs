@@ -9,7 +9,7 @@ using google.Provider;
 using google.ComputeNetwork;
 using google.ComputeInstance;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 
 
 namespace MyCompany.MyApp
@@ -23,7 +23,7 @@ namespace MyCompany.MyApp
             new GoogleProvider(this, "Google", new GoogleProviderConfig {
                 Region = "us-central1",
                 Zone = "us-central1-c",
-                Project = "terraform-cdk",
+                Project = "cdk-terrain",
                 Credentials = credentials
             });
 

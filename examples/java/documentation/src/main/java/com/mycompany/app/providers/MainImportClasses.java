@@ -6,10 +6,10 @@
 package com.mycompany.app.providers;
 
 // DOCS_BLOCK_START:providers-import-classes
-import com.hashicorp.cdktf.TerraformVariableConfig;
+import io.cdktn.cdktn.TerraformVariableConfig;
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformVariable;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformVariable;
 import imports.aws.instance.Instance;
 import imports.aws.instance.InstanceConfig;
 import imports.aws.provider.AwsProvider;

@@ -5,16 +5,16 @@
 
 package com.mycompany.app;
 
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.TerraformStack;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 
 import software.constructs.Construct;
 
 // DOCS_BLOCK_START:functions-usage-example
-import com.hashicorp.cdktf.Fn;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformOutputConfig;
+import io.cdktn.cdktn.Fn;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformOutputConfig;
 import imports.aws.data_aws_availability_zones.DataAwsAvailabilityZones;
 import imports.aws.data_aws_availability_zones.DataAwsAvailabilityZonesConfig;
 // DOCS_BLOCK_END:functions-usage-example

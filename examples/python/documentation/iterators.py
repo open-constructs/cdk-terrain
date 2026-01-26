@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-from cdktf import TerraformStack, Token, TerraformCount, TerraformAsset
+from cdktn import TerraformStack, Token, TerraformCount, TerraformAsset
 from constructs import Construct
 from imports.aws.provider import AwsProvider
 from imports.aws.instance import Instance
@@ -18,7 +18,7 @@ from imports.aws.route53_record import Route53Record
 
 # DOCS_BLOCK_START:iterators-define-iterators,iterators-iterators-complex-types
 from imports.aws.s3_bucket import S3Bucket
-from cdktf import TerraformIterator, TerraformVariable, TerraformLocal
+from cdktn import TerraformIterator, TerraformVariable, TerraformLocal
 # DOCS_BLOCK_END:iterators-define-iterators,iterators-iterators-complex-types
 
 

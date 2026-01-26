@@ -45,17 +45,20 @@ The specification was updated based on user-identified edge cases around depende
 3. **User Story 4**: Emphasized that local provider generation is the clean migration path with zero `cdktf` dependencies.
 
 4. **Functional Requirements**: Added FR-023 through FR-032 covering:
+
    - Provider generator clean output (no `cdktf` deps)
    - Dual dependency transitional support
    - Migration tooling (`cdktn migrate` command)
 
 5. **Edge Cases**: Expanded to cover:
+
    - Dual dependency coexistence concerns (with research items)
    - Provider dependency mixing scenarios
    - Provider generator edge cases
    - Migration tooling edge cases
 
 6. **Success Criteria**: Added SC-007 through SC-009 for:
+
    - Dual dependency synthesis
    - Clean local provider generation
    - Migration tool functionality
@@ -66,35 +69,37 @@ The specification was updated based on user-identified edge cases around depende
 
 ### Summary of Clarifications (Session 2026-01-14)
 
-| Question | Answer | Sections Updated |                                                                                                                                                    
-|----------|--------|------------------|                                                                                                                                                    
-| Config filename in Release 1 | `cdktf.json` only | FR-008, Decisions Log, Assumptions |                                                                                                   
-| Dual-dependency research approach | Pre-implementation spike | Edge Cases, Decisions Log, Assumptions |                                                                                   
-| Observability during migration | Re-use Sentry telemetry | FR-033, FR-034, Decisions Log, Assumptions |          
+| Question                          | Answer                   | Sections Updated                           |
+| --------------------------------- | ------------------------ | ------------------------------------------ |
+| Config filename in Release 1      | `cdktf.json` only        | FR-008, Decisions Log, Assumptions         |
+| Dual-dependency research approach | Pre-implementation spike | Edge Cases, Decisions Log, Assumptions     |
+| Observability during migration    | Re-use Sentry telemetry  | FR-033, FR-034, Decisions Log, Assumptions |
 
 ### Validation Summary
 
-| Category | Count | Status |
-|----------|-------|--------|
-|  Functional Requirements | 34 (FR-001 to FR-034) | All testable |
-| Success Criteria | 9 (SC-001 to SC-009) | All measurable |
-| User Stories | 5 | All have acceptance scenarios |
-| Edge Cases | 10+ specific scenarios | All documented |
-| Assumptions | 10 | All documented |
-| Decisions | 6 | All logged with alternatives  |
-| Clarifications | 3 | All integrated | 
+| Category                | Count                  | Status                        |
+| ----------------------- | ---------------------- | ----------------------------- |
+| Functional Requirements | 34 (FR-001 to FR-034)  | All testable                  |
+| Success Criteria        | 9 (SC-001 to SC-009)   | All measurable                |
+| User Stories            | 5                      | All have acceptance scenarios |
+| Edge Cases              | 10+ specific scenarios | All documented                |
+| Assumptions             | 10                     | All documented                |
+| Decisions               | 6                      | All logged with alternatives  |
+| Clarifications          | 3                      | All integrated                |
 
 ### Research Items Identified
 
 The following items MUST be investigated in a spike before main implementation (during specledger.plan phase):
 
-- [ ] JavaScript ecosystem concerns with `cdktf` + `cdktn` dual dependency coexistence
-- [ ] Symbol conflict potential between packages
-- [ ] Bundler behavior with both packages
-- [ ] JSII cross-language implications
+- [x] JavaScript ecosystem concerns with `cdktf` + `cdktn` dual dependency coexistence
+- [x] Symbol conflict potential between packages
+- [x] Bundler behavior with both packages
+- [x] JSII cross-language implications
 
 **Spike Outcome**: If fatal issues are discovered, the dual-dependency approach must be reconsidered.
 
+**Note**: These research items were addressed during the planning phase. See `research.md` for detailed findings and decisions.
+
 ---
 
-**Specification is ready for `/specledger.plan`** 
+**Specification is ready for `/specledger.plan`**

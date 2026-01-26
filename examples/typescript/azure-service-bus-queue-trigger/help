@@ -1,6 +1,6 @@
 ========================================================================================================
 
-  Your cdktf typescript project is ready!
+  Your cdktn typescript project is ready!
 
   cat help                Print this message
 
@@ -11,16 +11,16 @@
     npm run build         Compile typescript
 
   Synthesize:
-    cdktf synth [stack]   Synthesize Terraform resources from stacks to cdktf.out/ (ready for 'terraform apply')
+    cdktn synth [stack]   Synthesize Terraform resources from stacks to cdktf.out/ (ready for 'terraform apply')
 
   Diff:
-    cdktf diff [stack]    Perform a diff (terraform plan) for the given stack
+    cdktn diff [stack]    Perform a diff (terraform plan) for the given stack
 
   Deploy:
-    cdktf deploy [stack]  Deploy the given stack
+    cdktn deploy [stack]  Deploy the given stack
 
   Destroy:
-    cdktf destroy [stack] Destroy the stack
+    cdktn destroy [stack] Destroy the stack
 
   Test:
     npm run test        Runs unit tests (edit __tests__/main-test.ts to add your own tests)

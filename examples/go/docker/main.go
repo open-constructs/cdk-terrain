@@ -8,29 +8,29 @@ Starts a Docker container with an Nginx server.
 Steps:
 
 - Start Docker on your machine
-- Run `cdktf get` to generate provider bindings
+- Run `cdktn get` to generate provider bindings
 - Run `go mod tidy` to install dependencies (e.g. jsii-runtime-go)
-- Run `cdktf deploy` to run the Nginx container
+- Run `cdktn deploy` to run the Nginx container
 - Visit http://localhost:8000/ to view the Nginx default page
 - Optional: `docker ps` will show the running container
-- Destroy with `cdktf destroy`
+- Destroy with `cdktn destroy`
 
 */
 
 package main
 
 import (
-	"github.com/hashicorp/terraform-cdk/examples/go/docker/generated/kreuzwerker/docker/container"
-	"github.com/hashicorp/terraform-cdk/examples/go/docker/generated/kreuzwerker/docker/image"
-	dockerprovider "github.com/hashicorp/terraform-cdk/examples/go/docker/generated/kreuzwerker/docker/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/docker/generated/kreuzwerker/docker/container"
+	"github.com/open-constructs/cdk-terrain/examples/go/docker/generated/kreuzwerker/docker/image"
+	dockerprovider "github.com/open-constructs/cdk-terrain/examples/go/docker/generated/kreuzwerker/docker/provider"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewExampleCdktfGoDockerStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewExampleCdktfGoDockerStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 
 	dockerprovider.NewDockerProvider(stack, jsii.String("provider"), &dockerprovider.DockerProviderConfig{})
 
@@ -51,7 +51,7 @@ func NewExampleCdktfGoDockerStack(scope constructs.Construct, id string) cdktf.T
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewExampleCdktfGoDockerStack(app, "ExampleCdktfGoDockerStack")
 

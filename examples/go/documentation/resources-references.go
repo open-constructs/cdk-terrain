@@ -7,14 +7,14 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/kubernetes/deployment"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/kubernetes/namespace"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/kubernetes/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/kubernetes/deployment"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/kubernetes/namespace"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/kubernetes/provider"
 )
 
-func NewResourcesReferencesStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewResourcesReferencesStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	provider.NewKubernetesProvider(stack, jsii.String("kubernetes"), &provider.KubernetesProviderConfig{})
 

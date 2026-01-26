@@ -8,7 +8,7 @@ package com.mycompany.app;
 import java.util.*;
 import software.constructs.Construct;
 
-import com.hashicorp.cdktf.*;
+import io.cdktn.cdktn.*;
 import imports.edgeprovider.provider.*;
 import imports.edgeprovider.optional_attribute_resource.*;
 import imports.edgeprovider.list_block_resource.*;
@@ -138,7 +138,7 @@ class ReferenceStack extends TerraformStack {
     }
 }
 
-// CDKTF supports referencing inputs from providers (Terraform does not)
+// CDKTN supports referencing inputs from providers (Terraform does not)
 class ProviderStack extends TerraformStack {
     public ProviderStack(Construct scope, String id) {
         super(scope, id);

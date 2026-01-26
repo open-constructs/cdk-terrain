@@ -21,7 +21,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Check Out
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -36,7 +36,7 @@ jobs:
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Install Tools
         run: |-
           npm -g install lerna npm-check-updates@^9.0.0
@@ -100,7 +100,7 @@ jobs:
           body: |-
             Ran npm-check-updates and yarn upgrade to keep the `yarn.lock` file up-to-date.
           labels: dependencies,auto-approve,ci/run-all
-          team-reviewers: cdktf
+          team-reviewers: cdktf-maintainers
           token: ${{ secrets.TERRAFORM_CDK_PUSH_GITHUB_TOKEN }}
 
   upgradePackage:
@@ -109,24 +109,24 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     strategy:
       fail-fast: false
       matrix:
         pr: [
-            { name: "cli", packages: ["cdktf-cli", "@cdktf/cli-core"] },
-            # A dumb hack to make the resulting expansion expression work since { cdktf }
-            # searches for the literal string, whereas { cdktf, cdktf } searches for either cdktf or cdktf
-            { name: "lib", packages: ["cdktf", "cdktf"] },
+            { name: "cli", packages: ["cdktn-cli", "@cdktn/cli-core"] },
+            # A dumb hack to make the resulting expansion expression work since { cdktn }
+            # searches for the literal string, whereas { cdktn, cdktn } searches for either cdktn or cdktn
+            { name: "lib", packages: ["cdktn", "cdktn"] },
             {
               name: "util",
               packages:
                 [
-                  "@cdktf/hcl2cdk",
-                  "@cdktf/hcl2json",
-                  "@cdktf/provider-schema",
-                  "@cdktf/provider-generator",
-                  "@cdktf/commons",
+                  "@cdktn/hcl2cdk",
+                  "@cdktn/hcl2json",
+                  "@cdktn/provider-schema",
+                  "@cdktn/provider-generator",
+                  "@cdktn/commons",
                 ],
             },
             # Sometimes we are very lucky and all packages can be updated in one go
@@ -135,14 +135,14 @@ jobs:
               name: "all",
               packages:
                 [
-                  "cdktf-cli",
-                  "@cdktf/cli-core",
-                  "cdktf",
-                  "@cdktf/hcl2cdk",
-                  "@cdktf/hcl2json",
-                  "@cdktf/provider-schema",
-                  "@cdktf/provider-generator",
-                  "@cdktf/commons",
+                  "cdktn-cli",
+                  "@cdktn/cli-core",
+                  "cdktn",
+                  "@cdktn/hcl2cdk",
+                  "@cdktn/hcl2json",
+                  "@cdktn/provider-schema",
+                  "@cdktn/provider-generator",
+                  "@cdktn/commons",
                 ],
             },
           ]
@@ -160,7 +160,7 @@ jobs:
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Install Tools
         run: |-
           npm -g install lerna npm-check-updates@^9.0.0
@@ -201,7 +201,7 @@ jobs:
             ${{ join(matrix.pr.packages, '\n -')}}
 
           labels: dependencies,auto-approve
-          team-reviewers: cdktf
+          team-reviewers: cdktf-maintainers
           token: ${{ secrets.TERRAFORM_CDK_PUSH_GITHUB_TOKEN }}
           author: team-tf-cdk <github-team-tf-cdk@hashicorp.com>
 
@@ -211,7 +211,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Check Out
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -226,7 +226,7 @@ jobs:
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Install Tools
         run: |-
           npm -g install lerna npm-check-updates@^9.0.0
@@ -263,6 +263,6 @@ jobs:
             This PR updates JSII across all packages.
 
           labels: dependencies,auto-approve
-          team-reviewers: cdktf
+          team-reviewers: cdktf-maintainers
           token: ${{ secrets.TERRAFORM_CDK_PUSH_GITHUB_TOKEN }}
           author: team-tf-cdk <github-team-tf-cdk@hashicorp.com>

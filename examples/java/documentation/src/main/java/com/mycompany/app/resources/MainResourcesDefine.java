@@ -11,7 +11,7 @@ import imports.aws.data_aws_region.DataAwsRegion;
 
 // DOCS_BLOCK_START:resources-define
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.TerraformStack;
 import imports.aws.dynamodb_table.DynamodbTable;
 import imports.aws.dynamodb_table.DynamodbTableAttribute;
 import imports.aws.dynamodb_table.DynamodbTableConfig;

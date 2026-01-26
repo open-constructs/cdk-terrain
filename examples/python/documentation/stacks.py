@@ -3,7 +3,7 @@
 
 #DOCS_BLOCK_START:single-stack
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.aws.instance import Instance
 from imports.aws.provider import AwsProvider
 
@@ -28,7 +28,7 @@ app.synth
 
 #DOCS_BLOCK_START:multiple-stacks
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.aws.instance import Instance
 from imports.aws.provider import AwsProvider
 
@@ -68,7 +68,7 @@ multi_stack_app.synth
 
 #DOCS_BLOCK_START:cross-stack-reference
 from constructs import Construct
-from cdktf import App, TerraformStack, Token
+from cdktn import App, TerraformStack, Token
 from imports.aws.instance import Instance
 from imports.aws.provider import AwsProvider
 from imports.vpc import Vpc
@@ -121,7 +121,7 @@ BackendStack(cross_stack_app, "target-stack",
 cross_stack_app.synth()
 #DOCS_BLOCK_END:cross-stack-reference
 
-from cdktf import TerraformLocal, Fn
+from cdktn import TerraformLocal, Fn
 from imports.aws.provider import AwsProvider
 from imports.aws.instance import Instance
 

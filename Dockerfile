@@ -1,12 +1,15 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-FROM docker.mirror.hashicorp.services/jsii/superchain:1-bookworm-slim-node20-nightly@sha256:cd75861281b3f9d503629a87e3529026b588500a752ae60b16c5f226344de2a7
+FROM public.ecr.aws/jsii/superchain:1-bookworm-slim-node20-nightly@sha256:cd75861281b3f9d503629a87e3529026b588500a752ae60b16c5f226344de2a7
 
 USER root
 
 ARG DEFAULT_TERRAFORM_VERSION
 ARG AVAILABLE_TERRAFORM_VERSIONS
+
+# Update expired yarn GPG key
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 
 RUN apt-get update -y && apt-get install -y unzip jq build-essential time python3-venv wget
 
@@ -15,8 +18,8 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN npm install -g @sentry/cli --unsafe-perm
 # From the official gradle Dockerfile (https://github.com/keeganwitt/docker-gradle/blob/2ba84220e311de7a55f3731509dd772a885b86f8/jdk8/Dockerfile)
-ENV GRADLE_HOME /opt/gradle
-ENV GRADLE_VERSION 8.2.1
+ENV GRADLE_HOME=/opt/gradle
+ENV GRADLE_VERSION=8.2.1
 ARG GRADLE_DOWNLOAD_SHA256=03ec176d388f2aa99defcadc3ac6adf8dd2bce5145a129659537c0874dea5ad1
 RUN set -o errexit -o nounset \
     && echo "Downloading Gradle" \

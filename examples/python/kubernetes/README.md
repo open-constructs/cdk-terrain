@@ -1,6 +1,6 @@
 # python-kubernetes
 
-A CDK for Terraform application in Python to demonstrate use of the Kubernetes Provider according to the [HashiCorp Learn Guide](https://learn.hashicorp.com/terraform/kubernetes/deploy-nginx-kubernetes).
+A CDK Terrain application in Python to demonstrate use of the Kubernetes Provider according to the [HashiCorp Learn Guide](https://learn.hashicorp.com/terraform/kubernetes/deploy-nginx-kubernetes).
 
 ## Usage
 
@@ -18,10 +18,10 @@ Install project dependencies
 pipenv install
 ```
 
-Generate CDK for Terraform constructs for Terraform providers and modules used in the project.
+Generate CDK Terrain constructs for Terraform providers and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```
 
 You can now edit the `main.py` file if you want to modify any code.
@@ -29,14 +29,14 @@ You can now edit the `main.py` file if you want to modify any code.
 Compile and generate Terraform configuration
 
 ```bash
-cdktf synth
+cdktn synth
 ```
 
 The above command will create a folder called `cdktf.out` that contains all Terraform JSON configuration that was generated.
 
-Run cdktf-cli commands
+Run cdktn-cli commands
 
 ```bash
-cdktf diff
-cdktf deploy
+cdktn diff
+cdktn deploy
 ```

@@ -8,21 +8,21 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/eksnodegroup"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/eksnodegroup"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
-func NewVariablesStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewVariablesStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("eu-central-1"),
 	})
 
 	// DOCS_BLOCK_START:variables
-	imageId := cdktf.NewTerraformVariable(stack, jsii.String("imageId"), &cdktf.TerraformVariableConfig{
+	imageId := cdktn.NewTerraformVariable(stack, jsii.String("imageId"), &cdktn.TerraformVariableConfig{
 		Type:        jsii.String("string"),
 		Default:     jsii.String("ami-abcde123"),
 		Description: jsii.String("What AMI to use to create an instance"),
@@ -34,13 +34,13 @@ func NewVariablesStack(scope constructs.Construct, name string) cdktf.TerraformS
 	// DOCS_BLOCK_END:variables
 
 	// DOCS_BLOCK_START:variables-complex
-	nodeGroupConfig := cdktf.NewTerraformVariable(stack, jsii.String("node-group-config"), &cdktf.TerraformVariableConfig{
-		Type: cdktf.VariableType_Object(&map[string]*string{
-			"node_group_name": cdktf.VariableType_STRING(),
-			"instance_types":  cdktf.VariableType_List(cdktf.VariableType_STRING()),
-			"min_size":        cdktf.VariableType_NUMBER(),
-			"desired_size":    cdktf.VariableType_NUMBER(),
-			"max_size":        cdktf.VariableType_NUMBER(),
+	nodeGroupConfig := cdktn.NewTerraformVariable(stack, jsii.String("node-group-config"), &cdktn.TerraformVariableConfig{
+		Type: cdktn.VariableType_Object(&map[string]*string{
+			"node_group_name": cdktn.VariableType_STRING(),
+			"instance_types":  cdktn.VariableType_List(cdktn.VariableType_STRING()),
+			"min_size":        cdktn.VariableType_NUMBER(),
+			"desired_size":    cdktn.VariableType_NUMBER(),
+			"max_size":        cdktn.VariableType_NUMBER(),
 		}),
 		Nullable:    jsii.Bool(false),
 		Description: jsii.String("Node group configuration"),
@@ -51,17 +51,17 @@ func NewVariablesStack(scope constructs.Construct, name string) cdktf.TerraformS
 		NodeRoleArn:   jsii.String("arn:::::dummy"),
 		SubnetIds:     jsii.Strings("id-1234"),
 		NodeGroupName: jsii.String(fmt.Sprintf("${%s.node_group_name}", *nodeGroupConfig.Fqn())),
-		InstanceTypes: cdktf.Token_AsList(fmt.Sprintf("${%s.instance_types}", *nodeGroupConfig.Fqn()), &cdktf.EncodingOptions{}),
+		InstanceTypes: cdktn.Token_AsList(fmt.Sprintf("${%s.instance_types}", *nodeGroupConfig.Fqn()), &cdktn.EncodingOptions{}),
 		ScalingConfig: &eksnodegroup.EksNodeGroupScalingConfig{
-			DesiredSize: cdktf.Token_AsNumber(fmt.Sprintf("${%s.desired_size}", *nodeGroupConfig.Fqn())),
-			MinSize:     cdktf.Token_AsNumber(fmt.Sprintf("${%s.min_size}", *nodeGroupConfig.Fqn())),
-			MaxSize:     cdktf.Token_AsNumber(fmt.Sprintf("${%s.max_size}", *nodeGroupConfig.Fqn())),
+			DesiredSize: cdktn.Token_AsNumber(fmt.Sprintf("${%s.desired_size}", *nodeGroupConfig.Fqn())),
+			MinSize:     cdktn.Token_AsNumber(fmt.Sprintf("${%s.min_size}", *nodeGroupConfig.Fqn())),
+			MaxSize:     cdktn.Token_AsNumber(fmt.Sprintf("${%s.max_size}", *nodeGroupConfig.Fqn())),
 		},
 	})
 	// DOCS_BLOCK_END:variables-complex
 
 	// DOCS_BLOCK_START:locals
-	commonTags := cdktf.NewTerraformLocal(stack, jsii.String("common_tags"), map[string]string{
+	commonTags := cdktn.NewTerraformLocal(stack, jsii.String("common_tags"), map[string]string{
 		"Service": "service_name",
 		"Owner":   "owner",
 	})

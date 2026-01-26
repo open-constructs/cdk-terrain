@@ -7,21 +7,21 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
-func RemoteStateDataSourceStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func RemoteStateDataSourceStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("eu-central-1"),
 	})
 
-	remote_state := cdktf.NewDataTerraformRemoteState(stack, jsii.String("remote_state"), &cdktf.DataTerraformRemoteStateRemoteConfig{
+	remote_state := cdktn.NewDataTerraformRemoteState(stack, jsii.String("remote_state"), &cdktn.DataTerraformRemoteStateRemoteConfig{
 		Organization: jsii.String("hashicorp"),
-		Workspaces:   cdktf.NewNamedRemoteWorkspace(jsii.String("vpc-prod")),
+		Workspaces:   cdktn.NewNamedRemoteWorkspace(jsii.String("vpc-prod")),
 	})
 
 	instance.NewInstance(stack, jsii.String("region"), &instance.InstanceConfig{

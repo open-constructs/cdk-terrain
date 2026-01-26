@@ -9,7 +9,7 @@ import { AwsProvider } from "./.gen/providers/aws/provider";
 
 // DOCS_BLOCK_START:constructs,constructs-scope
 import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 // DOCS_BLOCK_END:constructs,constructs-scope
 // DOCS_BLOCK_START:constructs
 import { KubernetesWebAppDeployment } from "./constructs/kubernetes-web-app-deployment";

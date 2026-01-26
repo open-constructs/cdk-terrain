@@ -7,7 +7,7 @@ import {
   TerraformStack,
   TerraformVariable,
   Testing,
-} from "cdktf";
+} from "cdktn";
 import * as Aws from "./.gen/providers/aws";
 import * as Nomad from "./.gen/providers/nomad";
 import * as Kubernetes from "./.gen/providers/kubernetes";

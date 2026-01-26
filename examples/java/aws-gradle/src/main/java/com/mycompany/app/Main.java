@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformStack;
 
 import imports.aws.provider.AwsProvider;
 import imports.aws.data_aws_region.DataAwsRegion;

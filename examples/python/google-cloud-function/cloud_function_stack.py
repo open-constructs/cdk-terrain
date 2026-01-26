@@ -4,7 +4,7 @@
 import os
 
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput, TerraformAsset, AssetType
+from cdktn import App, TerraformStack, TerraformOutput, TerraformAsset, AssetType
 
 from imports.google.provider import GoogleProvider
 from imports.google.cloudfunctions_function_iam_binding import CloudfunctionsFunctionIamBinding

@@ -1,4 +1,4 @@
-# cdktf and terraform ignores
+# cdktn and terraform ignores
 .terraform
 cdktf.out
 terraform.tfstate*

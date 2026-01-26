@@ -5,16 +5,16 @@
 
 package com.mycompany.app.aspects;
 
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.Annotations;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.Annotations;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 import imports.aws.s3_bucket.S3BucketConfig;
 import org.jetbrains.annotations.NotNull;
 import software.constructs.Construct;
 import software.constructs.IConstruct;
-import com.hashicorp.cdktf.Aspects;
-import com.hashicorp.cdktf.IAspect;
+import io.cdktn.cdktn.Aspects;
+import io.cdktn.cdktn.IAspect;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

@@ -9,7 +9,7 @@ jobs:
   depcheck:
     runs-on: ubuntu-latest
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     env:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
@@ -17,15 +17,15 @@ jobs:
       fail-fast: false
       matrix:
         package: [
-            cdktf,
-            # cdktf-cli,
-            "@cdktf/hcl2json",
-            "@cdktf/hcl2cdk",
-            "@cdktf/hcl-tools",
-            "@cdktf/provider-schema",
-            "@cdktf/provider-generator",
-            "@cdktf/commons",
-            # "@cdktf/cli-core",
+            cdktn,
+            # cdktn-cli,
+            "@cdktn/hcl2json",
+            "@cdktn/hcl2cdk",
+            "@cdktn/hcl-tools",
+            "@cdktn/provider-schema",
+            "@cdktn/provider-generator",
+            "@cdktn/commons",
+            # "@cdktn/cli-core",
           ]
 
     steps:

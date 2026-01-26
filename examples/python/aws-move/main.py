@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 import os
 from imports.aws.provider import AwsProvider
 from imports.aws.s3_bucket import S3Bucket

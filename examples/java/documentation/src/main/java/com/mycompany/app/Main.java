@@ -5,8 +5,8 @@
 
 package com.mycompany.app;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
 import com.mycompany.app.assets.MyAssetStack;
 import com.mycompany.app.aspects.MainAspects;
 import com.mycompany.app.constructs.MainConstructScope;

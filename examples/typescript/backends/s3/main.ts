@@ -6,7 +6,7 @@ import {
   TerraformStack,
   S3Backend,
   DataTerraformRemoteStateS3,
-} from "cdktf";
+} from "cdktn";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { DataAwsS3BucketObject } from "./.gen/providers/aws/data-aws-s3-bucket-object";
 

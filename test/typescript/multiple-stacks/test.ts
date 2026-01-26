@@ -69,11 +69,11 @@ describe("multiple stacks", () => {
 
     // completions for stacks relies on a manifest.json being present
     // so this test must be run after something that synthesizes and
-    // thus writes a Manifest (like e.g. cdktf list)
+    // thus writes a Manifest (like e.g. cdktn list)
     test("shell completions complete stacks", async () => {
-      const { stdout, stderr } = await driver.exec("cdktf", [
+      const { stdout, stderr } = await driver.exec("cdktn", [
         "--get-yargs-completions",
-        "cdktf",
+        "cdktn",
         "diff",
       ]);
 
@@ -89,7 +89,7 @@ describe("multiple stacks", () => {
       );
 
       expect(driver.deploy()).rejects.toThrowError(
-        "Found more than one stack, please specify a target stack. Run cdktf deploy <stack> with one of these stacks: first, second",
+        "Found more than one stack, please specify a target stack. Run cdktn deploy <stack> with one of these stacks: first, second",
       );
     });
 
@@ -99,7 +99,7 @@ describe("multiple stacks", () => {
       );
 
       expect(() => driver.destroy()).toThrowError(
-        "Found more than one stack, please specify a target stack. Run cdktf destroy <stack> with one of these stacks: first, second",
+        "Found more than one stack, please specify a target stack. Run cdktn destroy <stack> with one of these stacks: first, second",
       );
     });
   });

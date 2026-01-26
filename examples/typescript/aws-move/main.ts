@@ -4,7 +4,7 @@
  */
 
 import { Construct } from "constructs";
-import { App, TerraformStack, TerraformIterator } from "cdktf";
+import { App, TerraformStack, TerraformIterator } from "cdktn";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { S3Bucket } from "./.gen/providers/aws/s3-bucket";
 

@@ -22,12 +22,12 @@ import { Documentation, Language } from "jsii-docgen";
     );
   }
 
-  const sourceFolder = path.resolve(rootFolder, "packages", "cdktf");
+  const sourceFolder = path.resolve(rootFolder, "packages", "cdktn");
   if (!fs.existsSync(sourceFolder)) {
     throw new Error(
       "Expected " +
         sourceFolder +
-        " to be the source directory of the cdktf package, but it does not exist"
+        " to be the source directory of the cdktn package, but it does not exist"
     );
   }
 
@@ -35,7 +35,7 @@ import { Documentation, Language } from "jsii-docgen";
     rootFolder,
     "website",
     "docs",
-    "cdktf",
+    "cdktn",
     "api-reference"
   );
   if (!fs.existsSync(targetFolder)) {

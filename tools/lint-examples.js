@@ -53,7 +53,7 @@ const exampleProjects = collectCdktfOrExampleProjectDirs(
   path.resolve(REPO_ROOT, "examples"),
 ).map((p) => p.replace(REPO_ROOT + "/", ""));
 
-// e.g. [{ name: '@examples/typescript-google-cloud-run', location: '/Users/ansgar/projects/hashicorp/terraform-cdk/examples/typescript/google-cloudrun'}]
+// e.g. [{ name: '@examples/typescript-google-cloud-run', location: '/Users/ansgar/projects/open-constructs/cdk-terrain/examples/typescript/google-cloudrun'}]
 // (also includes version and private for each package)
 const knownToLerna = JSON.parse(exec("npx lerna list --all --json").toString());
 

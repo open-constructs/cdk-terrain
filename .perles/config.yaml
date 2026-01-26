@@ -1,0 +1,84 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+# Perles Configuration
+
+# Path to beads database directory (default: current directory)
+# beads_dir: /path/to/project
+
+# Auto-refresh when database changes
+auto_refresh: true
+auto_refresh_debounce: 1s
+
+# UI settings
+ui:
+  show_counts: true # Show issue counts in column headers
+  show_status_bar: true # Show status bar at bottom
+
+# Theme configuration
+# Use a preset theme or customize individual colors
+theme:
+  # Use a preset (run 'perles themes' to see available presets):
+  # preset: catppuccin-mocha
+  #
+  # Available presets:
+  #   default           - Default perles theme
+  #   catppuccin-mocha  - Warm, cozy dark theme
+  #   catppuccin-latte  - Warm, cozy light theme
+  #   dracula           - Dark theme with vibrant colors
+  #   nord              - Arctic, north-bluish palette
+  #   high-contrast     - High contrast for accessibility
+  #
+  # Override specific colors (works with or without preset):
+  # colors:
+  #   text.primary: "#FFFFFF"
+  #   status.error: "#FF0000"
+  #   priority.critical: "#FF5555"
+  #
+  # See all available color tokens with 'perles themes --help' or docs
+
+# Board views - each view is a named collection of columns
+# Cycle through views with Shift+J (next) and Shift+K (previous)
+views:
+  - name: Default
+    columns:
+      - name: Blocked
+        type: bql
+        query: "status = open and blocked = true"
+        color: "#FF8787"
+
+      - name: Ready
+        type: bql
+        query: "status = open and ready = true"
+        color: "#73F59F"
+
+      - name: In Progress
+        type: bql
+        query: "status = in_progress"
+        color: "#54A0FF"
+
+      - name: Closed
+        type: bql
+        query: "status = closed"
+        color: "#BBBBBB"
+# View options:
+#   name: Display name for the view (required)
+#   columns: List of columns for this view (required)
+#
+# Column options:
+#   name: Display name (required)
+#   type: bql or tree
+#   query: BQL query (required when type is bql) - see BQL syntax below
+#   issue_id: Issue Id (required when type is tree)
+#   tree_mode: deps or child (optional when type is tree)
+#   color: Hex color for column header
+#
+# BQL Query Syntax:
+#   Fields: type, priority, status, blocked, ready, label, title, id, created, updated
+#   Operators: = != < > <= >= ~ (contains) in not-in
+#   Examples:
+#     status = open
+#     type = bug and priority = P0
+#     blocked = true
+#     label in (urgent, critical)
+#     title ~ auth

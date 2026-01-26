@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, Fn, TerraformStack } from "cdktf";
+import { App, Fn, TerraformStack } from "cdktn";
 import { Deployment } from "./.gen/providers/kubernetes/deployment";
 import { KubernetesProvider } from "./.gen/providers/kubernetes/provider";
 import { Service } from "./.gen/providers/kubernetes/service";
@@ -137,7 +137,7 @@ class EksClusterStack extends TerraformStack {
       ],
 
       tags: {
-        githubRepo: "hashicorp/terraform-cdk",
+        githubRepo: "open-constructs/cdk-terrain",
       },
     });
 

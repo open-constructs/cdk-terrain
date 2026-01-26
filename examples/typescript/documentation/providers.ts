@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // DOCS_BLOCK_START:providers-import,providers-import-classes
 import { Construct } from "constructs";
-import { TerraformStack, TerraformVariable, Token } from "cdktf";
+import { TerraformStack, TerraformVariable, Token } from "cdktn";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { Instance } from "./.gen/providers/aws/instance";
 // DOCS_BLOCK_END:providers-import,providers-import-classes

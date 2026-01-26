@@ -1,6 +1,6 @@
 # python-ucloud
 
-A CDK for Terraform application in Python.
+A CDK Terrain application in Python.
 
 ## Usage
 
@@ -18,22 +18,22 @@ Install project dependencies
 pipenv install
 ```
 
-Generate CDK for Terraform constructs for Terraform providers and modules used in the project.
+Generate CDK Terrain constructs for Terraform providers and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```
 
 You can now edit the `main.py` file if you want to modify any code.
 
 ```bash
-cdktf synth
+cdktn synth
 ```
 
 The above command will create a folder called `cdktf.out` that contains all Terraform JSON configuration that was generated.
 
 ```bash
-cdktf deploy
+cdktn deploy
 ```
 
 Deploy the stack!

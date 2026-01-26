@@ -18,7 +18,7 @@ describe("provider add command", () => {
     onPosix(
       "adds local provider on posix",
       async () => {
-        const res = await driver.exec("cdktf", [
+        const res = await driver.exec("cdktn", [
           "provider",
           "add",
           "local@=2.2.3",
@@ -33,7 +33,7 @@ describe("provider add command", () => {
         `);
 
         expect(res.stdout).toContain(
-          `Local providers have been updated. Running cdktf get to update...`,
+          `Local providers have been updated. Running cdktn get to update...`,
         );
 
         // This file currently is only created for TypeScript targets
@@ -52,7 +52,7 @@ describe("provider add command", () => {
     onWindows(
       "adds local provider on windows",
       async () => {
-        const res = await driver.exec("cdktf", [
+        const res = await driver.exec("cdktn", [
           "provider",
           "add",
           "local@=2.2.3",
@@ -67,7 +67,7 @@ describe("provider add command", () => {
               `);
 
         expect(res.stdout).toContain(
-          `Local providers have been updated. Running cdktf get to update...`,
+          `Local providers have been updated. Running cdktn get to update...`,
         );
 
         const genVersionsFile = JSON.parse(
@@ -86,21 +86,23 @@ describe("provider add command", () => {
 
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTF_DIST: "",
         DISABLE_VERSION_CHECK: "true",
       }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-      await driver.setupGoProject({
-        init: { additionalOptions: "--cdktf-version 0.13.0" },
-      });
+      await driver.setupGoProject();
+
+      await driver.exec("go", [
+        "get",
+        "github.com/hashicorp/terraform-cdk-go/cdktf@v0.13.0",
+      ]);
     });
 
     it("detects correct cdktf version", async () => {
-      const res = await driver.exec("cdktf", ["debug"]);
+      const res = await driver.exec("cdktn", ["debug"]);
       expect(res.stdout).toContain("cdktf: 0.13.0");
     });
 
     test("installs pre-built provider using go get", async () => {
-      const res = await driver.exec("cdktf", [
+      const res = await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.4.3", // this won't always be the latest version, but theres v3.0.11 of the pre-built provider resulting in exactly this package

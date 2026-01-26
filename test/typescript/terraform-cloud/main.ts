@@ -9,7 +9,7 @@ import {
   TerraformOutput,
   CloudBackend,
   NamedCloudWorkspace,
-} from "cdktf";
+} from "cdktn";
 import * as NullProvider from "./.gen/providers/null";
 import * as local from "./.gen/providers/local";
 import * as random from "./.gen/providers/random";

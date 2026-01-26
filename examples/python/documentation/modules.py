@@ -1,11 +1,11 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-from cdktf import TerraformHclModule
+from cdktn import TerraformHclModule
 
 # DOCS_BLOCK_START:modules-install-modules
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.aws.provider import AwsProvider
 from imports.vpc import Vpc
 
@@ -72,7 +72,7 @@ DOCS_BLOCK_END:modules-create-modules
 
 # DOCS_BLOCK_START:modules-examples
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput
+from cdktn import App, TerraformStack, TerraformOutput
 # This module can come from a registry or through a local / remote reference
 from imports.my_local_module import MyLocalModule
 

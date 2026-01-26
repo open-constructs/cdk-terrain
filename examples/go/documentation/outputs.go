@@ -8,17 +8,17 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
 type OutputsStackConfig struct {
 	MyDomain string
 }
 
-func NewOutputsStack(scope constructs.Construct, name string, config OutputsStackConfig) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewOutputsStack(scope constructs.Construct, name string, config OutputsStackConfig) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
-	cdktf.NewTerraformOutput(stack, jsii.String("my-domain"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("my-domain"), &cdktn.TerraformOutputConfig{
 		Value: &config.MyDomain,
 	})
 
@@ -35,7 +35,7 @@ DOCS_BLOCK_END:outputs
 */
 func SynthOutputs() {
 	// DOCS_BLOCK_START:outputs
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewOutputsStack(app, "outputs", OutputsStackConfig{
 		MyDomain: "example.com",

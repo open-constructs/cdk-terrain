@@ -1,0 +1,2901 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`generate provider 1`] = `
+"// https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface AwsProviderConfig {
+  /**
+  * The access key for API operations. You can retrieve this
+  * from the 'Security & Credentials' section of the AWS console.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#access_key AwsProvider#access_key}
+  */
+  readonly accessKey?: string;
+  /**
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#allowed_account_ids AwsProvider#allowed_account_ids}
+  */
+  readonly allowedAccountIds?: string[];
+  /**
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#forbidden_account_ids AwsProvider#forbidden_account_ids}
+  */
+  readonly forbiddenAccountIds?: string[];
+  /**
+  * Explicitly allow the provider to perform "insecure" SSL requests. If omitted,default value is \`false\`
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#insecure AwsProvider#insecure}
+  */
+  readonly insecure?: boolean | cdktn.IResolvable;
+  /**
+  * The maximum number of times an AWS API request is
+  * being executed. If the API request still fails, an error is
+  * thrown.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#max_retries AwsProvider#max_retries}
+  */
+  readonly maxRetries?: number;
+  /**
+  * The profile for API operations. If not set, the default profile
+  * created with \`aws configure\` will be used.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#profile AwsProvider#profile}
+  */
+  readonly profile?: string;
+  /**
+  * The region where AWS operations will take place. Examples
+  * are us-east-1, us-west-2, etc.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#region AwsProvider#region}
+  */
+  readonly region: string;
+  /**
+  * Set this to true to force the request to use path-style addressing,
+  * i.e., http://s3.amazonaws.com/BUCKET/KEY. By default, the S3 client will
+  * use virtual hosted bucket addressing when possible
+  * (http://BUCKET.s3.amazonaws.com/KEY). Specific to the Amazon S3 service.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#s3_force_path_style AwsProvider#s3_force_path_style}
+  */
+  readonly s3ForcePathStyle?: boolean | cdktn.IResolvable;
+  /**
+  * The secret key for API operations. You can retrieve this
+  * from the 'Security & Credentials' section of the AWS console.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#secret_key AwsProvider#secret_key}
+  */
+  readonly secretKey?: string;
+  /**
+  * The path to the shared credentials file. If not set
+  * this defaults to ~/.aws/credentials.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#shared_credentials_file AwsProvider#shared_credentials_file}
+  */
+  readonly sharedCredentialsFile?: string;
+  /**
+  * Skip the credentials validation via STS API. Used for AWS API implementations that do not have STS available/implemented.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#skip_credentials_validation AwsProvider#skip_credentials_validation}
+  */
+  readonly skipCredentialsValidation?: boolean | cdktn.IResolvable;
+  /**
+  * Skip getting the supported EC2 platforms. Used by users that don't have ec2:DescribeAccountAttributes permissions.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#skip_get_ec2_platforms AwsProvider#skip_get_ec2_platforms}
+  */
+  readonly skipGetEc2Platforms?: boolean | cdktn.IResolvable;
+  /**
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#skip_metadata_api_check AwsProvider#skip_metadata_api_check}
+  */
+  readonly skipMetadataApiCheck?: boolean | cdktn.IResolvable;
+  /**
+  * Skip static validation of region name. Used by users of alternative AWS-like APIs or users w/ access to regions that are not public (yet).
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#skip_region_validation AwsProvider#skip_region_validation}
+  */
+  readonly skipRegionValidation?: boolean | cdktn.IResolvable;
+  /**
+  * Skip requesting the account ID. Used for AWS API implementations that do not have IAM/STS API and/or metadata API.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#skip_requesting_account_id AwsProvider#skip_requesting_account_id}
+  */
+  readonly skipRequestingAccountId?: boolean | cdktn.IResolvable;
+  /**
+  * session token. A session token is only required if you are
+  * using temporary security credentials.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#token AwsProvider#token}
+  */
+  readonly token?: string;
+  /**
+  * Alias name
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#alias AwsProvider#alias}
+  */
+  readonly alias?: string;
+  /**
+  * assume_role block
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#assume_role AwsProvider#assume_role}
+  */
+  readonly assumeRole?: AwsProviderAssumeRole;
+  /**
+  * endpoints block
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#endpoints AwsProvider#endpoints}
+  */
+  readonly endpoints?: AwsProviderEndpoints[] | cdktn.IResolvable;
+  /**
+  * ignore_tags block
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ignore_tags AwsProvider#ignore_tags}
+  */
+  readonly ignoreTags?: AwsProviderIgnoreTags;
+}
+export interface AwsProviderAssumeRole {
+  /**
+  * The external ID to use when assuming the role. If omitted, no external ID is passed to the AssumeRole call.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#external_id AwsProvider#external_id}
+  */
+  readonly externalId?: string;
+  /**
+  * The permissions applied when assuming a role. You cannot use, this policy to grant further permissions that are in excess to those of the,  role that is being assumed.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#policy AwsProvider#policy}
+  */
+  readonly policy?: string;
+  /**
+  * The ARN of an IAM role to assume prior to making API calls.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#role_arn AwsProvider#role_arn}
+  */
+  readonly roleArn?: string;
+  /**
+  * The session name to use when assuming the role. If omitted, no session name is passed to the AssumeRole call.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#session_name AwsProvider#session_name}
+  */
+  readonly sessionName?: string;
+}
+
+export function awsProviderAssumeRoleToTerraform(struct?: AwsProviderAssumeRole): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  return {
+    external_id: cdktn.stringToTerraform(struct!.externalId),
+    policy: cdktn.stringToTerraform(struct!.policy),
+    role_arn: cdktn.stringToTerraform(struct!.roleArn),
+    session_name: cdktn.stringToTerraform(struct!.sessionName),
+  }
+}
+
+
+export function awsProviderAssumeRoleToHclTerraform(struct?: AwsProviderAssumeRole): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  const attrs = {
+    external_id: {
+      value: cdktn.stringToHclTerraform(struct!.externalId),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    policy: {
+      value: cdktn.stringToHclTerraform(struct!.policy),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    role_arn: {
+      value: cdktn.stringToHclTerraform(struct!.roleArn),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    session_name: {
+      value: cdktn.stringToHclTerraform(struct!.sessionName),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+  };
+
+  // remove undefined attributes
+  return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined));
+}
+
+export interface AwsProviderEndpoints {
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#accessanalyzer AwsProvider#accessanalyzer}
+  */
+  readonly accessanalyzer?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#acm AwsProvider#acm}
+  */
+  readonly acm?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#acmpca AwsProvider#acmpca}
+  */
+  readonly acmpca?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#amplify AwsProvider#amplify}
+  */
+  readonly amplify?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#apigateway AwsProvider#apigateway}
+  */
+  readonly apigateway?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#applicationautoscaling AwsProvider#applicationautoscaling}
+  */
+  readonly applicationautoscaling?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#applicationinsights AwsProvider#applicationinsights}
+  */
+  readonly applicationinsights?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#appmesh AwsProvider#appmesh}
+  */
+  readonly appmesh?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#appstream AwsProvider#appstream}
+  */
+  readonly appstream?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#appsync AwsProvider#appsync}
+  */
+  readonly appsync?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#athena AwsProvider#athena}
+  */
+  readonly athena?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#autoscaling AwsProvider#autoscaling}
+  */
+  readonly autoscaling?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#autoscalingplans AwsProvider#autoscalingplans}
+  */
+  readonly autoscalingplans?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#backup AwsProvider#backup}
+  */
+  readonly backup?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#batch AwsProvider#batch}
+  */
+  readonly batch?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#budgets AwsProvider#budgets}
+  */
+  readonly budgets?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloud9 AwsProvider#cloud9}
+  */
+  readonly cloud9?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudformation AwsProvider#cloudformation}
+  */
+  readonly cloudformation?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudfront AwsProvider#cloudfront}
+  */
+  readonly cloudfront?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudhsm AwsProvider#cloudhsm}
+  */
+  readonly cloudhsm?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudsearch AwsProvider#cloudsearch}
+  */
+  readonly cloudsearch?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudtrail AwsProvider#cloudtrail}
+  */
+  readonly cloudtrail?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudwatch AwsProvider#cloudwatch}
+  */
+  readonly cloudwatch?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudwatchevents AwsProvider#cloudwatchevents}
+  */
+  readonly cloudwatchevents?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cloudwatchlogs AwsProvider#cloudwatchlogs}
+  */
+  readonly cloudwatchlogs?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#codebuild AwsProvider#codebuild}
+  */
+  readonly codebuild?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#codecommit AwsProvider#codecommit}
+  */
+  readonly codecommit?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#codedeploy AwsProvider#codedeploy}
+  */
+  readonly codedeploy?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#codepipeline AwsProvider#codepipeline}
+  */
+  readonly codepipeline?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cognitoidentity AwsProvider#cognitoidentity}
+  */
+  readonly cognitoidentity?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cognitoidp AwsProvider#cognitoidp}
+  */
+  readonly cognitoidp?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#configservice AwsProvider#configservice}
+  */
+  readonly configservice?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#cur AwsProvider#cur}
+  */
+  readonly cur?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#dataexchange AwsProvider#dataexchange}
+  */
+  readonly dataexchange?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#datapipeline AwsProvider#datapipeline}
+  */
+  readonly datapipeline?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#datasync AwsProvider#datasync}
+  */
+  readonly datasync?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#dax AwsProvider#dax}
+  */
+  readonly dax?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#devicefarm AwsProvider#devicefarm}
+  */
+  readonly devicefarm?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#directconnect AwsProvider#directconnect}
+  */
+  readonly directconnect?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#dlm AwsProvider#dlm}
+  */
+  readonly dlm?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#dms AwsProvider#dms}
+  */
+  readonly dms?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#docdb AwsProvider#docdb}
+  */
+  readonly docdb?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ds AwsProvider#ds}
+  */
+  readonly ds?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#dynamodb AwsProvider#dynamodb}
+  */
+  readonly dynamodb?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ec2 AwsProvider#ec2}
+  */
+  readonly ec2?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ecr AwsProvider#ecr}
+  */
+  readonly ecr?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ecs AwsProvider#ecs}
+  */
+  readonly ecs?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#efs AwsProvider#efs}
+  */
+  readonly efs?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#eks AwsProvider#eks}
+  */
+  readonly eks?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#elasticache AwsProvider#elasticache}
+  */
+  readonly elasticache?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#elasticbeanstalk AwsProvider#elasticbeanstalk}
+  */
+  readonly elasticbeanstalk?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#elastictranscoder AwsProvider#elastictranscoder}
+  */
+  readonly elastictranscoder?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#elb AwsProvider#elb}
+  */
+  readonly elb?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#emr AwsProvider#emr}
+  */
+  readonly emr?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#es AwsProvider#es}
+  */
+  readonly es?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#firehose AwsProvider#firehose}
+  */
+  readonly firehose?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#fms AwsProvider#fms}
+  */
+  readonly fms?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#forecast AwsProvider#forecast}
+  */
+  readonly forecast?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#fsx AwsProvider#fsx}
+  */
+  readonly fsx?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#gamelift AwsProvider#gamelift}
+  */
+  readonly gamelift?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#glacier AwsProvider#glacier}
+  */
+  readonly glacier?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#globalaccelerator AwsProvider#globalaccelerator}
+  */
+  readonly globalaccelerator?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#glue AwsProvider#glue}
+  */
+  readonly glue?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#greengrass AwsProvider#greengrass}
+  */
+  readonly greengrass?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#guardduty AwsProvider#guardduty}
+  */
+  readonly guardduty?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#iam AwsProvider#iam}
+  */
+  readonly iam?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#imagebuilder AwsProvider#imagebuilder}
+  */
+  readonly imagebuilder?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#inspector AwsProvider#inspector}
+  */
+  readonly inspector?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#iot AwsProvider#iot}
+  */
+  readonly iot?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#iotanalytics AwsProvider#iotanalytics}
+  */
+  readonly iotanalytics?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#iotevents AwsProvider#iotevents}
+  */
+  readonly iotevents?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#kafka AwsProvider#kafka}
+  */
+  readonly kafka?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#kinesis AwsProvider#kinesis}
+  */
+  readonly kinesis?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#kinesis_analytics AwsProvider#kinesis_analytics}
+  */
+  readonly kinesisAnalytics?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#kinesisanalytics AwsProvider#kinesisanalytics}
+  */
+  readonly kinesisanalytics?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#kinesisvideo AwsProvider#kinesisvideo}
+  */
+  readonly kinesisvideo?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#kms AwsProvider#kms}
+  */
+  readonly kms?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#lakeformation AwsProvider#lakeformation}
+  */
+  readonly lakeformation?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#lambda AwsProvider#lambda}
+  */
+  readonly lambda?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#lexmodels AwsProvider#lexmodels}
+  */
+  readonly lexmodels?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#licensemanager AwsProvider#licensemanager}
+  */
+  readonly licensemanager?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#lightsail AwsProvider#lightsail}
+  */
+  readonly lightsail?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#macie AwsProvider#macie}
+  */
+  readonly macie?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#managedblockchain AwsProvider#managedblockchain}
+  */
+  readonly managedblockchain?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#marketplacecatalog AwsProvider#marketplacecatalog}
+  */
+  readonly marketplacecatalog?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#mediaconnect AwsProvider#mediaconnect}
+  */
+  readonly mediaconnect?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#mediaconvert AwsProvider#mediaconvert}
+  */
+  readonly mediaconvert?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#medialive AwsProvider#medialive}
+  */
+  readonly medialive?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#mediapackage AwsProvider#mediapackage}
+  */
+  readonly mediapackage?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#mediastore AwsProvider#mediastore}
+  */
+  readonly mediastore?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#mediastoredata AwsProvider#mediastoredata}
+  */
+  readonly mediastoredata?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#mq AwsProvider#mq}
+  */
+  readonly mq?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#neptune AwsProvider#neptune}
+  */
+  readonly neptune?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#opsworks AwsProvider#opsworks}
+  */
+  readonly opsworks?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#organizations AwsProvider#organizations}
+  */
+  readonly organizations?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#personalize AwsProvider#personalize}
+  */
+  readonly personalize?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#pinpoint AwsProvider#pinpoint}
+  */
+  readonly pinpoint?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#pricing AwsProvider#pricing}
+  */
+  readonly pricing?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#qldb AwsProvider#qldb}
+  */
+  readonly qldb?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#quicksight AwsProvider#quicksight}
+  */
+  readonly quicksight?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#r53 AwsProvider#r53}
+  */
+  readonly r53?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ram AwsProvider#ram}
+  */
+  readonly ram?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#rds AwsProvider#rds}
+  */
+  readonly rds?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#redshift AwsProvider#redshift}
+  */
+  readonly redshift?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#resourcegroups AwsProvider#resourcegroups}
+  */
+  readonly resourcegroups?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#route53 AwsProvider#route53}
+  */
+  readonly route53?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#route53domains AwsProvider#route53domains}
+  */
+  readonly route53Domains?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#route53resolver AwsProvider#route53resolver}
+  */
+  readonly route53Resolver?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#s3 AwsProvider#s3}
+  */
+  readonly s3?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#s3control AwsProvider#s3control}
+  */
+  readonly s3Control?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#sagemaker AwsProvider#sagemaker}
+  */
+  readonly sagemaker?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#sdb AwsProvider#sdb}
+  */
+  readonly sdb?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#secretsmanager AwsProvider#secretsmanager}
+  */
+  readonly secretsmanager?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#securityhub AwsProvider#securityhub}
+  */
+  readonly securityhub?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#serverlessrepo AwsProvider#serverlessrepo}
+  */
+  readonly serverlessrepo?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#servicecatalog AwsProvider#servicecatalog}
+  */
+  readonly servicecatalog?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#servicediscovery AwsProvider#servicediscovery}
+  */
+  readonly servicediscovery?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#servicequotas AwsProvider#servicequotas}
+  */
+  readonly servicequotas?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ses AwsProvider#ses}
+  */
+  readonly ses?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#shield AwsProvider#shield}
+  */
+  readonly shield?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#sns AwsProvider#sns}
+  */
+  readonly sns?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#sqs AwsProvider#sqs}
+  */
+  readonly sqs?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#ssm AwsProvider#ssm}
+  */
+  readonly ssm?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#stepfunctions AwsProvider#stepfunctions}
+  */
+  readonly stepfunctions?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#storagegateway AwsProvider#storagegateway}
+  */
+  readonly storagegateway?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#sts AwsProvider#sts}
+  */
+  readonly sts?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#swf AwsProvider#swf}
+  */
+  readonly swf?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#transfer AwsProvider#transfer}
+  */
+  readonly transfer?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#waf AwsProvider#waf}
+  */
+  readonly waf?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#wafregional AwsProvider#wafregional}
+  */
+  readonly wafregional?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#wafv2 AwsProvider#wafv2}
+  */
+  readonly wafv2?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#worklink AwsProvider#worklink}
+  */
+  readonly worklink?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#workmail AwsProvider#workmail}
+  */
+  readonly workmail?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#workspaces AwsProvider#workspaces}
+  */
+  readonly workspaces?: string;
+  /**
+  * Use this to override the default service endpoint URL
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#xray AwsProvider#xray}
+  */
+  readonly xray?: string;
+}
+
+export function awsProviderEndpointsToTerraform(struct?: AwsProviderEndpoints | cdktn.IResolvable): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  return {
+    accessanalyzer: cdktn.stringToTerraform(struct!.accessanalyzer),
+    acm: cdktn.stringToTerraform(struct!.acm),
+    acmpca: cdktn.stringToTerraform(struct!.acmpca),
+    amplify: cdktn.stringToTerraform(struct!.amplify),
+    apigateway: cdktn.stringToTerraform(struct!.apigateway),
+    applicationautoscaling: cdktn.stringToTerraform(struct!.applicationautoscaling),
+    applicationinsights: cdktn.stringToTerraform(struct!.applicationinsights),
+    appmesh: cdktn.stringToTerraform(struct!.appmesh),
+    appstream: cdktn.stringToTerraform(struct!.appstream),
+    appsync: cdktn.stringToTerraform(struct!.appsync),
+    athena: cdktn.stringToTerraform(struct!.athena),
+    autoscaling: cdktn.stringToTerraform(struct!.autoscaling),
+    autoscalingplans: cdktn.stringToTerraform(struct!.autoscalingplans),
+    backup: cdktn.stringToTerraform(struct!.backup),
+    batch: cdktn.stringToTerraform(struct!.batch),
+    budgets: cdktn.stringToTerraform(struct!.budgets),
+    cloud9: cdktn.stringToTerraform(struct!.cloud9),
+    cloudformation: cdktn.stringToTerraform(struct!.cloudformation),
+    cloudfront: cdktn.stringToTerraform(struct!.cloudfront),
+    cloudhsm: cdktn.stringToTerraform(struct!.cloudhsm),
+    cloudsearch: cdktn.stringToTerraform(struct!.cloudsearch),
+    cloudtrail: cdktn.stringToTerraform(struct!.cloudtrail),
+    cloudwatch: cdktn.stringToTerraform(struct!.cloudwatch),
+    cloudwatchevents: cdktn.stringToTerraform(struct!.cloudwatchevents),
+    cloudwatchlogs: cdktn.stringToTerraform(struct!.cloudwatchlogs),
+    codebuild: cdktn.stringToTerraform(struct!.codebuild),
+    codecommit: cdktn.stringToTerraform(struct!.codecommit),
+    codedeploy: cdktn.stringToTerraform(struct!.codedeploy),
+    codepipeline: cdktn.stringToTerraform(struct!.codepipeline),
+    cognitoidentity: cdktn.stringToTerraform(struct!.cognitoidentity),
+    cognitoidp: cdktn.stringToTerraform(struct!.cognitoidp),
+    configservice: cdktn.stringToTerraform(struct!.configservice),
+    cur: cdktn.stringToTerraform(struct!.cur),
+    dataexchange: cdktn.stringToTerraform(struct!.dataexchange),
+    datapipeline: cdktn.stringToTerraform(struct!.datapipeline),
+    datasync: cdktn.stringToTerraform(struct!.datasync),
+    dax: cdktn.stringToTerraform(struct!.dax),
+    devicefarm: cdktn.stringToTerraform(struct!.devicefarm),
+    directconnect: cdktn.stringToTerraform(struct!.directconnect),
+    dlm: cdktn.stringToTerraform(struct!.dlm),
+    dms: cdktn.stringToTerraform(struct!.dms),
+    docdb: cdktn.stringToTerraform(struct!.docdb),
+    ds: cdktn.stringToTerraform(struct!.ds),
+    dynamodb: cdktn.stringToTerraform(struct!.dynamodb),
+    ec2: cdktn.stringToTerraform(struct!.ec2),
+    ecr: cdktn.stringToTerraform(struct!.ecr),
+    ecs: cdktn.stringToTerraform(struct!.ecs),
+    efs: cdktn.stringToTerraform(struct!.efs),
+    eks: cdktn.stringToTerraform(struct!.eks),
+    elasticache: cdktn.stringToTerraform(struct!.elasticache),
+    elasticbeanstalk: cdktn.stringToTerraform(struct!.elasticbeanstalk),
+    elastictranscoder: cdktn.stringToTerraform(struct!.elastictranscoder),
+    elb: cdktn.stringToTerraform(struct!.elb),
+    emr: cdktn.stringToTerraform(struct!.emr),
+    es: cdktn.stringToTerraform(struct!.es),
+    firehose: cdktn.stringToTerraform(struct!.firehose),
+    fms: cdktn.stringToTerraform(struct!.fms),
+    forecast: cdktn.stringToTerraform(struct!.forecast),
+    fsx: cdktn.stringToTerraform(struct!.fsx),
+    gamelift: cdktn.stringToTerraform(struct!.gamelift),
+    glacier: cdktn.stringToTerraform(struct!.glacier),
+    globalaccelerator: cdktn.stringToTerraform(struct!.globalaccelerator),
+    glue: cdktn.stringToTerraform(struct!.glue),
+    greengrass: cdktn.stringToTerraform(struct!.greengrass),
+    guardduty: cdktn.stringToTerraform(struct!.guardduty),
+    iam: cdktn.stringToTerraform(struct!.iam),
+    imagebuilder: cdktn.stringToTerraform(struct!.imagebuilder),
+    inspector: cdktn.stringToTerraform(struct!.inspector),
+    iot: cdktn.stringToTerraform(struct!.iot),
+    iotanalytics: cdktn.stringToTerraform(struct!.iotanalytics),
+    iotevents: cdktn.stringToTerraform(struct!.iotevents),
+    kafka: cdktn.stringToTerraform(struct!.kafka),
+    kinesis: cdktn.stringToTerraform(struct!.kinesis),
+    kinesis_analytics: cdktn.stringToTerraform(struct!.kinesisAnalytics),
+    kinesisanalytics: cdktn.stringToTerraform(struct!.kinesisanalytics),
+    kinesisvideo: cdktn.stringToTerraform(struct!.kinesisvideo),
+    kms: cdktn.stringToTerraform(struct!.kms),
+    lakeformation: cdktn.stringToTerraform(struct!.lakeformation),
+    lambda: cdktn.stringToTerraform(struct!.lambda),
+    lexmodels: cdktn.stringToTerraform(struct!.lexmodels),
+    licensemanager: cdktn.stringToTerraform(struct!.licensemanager),
+    lightsail: cdktn.stringToTerraform(struct!.lightsail),
+    macie: cdktn.stringToTerraform(struct!.macie),
+    managedblockchain: cdktn.stringToTerraform(struct!.managedblockchain),
+    marketplacecatalog: cdktn.stringToTerraform(struct!.marketplacecatalog),
+    mediaconnect: cdktn.stringToTerraform(struct!.mediaconnect),
+    mediaconvert: cdktn.stringToTerraform(struct!.mediaconvert),
+    medialive: cdktn.stringToTerraform(struct!.medialive),
+    mediapackage: cdktn.stringToTerraform(struct!.mediapackage),
+    mediastore: cdktn.stringToTerraform(struct!.mediastore),
+    mediastoredata: cdktn.stringToTerraform(struct!.mediastoredata),
+    mq: cdktn.stringToTerraform(struct!.mq),
+    neptune: cdktn.stringToTerraform(struct!.neptune),
+    opsworks: cdktn.stringToTerraform(struct!.opsworks),
+    organizations: cdktn.stringToTerraform(struct!.organizations),
+    personalize: cdktn.stringToTerraform(struct!.personalize),
+    pinpoint: cdktn.stringToTerraform(struct!.pinpoint),
+    pricing: cdktn.stringToTerraform(struct!.pricing),
+    qldb: cdktn.stringToTerraform(struct!.qldb),
+    quicksight: cdktn.stringToTerraform(struct!.quicksight),
+    r53: cdktn.stringToTerraform(struct!.r53),
+    ram: cdktn.stringToTerraform(struct!.ram),
+    rds: cdktn.stringToTerraform(struct!.rds),
+    redshift: cdktn.stringToTerraform(struct!.redshift),
+    resourcegroups: cdktn.stringToTerraform(struct!.resourcegroups),
+    route53: cdktn.stringToTerraform(struct!.route53),
+    route53domains: cdktn.stringToTerraform(struct!.route53Domains),
+    route53resolver: cdktn.stringToTerraform(struct!.route53Resolver),
+    s3: cdktn.stringToTerraform(struct!.s3),
+    s3control: cdktn.stringToTerraform(struct!.s3Control),
+    sagemaker: cdktn.stringToTerraform(struct!.sagemaker),
+    sdb: cdktn.stringToTerraform(struct!.sdb),
+    secretsmanager: cdktn.stringToTerraform(struct!.secretsmanager),
+    securityhub: cdktn.stringToTerraform(struct!.securityhub),
+    serverlessrepo: cdktn.stringToTerraform(struct!.serverlessrepo),
+    servicecatalog: cdktn.stringToTerraform(struct!.servicecatalog),
+    servicediscovery: cdktn.stringToTerraform(struct!.servicediscovery),
+    servicequotas: cdktn.stringToTerraform(struct!.servicequotas),
+    ses: cdktn.stringToTerraform(struct!.ses),
+    shield: cdktn.stringToTerraform(struct!.shield),
+    sns: cdktn.stringToTerraform(struct!.sns),
+    sqs: cdktn.stringToTerraform(struct!.sqs),
+    ssm: cdktn.stringToTerraform(struct!.ssm),
+    stepfunctions: cdktn.stringToTerraform(struct!.stepfunctions),
+    storagegateway: cdktn.stringToTerraform(struct!.storagegateway),
+    sts: cdktn.stringToTerraform(struct!.sts),
+    swf: cdktn.stringToTerraform(struct!.swf),
+    transfer: cdktn.stringToTerraform(struct!.transfer),
+    waf: cdktn.stringToTerraform(struct!.waf),
+    wafregional: cdktn.stringToTerraform(struct!.wafregional),
+    wafv2: cdktn.stringToTerraform(struct!.wafv2),
+    worklink: cdktn.stringToTerraform(struct!.worklink),
+    workmail: cdktn.stringToTerraform(struct!.workmail),
+    workspaces: cdktn.stringToTerraform(struct!.workspaces),
+    xray: cdktn.stringToTerraform(struct!.xray),
+  }
+}
+
+
+export function awsProviderEndpointsToHclTerraform(struct?: AwsProviderEndpoints | cdktn.IResolvable): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  const attrs = {
+    accessanalyzer: {
+      value: cdktn.stringToHclTerraform(struct!.accessanalyzer),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    acm: {
+      value: cdktn.stringToHclTerraform(struct!.acm),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    acmpca: {
+      value: cdktn.stringToHclTerraform(struct!.acmpca),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    amplify: {
+      value: cdktn.stringToHclTerraform(struct!.amplify),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    apigateway: {
+      value: cdktn.stringToHclTerraform(struct!.apigateway),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    applicationautoscaling: {
+      value: cdktn.stringToHclTerraform(struct!.applicationautoscaling),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    applicationinsights: {
+      value: cdktn.stringToHclTerraform(struct!.applicationinsights),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    appmesh: {
+      value: cdktn.stringToHclTerraform(struct!.appmesh),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    appstream: {
+      value: cdktn.stringToHclTerraform(struct!.appstream),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    appsync: {
+      value: cdktn.stringToHclTerraform(struct!.appsync),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    athena: {
+      value: cdktn.stringToHclTerraform(struct!.athena),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    autoscaling: {
+      value: cdktn.stringToHclTerraform(struct!.autoscaling),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    autoscalingplans: {
+      value: cdktn.stringToHclTerraform(struct!.autoscalingplans),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    backup: {
+      value: cdktn.stringToHclTerraform(struct!.backup),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    batch: {
+      value: cdktn.stringToHclTerraform(struct!.batch),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    budgets: {
+      value: cdktn.stringToHclTerraform(struct!.budgets),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloud9: {
+      value: cdktn.stringToHclTerraform(struct!.cloud9),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudformation: {
+      value: cdktn.stringToHclTerraform(struct!.cloudformation),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudfront: {
+      value: cdktn.stringToHclTerraform(struct!.cloudfront),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudhsm: {
+      value: cdktn.stringToHclTerraform(struct!.cloudhsm),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudsearch: {
+      value: cdktn.stringToHclTerraform(struct!.cloudsearch),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudtrail: {
+      value: cdktn.stringToHclTerraform(struct!.cloudtrail),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudwatch: {
+      value: cdktn.stringToHclTerraform(struct!.cloudwatch),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudwatchevents: {
+      value: cdktn.stringToHclTerraform(struct!.cloudwatchevents),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cloudwatchlogs: {
+      value: cdktn.stringToHclTerraform(struct!.cloudwatchlogs),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    codebuild: {
+      value: cdktn.stringToHclTerraform(struct!.codebuild),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    codecommit: {
+      value: cdktn.stringToHclTerraform(struct!.codecommit),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    codedeploy: {
+      value: cdktn.stringToHclTerraform(struct!.codedeploy),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    codepipeline: {
+      value: cdktn.stringToHclTerraform(struct!.codepipeline),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cognitoidentity: {
+      value: cdktn.stringToHclTerraform(struct!.cognitoidentity),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cognitoidp: {
+      value: cdktn.stringToHclTerraform(struct!.cognitoidp),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    configservice: {
+      value: cdktn.stringToHclTerraform(struct!.configservice),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cur: {
+      value: cdktn.stringToHclTerraform(struct!.cur),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    dataexchange: {
+      value: cdktn.stringToHclTerraform(struct!.dataexchange),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    datapipeline: {
+      value: cdktn.stringToHclTerraform(struct!.datapipeline),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    datasync: {
+      value: cdktn.stringToHclTerraform(struct!.datasync),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    dax: {
+      value: cdktn.stringToHclTerraform(struct!.dax),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    devicefarm: {
+      value: cdktn.stringToHclTerraform(struct!.devicefarm),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    directconnect: {
+      value: cdktn.stringToHclTerraform(struct!.directconnect),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    dlm: {
+      value: cdktn.stringToHclTerraform(struct!.dlm),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    dms: {
+      value: cdktn.stringToHclTerraform(struct!.dms),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    docdb: {
+      value: cdktn.stringToHclTerraform(struct!.docdb),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ds: {
+      value: cdktn.stringToHclTerraform(struct!.ds),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    dynamodb: {
+      value: cdktn.stringToHclTerraform(struct!.dynamodb),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ec2: {
+      value: cdktn.stringToHclTerraform(struct!.ec2),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ecr: {
+      value: cdktn.stringToHclTerraform(struct!.ecr),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ecs: {
+      value: cdktn.stringToHclTerraform(struct!.ecs),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    efs: {
+      value: cdktn.stringToHclTerraform(struct!.efs),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    eks: {
+      value: cdktn.stringToHclTerraform(struct!.eks),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    elasticache: {
+      value: cdktn.stringToHclTerraform(struct!.elasticache),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    elasticbeanstalk: {
+      value: cdktn.stringToHclTerraform(struct!.elasticbeanstalk),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    elastictranscoder: {
+      value: cdktn.stringToHclTerraform(struct!.elastictranscoder),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    elb: {
+      value: cdktn.stringToHclTerraform(struct!.elb),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    emr: {
+      value: cdktn.stringToHclTerraform(struct!.emr),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    es: {
+      value: cdktn.stringToHclTerraform(struct!.es),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    firehose: {
+      value: cdktn.stringToHclTerraform(struct!.firehose),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    fms: {
+      value: cdktn.stringToHclTerraform(struct!.fms),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    forecast: {
+      value: cdktn.stringToHclTerraform(struct!.forecast),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    fsx: {
+      value: cdktn.stringToHclTerraform(struct!.fsx),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    gamelift: {
+      value: cdktn.stringToHclTerraform(struct!.gamelift),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    glacier: {
+      value: cdktn.stringToHclTerraform(struct!.glacier),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    globalaccelerator: {
+      value: cdktn.stringToHclTerraform(struct!.globalaccelerator),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    glue: {
+      value: cdktn.stringToHclTerraform(struct!.glue),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    greengrass: {
+      value: cdktn.stringToHclTerraform(struct!.greengrass),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    guardduty: {
+      value: cdktn.stringToHclTerraform(struct!.guardduty),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    iam: {
+      value: cdktn.stringToHclTerraform(struct!.iam),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    imagebuilder: {
+      value: cdktn.stringToHclTerraform(struct!.imagebuilder),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    inspector: {
+      value: cdktn.stringToHclTerraform(struct!.inspector),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    iot: {
+      value: cdktn.stringToHclTerraform(struct!.iot),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    iotanalytics: {
+      value: cdktn.stringToHclTerraform(struct!.iotanalytics),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    iotevents: {
+      value: cdktn.stringToHclTerraform(struct!.iotevents),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    kafka: {
+      value: cdktn.stringToHclTerraform(struct!.kafka),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    kinesis: {
+      value: cdktn.stringToHclTerraform(struct!.kinesis),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    kinesis_analytics: {
+      value: cdktn.stringToHclTerraform(struct!.kinesisAnalytics),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    kinesisanalytics: {
+      value: cdktn.stringToHclTerraform(struct!.kinesisanalytics),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    kinesisvideo: {
+      value: cdktn.stringToHclTerraform(struct!.kinesisvideo),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    kms: {
+      value: cdktn.stringToHclTerraform(struct!.kms),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    lakeformation: {
+      value: cdktn.stringToHclTerraform(struct!.lakeformation),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    lambda: {
+      value: cdktn.stringToHclTerraform(struct!.lambda),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    lexmodels: {
+      value: cdktn.stringToHclTerraform(struct!.lexmodels),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    licensemanager: {
+      value: cdktn.stringToHclTerraform(struct!.licensemanager),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    lightsail: {
+      value: cdktn.stringToHclTerraform(struct!.lightsail),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    macie: {
+      value: cdktn.stringToHclTerraform(struct!.macie),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    managedblockchain: {
+      value: cdktn.stringToHclTerraform(struct!.managedblockchain),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    marketplacecatalog: {
+      value: cdktn.stringToHclTerraform(struct!.marketplacecatalog),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    mediaconnect: {
+      value: cdktn.stringToHclTerraform(struct!.mediaconnect),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    mediaconvert: {
+      value: cdktn.stringToHclTerraform(struct!.mediaconvert),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    medialive: {
+      value: cdktn.stringToHclTerraform(struct!.medialive),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    mediapackage: {
+      value: cdktn.stringToHclTerraform(struct!.mediapackage),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    mediastore: {
+      value: cdktn.stringToHclTerraform(struct!.mediastore),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    mediastoredata: {
+      value: cdktn.stringToHclTerraform(struct!.mediastoredata),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    mq: {
+      value: cdktn.stringToHclTerraform(struct!.mq),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    neptune: {
+      value: cdktn.stringToHclTerraform(struct!.neptune),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    opsworks: {
+      value: cdktn.stringToHclTerraform(struct!.opsworks),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    organizations: {
+      value: cdktn.stringToHclTerraform(struct!.organizations),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    personalize: {
+      value: cdktn.stringToHclTerraform(struct!.personalize),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    pinpoint: {
+      value: cdktn.stringToHclTerraform(struct!.pinpoint),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    pricing: {
+      value: cdktn.stringToHclTerraform(struct!.pricing),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    qldb: {
+      value: cdktn.stringToHclTerraform(struct!.qldb),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    quicksight: {
+      value: cdktn.stringToHclTerraform(struct!.quicksight),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    r53: {
+      value: cdktn.stringToHclTerraform(struct!.r53),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ram: {
+      value: cdktn.stringToHclTerraform(struct!.ram),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    rds: {
+      value: cdktn.stringToHclTerraform(struct!.rds),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    redshift: {
+      value: cdktn.stringToHclTerraform(struct!.redshift),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    resourcegroups: {
+      value: cdktn.stringToHclTerraform(struct!.resourcegroups),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    route53: {
+      value: cdktn.stringToHclTerraform(struct!.route53),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    route53domains: {
+      value: cdktn.stringToHclTerraform(struct!.route53Domains),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    route53resolver: {
+      value: cdktn.stringToHclTerraform(struct!.route53Resolver),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    s3: {
+      value: cdktn.stringToHclTerraform(struct!.s3),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    s3control: {
+      value: cdktn.stringToHclTerraform(struct!.s3Control),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    sagemaker: {
+      value: cdktn.stringToHclTerraform(struct!.sagemaker),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    sdb: {
+      value: cdktn.stringToHclTerraform(struct!.sdb),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    secretsmanager: {
+      value: cdktn.stringToHclTerraform(struct!.secretsmanager),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    securityhub: {
+      value: cdktn.stringToHclTerraform(struct!.securityhub),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    serverlessrepo: {
+      value: cdktn.stringToHclTerraform(struct!.serverlessrepo),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    servicecatalog: {
+      value: cdktn.stringToHclTerraform(struct!.servicecatalog),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    servicediscovery: {
+      value: cdktn.stringToHclTerraform(struct!.servicediscovery),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    servicequotas: {
+      value: cdktn.stringToHclTerraform(struct!.servicequotas),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ses: {
+      value: cdktn.stringToHclTerraform(struct!.ses),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    shield: {
+      value: cdktn.stringToHclTerraform(struct!.shield),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    sns: {
+      value: cdktn.stringToHclTerraform(struct!.sns),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    sqs: {
+      value: cdktn.stringToHclTerraform(struct!.sqs),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ssm: {
+      value: cdktn.stringToHclTerraform(struct!.ssm),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    stepfunctions: {
+      value: cdktn.stringToHclTerraform(struct!.stepfunctions),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    storagegateway: {
+      value: cdktn.stringToHclTerraform(struct!.storagegateway),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    sts: {
+      value: cdktn.stringToHclTerraform(struct!.sts),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    swf: {
+      value: cdktn.stringToHclTerraform(struct!.swf),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    transfer: {
+      value: cdktn.stringToHclTerraform(struct!.transfer),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    waf: {
+      value: cdktn.stringToHclTerraform(struct!.waf),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    wafregional: {
+      value: cdktn.stringToHclTerraform(struct!.wafregional),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    wafv2: {
+      value: cdktn.stringToHclTerraform(struct!.wafv2),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    worklink: {
+      value: cdktn.stringToHclTerraform(struct!.worklink),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    workmail: {
+      value: cdktn.stringToHclTerraform(struct!.workmail),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    workspaces: {
+      value: cdktn.stringToHclTerraform(struct!.workspaces),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    xray: {
+      value: cdktn.stringToHclTerraform(struct!.xray),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+  };
+
+  // remove undefined attributes
+  return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined));
+}
+
+export interface AwsProviderIgnoreTags {
+  /**
+  * Resource tag key prefixes to ignore across all resources.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#key_prefixes AwsProvider#key_prefixes}
+  */
+  readonly keyPrefixes?: string[];
+  /**
+  * Resource tag keys to ignore across all resources.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#keys AwsProvider#keys}
+  */
+  readonly keys?: string[];
+}
+
+export function awsProviderIgnoreTagsToTerraform(struct?: AwsProviderIgnoreTags): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  return {
+    key_prefixes: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.keyPrefixes),
+    keys: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.keys),
+  }
+}
+
+
+export function awsProviderIgnoreTagsToHclTerraform(struct?: AwsProviderIgnoreTags): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  const attrs = {
+    key_prefixes: {
+      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.keyPrefixes),
+      isBlock: false,
+      type: "set",
+      storageClassType: "stringList",
+    },
+    keys: {
+      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.keys),
+      isBlock: false,
+      type: "set",
+      storageClassType: "stringList",
+    },
+  };
+
+  // remove undefined attributes
+  return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined));
+}
+
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs aws}
+*/
+export class AwsProvider extends cdktn.TerraformProvider {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "aws";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a AwsProvider resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the AwsProvider to import
+  * @param importFromId The id of the existing AwsProvider that should be imported. Refer to the {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the AwsProvider to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "aws", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/hashicorp/aws/latest/docs aws} Resource
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options AwsProviderConfig
+  */
+  public constructor(scope: Construct, id: string, config: AwsProviderConfig) {
+    super(scope, id, {
+      terraformResourceType: 'aws',
+      terraformGeneratorMetadata: {
+        providerName: 'aws'
+      },
+      terraformProviderSource: 'registry.terraform.io/hashicorp/aws'
+    });
+    this._accessKey = config.accessKey;
+    this._allowedAccountIds = config.allowedAccountIds;
+    this._forbiddenAccountIds = config.forbiddenAccountIds;
+    this._insecure = config.insecure;
+    this._maxRetries = config.maxRetries;
+    this._profile = config.profile;
+    this._region = config.region;
+    this._s3ForcePathStyle = config.s3ForcePathStyle;
+    this._secretKey = config.secretKey;
+    this._sharedCredentialsFile = config.sharedCredentialsFile;
+    this._skipCredentialsValidation = config.skipCredentialsValidation;
+    this._skipGetEc2Platforms = config.skipGetEc2Platforms;
+    this._skipMetadataApiCheck = config.skipMetadataApiCheck;
+    this._skipRegionValidation = config.skipRegionValidation;
+    this._skipRequestingAccountId = config.skipRequestingAccountId;
+    this._token = config.token;
+    this._alias = config.alias;
+    this._assumeRole = config.assumeRole;
+    this._endpoints = config.endpoints;
+    this._ignoreTags = config.ignoreTags;
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // access_key - computed: false, optional: true, required: false
+  private _accessKey?: string; 
+  public get accessKey() {
+    return this._accessKey;
+  }
+  public set accessKey(value: string | undefined) {
+    this._accessKey = value;
+  }
+  public resetAccessKey() {
+    this._accessKey = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get accessKeyInput() {
+    return this._accessKey;
+  }
+
+  // allowed_account_ids - computed: false, optional: true, required: false
+  private _allowedAccountIds?: string[]; 
+  public get allowedAccountIds() {
+    return this._allowedAccountIds;
+  }
+  public set allowedAccountIds(value: string[] | undefined) {
+    this._allowedAccountIds = value;
+  }
+  public resetAllowedAccountIds() {
+    this._allowedAccountIds = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get allowedAccountIdsInput() {
+    return this._allowedAccountIds;
+  }
+
+  // forbidden_account_ids - computed: false, optional: true, required: false
+  private _forbiddenAccountIds?: string[]; 
+  public get forbiddenAccountIds() {
+    return this._forbiddenAccountIds;
+  }
+  public set forbiddenAccountIds(value: string[] | undefined) {
+    this._forbiddenAccountIds = value;
+  }
+  public resetForbiddenAccountIds() {
+    this._forbiddenAccountIds = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get forbiddenAccountIdsInput() {
+    return this._forbiddenAccountIds;
+  }
+
+  // insecure - computed: false, optional: true, required: false
+  private _insecure?: boolean | cdktn.IResolvable; 
+  public get insecure() {
+    return this._insecure;
+  }
+  public set insecure(value: boolean | cdktn.IResolvable | undefined) {
+    this._insecure = value;
+  }
+  public resetInsecure() {
+    this._insecure = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get insecureInput() {
+    return this._insecure;
+  }
+
+  // max_retries - computed: false, optional: true, required: false
+  private _maxRetries?: number; 
+  public get maxRetries() {
+    return this._maxRetries;
+  }
+  public set maxRetries(value: number | undefined) {
+    this._maxRetries = value;
+  }
+  public resetMaxRetries() {
+    this._maxRetries = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get maxRetriesInput() {
+    return this._maxRetries;
+  }
+
+  // profile - computed: false, optional: true, required: false
+  private _profile?: string; 
+  public get profile() {
+    return this._profile;
+  }
+  public set profile(value: string | undefined) {
+    this._profile = value;
+  }
+  public resetProfile() {
+    this._profile = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get profileInput() {
+    return this._profile;
+  }
+
+  // region - computed: false, optional: false, required: true
+  private _region?: string; 
+  public get region() {
+    return this._region;
+  }
+  public set region(value: string | undefined) {
+    this._region = value;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get regionInput() {
+    return this._region;
+  }
+
+  // s3_force_path_style - computed: false, optional: true, required: false
+  private _s3ForcePathStyle?: boolean | cdktn.IResolvable; 
+  public get s3ForcePathStyle() {
+    return this._s3ForcePathStyle;
+  }
+  public set s3ForcePathStyle(value: boolean | cdktn.IResolvable | undefined) {
+    this._s3ForcePathStyle = value;
+  }
+  public resetS3ForcePathStyle() {
+    this._s3ForcePathStyle = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get s3ForcePathStyleInput() {
+    return this._s3ForcePathStyle;
+  }
+
+  // secret_key - computed: false, optional: true, required: false
+  private _secretKey?: string; 
+  public get secretKey() {
+    return this._secretKey;
+  }
+  public set secretKey(value: string | undefined) {
+    this._secretKey = value;
+  }
+  public resetSecretKey() {
+    this._secretKey = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get secretKeyInput() {
+    return this._secretKey;
+  }
+
+  // shared_credentials_file - computed: false, optional: true, required: false
+  private _sharedCredentialsFile?: string; 
+  public get sharedCredentialsFile() {
+    return this._sharedCredentialsFile;
+  }
+  public set sharedCredentialsFile(value: string | undefined) {
+    this._sharedCredentialsFile = value;
+  }
+  public resetSharedCredentialsFile() {
+    this._sharedCredentialsFile = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get sharedCredentialsFileInput() {
+    return this._sharedCredentialsFile;
+  }
+
+  // skip_credentials_validation - computed: false, optional: true, required: false
+  private _skipCredentialsValidation?: boolean | cdktn.IResolvable; 
+  public get skipCredentialsValidation() {
+    return this._skipCredentialsValidation;
+  }
+  public set skipCredentialsValidation(value: boolean | cdktn.IResolvable | undefined) {
+    this._skipCredentialsValidation = value;
+  }
+  public resetSkipCredentialsValidation() {
+    this._skipCredentialsValidation = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get skipCredentialsValidationInput() {
+    return this._skipCredentialsValidation;
+  }
+
+  // skip_get_ec2_platforms - computed: false, optional: true, required: false
+  private _skipGetEc2Platforms?: boolean | cdktn.IResolvable; 
+  public get skipGetEc2Platforms() {
+    return this._skipGetEc2Platforms;
+  }
+  public set skipGetEc2Platforms(value: boolean | cdktn.IResolvable | undefined) {
+    this._skipGetEc2Platforms = value;
+  }
+  public resetSkipGetEc2Platforms() {
+    this._skipGetEc2Platforms = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get skipGetEc2PlatformsInput() {
+    return this._skipGetEc2Platforms;
+  }
+
+  // skip_metadata_api_check - computed: false, optional: true, required: false
+  private _skipMetadataApiCheck?: boolean | cdktn.IResolvable; 
+  public get skipMetadataApiCheck() {
+    return this._skipMetadataApiCheck;
+  }
+  public set skipMetadataApiCheck(value: boolean | cdktn.IResolvable | undefined) {
+    this._skipMetadataApiCheck = value;
+  }
+  public resetSkipMetadataApiCheck() {
+    this._skipMetadataApiCheck = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get skipMetadataApiCheckInput() {
+    return this._skipMetadataApiCheck;
+  }
+
+  // skip_region_validation - computed: false, optional: true, required: false
+  private _skipRegionValidation?: boolean | cdktn.IResolvable; 
+  public get skipRegionValidation() {
+    return this._skipRegionValidation;
+  }
+  public set skipRegionValidation(value: boolean | cdktn.IResolvable | undefined) {
+    this._skipRegionValidation = value;
+  }
+  public resetSkipRegionValidation() {
+    this._skipRegionValidation = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get skipRegionValidationInput() {
+    return this._skipRegionValidation;
+  }
+
+  // skip_requesting_account_id - computed: false, optional: true, required: false
+  private _skipRequestingAccountId?: boolean | cdktn.IResolvable; 
+  public get skipRequestingAccountId() {
+    return this._skipRequestingAccountId;
+  }
+  public set skipRequestingAccountId(value: boolean | cdktn.IResolvable | undefined) {
+    this._skipRequestingAccountId = value;
+  }
+  public resetSkipRequestingAccountId() {
+    this._skipRequestingAccountId = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get skipRequestingAccountIdInput() {
+    return this._skipRequestingAccountId;
+  }
+
+  // token - computed: false, optional: true, required: false
+  private _token?: string; 
+  public get token() {
+    return this._token;
+  }
+  public set token(value: string | undefined) {
+    this._token = value;
+  }
+  public resetToken() {
+    this._token = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get tokenInput() {
+    return this._token;
+  }
+
+  // alias - computed: false, optional: true, required: false
+  private _alias?: string; 
+  public get alias() {
+    return this._alias;
+  }
+  public set alias(value: string | undefined) {
+    this._alias = value;
+  }
+  public resetAlias() {
+    this._alias = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get aliasInput() {
+    return this._alias;
+  }
+
+  // assume_role - computed: false, optional: true, required: false
+  private _assumeRole?: AwsProviderAssumeRole; 
+  public get assumeRole() {
+    return this._assumeRole;
+  }
+  public set assumeRole(value: AwsProviderAssumeRole | undefined) {
+    this._assumeRole = value;
+  }
+  public resetAssumeRole() {
+    this._assumeRole = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get assumeRoleInput() {
+    return this._assumeRole;
+  }
+
+  // endpoints - computed: false, optional: true, required: false
+  private _endpoints?: AwsProviderEndpoints[] | cdktn.IResolvable; 
+  public get endpoints() {
+    return this._endpoints;
+  }
+  public set endpoints(value: AwsProviderEndpoints[] | cdktn.IResolvable | undefined) {
+    this._endpoints = value;
+  }
+  public resetEndpoints() {
+    this._endpoints = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get endpointsInput() {
+    return this._endpoints;
+  }
+
+  // ignore_tags - computed: false, optional: true, required: false
+  private _ignoreTags?: AwsProviderIgnoreTags; 
+  public get ignoreTags() {
+    return this._ignoreTags;
+  }
+  public set ignoreTags(value: AwsProviderIgnoreTags | undefined) {
+    this._ignoreTags = value;
+  }
+  public resetIgnoreTags() {
+    this._ignoreTags = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get ignoreTagsInput() {
+    return this._ignoreTags;
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+      access_key: cdktn.stringToTerraform(this._accessKey),
+      allowed_account_ids: cdktn.listMapper(cdktn.stringToTerraform, false)(this._allowedAccountIds),
+      forbidden_account_ids: cdktn.listMapper(cdktn.stringToTerraform, false)(this._forbiddenAccountIds),
+      insecure: cdktn.booleanToTerraform(this._insecure),
+      max_retries: cdktn.numberToTerraform(this._maxRetries),
+      profile: cdktn.stringToTerraform(this._profile),
+      region: cdktn.stringToTerraform(this._region),
+      s3_force_path_style: cdktn.booleanToTerraform(this._s3ForcePathStyle),
+      secret_key: cdktn.stringToTerraform(this._secretKey),
+      shared_credentials_file: cdktn.stringToTerraform(this._sharedCredentialsFile),
+      skip_credentials_validation: cdktn.booleanToTerraform(this._skipCredentialsValidation),
+      skip_get_ec2_platforms: cdktn.booleanToTerraform(this._skipGetEc2Platforms),
+      skip_metadata_api_check: cdktn.booleanToTerraform(this._skipMetadataApiCheck),
+      skip_region_validation: cdktn.booleanToTerraform(this._skipRegionValidation),
+      skip_requesting_account_id: cdktn.booleanToTerraform(this._skipRequestingAccountId),
+      token: cdktn.stringToTerraform(this._token),
+      alias: cdktn.stringToTerraform(this._alias),
+      assume_role: awsProviderAssumeRoleToTerraform(this._assumeRole),
+      endpoints: cdktn.listMapper(awsProviderEndpointsToTerraform, true)(this._endpoints),
+      ignore_tags: awsProviderIgnoreTagsToTerraform(this._ignoreTags),
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+      access_key: {
+        value: cdktn.stringToHclTerraform(this._accessKey),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      allowed_account_ids: {
+        value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(this._allowedAccountIds),
+        isBlock: false,
+        type: "set",
+        storageClassType: "stringList",
+      },
+      forbidden_account_ids: {
+        value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(this._forbiddenAccountIds),
+        isBlock: false,
+        type: "set",
+        storageClassType: "stringList",
+      },
+      insecure: {
+        value: cdktn.booleanToHclTerraform(this._insecure),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      max_retries: {
+        value: cdktn.numberToHclTerraform(this._maxRetries),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "number",
+      },
+      profile: {
+        value: cdktn.stringToHclTerraform(this._profile),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      region: {
+        value: cdktn.stringToHclTerraform(this._region),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      s3_force_path_style: {
+        value: cdktn.booleanToHclTerraform(this._s3ForcePathStyle),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      secret_key: {
+        value: cdktn.stringToHclTerraform(this._secretKey),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      shared_credentials_file: {
+        value: cdktn.stringToHclTerraform(this._sharedCredentialsFile),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      skip_credentials_validation: {
+        value: cdktn.booleanToHclTerraform(this._skipCredentialsValidation),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      skip_get_ec2_platforms: {
+        value: cdktn.booleanToHclTerraform(this._skipGetEc2Platforms),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      skip_metadata_api_check: {
+        value: cdktn.booleanToHclTerraform(this._skipMetadataApiCheck),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      skip_region_validation: {
+        value: cdktn.booleanToHclTerraform(this._skipRegionValidation),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      skip_requesting_account_id: {
+        value: cdktn.booleanToHclTerraform(this._skipRequestingAccountId),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      token: {
+        value: cdktn.stringToHclTerraform(this._token),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      alias: {
+        value: cdktn.stringToHclTerraform(this._alias),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      assume_role: {
+        value: awsProviderAssumeRoleToHclTerraform(this._assumeRole),
+        isBlock: true,
+        type: "set",
+        storageClassType: "AwsProviderAssumeRoleList",
+      },
+      endpoints: {
+        value: cdktn.listMapperHcl(awsProviderEndpointsToHclTerraform, true)(this._endpoints),
+        isBlock: true,
+        type: "set",
+        storageClassType: "AwsProviderEndpointsList",
+      },
+      ignore_tags: {
+        value: awsProviderIgnoreTagsToHclTerraform(this._ignoreTags),
+        isBlock: true,
+        type: "list",
+        storageClassType: "AwsProviderIgnoreTagsList",
+      },
+    };
+
+    // remove undefined attributes
+    return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined ))
+  }
+}
+"
+`;
+
+exports[`generate provider with only block_types 1`] = `
+"// https://registry.terraform.io/providers/elastic/elasticstack/latest/docs
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface ElasticstackProviderConfig {
+  /**
+  * Alias name
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#alias ElasticstackProvider#alias}
+  */
+  readonly alias?: string;
+  /**
+  * elasticsearch block
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#elasticsearch ElasticstackProvider#elasticsearch}
+  */
+  readonly elasticsearch?: ElasticstackProviderElasticsearch;
+}
+export interface ElasticstackProviderElasticsearch {
+  /**
+  * API Key to use for authentication to Elasticsearch
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#api_key ElasticstackProvider#api_key}
+  */
+  readonly apiKey?: string;
+  /**
+  * PEM-encoded custom Certificate Authority certificate
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#ca_data ElasticstackProvider#ca_data}
+  */
+  readonly caData?: string;
+  /**
+  * Path to a custom Certificate Authority certificate
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#ca_file ElasticstackProvider#ca_file}
+  */
+  readonly caFile?: string;
+  /**
+  * PEM encoded certificate for client auth
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#cert_data ElasticstackProvider#cert_data}
+  */
+  readonly certData?: string;
+  /**
+  * Path to a file containing the PEM encoded certificate for client auth
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#cert_file ElasticstackProvider#cert_file}
+  */
+  readonly certFile?: string;
+  /**
+  * A comma-separated list of endpoints where the terraform provider will point to, this must include the http(s) schema and port number.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#endpoints ElasticstackProvider#endpoints}
+  */
+  readonly endpoints?: string[];
+  /**
+  * Disable TLS certificate validation
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#insecure ElasticstackProvider#insecure}
+  */
+  readonly insecure?: boolean | cdktn.IResolvable;
+  /**
+  * PEM encoded private key for client auth
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#key_data ElasticstackProvider#key_data}
+  */
+  readonly keyData?: string;
+  /**
+  * Path to a file containing the PEM encoded private key for client auth
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#key_file ElasticstackProvider#key_file}
+  */
+  readonly keyFile?: string;
+  /**
+  * Password to use for API authentication to Elasticsearch.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#password ElasticstackProvider#password}
+  */
+  readonly password?: string;
+  /**
+  * Username to use for API authentication to Elasticsearch.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#username ElasticstackProvider#username}
+  */
+  readonly username?: string;
+}
+
+export function elasticstackProviderElasticsearchToTerraform(struct?: ElasticstackProviderElasticsearch): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  return {
+    api_key: cdktn.stringToTerraform(struct!.apiKey),
+    ca_data: cdktn.stringToTerraform(struct!.caData),
+    ca_file: cdktn.stringToTerraform(struct!.caFile),
+    cert_data: cdktn.stringToTerraform(struct!.certData),
+    cert_file: cdktn.stringToTerraform(struct!.certFile),
+    endpoints: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.endpoints),
+    insecure: cdktn.booleanToTerraform(struct!.insecure),
+    key_data: cdktn.stringToTerraform(struct!.keyData),
+    key_file: cdktn.stringToTerraform(struct!.keyFile),
+    password: cdktn.stringToTerraform(struct!.password),
+    username: cdktn.stringToTerraform(struct!.username),
+  }
+}
+
+
+export function elasticstackProviderElasticsearchToHclTerraform(struct?: ElasticstackProviderElasticsearch): any {
+  if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
+  if (cdktn.isComplexElement(struct)) {
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+  }
+  const attrs = {
+    api_key: {
+      value: cdktn.stringToHclTerraform(struct!.apiKey),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ca_data: {
+      value: cdktn.stringToHclTerraform(struct!.caData),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    ca_file: {
+      value: cdktn.stringToHclTerraform(struct!.caFile),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cert_data: {
+      value: cdktn.stringToHclTerraform(struct!.certData),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    cert_file: {
+      value: cdktn.stringToHclTerraform(struct!.certFile),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    endpoints: {
+      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.endpoints),
+      isBlock: false,
+      type: "list",
+      storageClassType: "stringList",
+    },
+    insecure: {
+      value: cdktn.booleanToHclTerraform(struct!.insecure),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "boolean",
+    },
+    key_data: {
+      value: cdktn.stringToHclTerraform(struct!.keyData),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    key_file: {
+      value: cdktn.stringToHclTerraform(struct!.keyFile),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    password: {
+      value: cdktn.stringToHclTerraform(struct!.password),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+    username: {
+      value: cdktn.stringToHclTerraform(struct!.username),
+      isBlock: false,
+      type: "simple",
+      storageClassType: "string",
+    },
+  };
+
+  // remove undefined attributes
+  return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined));
+}
+
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs elasticstack}
+*/
+export class ElasticstackProvider extends cdktn.TerraformProvider {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "elasticstack";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a ElasticstackProvider resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the ElasticstackProvider to import
+  * @param importFromId The id of the existing ElasticstackProvider that should be imported. Refer to the {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the ElasticstackProvider to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "elasticstack", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/elastic/elasticstack/latest/docs elasticstack} Resource
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options ElasticstackProviderConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: ElasticstackProviderConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'elasticstack',
+      terraformGeneratorMetadata: {
+        providerName: 'elasticstack'
+      },
+      terraformProviderSource: 'registry.terraform.io/elastic/elasticstack'
+    });
+    this._alias = config.alias;
+    this._elasticsearch = config.elasticsearch;
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // alias - computed: false, optional: true, required: false
+  private _alias?: string; 
+  public get alias() {
+    return this._alias;
+  }
+  public set alias(value: string | undefined) {
+    this._alias = value;
+  }
+  public resetAlias() {
+    this._alias = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get aliasInput() {
+    return this._alias;
+  }
+
+  // elasticsearch - computed: false, optional: true, required: false
+  private _elasticsearch?: ElasticstackProviderElasticsearch; 
+  public get elasticsearch() {
+    return this._elasticsearch;
+  }
+  public set elasticsearch(value: ElasticstackProviderElasticsearch | undefined) {
+    this._elasticsearch = value;
+  }
+  public resetElasticsearch() {
+    this._elasticsearch = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get elasticsearchInput() {
+    return this._elasticsearch;
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+      alias: cdktn.stringToTerraform(this._alias),
+      elasticsearch: elasticstackProviderElasticsearchToTerraform(this._elasticsearch),
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+      alias: {
+        value: cdktn.stringToHclTerraform(this._alias),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      elasticsearch: {
+        value: elasticstackProviderElasticsearchToHclTerraform(this._elasticsearch),
+        isBlock: true,
+        type: "list",
+        storageClassType: "ElasticstackProviderElasticsearchList",
+      },
+    };
+
+    // remove undefined attributes
+    return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined ))
+  }
+}
+"
+`;

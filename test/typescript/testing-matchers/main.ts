@@ -4,7 +4,7 @@
  */
 
 import { Construct } from "constructs";
-import { App } from "cdktf";
+import { App } from "cdktn";
 import { DockerProvider } from "./.gen/providers/docker/provider";
 import { Container } from "./.gen/providers/docker/container";
 

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, Fn, TerraformStack, Testing
+from cdktn import App, Fn, TerraformStack, Testing
 from imports.random.provider import RandomProvider
 from imports.random.integer import Integer as NumericResource
 from imports.random.password import Password as StringResource

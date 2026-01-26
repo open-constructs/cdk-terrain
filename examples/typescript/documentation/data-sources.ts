@@ -1,9 +1,9 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 // DOCS_BLOCK_START:datasources,remote-state-datasources
-import { TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 // DOCS_BLOCK_END:datasources,remote-state-datasources
 
 // DOCS_BLOCK_START:datasources
@@ -11,7 +11,7 @@ import { DataAwsRegion } from "@cdktf/provider-aws/lib/data-aws-region";
 // DOCS_BLOCK_END:datasources
 
 // DOCS_BLOCK_START:remote-state-datasources
-import { DataTerraformRemoteState } from "cdktf";
+import { DataTerraformRemoteState } from "cdktn";
 import { Instance } from "@cdktf/provider-aws/lib/instance";
 // DOCS_BLOCK_END:remote-state-datasources
 

@@ -3,7 +3,7 @@
 
 import pytest
 from main import MyStack, MyStackInvalidTerraform
-from cdktf import Testing
+from cdktn import Testing
 from imports.docker.config import Config
 from imports.docker.container import Container
 from imports.docker.data_docker_image import DataDockerImage

@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, LocalBackend, TerraformStack, Testing } from "cdktf";
+import { App, LocalBackend, TerraformStack, Testing } from "cdktn";
 
 import * as bitbucket from "./.gen/providers/bitbucket";
 import * as abitbucket from "./.gen/providers/abitbucket";

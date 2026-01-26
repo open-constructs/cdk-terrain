@@ -8,13 +8,13 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
-func NewSingleStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewSingleStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("us-east-1"),
@@ -38,14 +38,14 @@ DOCS_BLOCK_END:single-stack
 */
 func SynthSingleStack() {
 	// DOCS_BLOCK_START:single-stack
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	stack := NewSingleStack(app, "a-single-stack")
 
 	// DOCS_BLOCK_END:single-stack
 	// DOCS_BLOCK_START:stack-escape-hatches
 	stack.AddOverride(jsii.String("terraform.backend"), map[string]interface{}{
-		"local": cdktf.Token_NullValue(), // delete the default local backend
+		"local": cdktn.Token_NullValue(), // delete the default local backend
 		"remote": map[string]interface{}{
 			"organization": "test",
 			"workspaces": map[string]string{

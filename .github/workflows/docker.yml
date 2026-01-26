@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-docker-image:
-    if: github.repository == 'hashicorp/terraform-cdk'
+    if: github.repository == 'open-constructs/cdk-terrain'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -37,10 +37,10 @@ jobs:
           AVAILABLE_TERRAFORM_VERSIONS=$(cat .terraform.versions.json | jq -r '.available | join(" ")')
           echo "default=$DEFAULT_TERRAFORM_VERSION" >> $GITHUB_OUTPUT
           echo "available=$AVAILABLE_TERRAFORM_VERSIONS" >> $GITHUB_OUTPUT
-      - id: cdktf-version
+      - id: cdktn-version
         run: |
           CDKTF_VERSION=$(cat package.json | jq -r '.version')
-          echo "cdktf=$CDKTF_VERSION" >> $GITHUB_OUTPUT
+          echo "cdktn=$CDKTF_VERSION" >> $GITHUB_OUTPUT
       - id: git-sha
         run: |
           GIT_SHA=$(git rev-parse HEAD)
@@ -50,7 +50,7 @@ jobs:
         with:
           pull: true
           push: true
-          tags: hashicorp/jsii-terraform:latest,hashicorp/jsii-terraform:${{ steps.cdktf-version.outputs.cdktf }},hashicorp/jsii-terraform:${{ steps.cdktf-version.outputs.cdktf }}-${{ steps.git-sha.outputs.git-sha }}
+          tags: terraconstructs/jsii-terraform:latest,terraconstructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }},terraconstructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }}-${{ steps.git-sha.outputs.git-sha }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           build-args: |

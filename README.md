@@ -6,7 +6,7 @@
 
 CDK Terrain (CDKTN) is a community fork of the Cloud Development Kit for Terraform (CDKTF).
 CDKTF/CDKTN allows you to use familiar programming languages to define cloud infrastructure
-and provision it through HashiCorp Terraform or OpenTofu. This gives you access to the 
+and provision it through HashiCorp Terraform or OpenTofu. This gives you access to the
 entire Terraform/OpenTofu ecosystem without learning HashiCorp Configuration Language (HCL)
 and lets you leverage the power of your existing toolchain for testing, dependency management, etc.
 
@@ -14,10 +14,10 @@ We currently support TypeScript, Python and Go.
 
 ![terraform platform](./docs/terraform-platform.png)
 
-CDKTF includes two packages:
+CDKTN includes two packages:
 
-- [cdktf-cli](./packages/cdktf-cli) - A CLI that allows users to run commands to initialize, import, and synthesize CDK for Terraform applications.
-- [cdktf](./packages/cdktf) - A library for defining Terraform resources using programming constructs.
+- [cdktn-cli](./packages/cdktn-cli) - A CLI that allows users to run commands to initialize, import, and synthesize CDK Terrain applications.
+- [cdktn](./packages/cdktn) - A library for defining Terraform resources using programming constructs.
 
 ## Get Started
 
@@ -33,11 +33,11 @@ Choose a language:
 
 ## Documentation
 
-Refer to the [CDKTF documentation](https://developer.hashicorp.com/terraform/cdktf) for more detail about how to build and manage CDKTF applications, including:
+Refer to the [CDKTF documentation](https://developer.hashicorp.com/terraform/cdktf) for more detail about how to build and manage CDKTN applications, including:
 
-- [Application Architecture](https://developer.hashicorp.com/terraform/cdktf/concepts/cdktf-architecture): Learn the tools and processes that CDKTF uses to leverage the Terraform ecosystem and convert code into Terraform configuration files. It also explains the major components of a CDKTF application and how those pieces fit together.
+- [Application Architecture](https://developer.hashicorp.com/terraform/cdktf/concepts/cdktf-architecture): Learn the tools and processes that CDKTN uses to leverage the Terraform ecosystem and convert code into Terraform configuration files. It also explains the major components of a CDKTN application and how those pieces fit together.
 
-- [Project Setup](https://developer.hashicorp.com/terraform/cdktf/create-and-deploy/project-setup): Learn how to create a new CDKTF project from a pre-built or custom template. Also learn how to convert an existing HCL project into a CDKTF application.
+- [Project Setup](https://developer.hashicorp.com/terraform/cdktf/create-and-deploy/project-setup): Learn how to create a new CDKTN project from a pre-built or custom template. Also learn how to convert an existing HCL project into a CDKTN application.
 
 - [Unit Tests](https://developer.hashicorp.com/terraform/cdktf/test/unit-tests): Learn how to test your application in Typescript with jest.
 
@@ -48,7 +48,7 @@ Refer to the [CDKTF documentation](https://developer.hashicorp.com/terraform/cdk
 The development team would love your feedback to help guide the project.
 
 - Contribute using the [CONTRIBUTING.md](./CONTRIBUTING.md) guide.
-- Ask a question on the HashiCorp [Discuss](https://discuss.hashicorp.com/) using the [terraform-cdk](https://discuss.hashicorp.com/c/terraform-core/cdk-for-terraform/) category.
+- Ask a question on the [the cdk.dev - #cdk-terrain channel](https://cdk.dev)).
 - Report a [bug](https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug&template=bug-report.md&title=) or request a new [feature](https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=enhancement&template=feature-request.md&title=).
 - Browse all [open issues](https://github.com/open-constructs/cdk-terrain/issues).
 
@@ -65,7 +65,7 @@ git clone https://github.com/open-constructs/cdk-terrain.git
 Download dependencies.
 
 ```bash
-cd terraform-cdk/
+cd cdk-terrain/
 yarn install
 ```
 

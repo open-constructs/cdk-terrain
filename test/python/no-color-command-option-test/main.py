@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, TerraformStack, Testing, LocalBackend
+from cdktn import App, TerraformStack, Testing, LocalBackend
 
 class MyStack(TerraformStack):
     def __init__(self, scope: Construct, ns: str):

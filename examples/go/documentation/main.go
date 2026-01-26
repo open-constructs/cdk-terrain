@@ -3,12 +3,10 @@
 
 package main
 
-import (
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-)
+import "github.com/open-constructs/cdk-terrain-go/cdktn"
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewDatasourcesStack(app, "datasources")
 	RemoteStateDataSourceStack(app, "datasources-remote-state")

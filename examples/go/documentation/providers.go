@@ -7,19 +7,19 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	// DOCS_BLOCK_END:providers-import-providers
-	dnsimple "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/dnsimple/dnsimple/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/dnsimple/dnsimple/zonerecord"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	dnsimple "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/dnsimple/dnsimple/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/dnsimple/dnsimple/zonerecord"
 
 	// DOCS_BLOCK_START:providers-import-providers
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
-func NewProvidersStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewProvidersStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String(("us-east-1")),
@@ -31,13 +31,13 @@ func NewProvidersStack(scope constructs.Construct, name string) cdktf.TerraformS
 	})
 	// DOCS_BLOCK_END:providers-import-providers
 
-	dnsimpleToken := cdktf.NewTerraformVariable(stack, jsii.String("dnsimpleToken"), &cdktf.TerraformVariableConfig{
+	dnsimpleToken := cdktn.NewTerraformVariable(stack, jsii.String("dnsimpleToken"), &cdktn.TerraformVariableConfig{
 		Type:        jsii.String("string"),
 		Description: jsii.String("dnsimple token"),
 		Sensitive:   jsii.Bool(true),
 	})
 
-	dnsimpleAccount := cdktf.NewTerraformVariable(stack, jsii.String("dnsimpleAccount"), &cdktf.TerraformVariableConfig{
+	dnsimpleAccount := cdktn.NewTerraformVariable(stack, jsii.String("dnsimpleAccount"), &cdktn.TerraformVariableConfig{
 		Type:        jsii.String("string"),
 		Description: jsii.String("dnsimple account"),
 		Sensitive:   jsii.Bool(true),
@@ -50,9 +50,9 @@ func NewProvidersStack(scope constructs.Construct, name string) cdktf.TerraformS
 
 	zonerecord.NewZoneRecord(stack, jsii.String("web-www"), &zonerecord.ZoneRecordConfig{
 		ZoneName: jsii.String("example.com"),
-		Name:   jsii.String("web"),
-		Value:  instance.PublicIp(),
-		Type:   jsii.String("A"),
+		Name:     jsii.String("web"),
+		Value:    instance.PublicIp(),
+		Type:     jsii.String("A"),
 	})
 
 	// DOCS_BLOCK_START:providers-import-providers

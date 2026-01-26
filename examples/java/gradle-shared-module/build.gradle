@@ -9,7 +9,7 @@ subprojects {
         mavenCentral()
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/hashicorp/terraform-cdk")
+            url = uri("https://maven.pkg.github.com/open-constructs/cdk-terrain")
             credentials {
                 if (System.getenv("CI")?.toBoolean()) {
                     password = System.getenv("GITHUB_TOKEN")
@@ -61,7 +61,7 @@ subprojects {
 
 /***********************************************************************
  *
- *       The following configuration is only for `terraform-cdk`
+ *       The following configuration is only for `cdk-terrain`
  *       integration testing purposes and should be removed in
  *       consumer implementations.
  *
@@ -74,8 +74,8 @@ if(System.getenv("CI")?.toBoolean()) {
         configurations {
             all {
                 resolutionStrategy.dependencySubstitution {
-                    substitute(module("com.hashicorp:cdktf"))
-                            .using(module("com.hashicorp:cdktf:0.0.0"))
+                    substitute(module("io.cdktn:cdktn"))
+                            .using(module("io.cdktn:cdktn:0.0.0"))
                             .withoutClassifier()
                 }
             }

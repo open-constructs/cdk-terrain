@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-from cdktf import App
+from cdktn import App
 from assets import MyAssetStack
 from custom_constructs import MyS3BucketStack, MyKubernetesStack
 from data_sources import HelloTerraform, HelloTerraformRemoteState

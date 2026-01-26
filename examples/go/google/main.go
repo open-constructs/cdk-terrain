@@ -5,24 +5,24 @@ package main
 
 import (
 	constructs "github.com/aws/constructs-go/constructs/v10"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
 
 	jsii "github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/gkeAuth"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/google/containercluster"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/google/containernodepool"
-	google "github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/google/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/google/serviceaccount"
-	helm "github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/helm/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/helm/release"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/kubernetes/namespace"
-	kubernetes "github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/kubernetes/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/local/file"
-	local "github.com/hashicorp/terraform-cdk/examples/go/google/generated/hashicorp/local/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/gkeAuth"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/google/containercluster"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/google/containernodepool"
+	google "github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/google/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/google/serviceaccount"
+	helm "github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/helm/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/helm/release"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/kubernetes/namespace"
+	kubernetes "github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/kubernetes/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/local/file"
+	local "github.com/open-constructs/cdk-terrain/examples/go/google/generated/hashicorp/local/provider"
 )
 
-func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &id)
+func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &id)
 	google.NewGoogleProvider(stack, jsii.String("google"), &google.GoogleProviderConfig{
 		Zone:    jsii.String("us-west1"),
 		Project: jsii.String("dschmidt-cdk-test"),
@@ -96,7 +96,7 @@ func NewMyStack(scope constructs.Construct, id string) cdktf.TerraformStack {
 }
 
 func main() {
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewMyStack(app, "google")
 

@@ -9,8 +9,8 @@ import java.util.Arrays;
 
 // DOCS_BLOCK_START:modules-install-modules
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.App;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.App;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 import imports.vpc.Vpc;

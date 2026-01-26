@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import TerraformStack, App, TerraformVariable, Token
+from cdktn import TerraformStack, App, TerraformVariable, Token
 # DOCS_BLOCK_START:functions-usage-example
-from cdktf import Fn, TerraformOutput
+from cdktn import Fn, TerraformOutput
 from imports.aws.provider import AwsProvider
 from imports.aws.data_aws_availability_zones import DataAwsAvailabilityZones
 # DOCS_BLOCK_END:functions-usage-example

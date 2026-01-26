@@ -7,16 +7,16 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	kubernetes "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/kubernetes/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/myconstructs"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	kubernetes "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/kubernetes/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/myconstructs"
 
 	"os"
 	"path"
 )
 
-func NewConstructsStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewConstructsStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	cwd, _ := os.Getwd()
 
@@ -44,7 +44,7 @@ DOCS_BLOCK_END:constructs
 */
 func SynthConstructs() {
 	// DOCS_BLOCK_START:constructs
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewConstructsStack(app, "constructs")
 

@@ -10,14 +10,14 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/s3bucket"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/s3bucketobject"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/s3bucket"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/s3bucketobject"
 )
 
-func NewAssetsStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewAssetsStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	cwd, _ := os.Getwd()
 
@@ -29,9 +29,9 @@ func NewAssetsStack(scope constructs.Construct, name string) cdktf.TerraformStac
 		Bucket: jsii.String("demo"),
 	})
 
-	asset := cdktf.NewTerraformAsset(stack, jsii.String("lambda-asset"), &cdktf.TerraformAssetConfig{
+	asset := cdktn.NewTerraformAsset(stack, jsii.String("lambda-asset"), &cdktn.TerraformAssetConfig{
 		Path: jsii.String(path.Join(cwd, "lambda")),
-		Type: cdktf.AssetType_ARCHIVE,
+		Type: cdktn.AssetType_ARCHIVE,
 	})
 
 	s3bucketobject.NewS3BucketObject(stack, jsii.String("lambda-archive"), &s3bucketobject.S3BucketObjectConfig{
@@ -53,7 +53,7 @@ DOCS_BLOCK_END:assets
 */
 func SynthAssets() {
 	// DOCS_BLOCK_START:assets
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	NewAssetsStack(app, "assets")
 

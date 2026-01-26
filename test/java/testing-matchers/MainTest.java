@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import com.hashicorp.cdktf.Testing;
+import io.cdktn.cdktn.Testing;
 import com.mycompany.app.Main;
-import com.hashicorp.cdktf.App;
+import io.cdktn.cdktn.App;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;

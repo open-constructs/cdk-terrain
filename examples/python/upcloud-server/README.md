@@ -1,6 +1,6 @@
 # python-upcloud-server
 
-A CDK for Terraform application in Python to create a server with UpCloud CDK for Terraform provider.
+A CDK Terrain application in Python to create a server with UpCloud CDK Terrain provider.
 
 To get started with this example, you need to:
 
@@ -22,10 +22,10 @@ Then, to install the project dependencies, run `pipenv install`.
 pipenv install
 ```
 
-Finally, generate CDK for Terraform constructs for Terraform providers and modules used in the project by running `cdktf get`.
+Finally, generate CDK Terrain constructs for Terraform providers and modules used in the project by running `cdktn get`.
 
 ```sh
-cdktf get
+cdktn get
 ```
 
 See also [repository](https://github.com/cdktf/cdktf-provider-upcloud.git) with pre-built UpCloud CDK for Terraform provider.
@@ -48,20 +48,20 @@ export UPCLOUD_PASSWORD="your-password"
 
 ## Deploy the example stack
 
-To deploy our stack defined in [main.py](./main.py), run `cdktf deploy`.
+To deploy our stack defined in [main.py](./main.py), run `cdktn deploy`.
 
 ```sh
 # With one-time password delivered to your email
-cdktf deploy
+cdktn deploy
 
 # With ssh-key
-PUBLIC_KEY_PATH=$(ls ~/.ssh/*.pub) cdktf deploy
+PUBLIC_KEY_PATH=$(ls ~/.ssh/*.pub) cdktn deploy
 ```
 
 After the server has been deployed, you can use `example` username and `server_ip` stack output value to SSH into the server.
 
-If you want to cleanup the created resources, run `cdktf destroy` to destroy the stack.
+If you want to cleanup the created resources, run `cdktn destroy` to destroy the stack.
 
 ```sh
-cdktf destroy
+cdktn destroy
 ```

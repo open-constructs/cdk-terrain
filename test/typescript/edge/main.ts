@@ -8,7 +8,7 @@ import {
   TerraformOutput,
   TerraformStack,
   Token,
-} from "cdktf";
+} from "cdktn";
 import * as edge from "./.gen/providers/edge";
 
 // Using references to resource attributes as resource arguments
@@ -150,7 +150,7 @@ export class ReferenceStack extends TerraformStack {
   }
 }
 
-// CDKTF supports referencing inputs from providers (Terraform does not)
+// CDKTN supports referencing inputs from providers (Terraform does not)
 export class ProviderStack extends TerraformStack {
   constructor(scope: Construct, id: string) {
     super(scope, id);

@@ -7,8 +7,8 @@ package com.mycompany.app.resources;
 
 // DOCS_BLOCK_START:resources-escape-hatch
 // DOCS_BLOCK_START:resources-escape-hatch-dynamic-block
-import com.hashicorp.cdktf.TerraformVariable;
-import com.hashicorp.cdktf.TerraformVariableConfig;
+import io.cdktn.cdktn.TerraformVariable;
+import io.cdktn.cdktn.TerraformVariableConfig;
 // DOCS_BLOCK_END:resources-escape-hatch-dynamic-block
 import imports.aws.dynamodb_table.DynamodbTable;
 import imports.aws.dynamodb_table.DynamodbTableAttribute;
@@ -20,8 +20,8 @@ import imports.aws.security_group.*;
 // DOCS_BLOCK_END:resources-escape-hatch-dynamic-block
 import imports.kubernetes.deployment.*;
 import software.constructs.Construct;
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
 
 // DOCS_BLOCK_START:resources-references
 import imports.kubernetes.namespace.Namespace;

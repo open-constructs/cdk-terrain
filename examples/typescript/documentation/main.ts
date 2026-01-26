@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App } from "cdktf";
+import { App } from "cdktn";
 import { AspectTaggingStack } from "./aspect-tagging";
 import { AspectValidationStack } from "./aspect-validation";
 import { AssetsStack } from "./assets";

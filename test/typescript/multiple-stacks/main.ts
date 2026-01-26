@@ -7,7 +7,7 @@ import {
   Testing,
   LocalBackend,
   TerraformOutput,
-} from "cdktf";
+} from "cdktn";
 import * as NullProvider from "./.gen/providers/null";
 
 export class HelloTerra extends TerraformStack {

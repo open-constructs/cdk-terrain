@@ -199,7 +199,7 @@ case@^1.6.3:
   resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
-"cdktf@file:../../packages/cdktf":
+"cdktn@file:../../packages/cdktn":
   version "0.0.0"
   dependencies:
     archiver "7.0.1"

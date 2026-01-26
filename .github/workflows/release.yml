@@ -7,33 +7,33 @@ on:
   workflow_dispatch: {}
 
 env:
-  SENTRY_ORG: hashicorp
-  SENTRY_PROJECT: cdktf-cli
+  SENTRY_ORG: cdk-terrain
+  SENTRY_PROJECT: cdktn-cli
 
 concurrency:
   group: release
 
 jobs:
   prepare-release:
-    if: github.repository == 'hashicorp/terraform-cdk'
+    if: github.repository == 'open-constructs/cdk-terrain'
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.build-test-matrix.outputs.tests }}
       version: ${{ steps.get_version.outputs.version }}
       release_status: ${{ steps.get_release_status.outputs.release }}
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     env:
       CHECKPOINT_DISABLE: "1"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0 # gives sentry access to all previous commits
-      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktf/hcl2json fails without this
+      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
         # The Sentry CLI also requires this, https://github.com/actions/checkout/issues/760
-        run: git config --global --add safe.directory /__w/terraform-cdk/terraform-cdk
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: version
         id: get_version
         run: |
@@ -42,14 +42,14 @@ jobs:
       - name: release status
         id: get_release_status
         run: |
-          status=$(sentry-cli releases list | grep -q 'cdktf-cli-${{ steps.get_version.outputs.version }} ' && echo 'released' || echo 'unreleased')
+          status=$(sentry-cli releases list | grep -q 'cdktn-cli-${{ steps.get_version.outputs.version }} ' && echo 'released' || echo 'unreleased')
           echo "Sentry returned: ${status}"
           echo "release=${status}" >> $GITHUB_OUTPUT
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
       - name: Create a release
         if: steps.get_release_status.outputs.release == 'unreleased'
-        run: sentry-cli releases new cdktf-cli-${{ steps.get_version.outputs.version }}
+        run: sentry-cli releases new cdktn-cli-${{ steps.get_version.outputs.version }}
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
       - name: create bundle
@@ -63,8 +63,8 @@ jobs:
       - name: Add sourcemap and commit info to sentry
         if: steps.get_release_status.outputs.release == 'unreleased'
         run: |
-          sentry-cli releases files cdktf-cli-${{ steps.get_version.outputs.version }} upload-sourcemaps ./packages/cdktf-cli/bundle
-          sentry-cli releases set-commits --auto cdktf-cli-${{ steps.get_version.outputs.version }}
+          sentry-cli releases files cdktn-cli-${{ steps.get_version.outputs.version }} upload-sourcemaps ./packages/cdktn-cli/bundle
+          sentry-cli releases set-commits --auto cdktn-cli-${{ steps.get_version.outputs.version }}
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
       - name: Upload artifact
@@ -77,7 +77,7 @@ jobs:
         if: ${{ !inputs.skip_setup }}
         with:
           name: edge-provider-bindings
-          path: packages/@cdktf/provider-generator/edge-provider-bindings
+          path: packages/@cdktn/provider-generator/edge-provider-bindings
 
   integration_test:
     uses: ./.github/workflows/integration.yml
@@ -127,14 +127,14 @@ jobs:
       matrix:
         package:
           [
-            cdktf,
-            cdktf-cli,
-            "@cdktf/hcl2cdk",
-            "@cdktf/hcl2json",
-            "@cdktf/provider-generator",
-            "@cdktf/provider-schema",
-            "@cdktf/commons",
-            "@cdktf/cli-core",
+            cdktn,
+            cdktn-cli,
+            "@cdktn/hcl2cdk",
+            "@cdktn/hcl2json",
+            "@cdktn/provider-generator",
+            "@cdktn/provider-schema",
+            "@cdktn/commons",
+            "@cdktn/cli-core",
           ]
         terraform_version: ["1.6.5", "1.5.5"]
     with:
@@ -153,7 +153,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: installing dependencies
@@ -178,7 +178,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -186,7 +186,7 @@ jobs:
           name: dist
           path: dist
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Release
         run: npx -p publib publib-npm
         env:
@@ -202,7 +202,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -210,7 +210,7 @@ jobs:
           name: dist
           path: dist
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       # We use twine directly for publishing instead of publib-pypi
       # Publib-pypi does the same twine command (https://github.com/cdklabs/publib/blob/main/bin/publib-pypi)
       # but also tries to install twine which is already globally
@@ -229,8 +229,11 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
 
   release_maven:
-    name: Release to Maven
+    name: Release to GitHub Packages (Maven)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs:
       - prepare-release
       - integration_test
@@ -238,7 +241,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -246,21 +249,22 @@ jobs:
           name: dist
           path: dist
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Release
         run: npx -p publib publib-maven
         env:
-          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-          MAVEN_ENDPOINT: https://hashicorp.oss.sonatype.org
-          MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          MAVEN_GPG_PRIVATE_KEY_PASSPHRASE: ${{ secrets.MAVEN_GPG_PRIVATE_KEY_PASSPHRASE }}
-          MAVEN_STAGING_PROFILE_ID: ${{ secrets.MAVEN_STAGING_PROFILE_ID }}
+          MAVEN_SERVER_ID: github
+          MAVEN_USERNAME: ${{ github.actor }}
+          MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          MAVEN_REPOSITORY_URL: "https://maven.pkg.github.com/${{ github.repository }}"
           MAVEN_OPTS: "--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED" # See https://stackoverflow.com/questions/70153962/nexus-staging-maven-plugin-maven-deploy-failed-an-api-incompatibility-was-enco
 
   release_nuget:
-    name: Release to NuGet
+    name: Release to GitHub Packages (NuGet)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs:
       - prepare-release
       - integration_test
@@ -268,7 +272,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Download dist
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -276,11 +280,12 @@ jobs:
           name: dist
           path: dist
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Release
         run: npx -p publib publib-nuget
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_SERVER: "https://nuget.pkg.github.com/open-constructs/index.json"
+          NUGET_API_KEY: ${{ secrets.GITHUB_TOKEN }}
 
   release_golang:
     name: Release Go to Github Repo
@@ -292,7 +297,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - name: Download dist
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -300,7 +305,7 @@ jobs:
           name: dist
           path: dist
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       - name: Release
         run: npx -p publib publib-golang
         env:
@@ -318,7 +323,7 @@ jobs:
       - unit_test
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: version
@@ -329,14 +334,14 @@ jobs:
       - name: release status
         id: get_release_status
         run: |
-          status=$(sentry-cli releases list | grep 'cdktf-cli-${{ steps.get_version.outputs.version }} ' | grep -q 'unreleased' && echo "unreleased" || echo "released")
+          status=$(sentry-cli releases list | grep 'cdktn-cli-${{ steps.get_version.outputs.version }} ' | grep -q 'unreleased' && echo "unreleased" || echo "released")
           echo "Sentry returned: ${status}"
           echo "release=${status}" >> $GITHUB_OUTPUT
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
       - name: Finalize the release
         if: steps.get_release_status.outputs.release == 'unreleased'
-        run: sentry-cli releases finalize cdktf-cli-${{ steps.get_version.outputs.version }}
+        run: sentry-cli releases finalize cdktn-cli-${{ steps.get_version.outputs.version }}
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
 
@@ -367,5 +372,5 @@ jobs:
           payload: |
             {
               "name": "main",
-              "run_url": "https://github.com/hashicorp/terraform-cdk/actions/runs/${{ github.run_id }}"
+              "run_url": "https://github.com/open-constructs/cdk-terrain/actions/runs/${{ github.run_id }}"
             }

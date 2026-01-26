@@ -1,0 +1,22 @@
+{
+  "name": "{{ $base }}",
+  "version": "1.0.0",
+  "main": "main.js",
+  "types": "main.ts",
+  "license": "MPL-2.0",
+  "private": true,
+  "scripts": {
+    "get": "cdktn get",
+    "build": "tsc",
+    "synth": "cdktn synth",
+    "compile": "tsc --pretty",
+    "watch": "tsc -w",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "upgrade": "npm i cdktn@latest cdktn-cli@latest",
+    "upgrade:next": "npm i cdktn@next cdktn-cli@next"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

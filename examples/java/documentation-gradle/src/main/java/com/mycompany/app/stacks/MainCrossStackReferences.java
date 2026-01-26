@@ -7,8 +7,8 @@ package com.mycompany.app.stacks;
 
 // DOCS_BLOCK_START:cross-stack-reference
 import software.constructs.Construct;
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 import com.mycompany.app.myconstructs.DockerBackend;

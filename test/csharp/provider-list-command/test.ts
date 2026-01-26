@@ -6,24 +6,29 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      CDKTF_DIST: "",
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
     }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-    await driver.setupCsharpProject({
-      init: { additionalOptions: "--cdktf-version 0.13.0" },
-    });
+    await driver.setupCsharpProject();
+
+    await driver.exec("dotnet", [
+      "add",
+      "package",
+      "HashiCorp.Cdktf",
+      "--version",
+      "0.13.0",
+    ]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "random@=3.4.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
       ]);
 
-      await driver.exec("cdktf", [
+      await driver.exec("cdktn", [
         "provider",
         "add",
         "local@=2.2.3",
@@ -32,7 +37,7 @@ describe("provider list command", () => {
     });
 
     test("with json output", async () => {
-      const res = await driver.exec("cdktf", ["provider", "list", "--json"]);
+      const res = await driver.exec("cdktn", ["provider", "list", "--json"]);
 
       const output = JSON.parse(res.stdout);
 
@@ -63,7 +68,7 @@ describe("provider list command", () => {
     }, 120_000);
 
     test("with tabular output", async () => {
-      const res = await driver.exec("cdktf", ["provider", "list"]);
+      const res = await driver.exec("cdktn", ["provider", "list"]);
 
       expect(res.stdout).toMatchSnapshot();
     }, 120_000);

@@ -7,10 +7,10 @@ package com.mycompany.app.assets;
 
 // DOCS_BLOCK_START:assets
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformAsset;
-import com.hashicorp.cdktf.TerraformAssetConfig;
-import com.hashicorp.cdktf.AssetType;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformAsset;
+import io.cdktn.cdktn.TerraformAssetConfig;
+import io.cdktn.cdktn.AssetType;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 import imports.aws.s3_bucket.S3Bucket;

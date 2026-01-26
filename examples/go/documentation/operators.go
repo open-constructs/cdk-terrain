@@ -9,15 +9,15 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/dataawsavailabilityzones"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/dataawsavailabilityzones"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
 // DOCS_BLOCK_END:operators,functions-raw
 
-func NewOperatorsAndFunctionsRawStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewOperatorsAndFunctionsRawStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("use-west-2"),
@@ -30,19 +30,19 @@ func NewOperatorsAndFunctionsRawStack(scope constructs.Construct, name string) c
 	)
 
 	// DOCS_BLOCK_END:functions-raw
-	cdktf.NewTerraformOutput(stack, jsii.String("half-of-the-zone"), &cdktf.TerraformOutputConfig{
-		Value: cdktf.Op_Div(
-			cdktf.Fn_LengthOf(cdktf.Token_AsAny(zones.Names())),
+	cdktn.NewTerraformOutput(stack, jsii.String("half-of-the-zone"), &cdktn.TerraformOutputConfig{
+		Value: cdktn.Op_Div(
+			cdktn.Fn_LengthOf(cdktn.Token_AsAny(zones.Names())),
 			jsii.Number(2),
 		),
 	})
 	// DOCS_BLOCK_END:operators
 
 	// DOCS_BLOCK_START:functions-raw
-	cdktf.NewTerraformOutput(stack, jsii.String("half-of-the-zone-raw"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("half-of-the-zone-raw"), &cdktn.TerraformOutputConfig{
 		Value: jsii.String(
 			fmt.Sprintf("${length(%s.names) / 2}",
-				*cdktf.Token_AsString(zones.Names(), &cdktf.EncodingOptions{}),
+				*cdktn.Token_AsString(zones.Names(), &cdktn.EncodingOptions{}),
 			),
 		),
 	})

@@ -4,7 +4,7 @@
 
 
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.null.provider import NullProvider
 from imports.null.resource import Resource
 

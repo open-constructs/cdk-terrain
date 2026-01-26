@@ -8,9 +8,9 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/instance"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/instance"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 )
 
 type SourceStack struct {
@@ -18,7 +18,7 @@ type SourceStack struct {
 }
 
 func NewSourceStack(scope constructs.Construct, name string) SourceStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("us-east-1"),
@@ -39,24 +39,24 @@ type DependencyStack struct {
 }
 
 func NewDependencyStack(scope constructs.Construct, name string, dependencies []*SourceStack) DependencyStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	ids := make([]*string, 0)
 	for _, dep := range dependencies {
 		ids = append(ids, dep.Instance.Id())
 	}
 
-	allResources := cdktf.NewTerraformLocal(stack, jsii.String("merged_items"), ids)
+	allResources := cdktn.NewTerraformLocal(stack, jsii.String("merged_items"), ids)
 
 	return DependencyStack{
 		AllResources: allResources.AsList(),
 	}
 }
 
-func NewNestedDependencyStack(scope constructs.Construct, name string, allResources []*string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewNestedDependencyStack(scope constructs.Construct, name string, allResources []*string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
-	cdktf.NewTerraformOutput(stack, jsii.String("all_resources"), &cdktf.TerraformOutputConfig{
+	cdktn.NewTerraformOutput(stack, jsii.String("all_resources"), &cdktn.TerraformOutputConfig{
 		Value: allResources,
 	})
 
@@ -73,7 +73,7 @@ DOCS_BLOCK_END:stack-dependencies
 */
 func SynthStackDependencies() {
 	// DOCS_BLOCK_START:stack-dependencies
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	stackA := NewSourceStack(app, "stack-a")
 	stackB := NewSourceStack(app, "stack-b")

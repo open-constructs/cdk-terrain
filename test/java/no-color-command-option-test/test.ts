@@ -7,7 +7,7 @@ import { onPosix, TestDriver } from "../../test-helper";
 // No-Color in Gradle is either defined through command line options (--console=plain)
 // or through setting the org.gradle.console=plain key in the gradle.properties file
 // Both are on the project to configure, therefore we disable this test for now.
-describe.skip("no-color option for cdktf deploy, diff, destroy", () => {
+describe.skip("no-color option for cdktn deploy, diff, destroy", () => {
   let driver: TestDriver;
   beforeAll(async () => {
     driver = new TestDriver(__dirname, {
@@ -16,9 +16,9 @@ describe.skip("no-color option for cdktf deploy, diff, destroy", () => {
     await driver.setupJavaProject();
   }, 500_000);
 
-  onPosix("contains no color formatting in cdktf deploy", async () => {
+  onPosix("contains no color formatting in cdktn deploy", async () => {
     const result = await execa(
-      "cdktf",
+      "cdktn",
       ["deploy", "--auto-approve", "--no-color"],
       {
         env: driver.env,
@@ -29,8 +29,8 @@ describe.skip("no-color option for cdktf deploy, diff, destroy", () => {
     console.log(result.stdout);
     expect(hasAnsi(result.stdout)).toBe(false);
   });
-  onPosix("contains no color formatting in cdktf diff", async () => {
-    const result = await execa("cdktf", ["diff", "--no-color"], {
+  onPosix("contains no color formatting in cdktn diff", async () => {
+    const result = await execa("cdktn", ["diff", "--no-color"], {
       env: driver.env,
       cwd: driver.workingDirectory,
     });
@@ -38,9 +38,9 @@ describe.skip("no-color option for cdktf deploy, diff, destroy", () => {
     console.log(result.stdout);
     expect(hasAnsi(result.stdout)).toBe(false);
   });
-  onPosix("contains no color formatting in cdktf destroy", async () => {
+  onPosix("contains no color formatting in cdktn destroy", async () => {
     const result = await execa(
-      "cdktf",
+      "cdktn",
       ["destroy", "--auto-approve", "--no-color"],
       {
         env: driver.env,

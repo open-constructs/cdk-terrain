@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { Construct } from "constructs";
-import { App, TerraformStack, Testing } from "cdktf";
+import { App, TerraformStack, Testing } from "cdktn";
 import * as NullProvider from "./.gen/providers/null";
 // Reference import here
 

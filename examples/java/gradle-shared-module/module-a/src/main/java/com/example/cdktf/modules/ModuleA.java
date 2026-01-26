@@ -6,7 +6,7 @@
 package com.example.cdktf.modules;
 
 import com.example.cdktf.common.BaseApplicationModule;
-import com.hashicorp.cdktf.App;
+import io.cdktn.cdktn.App;
 import imports.vsphere.provider.VsphereProvider;
 import imports.vsphere.virtual_machine.VirtualMachine;
 import software.constructs.Construct;

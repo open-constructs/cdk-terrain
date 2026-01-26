@@ -75,13 +75,13 @@ export class TestDriver {
     addToEnv: Record<string, string> = {},
   ) {
     // Node.js prepends all parent node_modules/.bin directories to the PATH env var
-    // which shadows the cdktf CLI we want to test against and set in run-against-dist.sh
+    // which shadows the cdktn CLI we want to test against and set in run-against-dist.sh
     // While the code is the same, we want the CLI to be installed in a temporary directory
     // (handled by run-against-dist) to ensure we don't have broken relative paths in
     // that don't work then the CLI is installed via NPM. One example for such a bug we want
     // to catch with this is: https://github.com/hashicorp/terraform-cdk/issues/3025
     // To achieve this, we prepend the path exported by the run-against-dist script that
-    // it installed the cdktf CLI in
+    // it installed the cdktn CLI in
     const newPath = `${process.env.TEST_PATH_CDKTF_CLI}:${process.env.PATH}`;
     this.env = Object.assign(
       { CI: 1 },
@@ -223,21 +223,21 @@ export class TestDriver {
 
   init = async (template: string, additionalOptions = "") => {
     await this.exec(
-      `cdktf init --template ${template} --project-name="typescript-test" --project-description="typescript test app" --local --enable-crash-reporting=false ${additionalOptions}`,
+      `cdktn init --template ${template} --project-name="typescript-test" --project-description="typescript test app" --local --enable-crash-reporting=false ${additionalOptions}`,
     );
   };
 
   get = async () => {
-    await this.exec(`cdktf get`);
+    await this.exec(`cdktn get`);
   };
 
   synth = async (flags?: string) => {
-    return await this.exec(`cdktf synth ${flags ? flags : ""}`);
+    return await this.exec(`cdktn synth ${flags ? flags : ""}`);
   };
 
   list = (flags?: string) => {
     return stripAnsi(
-      execSyncLogErrors(`cdktf list ${flags ? flags : ""}`, {
+      execSyncLogErrors(`cdktn list ${flags ? flags : ""}`, {
         env: this.env,
       }).toString(),
     );
@@ -246,7 +246,7 @@ export class TestDriver {
   diff = (stackName?: string, otherFlags?: string[]) => {
     return stripAnsi(
       execSyncLogErrors(
-        `cdktf diff ${stackName ? stackName : ""} ${
+        `cdktn diff ${stackName ? stackName : ""} ${
           otherFlags?.length ? otherFlags.join(" ") : ""
         }`,
         {
@@ -262,7 +262,7 @@ export class TestDriver {
     otherFlags?: string[],
   ) => {
     const result = await execa(
-      "cdktf",
+      "cdktn",
       [
         "deploy",
         ...(stackNames || []),
@@ -282,7 +282,7 @@ export class TestDriver {
   ) => {
     return stripAnsi(
       execSyncLogErrors(
-        `cdktf output ${stackName ? stackName : ""} ${
+        `cdktn output ${stackName ? stackName : ""} ${
           outputsFilePath ? `--outputs-file=${outputsFilePath}` : ""
         } ${
           includeSensitiveOutputs
@@ -297,7 +297,7 @@ export class TestDriver {
   destroy = (stackNames?: string[]) => {
     return stripAnsi(
       execSyncLogErrors(
-        `cdktf destroy ${
+        `cdktn destroy ${
           stackNames ? stackNames.join(" ") : ""
         } --auto-approve`,
         {
@@ -308,7 +308,7 @@ export class TestDriver {
   };
 
   watch = () => {
-    const child = ptySpawn("cdktf", ["watch", "--auto-approve"], {
+    const child = ptySpawn("cdktn", ["watch", "--auto-approve"], {
       name: "xterm-color",
       env: this.env,
       cols: 80,
@@ -321,7 +321,7 @@ export class TestDriver {
   /**
    * runs terraform init and terraform validate in the output directory for the given stack name
    * @param stack the name of the stack to validate
-   * @param baseDirectory an optional base directory for the cdktf project
+   * @param baseDirectory an optional base directory for the cdktn project
    * @returns the stdout of terraform validate
    */
   async validate(stack: string, baseDirectory?: string) {
@@ -402,7 +402,7 @@ export class TestDriver {
       path.resolve(
         __dirname,
         "..",
-        "packages/@cdktf/cli-core/templates/typescript",
+        "packages/@cdktn/cli-core/templates/typescript",
       ),
     );
     try {
@@ -432,6 +432,18 @@ export class TestDriver {
 
   readLocalFile = (fileName: string): string => {
     return fs.readFileSync(path.join(this.workingDirectory, fileName), "utf8");
+  };
+
+  addGradleDependency = async (dependencyString: string) => {
+    fs.writeFileSync(
+      path.join(this.workingDirectory, "./build.gradle"),
+      this.readLocalFile("./build.gradle").replace(
+        `dependencies {`,
+        `dependencies {\nimplementation "${dependencyString}"\n`,
+      ),
+    );
+
+    await this.exec(`./gradlew install`);
   };
 }
 

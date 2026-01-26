@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-from cdktf import TerraformStack, TerraformLocal, TerraformVariable, CloudBackend, NamedCloudWorkspace
+from cdktn import TerraformStack, TerraformLocal, TerraformVariable, CloudBackend, NamedCloudWorkspace
 from imports.aws.instance import Instance
 from imports.aws.provider import AwsProvider
 
@@ -35,7 +35,7 @@ class VariablesOutputsDefineLocalStack(TerraformStack):
 
 #DOCS_BLOCK_START:var-out-output-values
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput
+from cdktn import App, TerraformStack, TerraformOutput
 
 class OutputValuesProps:
     myDomain: str
@@ -64,7 +64,7 @@ app.synth()
 from imports.random.provider import RandomProvider
 
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput
+from cdktn import App, TerraformStack, TerraformOutput
 
 class DefineOutputStack(TerraformStack):
     def __init__(self, scope: Construct, name: str):
@@ -91,7 +91,7 @@ app.synth()
 import imports.random as random
 
 from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput, CloudBackend, NamedRemoteWorkspace, DataTerraformRemoteState
+from cdktn import App, TerraformStack, TerraformOutput, CloudBackend, NamedRemoteWorkspace, DataTerraformRemoteState
 
 class Producer(TerraformStack):
     def __init__(self, scope: Construct, name: str):

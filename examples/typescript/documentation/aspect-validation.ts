@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // DOCS_BLOCK_START:aspect-validation
-import { Annotations, Aspects, IAspect, TerraformStack } from "cdktf";
+import { Annotations, Aspects, IAspect, TerraformStack } from "cdktn";
 import { Construct, IConstruct } from "constructs";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { S3Bucket } from "./.gen/providers/aws/s3-bucket";

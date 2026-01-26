@@ -4,7 +4,7 @@
 
 
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.docker.provider import DockerProvider
 from imports.docker.container import Container
 from imports.docker.image import Image

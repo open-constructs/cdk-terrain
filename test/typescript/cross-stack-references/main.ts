@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { App, Fn, TerraformStack, Testing, TerraformLocal } from "cdktf";
+import { App, Fn, TerraformStack, Testing, TerraformLocal } from "cdktn";
 import { RandomProvider } from "./.gen/providers/random/provider";
 import { Integer as NumericResource } from "./.gen/providers/random/integer";
 import { Password as StringResource } from "./.gen/providers/random/password";

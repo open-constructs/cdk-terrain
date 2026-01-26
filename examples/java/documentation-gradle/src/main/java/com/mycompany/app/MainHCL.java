@@ -7,12 +7,12 @@ package com.mycompany.app;
 
 // DOCS_BLOCK_START:hcl-interop
 import software.constructs.Construct;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformOutput;
-import com.hashicorp.cdktf.TerraformOutputConfig;
-import com.hashicorp.cdktf.TerraformVariable;
-import com.hashicorp.cdktf.TerraformVariableConfig;
-import com.hashicorp.cdktf.App;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformOutput;
+import io.cdktn.cdktn.TerraformOutputConfig;
+import io.cdktn.cdktn.TerraformVariable;
+import io.cdktn.cdktn.TerraformVariableConfig;
+import io.cdktn.cdktn.App;
 import imports.random.provider.RandomProvider;
 import imports.random.pet.Pet;
 import imports.random.pet.PetConfig;

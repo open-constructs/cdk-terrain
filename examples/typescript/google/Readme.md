@@ -10,10 +10,10 @@ Install project dependencies
 yarn install
 ```
 
-Generate CDK for Terraform constructs for Terraform provides and modules used in the project.
+Generate CDK Terrain constructs for Terraform provides and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```
 
 You can now edit the `main.ts` file if you want to modify any code.
@@ -23,11 +23,11 @@ Make sure to create your credential file `google.json` to make this example usab
 Generate Terraform configuration
 
 ```bash
-cdktf synth
+cdktn synth
 ```
 
 The above command will create a folder called `cdktf.out` that contains all Terraform JSON configuration that was generated.
 
-See changes `cdktf diff` and deploy via `cdktf deploy`.
+See changes `cdktn diff` and deploy via `cdktn deploy`.
 
-When you're done run `cdktf destroy`.
+When you're done run `cdktn destroy`.

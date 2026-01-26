@@ -9,19 +9,19 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/dataawsregion"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/dynamodbtable"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/dataawsregion"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/dynamodbtable"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
 
 	// DOCS_BLOCK_END:resources-define
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/securitygroup"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/snstopic"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/securitygroup"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/snstopic"
 	// DOCS_BLOCK_START:resources-define
 )
 
-func NewResourcesStack(scope constructs.Construct, name string) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewResourcesStack(scope constructs.Construct, name string) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: jsii.String("eu-central-1"),
@@ -67,7 +67,7 @@ func NewResourcesStack(scope constructs.Construct, name string) cdktf.TerraformS
 	// DOCS_BLOCK_END:resources-override-attribute
 
 	// DOCS_BLOCK_START:resources-escape-hatch-dynamic-block
-	portsList := cdktf.NewTerraformVariable(stack, jsii.String("ports"), &cdktf.TerraformVariableConfig{
+	portsList := cdktn.NewTerraformVariable(stack, jsii.String("ports"), &cdktn.TerraformVariableConfig{
 		Type:    jsii.String("list"),
 		Default: []int{22, 80, 443, 5432},
 	})

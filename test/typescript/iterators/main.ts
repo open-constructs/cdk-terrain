@@ -12,7 +12,7 @@ import {
   TerraformAsset,
   AssetType,
   Token,
-} from "cdktf";
+} from "cdktn";
 import * as ArchiveProvider from "./.gen/providers/archive";
 import * as NomadProvider from "./.gen/providers/nomad";
 import { AwsProvider } from "./.gen/providers/aws/provider";

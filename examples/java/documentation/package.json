@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "license": "MPL-2.0",
   "scripts": {
-    "reinstall": "mvn install:install-file -Dfile=./../../../dist/java/com/hashicorp/cdktf/0.0.0/cdktf-0.0.0.jar -DgroupId=com.hashicorp -DartifactId=cdktf -Dversion=0.0.0 -Dpackaging=jar",
-    "build": "cdktf get --parallelism 1 --show-performance-info",
-    "synth": "cdktf synth --show-performance-info"
+    "reinstall": "mvn install:install-file -Dfile=./../../../dist/java/io/cdktn/cdktn/0.0.0/cdktn-0.0.0.jar -DgroupId=io.cdktn -DartifactId=cdktn -Dversion=0.0.0 -Dpackaging=jar",
+    "build": "cdktn get --parallelism 1 --show-performance-info",
+    "synth": "cdktn synth --show-performance-info"
   }
 }

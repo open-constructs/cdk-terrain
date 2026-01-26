@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // DOCS_BLOCK_START:hcl-interop
 import { Construct } from "constructs";
-import { TerraformOutput, TerraformStack, TerraformVariable } from "cdktf";
+import { TerraformOutput, TerraformStack, TerraformVariable } from "cdktn";
 import { Pet } from "@cdktf/provider-random/lib/pet";
 import { RandomProvider } from "@cdktf/provider-random/lib/provider";
 

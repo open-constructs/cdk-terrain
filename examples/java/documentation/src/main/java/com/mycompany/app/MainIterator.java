@@ -5,7 +5,7 @@
 
 package com.mycompany.app;
 
-import com.hashicorp.cdktf.*;
+import io.cdktn.cdktn.*;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 import software.constructs.Construct;

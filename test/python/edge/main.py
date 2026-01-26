@@ -4,7 +4,7 @@
 
 import os
 from constructs import Construct
-from cdktf import App, Fn, TerraformStack, Token, TerraformOutput, TerraformIterator, Token
+from cdktn import App, Fn, TerraformStack, Token, TerraformOutput, TerraformIterator, Token
 import imports.edge as edge
 
 # Using references to resource attributes as resource arguments
@@ -135,7 +135,7 @@ class ReferenceStack(TerraformStack):
                                                                        5).str,
                                                                    )
 
-# CDKTF supports referencing inputs from providers (Terraform does not)
+# CDKTN supports referencing inputs from providers (Terraform does not)
 
 
 class ProviderStack(TerraformStack):

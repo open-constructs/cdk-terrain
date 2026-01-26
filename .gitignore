@@ -32,7 +32,7 @@ cdktf.out
 *.code-workspace
 
 bootstrap.json
-terraform-cdk.github-issues
+cdk-terrain.github-issues
 .idea
 tsconfig.tsbuildinfo
 examples/java/gradle-shared-module/.gradle/

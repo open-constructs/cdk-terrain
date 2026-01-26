@@ -7,10 +7,10 @@ package com.mycompany.app;
 
 import software.constructs.Construct;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.Testing;
-import com.hashicorp.cdktf.LocalBackend;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.Testing;
+import io.cdktn.cdktn.LocalBackend;
 
 public class Main extends TerraformStack
 {

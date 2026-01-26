@@ -12,7 +12,7 @@ using Providers.Edge.MapResource;
 using Providers.Edge.SetBlockResource;
 using Providers.Edge.RequiredAttributeResource;
 using Constructs;
-using HashiCorp.Cdktf;
+using Io.Cdktn;
 
 namespace MyCompany.MyApp
 {
@@ -128,7 +128,7 @@ namespace MyCompany.MyApp
         }
     }
 
-    // CDKTF supports referencing inputs from providers (Terraform does not)
+    // CDKTN supports referencing inputs from providers (Terraform does not)
     class ProviderStack : TerraformStack
     {
         public ProviderStack(Construct scope, string id) : base(scope, id)

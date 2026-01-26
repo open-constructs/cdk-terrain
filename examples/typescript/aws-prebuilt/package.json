@@ -6,19 +6,20 @@
   "scripts": {
     "build": "tsc",
     "compile": "tsc --pretty",
-    "synth": "cdktf synth"
+    "synth": "cdktn synth"
   },
   "devDependencies": {
     "@types/jest": "29.5.14",
     "@types/node": "20.17.51",
-    "cdktf-cli": "0.0.0",
+    "cdktn-cli": "0.0.0",
     "jest": "^29.7.0",
     "ts-node": "10.9.1",
     "typescript": "5.4.5"
   },
   "dependencies": {
-    "@cdktf/provider-aws": "0.0.111",
-    "cdktf": "0.0.0",
+    "@cdktf/provider-aws": "21.22.1",
+    "cdktf": "0.21.0",
+    "cdktn": "0.0.0",
     "constructs": "10.4.2"
   }
 }

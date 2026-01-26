@@ -6,10 +6,10 @@
 package com.mycompany.app.variablesAndOutputs;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
-import com.hashicorp.cdktf.TerraformLocal;
-import com.hashicorp.cdktf.TerraformStack;
-import com.hashicorp.cdktf.TerraformVariable;
-import com.hashicorp.cdktf.TerraformVariableConfig;
+import io.cdktn.cdktn.TerraformLocal;
+import io.cdktn.cdktn.TerraformStack;
+import io.cdktn.cdktn.TerraformVariable;
+import io.cdktn.cdktn.TerraformVariableConfig;
 import imports.aws.instance.Instance;
 import imports.aws.instance.InstanceConfig;
 import software.constructs.Construct;

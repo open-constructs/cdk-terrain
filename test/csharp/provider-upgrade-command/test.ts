@@ -7,18 +7,23 @@ describe("provider upgrade command", () => {
     let driver: TestDriver;
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTF_DIST: "",
         DISABLE_VERSION_CHECK: "true",
       }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
-      await driver.setupCsharpProject({
-        init: { additionalOptions: "--cdktf-version 0.12.2" },
-      });
+      await driver.setupCsharpProject();
+
+      await driver.exec("dotnet", [
+        "add",
+        "package",
+        "HashiCorp.Cdktf",
+        "--version",
+        "0.12.2",
+      ]);
     }, 500_000);
 
     onPosix(
       "installs pre-built provider using nuget",
       async () => {
-        await driver.exec("cdktf", [
+        await driver.exec("cdktn", [
           "provider",
           "add",
           "random@=3.4.2", // this is not the latest version, but theres v2.0.52 of the pre-built provider resulting in exactly this package
@@ -28,7 +33,7 @@ describe("provider upgrade command", () => {
           '<PackageReference Include="HashiCorp.Cdktf.Providers.Random" Version="2.0.52" />',
         );
 
-        await driver.exec("cdktf", ["provider", "upgrade", "random@=3.4.3"]);
+        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.4.3"]);
 
         expect(driver.readLocalFile("MyTerraformStack.csproj")).not.toContain(
           '<PackageReference Include="HashiCorp.Cdktf.Providers.Random" Version="2.0.52" />',
@@ -43,7 +48,7 @@ describe("provider upgrade command", () => {
     onWindows(
       "installs pre-built provider using nuget",
       async () => {
-        await driver.exec("cdktf", [
+        await driver.exec("cdktn", [
           "provider",
           "add",
           "random@=3.4.2", // this is not the latest version, but theres v2.0.52 of the pre-built provider resulting in exactly this package
@@ -53,7 +58,7 @@ describe("provider upgrade command", () => {
           '<PackageReference Include="HashiCorp.Cdktf.Providers.Random" Version="2.0.52" />',
         );
 
-        await driver.exec("cdktf", ["provider", "upgrade", "random@=3.4.3"]);
+        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.4.3"]);
 
         expect(driver.readLocalFile("MyTerraformStack.csproj")).not.toContain(
           '<PackageReference Include="HashiCorp.Cdktf.Providers.Random" Version="2.0.52" />',

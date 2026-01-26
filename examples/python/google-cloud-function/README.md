@@ -1,4 +1,4 @@
-A simple example GCP cloud function built using cdktf python template
+A simple example GCP cloud function built using cdktn python template
 
 ## Usage
 
@@ -16,10 +16,10 @@ Install project dependencies
 pipenv install
 ```
 
-Generate CDK for Terraform constructs for Terraform providers and modules used in the project.
+Generate CDK Terrain constructs for Terraform providers and modules used in the project.
 
 ```bash
-cdktf get
+cdktn get
 ```
 
 - Create a service account with following roles:
@@ -41,11 +41,11 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceaccount/key.json
 Verify the resources that are going to be created.
 
 ```bash
-cdktf plan
+cdktn plan
 ```
 
 Deploy the resources
 
 ```bash
-cdktf deploy
+cdktn deploy
 ```

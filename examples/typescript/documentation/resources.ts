@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformStack, TerraformVariable } from "cdktf";
+import { TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/aws-provider";
+import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { DataAwsRegion } from "@cdktf/provider-aws/lib/data-aws-region";
 import { DynamodbTable } from "@cdktf/provider-aws/lib/dynamodb-table";
 import { SnsTopic } from "@cdktf/provider-aws/lib/sns-topic";

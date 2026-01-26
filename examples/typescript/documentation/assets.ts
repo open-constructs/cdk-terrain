@@ -3,8 +3,8 @@
 
 // DOCS_BLOCK_START:assets
 import { Construct } from "constructs";
-import { TerraformStack } from "cdktf";
-import { TerraformAsset, AssetType } from "cdktf";
+import { TerraformStack } from "cdktn";
+import { TerraformAsset, AssetType } from "cdktn";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { S3Bucket } from "./.gen/providers/aws/s3-bucket";
 import { S3BucketObject } from "./.gen/providers/aws/s3-bucket-object";

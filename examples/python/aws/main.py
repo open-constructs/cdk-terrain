@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, TerraformStack
+from cdktn import App, TerraformStack
 from imports.aws.iam_role import IamRole
 from imports.aws.lambda_function import LambdaFunction
 from imports.aws.provider import AwsProvider

@@ -5,4 +5,4 @@
 
 set -ex
 
-sed -i 's/"com\.hashicorp:cdktf:0\.0\.0"/files("..\/..\/..\/dist\/java\/com\/hashicorp\/cdktf\/0.0.0\/cdktf-0.0.0.jar")/g' build.gradle
+sed -i 's/"io\.cdktn:cdktn:0\.0\.0"/files("..\/..\/..\/dist\/java\/io\/cdktn\/cdktn\/0.0.0\/cdktn-0.0.0.jar")/g' build.gradle

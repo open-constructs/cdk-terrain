@@ -22,17 +22,17 @@ jobs:
     outputs:
       tests: ${{ steps.build-test-matrix.outputs.tests }}
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     env:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktf/hcl2json fails without this
-        run: git config --global --add safe.directory /__w/terraform-cdk/terraform-cdk
+      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       # Setup caches for yarn, and go
       - name: Get cache directory paths
         id: global-cache-dir-path
@@ -78,7 +78,7 @@ jobs:
         if: ${{ !inputs.skip_setup }}
         with:
           name: edge-provider-bindings
-          path: packages/@cdktf/provider-generator/edge-provider-bindings
+          path: packages/@cdktn/provider-generator/edge-provider-bindings
       - name: installing test dependencies
         run: |
           cd test && yarn install --frozen-lockfile --prefer-offline
@@ -94,7 +94,7 @@ jobs:
       matrix: ${{fromJSON(needs.prepare-integration-tests.outputs.tests)}}
       max-parallel: 30 # too many in parallel will give HTTP 429 errors from GH when checking out the source for example
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
     env:
       CHECKPOINT_DISABLE: "1"
       TERRAFORM_VERSION: ${{ matrix.terraform }}
@@ -105,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: ensure correct user
-        run: chown -R root /__w/terraform-cdk
+        run: chown -R root /__w/cdk-terrain
       # Setup caches for yarn, terraform, and go
       - name: Get cache directory paths
         id: global-cache-dir-path

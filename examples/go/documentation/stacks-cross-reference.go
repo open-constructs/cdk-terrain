@@ -8,9 +8,9 @@ package main
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	aws "github.com/hashicorp/terraform-cdk/examples/go/documentation/generated/hashicorp/aws/provider"
-	"github.com/hashicorp/terraform-cdk/examples/go/documentation/myconstructs"
+	"github.com/open-constructs/cdk-terrain-go/cdktn"
+	aws "github.com/open-constructs/cdk-terrain/examples/go/documentation/generated/hashicorp/aws/provider"
+	"github.com/open-constructs/cdk-terrain/examples/go/documentation/myconstructs"
 )
 
 type VPCStack struct {
@@ -19,7 +19,7 @@ type VPCStack struct {
 }
 
 func NewVPCStack(scope constructs.Construct, name string, region *string) *VPCStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	if region == nil {
 		region = jsii.String("us-east-1")
@@ -43,8 +43,8 @@ type BackendStackConfig struct {
 	DockerImage string
 }
 
-func NewBackendStack(scope constructs.Construct, name string, config BackendStackConfig) cdktf.TerraformStack {
-	stack := cdktf.NewTerraformStack(scope, &name)
+func NewBackendStack(scope constructs.Construct, name string, config BackendStackConfig) cdktn.TerraformStack {
+	stack := cdktn.NewTerraformStack(scope, &name)
 
 	aws.NewAwsProvider(stack, jsii.String("aws"), &aws.AwsProviderConfig{
 		Region: &config.Region,
@@ -68,7 +68,7 @@ DOCS_BLOCK_END:cross-stack-reference
 */
 func SynthCrossStackReference() {
 	// DOCS_BLOCK_START:cross-stack-reference
-	app := cdktf.NewApp(nil)
+	app := cdktn.NewApp(nil)
 
 	origin := NewVPCStack(app, "origin-stack", nil)
 	NewBackendStack(app, "target-stack", BackendStackConfig{

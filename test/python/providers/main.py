@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from constructs import Construct
-from cdktf import App, TerraformStack, Testing, TerraformOutput, LocalBackend
+from cdktn import App, TerraformStack, Testing, TerraformOutput, LocalBackend
 from imports.docker.provider import DockerProvider
 from imports.docker.image import Image
 from imports.docker.container import Container

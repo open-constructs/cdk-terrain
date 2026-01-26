@@ -5,10 +5,10 @@
 
 package com.mycompany.app.modules;
 
-import com.hashicorp.cdktf.App;
-import com.hashicorp.cdktf.TerraformHclModule;
-import com.hashicorp.cdktf.TerraformHclModuleConfig;
-import com.hashicorp.cdktf.TerraformStack;
+import io.cdktn.cdktn.App;
+import io.cdktn.cdktn.TerraformHclModule;
+import io.cdktn.cdktn.TerraformHclModuleConfig;
+import io.cdktn.cdktn.TerraformStack;
 import imports.aws.provider.AwsProvider;
 import imports.aws.provider.AwsProviderConfig;
 import software.constructs.Construct;
