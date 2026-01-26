@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # Beads Configuration File
 # This file configures default behavior for all bd commands in this repository
 # All settings can also be set via environment variables (BD_* prefix)
