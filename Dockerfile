@@ -1,12 +1,15 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-FROM public.ecr.aws/jsii/superchain:1-bookworm-slim
+FROM public.ecr.aws/jsii/superchain:1-bookworm-slim-node20-nightly@sha256:cd75861281b3f9d503629a87e3529026b588500a752ae60b16c5f226344de2a7
 
 USER root
 
 ARG DEFAULT_TERRAFORM_VERSION
 ARG AVAILABLE_TERRAFORM_VERSIONS
+
+# Update expired yarn GPG key
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 
 RUN apt-get update -y && apt-get install -y unzip jq build-essential time python3-venv wget
 
