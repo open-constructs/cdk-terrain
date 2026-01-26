@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # Common functions and variables for all scripts
 
 # Get repository root, with fallback for non-git repositories
