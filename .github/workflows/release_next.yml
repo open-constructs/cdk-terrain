@@ -6,8 +6,8 @@ on:
   workflow_dispatch: {}
 
 env:
-  SENTRY_ORG: cdk-terrain
-  SENTRY_PROJECT: cdktn-cli
+  SENTRY_ORG: cdktn
+  SENTRY_PROJECT: cdktn
 
 concurrency:
   group: release-next
