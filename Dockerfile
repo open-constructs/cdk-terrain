@@ -16,7 +16,7 @@ RUN apt-get update -y && apt-get install -y unzip jq build-essential time python
 RUN python3 -m pip install --break-system-packages pipx "pip>=23.3.1" pipenv
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-RUN npm install -g @sentry/cli --unsafe-perm
+RUN npm install -g @sentry/cli@2.58.4 --unsafe-perm
 # From the official gradle Dockerfile (https://github.com/keeganwitt/docker-gradle/blob/2ba84220e311de7a55f3731509dd772a885b86f8/jdk8/Dockerfile)
 ENV GRADLE_HOME=/opt/gradle
 ENV GRADLE_VERSION=8.2.1

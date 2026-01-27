@@ -21,7 +21,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
+      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
     steps:
       - name: Check Out
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -109,7 +109,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
+      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
     strategy:
       fail-fast: false
       matrix:
@@ -211,7 +211,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
+      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
     steps:
       - name: Check Out
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

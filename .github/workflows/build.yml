@@ -16,7 +16,7 @@ jobs:
   build-and-package:
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform:0.21.0-19fe5d00c3daee40c3b20b6aa508f576df85d506
+      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
     env:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
