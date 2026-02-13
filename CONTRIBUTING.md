@@ -403,7 +403,7 @@ Most of our tests are automated but there are some workflows we need to manually
 
 - Test `cdktf` against Terraform Enterprise
 
-#### Terraform CDK
+#### CDK Terrain
 
 1. Create a new branch (e.g. `prepare-release-0.9.0`)
 2. Update the [CHANGELOG](./CHANGELOG.md): `./tools/create-changelog.sh` should get you a good start
@@ -412,15 +412,9 @@ Most of our tests are automated but there are some workflows we need to manually
 5. Merge the PR, a new release will be build and published because the version changed
 6. For major releases:
 
-- Write an [upgrade guide](https://github.com/hashicorp/web-unified-docs/tree/main/content/terraform-cdk/v0.21.x/docs/cdktf/release)
+- Write an [upgrade guide](https://github.com/open-constructs/cdk-terrain-docs/tree/main/content/release)
 - Run `yarn generate-docs` to bring our api documentation up to date
-- Make a PR with the changes over in the [`hashicorp/web-unified-docs`](https://github.com/hashicorp/web-unified-docs) repository
-
-#### After the release
-
-- Updates in our other repos should largely be automated, but some of the updates require manual approval before they'll be auto-merged
-- Update the learn examples and the end to end examples
-- Check if there are PRs left behind on our [triage board](https://github.com/orgs/hashicorp/projects/125/views/4)
+- Make a PR with the changes over in the [`open-constructs/cdk-terrain-docs`](https://github.com/open-constructs/cdk-terrain-docs) repository
 
 #### Retrying a broken deployment
 
@@ -431,17 +425,10 @@ The release workflow uses sentry as the source of truth for releases. The downsi
 npm i -g @sentry/cli
 sentry-cli login
 # List all releases (optional)
-sentry-cli releases list --org hashicorp
+sentry-cli releases list --org cdktn
 # Delete the release, Note: there will be no confirmation for deleting the release!
-sentry-cli releases delete --org hashicorp <release> # e.g. cdktf-cli-0.14.0
+sentry-cli releases delete --org cdktn <release> # e.g. cdktn-cli-0.14.0
 ```
-
-### Repositories to update
-
-- [Docker E2E](https://github.com/hashicorp/docker-on-aws-ecs-with-terraform-cdk-using-typescript)
-- [Serverless E2E](https://github.com/hashicorp/cdktf-integration-serverless-example)
-- [Learn Lambda Demo](https://github.com/hashicorp/learn-cdktf-assets-stacks-lambda)
-- [AWS Adapter](https://github.com/hashicorp/cdktf-aws-cdk)
 
 ### Helper for creating the changelog
 

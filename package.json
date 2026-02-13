@@ -1,6 +1,6 @@
 {
     "name": "root",
-    "version": "0.21.0",
+    "version": "0.22.0",
     "private": true,
     "scripts": {
         "build-and-package": "lerna run --scope 'cdktn*' --scope @cdktn/* build,package && tools/collect-dist.sh",
@@ -44,7 +44,7 @@
         "prepare-next-release": "standard-version --prerelease pre --release-as minor --skip.changelog=true --skip.commit=true",
         "prepare-release": "tools/prepare-release.sh",
         "release": "standard-version",
-        "generate-docs:api": "yarn && yarn build && yarn package && git clean -dfx . && mkdir -p website/docs/cdktf/api-reference && cd tools/documentation-generation && yarn && yarn docs && npx prettier --write ../../website/docs/cdktf/api-reference/**",
+        "generate-docs:api": "yarn && yarn build && mkdir -p website/docs/cdktn/api-reference && cd tools/documentation-generation && yarn && yarn docs && npx prettier --write ../../website/docs/cdktn/api-reference/**",
         "generate-docs": "yarn generate-docs:api",
         "generate-function-bindings": "cd tools/generate-function-bindings && yarn && yarn fetch-metadata && yarn generate"
     },

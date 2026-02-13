@@ -1,3 +1,30 @@
+## 0.22.0
+
+**Breaking Changes**
+
+### Package Rename: `cdktf` to `cdktn`
+
+This is the first release under the CDK Terrain (CDKTN) project. All packages have been renamed:
+
+- `cdktf` → `cdktn`
+- `cdktf-cli` → `cdktn-cli`
+- `@cdktf/*` → `@cdktn/*`
+
+Internal symbols and logical IDs remain unchanged for backwards compatibility. Legacy config keys (`cdktf.json`, `CDKTF_*` env vars) are still supported.
+
+Prebuilt providers now require `cdktn` as a peer dependency (major version bump).
+
+### fix
+
+- fix: release-next gh token permissions [\#2db8ee4](https://github.com/open-constructs/cdk-terrain/commit/2db8ee4f0)
+- fix: pin sentry-cli to last v2 release [\#31eceb8](https://github.com/open-constructs/cdk-terrain/commit/31eceb82d)
+- fix(release): Sentry org/project [\#16](https://github.com/open-constructs/cdk-terrain/pull/16)
+
+### chore
+
+- chore: Rename to CDK Terrain / cdktn [\#7](https://github.com/open-constructs/cdk-terrain/pull/7)
+- docs: Update reference to CDKTF in PR template [\#3](https://github.com/open-constructs/cdk-terrain/pull/3)
+
 ## 0.21.0
 
 **Breaking Changes**

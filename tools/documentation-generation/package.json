@@ -6,11 +6,12 @@
         "docs": "node ./generate-documentation.js ../../"
     },
     "dependencies": {
-        "cdktn": "file:../../packages/cdktn",
+        "cdktn": "link:../../packages/cdktn",
         "constructs": "10.3.0"
     },
     "devDependencies": {
         "jsii-docgen": "^10.4.20",
+        "jsii-rosetta": "~5.8.0",
         "remark-parse": "^11.0.0",
         "remark-stringify": "^11.0.0",
         "unified": "^11.0.5",

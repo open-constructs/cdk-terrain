@@ -135,8 +135,8 @@ import { Documentation, Language } from "jsii-docgen";
   }
 
   const compose = (lang, topic, content) => `---
-page_title: ${lang} Reference for ${topic}
-description: CDKTF Core API Reference for ${topic} in ${lang}.
+title: ${lang} Reference for ${topic}
+description: CDKTN Core API Reference for ${topic} in ${lang}.
 ---
 
 <!-- This file is generated through yarn generate-docs -->
