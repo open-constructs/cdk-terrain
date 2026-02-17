@@ -12,24 +12,54 @@ on:
       - reopened
 
 jobs:
+  determine-affected:
+    name: "Determine Affected Packages"
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.affected.outputs.packages }}
+      has_packages: ${{ steps.affected.outputs.has_packages }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --prefer-offline
+      - name: Determine affected packages
+        id: affected
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci/run-all-unit') }}" == "true" ]]; then
+            echo "Label ci/run-all-unit detected, running all packages"
+            PACKAGES='["cdktn","cdktn-cli","@cdktn/hcl2cdk","@cdktn/hcl2json","@cdktn/provider-schema","@cdktn/provider-generator","@cdktn/commons","@cdktn/cli-core"]'
+          else
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            else
+              BASE_SHA="${{ github.event.merge_group.base_sha }}"
+            fi
+            PACKAGES=$(bash tools/affected-packages.sh "$BASE_SHA")
+          fi
+          echo "packages=$PACKAGES" >> "$GITHUB_OUTPUT"
+          if [[ "$PACKAGES" == "[]" ]]; then
+            echo "has_packages=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_packages=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Affected packages: $PACKAGES"
+
   all_unit_tests:
     name: "All Unit Tests"
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
+    needs: determine-affected
+    if: ${{ needs.determine-affected.outputs.has_packages == 'true' }}
     uses: ./.github/workflows/unit.yml
     strategy:
       fail-fast: false
       matrix:
-        package:
-          [
-            cdktn,
-            cdktn-cli,
-            "@cdktn/hcl2cdk",
-            "@cdktn/hcl2json",
-            "@cdktn/provider-schema",
-            "@cdktn/provider-generator",
-            "@cdktn/commons",
-            "@cdktn/cli-core",
-          ]
+        package: ${{ fromJSON(needs.determine-affected.outputs.packages) }}
         terraform_version: ["1.6.5", "1.5.5"]
     with:
       concurrency_group_prefix: pr-all
@@ -141,6 +171,7 @@ jobs:
     name: Unit Tests - PR - Result
     needs:
       [
+        determine-affected,
         all_unit_tests,
         cdktn,
         cdktn_cli,
