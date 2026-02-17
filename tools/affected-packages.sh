@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # Determine which testable packages are affected by changes between BASE and HEAD.
 # Outputs a JSON array suitable for GitHub Actions matrix consumption.
 #
