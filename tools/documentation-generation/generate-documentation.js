@@ -46,6 +46,21 @@ import { Documentation, Language } from "jsii-docgen";
     );
   }
 
+  const docsJsonPath = path.resolve(
+    rootFolder,
+    "website",
+    "docs",
+    "cdktn",
+    "docs.json"
+  );
+  const langDisplayNames = {
+    Typescript: "TypeScript",
+    Python: "Python",
+    Java: "Java",
+    CSharp: "C#",
+    Go: "Go",
+  };
+
   /**
    * Split an MDAST tree into sections by heading depth.
    * Returns a Map from heading text to a subtree (root node containing
@@ -82,6 +97,28 @@ import { Documentation, Language } from "jsii-docgen";
       });
     }
     return sections;
+  }
+
+  /**
+   * Convert a PascalCase class name to kebab-case for use as a filename.
+   * Handles digit-to-uppercase transitions and consecutive uppercase runs.
+   */
+  function toKebabCase(name) {
+    return name
+      .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+      .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
+      .toLowerCase();
+  }
+
+  /**
+   * Shift all heading depths in an MDAST tree by a given offset.
+   * A negative offset promotes headings (e.g., H4 → H3 with offset -1).
+   * Clamps to minimum depth of 1.
+   */
+  function adjustHeadingDepth(tree, offset) {
+    visit(tree, "heading", (node) => {
+      node.depth = Math.max(1, node.depth + offset);
+    });
   }
 
   /**
@@ -222,11 +259,17 @@ import { Documentation, Language } from "jsii-docgen";
     return result;
   }
 
-  function compose(lang, topic, content) {
+  function compose(lang, topic, content, className = null) {
+    const title = className ? `${lang}: ${className}` : `${lang}: ${topic}`;
+    const sidebarTitle = className || topic;
+    const description = className
+      ? `CDKTN Core API Reference for ${className} in ${lang}.`
+      : `CDKTN Core API Reference for ${topic} in ${lang}.`;
+
     return `---
-title: "${lang}: ${topic}"
-sidebarTitle: ${topic}
-description: CDKTN Core API Reference for ${topic} in ${lang}.
+title: "${title}"
+sidebarTitle: ${sidebarTitle}
+description: ${description}
 ---
 
 {/* This file is generated through yarn generate-docs */}
@@ -253,6 +296,10 @@ ${content}
       Go: Language.GO,
     };
 
+    // Collect navigation data for docs.json update
+    const navigationData = {};
+    const topics = ["Constructs", "Structs", "Classes", "Protocols", "Enums"];
+
     for (const entry of Object.entries(languages)) {
       const [lang, key] = entry;
       const markdown = await docs.toMarkdown({
@@ -265,30 +312,119 @@ ${content}
       // Parse the full markdown into an MDAST tree
       const tree = unified().use(remarkParse).parse(rendered);
 
-      // Split into sections by H2 heading
+      // Split into sections by H2 heading (topic level)
       const sections = splitByHeading(tree, 2);
 
-      const topics = ["Constructs", "Structs", "Classes", "Protocols", "Enums"];
       const langFolder = path.resolve(targetFolder, lang.toLowerCase());
       fs.mkdirSync(langFolder, { recursive: true });
 
-      await Promise.all(
-        topics.map(async (topic) => {
-          const subtree = sections.get(topic);
-          if (!subtree || subtree.children.length === 0) {
-            return;
-          }
+      // Clean up old single-file topics
+      for (const topic of topics) {
+        const oldFile = path.resolve(langFolder, `${topic.toLowerCase()}.mdx`);
+        if (fs.existsSync(oldFile)) {
+          fs.unlinkSync(oldFile);
+        }
+      }
 
-          // Sanitize the subtree in-place, stringify, then escape braces for MDX
-          sanitizeAst()(subtree);
-          const content = postProcessForMdx(stringifyTree(subtree));
+      navigationData[lang] = [];
+
+      for (const topic of topics) {
+        const topicSubtree = sections.get(topic);
+        if (!topicSubtree || topicSubtree.children.length === 0) {
+          continue;
+        }
+
+        // Second-level split: by H3 (individual class/construct names)
+        const classSections = splitByHeading(topicSubtree, 3);
+
+        if (classSections.size === 0) {
+          continue;
+        }
+
+        // Create topic subdirectory
+        const topicFolder = path.resolve(langFolder, topic.toLowerCase());
+        fs.mkdirSync(topicFolder, { recursive: true });
+
+        const topicPages = [];
+
+        for (const [className, classSubtree] of classSections) {
+          // Shift headings: H4→H2, H5→H3, H6→H4
+          // Mintlify TOC shows H2/H3, so sections (Initializers, Methods)
+          // should be H2 and members (toString, node) should be H3.
+          adjustHeadingDepth(classSubtree, -2);
+
+          // Sanitize, stringify, post-process (same pipeline as before)
+          sanitizeAst()(classSubtree);
+          const content = postProcessForMdx(stringifyTree(classSubtree));
+
+          const fileName = toKebabCase(className);
+          const filePath = path.resolve(topicFolder, `${fileName}.mdx`);
 
           fs.writeFileSync(
-            path.resolve(langFolder, `${topic.toLowerCase()}.mdx`),
-            compose(lang, topic, content),
+            filePath,
+            compose(lang, topic, content, className),
             "utf-8"
           );
-        })
+
+          // Collect page path for docs.json (without .mdx extension)
+          topicPages.push(
+            `api-reference/${lang.toLowerCase()}/${topic.toLowerCase()}/${fileName}`
+          );
+        }
+
+        navigationData[lang].push({
+          group: topic,
+          expanded: false,
+          pages: topicPages,
+        });
+      }
+    }
+
+    // Update docs.json with generated navigation
+    if (fs.existsSync(docsJsonPath)) {
+      const docsJson = JSON.parse(fs.readFileSync(docsJsonPath, "utf-8"));
+
+      // Find the API Reference tab
+      const apiRefTab = docsJson.navigation.tabs.find(
+        (t) => t.tab === "API Reference"
+      );
+
+      if (apiRefTab) {
+        // Keep Overview group, replace language groups
+        const overviewGroup = apiRefTab.groups.find(
+          (g) => g.group === "Overview"
+        );
+        const newGroups = overviewGroup ? [overviewGroup] : [];
+
+        for (const [lang] of Object.entries(languages)) {
+          const displayName = langDisplayNames[lang] || lang;
+          const topicGroups = navigationData[lang];
+
+          if (topicGroups && topicGroups.length > 0) {
+            newGroups.push({
+              group: displayName,
+              pages: topicGroups,
+            });
+          }
+        }
+
+        apiRefTab.groups = newGroups;
+      }
+
+      fs.writeFileSync(
+        docsJsonPath,
+        JSON.stringify(docsJson, null, 2) + "\n",
+        "utf-8"
+      );
+      const totalPages = Object.values(navigationData)
+        .flat()
+        .reduce((sum, g) => sum + g.pages.length, 0);
+      console.log(
+        `Updated ${docsJsonPath} with ${totalPages} page references`
+      );
+    } else {
+      console.warn(
+        `Warning: docs.json not found at ${docsJsonPath}, skipping navigation update`
       );
     }
   });

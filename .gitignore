@@ -43,3 +43,8 @@ test/.yarn
 
 website/*
 !website/README.md
+!website/docs/
+website/docs/*
+!website/docs/cdktn/
+website/docs/cdktn/*
+!website/docs/cdktn/docs.json
