@@ -47,107 +47,193 @@ import { Documentation, Language } from "jsii-docgen";
   }
 
   /**
-   * If the documentation code has generics they are denoted in the hand-written
-   * documentation as <>, e.g. Record<string, string>. Some other documentation parts
-   * use <thing> to signal something needs to be filled in here
-   *
-   * In a markdown context these get interpretet as an HTML tag, this is why we break them up here
-   * <thing> becomes < thing > which is no longer an HTML tag.
+   * Split an MDAST tree into sections by heading depth.
+   * Returns a Map from heading text to a subtree (root node containing
+   * all nodes under that heading, up to the next heading of same/higher depth).
    */
-  function replaceAngleBracketsInDocumentation(docs) {
-    const lines = docs.split("\n");
-    const sanitizedLines = lines.map((doc) => {
-      const htmlTags = doc.split("<");
+  function splitByHeading(tree, depth) {
+    const sections = new Map();
+    let currentHeading = null;
+    let currentNodes = [];
 
-      const sanitizedTags = htmlTags.map((tag) => {
-        if (
-          ["code", "a", "sup"].some(
-            (item) =>
-              (tag.startsWith(item) || tag.startsWith(`/${item}`)) &&
-              tag.includes(">")
-          )
-        ) {
-          return tag;
+    for (const node of tree.children) {
+      if (node.type === "heading" && node.depth <= depth) {
+        // Save previous section
+        if (currentHeading !== null) {
+          sections.set(currentHeading, {
+            type: "root",
+            children: currentNodes,
+          });
+        }
+        // Extract heading text from the first text child
+        // Trim because headings like `## Constructs <a ...>` parse with trailing space
+        const textChild = node.children.find((c) => c.type === "text");
+        currentHeading = textChild ? textChild.value.trim() : "";
+        currentNodes = [];
+      } else if (currentHeading !== null) {
+        currentNodes.push(node);
+      }
+    }
+    // Save last section
+    if (currentHeading !== null) {
+      sections.set(currentHeading, {
+        type: "root",
+        children: currentNodes,
+      });
+    }
+    return sections;
+  }
+
+  /**
+   * Remark plugin that sanitizes prose for MDX compatibility while
+   * skipping code and inlineCode nodes entirely. This is the key fix:
+   * code blocks are never touched, so `import { Foo }` and `-> str`
+   * are preserved exactly as jsii-docgen produced them.
+   */
+  function sanitizeAst() {
+    const PRESERVED_HTML_TAGS = ["code", "a", "sup"];
+
+    return function (tree) {
+      visit(tree, function (node, index, parent) {
+        // Skip code and inlineCode nodes entirely
+        if (node.type === "code" || node.type === "inlineCode") {
+          return visit.SKIP;
         }
 
-        const fullTag = tag.substring(0, tag.indexOf(">"));
+        if (node.type === "text" && parent) {
+          // Handle {@link URL text} patterns — replace with text + link + text splicing
+          const linkPattern =
+            /\{@link\s+((?:https?:\/\/|\/)[^\s}]+)(?:\s+([^}]+))?\}/;
+          let match;
+          if ((match = linkPattern.exec(node.value))) {
+            const before = node.value.slice(0, match.index);
+            const after = node.value.slice(match.index + match[0].length);
+            const url = match[1];
+            const linkText = match[2] ? match[2].trim() : url;
 
-        return tag.replace(fullTag, ` ${fullTag} `);
-      });
+            const newNodes = [];
+            if (before) newNodes.push({ type: "text", value: before });
+            newNodes.push({
+              type: "link",
+              url: url,
+              children: [{ type: "text", value: linkText }],
+            });
+            if (after) newNodes.push({ type: "text", value: after });
 
-      return sanitizedTags.join("<");
-    });
-    return sanitizedLines.join("\n");
-  }
-
-  async function filterByTopicAndRemoveAnchors(content, topic) {
-    let startPosition = undefined;
-    let endPosition = undefined;
-
-    function filterByTopic() {
-      function isH2(node) {
-        return node.type === "heading" && "depth" in node && node.depth === 2;
-      }
-
-      function hasContent(node, content) {
-        return (
-          "children" in node &&
-          Array.isArray(node.children) &&
-          node.children.length > 0 &&
-          "value" in node.children[0] &&
-          node.children[0].value.startsWith(content)
-        );
-      }
-
-      return function (tree) {
-        // This assumes we visit the tree in order
-        visit(tree, function (node) {
-          // We already found the topic
-          if (startPosition != undefined) {
-            // We want to stop on the next h2
-            if (isH2(node) && endPosition == undefined) {
-              endPosition = node.position.start.offset - 1;
-            }
-          } else {
-            if (isH2(node) && hasContent(node, topic)) {
-              // We found the topic we are looking for, start taking in nodes
-              // We don't need the header though
-              startPosition = node.position.start.offset;
-            }
+            parent.children.splice(index, 1, ...newNodes);
+            // Return the index to re-process the "after" text node for more links
+            return index;
           }
-        });
-      };
-    }
 
-    // We don't mutate through the plugin API, it's harder than just doing it manually
-    // in the input string
-    await unified()
-      .use(remarkParse)
-      .use(filterByTopic)
-      .use(remarkStringify) // This is just needed so that the process run works fine
-      .process(content);
+          // Space out angle brackets for generics like <Foo> in prose
+          node.value = node.value.replace(/<([^>]+)>/g, (full, inner) => {
+            if (
+              PRESERVED_HTML_TAGS.some(
+                (tag) => inner === tag || inner === `/${tag}`
+              )
+            ) {
+              return full;
+            }
+            return `< ${inner} >`;
+          });
+        }
 
-    const output = content.substring(startPosition, endPosition);
-    return output.replace(
-      `  ${topic} <a name="${topic}" id="${topic}"></a>`,
-      ""
-    );
+        if (node.type === "html") {
+          // Space out angle brackets in HTML nodes, preserving only known safe tags
+          node.value = node.value.replace(/<([^>]+)>/g, (full, inner) => {
+            const trimmed = inner.trim();
+            if (
+              PRESERVED_HTML_TAGS.some(
+                (tag) =>
+                  trimmed === tag ||
+                  trimmed === `/${tag}` ||
+                  trimmed.startsWith(`${tag} `) ||
+                  trimmed.startsWith(`${tag}\t`)
+              )
+            ) {
+              return full;
+            }
+            return `< ${inner} >`;
+          });
+        }
+
+        if (node.type === "link") {
+          // Make relative terraform doc links absolute
+          if (
+            node.url &&
+            node.url.startsWith("/terraform/docs/")
+          ) {
+            node.url = `https://developer.hashicorp.com${node.url}`;
+          }
+        }
+      });
+    };
   }
 
-  const compose = (lang, topic, content) => `---
-title: ${lang} Reference for ${topic}
+  /**
+   * Serialize an MDAST subtree back to markdown using remark-stringify.
+   */
+  function stringifyTree(subtree) {
+    return unified()
+      .use(remarkStringify, { bullet: "-", emphasis: "*", strong: "*" })
+      .stringify(subtree);
+  }
+
+  /**
+   * Post-stringify MDX fixups that can't be done at the AST level
+   * (either because remark-stringify interferes, or because remark-parse
+   * splits inline HTML across multiple MDAST nodes).
+   *
+   * Applied only to prose — code fences are extracted first and restored after.
+   */
+  function postProcessForMdx(markdown) {
+    const codeBlockRegex = /^```[^\n]*\n[\s\S]*?^```$/gm;
+    const codeBlocks = [];
+    const placeholder = "\0CODEBLOCK\0";
+
+    const withPlaceholders = markdown.replace(codeBlockRegex, (match) => {
+      codeBlocks.push(match);
+      return placeholder;
+    });
+
+    let result = withPlaceholders
+      // Convert autolinks to standard markdown links (MDX treats <url> as JSX)
+      .replace(/<(https?:\/\/[^>]+)>/g, (_, url) => `[${url}](${url})`)
+      // Escape | inside <code>...</code> spans to prevent MDX table cell splitting.
+      // remark-parse splits inline HTML into separate nodes, so this can't be
+      // done at the AST level — we need the full string to see across node boundaries.
+      .replace(
+        /<code>([\s\S]*?)<\/code>/g,
+        (full, content) =>
+          `<code>${content.replace(/\|/g, "&#124;")}</code>`
+      )
+      // Escape lone < that don't start HTML tags (e.g., <=, <<a, trailing <).
+      // Preserves <tag>, </tag>, and <!-- by requiring a letter, /, or ! after <.
+      .replace(/<(?![a-zA-Z/!])/g, "&lt;")
+      // Escape { for MDX
+      .replace(/\{/g, "\\{");
+
+    let i = 0;
+    result = result.replace(
+      new RegExp(placeholder.replace(/\0/g, "\\0"), "g"),
+      () => codeBlocks[i++]
+    );
+
+    return result;
+  }
+
+  function compose(lang, topic, content) {
+    return `---
+title: "${lang}: ${topic}"
+sidebarTitle: ${topic}
 description: CDKTN Core API Reference for ${topic} in ${lang}.
 ---
 
-<!-- This file is generated through yarn generate-docs -->
+{/* This file is generated through yarn generate-docs */}
 
-${replaceAngleBracketsInDocumentation(
-  content.replace(
-    `## ${topic} <a name="${topic}" id="${topic}"></a>`,
-    `# ${lang}: ${topic} <a name="${topic}" id="${topic}"></a>`
-  )
-)}
+${content}
 `;
+  }
 
   const assembliesDir = path.resolve(
     rootFolder,
@@ -174,29 +260,32 @@ ${replaceAngleBracketsInDocumentation(
         readme: false,
         allSubmodules: true,
       });
-      const rendered = markdown
-        .render()
-        .replace(
-          `# API Reference <a name="API Reference" id="api-reference"></a>`,
-          ""
-        );
+      const rendered = markdown.render();
 
-      // These are rather static so we can just hard-code them here
+      // Parse the full markdown into an MDAST tree
+      const tree = unified().use(remarkParse).parse(rendered);
+
+      // Split into sections by H2 heading
+      const sections = splitByHeading(tree, 2);
+
       const topics = ["Constructs", "Structs", "Classes", "Protocols", "Enums"];
       const langFolder = path.resolve(targetFolder, lang.toLowerCase());
-      fs.mkdirSync(langFolder, {
-        recursive: true,
-      });
+      fs.mkdirSync(langFolder, { recursive: true });
 
       await Promise.all(
         topics.map(async (topic) => {
+          const subtree = sections.get(topic);
+          if (!subtree || subtree.children.length === 0) {
+            return;
+          }
+
+          // Sanitize the subtree in-place, stringify, then escape braces for MDX
+          sanitizeAst()(subtree);
+          const content = postProcessForMdx(stringifyTree(subtree));
+
           fs.writeFileSync(
             path.resolve(langFolder, `${topic.toLowerCase()}.mdx`),
-            compose(
-              lang,
-              topic,
-              await filterByTopicAndRemoveAnchors(rendered, topic)
-            ),
+            compose(lang, topic, content),
             "utf-8"
           );
         })
