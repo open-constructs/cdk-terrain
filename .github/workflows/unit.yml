@@ -67,7 +67,14 @@ jobs:
       - name: compile
         run: |
           tools/align-version.sh
-          yarn build
+          npx lerna run --scope '${{ inputs.package }}' build
+        env:
+          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
+          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+      - name: compile cdktn-cli and package
+        if: inputs.package == '@cdktn/hcl2cdk'
+        run: |
+          npx lerna run --scope 'cdktn-cli' build
           yarn package
         env:
           TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
