@@ -325,7 +325,7 @@ export class StructEmitter {
     );
     constructorComment.end();
     this.code.openBlock(
-      `constructor(protected terraformResource: cdktn.IInterpolatingParent, protected terraformAttribute: string, protected wrapsSet: boolean)`,
+      `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean)`,
     );
     this.code.line(`super(terraformResource, terraformAttribute, wrapsSet)`);
     this.code.closeBlock();
@@ -365,7 +365,7 @@ export class StructEmitter {
     );
     constructorComment.end();
     this.code.openBlock(
-      `constructor(protected terraformResource: cdktn.IInterpolatingParent, protected terraformAttribute: string)`,
+      `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string)`,
     );
     this.code.line(`super(terraformResource, terraformAttribute)`);
     this.code.closeBlock();
@@ -413,7 +413,7 @@ export class StructEmitter {
     );
     constructorComment.end();
     this.code.openBlock(
-      `constructor(protected terraformResource: cdktn.IInterpolatingParent, protected terraformAttribute: string, protected wrapsSet: boolean)`,
+      `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean)`,
     );
     this.code.line(`super(terraformResource, terraformAttribute, wrapsSet)`);
     this.code.closeBlock();
@@ -454,7 +454,7 @@ export class StructEmitter {
     );
     constructorComment.end();
     this.code.openBlock(
-      `constructor(protected terraformResource: cdktn.IInterpolatingParent, protected terraformAttribute: string)`,
+      `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string)`,
     );
     this.code.line(`super(terraformResource, terraformAttribute)`);
     this.code.closeBlock();
@@ -500,7 +500,7 @@ export class StructEmitter {
     );
     constructorComment.end();
     this.code.openBlock(
-      `constructor(protected terraformResource: cdktn.IInterpolatingParent, protected terraformAttribute: string, protected wrapsSet: boolean)`,
+      `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean)`,
     );
     this.code.line(`super(terraformResource, terraformAttribute, wrapsSet)`);
     this.code.closeBlock();
