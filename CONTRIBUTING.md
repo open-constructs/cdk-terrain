@@ -138,7 +138,7 @@ $ yarn build
 
 ## Examples
 
-We run the examples as part of our integration tests for each Pull Request. To support this, each example needs a `package.json` with at least a minmal config like this:
+We run the examples as part of our integration tests for each Pull Request. To support this, each example needs a `package.json` with at least a minimal config like this:
 
 ```json
 {
