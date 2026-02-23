@@ -32,6 +32,7 @@
   "keywords": [
     "cdk",
     "cdktf",
+    "cdktn",
     "terraform",
     "hcl"
   ],

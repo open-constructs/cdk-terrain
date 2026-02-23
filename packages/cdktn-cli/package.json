@@ -36,6 +36,7 @@
   "keywords": [
     "cdk",
     "cdktf",
+    "cdktn",
     "terraform"
   ],
   "license": "MPL-2.0",

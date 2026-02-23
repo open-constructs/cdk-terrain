@@ -24,6 +24,7 @@
     "keywords": [
         "cdk",
         "cdktf",
+        "cdktn",
         "terraform"
     ],
     "jsii": {
