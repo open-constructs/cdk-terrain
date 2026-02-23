@@ -13,7 +13,7 @@ import (
 	"github.com/open-constructs/cdk-terrain-go/cdktn"
 )
 
-func NewExampleCdktfGoAwsStack(scope constructs.Construct, id string) cdktn.TerraformStack {
+func NewExampleCdktnGoAwsStack(scope constructs.Construct, id string) cdktn.TerraformStack {
 	stack := cdktn.NewTerraformStack(scope, &id)
 
 	provider.NewAwsProvider(stack, jsii.String("aws"), &provider.AwsProviderConfig{
@@ -41,7 +41,7 @@ func NewExampleCdktfGoAwsStack(scope constructs.Construct, id string) cdktn.Terr
 func main() {
 	app := cdktn.NewApp(nil)
 
-	NewExampleCdktfGoAwsStack(app, "ExampleCdktfGoAwsStack")
+	NewExampleCdktnGoAwsStack(app, "ExampleCdktnGoAwsStack")
 
 	app.Synth()
 }

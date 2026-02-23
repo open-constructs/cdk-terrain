@@ -19,7 +19,7 @@ describe("provider add command", () => {
       await driver.exec("npm", ["install", "cdktf@0.10.4"]);
     }, 500_000);
 
-    it("detects correct cdktf version", async () => {
+    it("detects correct cdktn version", async () => {
       const res = await driver.exec("cdktn", ["debug"]);
       expect(res.stdout).toContain("cdktf: 0.10.4");
     });

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-package com.example.cdktf.common;
+package com.example.cdktn.common;
 
 import io.cdktn.cdktn.App;
 import io.cdktn.cdktn.TerraformStack;

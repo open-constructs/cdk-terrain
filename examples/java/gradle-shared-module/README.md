@@ -1,4 +1,4 @@
-# Shared Common Module CDKTF Example
+# Shared Common Module CDKTN Example
 
 This project serves as an example of how to build and share cdktn modules using gradle.
 

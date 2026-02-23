@@ -173,7 +173,7 @@ If your changes target only CLI and packages used by the CLI, running `yarn watc
 
 ```shell
 alias cdktnl='/path/to/cdk-terrain/packages/cdktn-cli/bundle/bin/cdktn' # For running cdktn locally
-alias cdktnld='node --inspect-brk /path/to/cdk-terrain/packages/cdktn-cli/bundle/bin/cdktn.js' # For running cdktf locally with debugging
+alias cdktnld='node --inspect-brk /path/to/cdk-terrain/packages/cdktn-cli/bundle/bin/cdktn.js' # For running cdktn locally with debugging
 
 $ cdktnl get
 ```
@@ -247,7 +247,7 @@ The easiest way to use this locally is using one of the [examples](./examples). 
 
 #### Typescript
 
-All Typescript [examples](./examples/typescript) leverage yarn workspaces to directly reference symlinked packages. If you don't have `./node_modules/.bin` in your `$PATH`, you can use `$(yarn bin)/cdktf` to use the symlinked CLI.
+All Typescript [examples](./examples/typescript) leverage yarn workspaces to directly reference symlinked packages. If you don't have `./node_modules/.bin` in your `$PATH`, you can use `$(yarn bin)/cdktn` to use the symlinked CLI.
 
 #### Python
 
@@ -261,7 +261,7 @@ For Java [examples](./examples/java), packages are referenced from `./dist`, the
 
 For C# [examples](./examples/csharp), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `yarn package` to create new packages to be referenced in the project.
 
-Sometimes, after re-packaging the cdktf package for C#, an already initialized example might not update that package even when running yarn reinstall. In that case you can clear your local cache by running `dotnet nuget locals all --clear` and after a `yarn reinstall` it should all be updated.
+Sometimes, after re-packaging the cdktn package for C#, an already initialized example might not update that package even when running yarn reinstall. In that case you can clear your local cache by running `dotnet nuget locals all --clear` and after a `yarn reinstall` it should all be updated.
 
 ### Outside of this Monorepo
 
@@ -279,15 +279,15 @@ If you'd want this permanently, you can add this line to your profile settings (
 
 ### Create link
 
-Let's link `cdktf` and `cdktf-cli`, run the following the repository root folder:
+Let's link `cdktn` and `cdktn-cli`, run the following the repository root folder:
 
 ```shell
 $ yarn link-packages
-$ cdktf --version
+$ cdktn --version
 0.0.0
 ```
 
-When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktf-cli` with `npm` or `yarn`.
+When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktn-cli` with `npm` or `yarn`.
 
 ### Build & Package
 
@@ -299,27 +299,27 @@ $ export CDKTF_DIST=$(pwd)/dist
 ### Create local project
 
 ```shell
-$ mkdir ~/my-local-cdktf-example
-$ cd ~/my-local-cdktf-example
-$ cdktf init --template typescript --local
+$ mkdir ~/my-local-cdktn-example
+$ cd ~/my-local-cdktn-example
+$ cdktn init --template typescript --local
 ```
 
 Please note, that this will reference the built packages in `$CDKTF_DIST`. This means, it will reflect code changes only after repeating `yarn build && yarn package` and running an explicit `yarn install` again.
 
-Reference the previously [linked](#create-link) `cdktf` package in our newly created project:
+Reference the previously [linked](#create-link) `cdktn` package in our newly created project:
 
 ```shell
-$ cd ~/my-local-cdktf-example
-$ yarn link "cdktf"
+$ cd ~/my-local-cdktn-example
+$ yarn link "cdktn"
 ```
 
-From here on both, the `cli` and the `cdktf` packages are linked and changes will be reflected immediatlely.
+From here on both, the `cli` and the `cdktn` packages are linked and changes will be reflected immediatlely.
 
 ### Known errors
 
 #### Python
 
-If you get this error message when trying to use a local build of `cdktf`:
+If you get this error message when trying to use a local build of `cdktn`:
 
 > ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE. If you have updated the package versions, please update the hashes. Otherwise, examine the package contents carefully; someone may have tampered with them.
 
@@ -329,7 +329,7 @@ Run:
 ./tools/align-version.sh -dev.111212112 && yarn build && yarn package
 ```
 
-This builds a package with a development version which skips the tamper check in Python. (We once accidentally released `cdktf 0.0.0` which is the reason why Python knows some valid hashes for that `0.0.0` version and will fail as they won't match.)
+This builds a package with a development version which skips the tamper check in Python. (We once accidentally released `cdktn 0.0.0` which is the reason why Python knows some valid hashes for that `0.0.0` version and will fail as they won't match.)
 
 ## Rebasing contributions against main
 
@@ -352,20 +352,20 @@ changes are only allowed in major versions and those are rare.
 To address this need, we have a feature flags pattern/mechanism. It allows us to
 introduce new breaking behavior which is disabled by default (so existing
 projects will not be affected) but enabled automatically for new projects
-created through `cdktf init`.
+created through `cdktn init`.
 
 The pattern is simple:
 
 1. Define a new const under
-   [cdktf/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktf/lib/features.ts)
+   [cdktn/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktn/lib/features.ts)
    with the name of the context key that **enables** this new feature (for
    example, `EXCLUDE_STACK_ID_FROM_LOGICAL_IDS`).
 2. Use `node.tryGetContext(ENABLE_XXX)` to check if this feature is enabled
    in your code. If it is not defined, revert to the legacy behavior.
 3. Add your feature flag to the `FUTURE_FLAGS` map in
-   [cdktf/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktf/lib/features.ts).
+   [cdktn/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktn/lib/features.ts).
    This map is inserted to generated `cdktf.json` files for new projects created
-   through `cdktf init`.
+   through `cdktn init`.
 4. In your PR title (which goes into CHANGELOG), add a `(under feature flag)` suffix. e.g:
 
    ```
@@ -375,19 +375,19 @@ The pattern is simple:
 5. Under `BREAKING CHANGES` in your commit message describe this new behavior:
 
    ```
-   BREAKING CHANGE: top level resource names for new projects created through "cdktf init"
+   BREAKING CHANGE: top level resource names for new projects created through "cdktn init"
    will omit the stack id from their name. This is enabled through the flag
    `excludeStackIdFromLogicalIds` in newly generated `cdktf.json` files.
    ```
 
 In the next major version of the
-CDKTF we will either remove the
+CDKTN we will either remove the
 legacy behavior or flip the logic for all these features and then
 reset the `FEATURE_FLAGS` map for the next cycle.
 
 ## Debugging
 
-We recommend enabling logging when you develop new features. To get detailed information about CDKTF operations, set `CDKTF_LOG_LEVEL` to `debug`.
+We recommend enabling logging when you develop new features. To get detailed information about CDKTN operations, set `CDKTF_LOG_LEVEL` to `debug`.
 
 ### JSII
 
@@ -401,7 +401,7 @@ To enable debug output of JSII, set `JSII_DEBUG` to e.g. `1`. There's also `JSII
 
 Most of our tests are automated but there are some workflows we need to manually test for now.
 
-- Test `cdktf` against Terraform Enterprise
+- Test `cdktn` against Terraform Enterprise
 
 #### CDK Terrain
 
@@ -492,7 +492,7 @@ You can have a look at this branch and its commits / PRs for an example: [backpo
 
 ## Issue Grooming
 
-To ensure we can properly prioritize new features and bugs we aim to keep our issues prioritized and sorted. We label new issues both in size (`size/small`, ..., `size/x-large`) and priority (`priority/awaiting-more-evidence`, ..., `priority/critical-urgent`) and we add labels for the affected part of the code base / effect (`cdktf-cli`, ..., `ux/cli`).
+To ensure we can properly prioritize new features and bugs we aim to keep our issues prioritized and sorted. We label new issues both in size (`size/small`, ..., `size/x-large`) and priority (`priority/awaiting-more-evidence`, ..., `priority/critical-urgent`) and we add labels for the affected part of the code base / effect (`cdktn-cli`, ..., `ux/cli`).
 
 Here are GitHub links that help this process:
 

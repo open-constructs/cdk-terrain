@@ -40,7 +40,7 @@ public class MainAspects extends TerraformStack {
             if (node instanceof S3Bucket) {
                 if (((S3Bucket) node).getBucketInput() != null && !((S3Bucket) node).getBucketInput().startsWith(this.prefix)) {
                     // You can include `addInfo`, `addWarning`, and `addError`.
-                    // CDKTF prints these messages when the user runs `synth`, `plan`, or `deploy`.
+                    // CDKTN prints these messages when the user runs `synth`, `plan`, or `deploy`.
                     Annotations.of(node).addError(
                             "Each S3 Bucket name needs to start with " + this.prefix);
                 }

@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-package com.example.cdktf.modules;
+package com.example.cdktn.modules;
 
-import com.example.cdktf.common.BaseApplicationModule;
+import com.example.cdktn.common.BaseApplicationModule;
 import io.cdktn.cdktn.App;
 import imports.vsphere.provider.VsphereProvider;
 import imports.vsphere.virtual_machine.VirtualMachine;

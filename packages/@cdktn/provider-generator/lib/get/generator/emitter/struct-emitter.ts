@@ -164,7 +164,7 @@ export class StructEmitter {
       );
 
       this.code.openFile(namespacedFilePath);
-      // the structs only makes use of cdktf not constructs
+      // the structs only makes use of cdktn not constructs
       this.code.line(`import * as cdktn from 'cdktn';`);
       Object.entries(structsToImport).forEach(([fileToImport, structs]) => {
         this.code.line(

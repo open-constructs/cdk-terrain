@@ -3,5 +3,5 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-const cdktf = require("cdktn");
-cdktf.Testing.setupJest();
+const cdktn = require("cdktn");
+cdktn.Testing.setupJest();

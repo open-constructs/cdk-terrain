@@ -15,7 +15,7 @@ describe("provider add command", () => {
         await driver.exec("pipenv", ["install", "cdktf~=0.10.4"]);
       });
 
-      it("detects correct cdktf version", async () => {
+      it("detects correct cdktn version", async () => {
         const res = await driver.exec("cdktn", ["debug"]);
         expect(res.stdout).toContain("cdktf: 0.10.4");
       });
@@ -55,7 +55,7 @@ describe("provider add command", () => {
         driver.exec("pip", ["install", "-r", "requirements.txt"]);
       });
 
-      it("detects correct cdktf version", async () => {
+      it("detects correct cdktn version", async () => {
         const res = await driver.exec("cdktn", ["debug"]);
         expect(res.stdout).toContain("cdktf: 0.10.4");
       });

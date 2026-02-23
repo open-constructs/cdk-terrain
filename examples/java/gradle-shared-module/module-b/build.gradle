@@ -2,9 +2,9 @@
 apply plugin: 'application'
 
 application {
-    mainClass = 'com.example.cdktf.common.BaseApplicationModule'
+    mainClass = 'com.example.cdktn.common.BaseApplicationModule'
 }
 
 dependencies {
-    implementation project(":common") // or "com.example.cdktf:common:0.1.0" if referencing a published artifact
+    implementation project(":common") // or "com.example.cdktn:common:0.1.0" if referencing a published artifact
 }

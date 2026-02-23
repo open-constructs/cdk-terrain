@@ -55,7 +55,7 @@ class ValidateS3IsPrefixed:
         if isinstance(node, S3Bucket):
             if(node.bucket_input and not node.bucket_input.startswith(self.prefix)):
               # You can include `addInfo`, `addWarning`, and `addError`.
-              # CDKTF prints these messages when the user runs `synth`, `plan`, or `deploy`.
+              # CDKTN prints these messages when the user runs `synth`, `plan`, or `deploy`.
               Annotations.of(node).add_error(
                 "Each S3 Bucket name needs to start with {}".format(self.prefix)
               )
