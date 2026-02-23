@@ -81,7 +81,7 @@ export abstract class TerraformIterator implements ITerraformIterator {
    * @param list the list to iterate over
    * @param mapKeyAttributeName the name of the attribute that should be used as the key in the map
    *
-   * Visit https://developer.hashicorp.com/terraform/cdktf/concepts/iterators#using-iterators-on-complex-lists for more information.
+   * Visit https://cdktn.io/docs/concepts/iterators#using-iterators-on-complex-lists for more information.
    *
    * @example
    * const cert = new AcmCertificate(this, "cert", {
@@ -284,7 +284,7 @@ export abstract class TerraformIterator implements ITerraformIterator {
    * in a dynamic block.
    * As this returns an IResolvable you might need to wrap the output in
    * a Token, e.g. `Token.asString`.
-   * See https://developer.hashicorp.com/terraform/cdktf/concepts/iterators#using-iterators-for-list-attributes
+   * See https://cdktn.io/docs/concepts/iterators#using-iterators-for-list-attributes
    */
   public dynamic(attributes: { [key: string]: any }): IResolvable {
     return Token.asAny(
@@ -391,7 +391,7 @@ export class ListTerraformIterator extends TerraformIterator {
    * Returns the currently entry in the list or set that is being iterated over.
    * For lists this is the same as `iterator.value`. If you need the index,
    * use count via `TerraformCount`:
-   * https://developer.hashicorp.com/terraform/cdktf/concepts/iterators#using-count
+   * https://cdktn.io/docs/concepts/iterators#using-count
    */
   public get key(): any {
     return this._getKey();
@@ -460,7 +460,7 @@ export class ResourceTerraformIterator extends TerraformIterator {
    * Returns the current entry in the list or set that is being iterated over.
    * For lists this is the same as `iterator.value`. If you need the index,
    * use count via `TerraformCount`:
-   * https://developer.hashicorp.com/terraform/cdktf/concepts/iterators#using-count
+   * https://cdktn.io/docs/concepts/iterators#using-count
    */
   public get key(): any {
     return this._getKey();

@@ -164,7 +164,7 @@ describe("Runtime", () => {
       ).toThrowErrorMatchingInlineSnapshot(`
         "Target (\${TfToken[TOKEN.2]}) cannot be a resolvable token if you specified overrides. Replace the value of the field you are overriding with a static value.
 
-        To learn more about Tokens, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/tokens
+        To learn more about Tokens, refer to: https://cdktn.io/docs/concepts/tokens
         "
       `);
     });

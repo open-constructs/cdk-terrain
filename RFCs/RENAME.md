@@ -149,7 +149,7 @@ We will need to provide a robust `cdktn upgrade` or `cdktn migrate` command.
 * @cdktf/commons -> getPackageVersion(language, "cdktn") (used by cmd handlers and check environment)
 * links to old repo blobs, issues, docs, ...
   - https://github.com/hashicorp/terraform-cdk/blob/1fb8588095a55d...........
-  - https://developer.hashicorp.com/terraform/cdktf/............ (until docs site is migrated)
+  - https://cdktn.io/docs/............ (until docs site is migrated)
 
 ## 8. Infra
 

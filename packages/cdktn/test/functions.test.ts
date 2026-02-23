@@ -576,7 +576,7 @@ it("errors mentioning function name and argument", () => {
 
     Doing this ensures CDKTN and Terraform interpret your values correctly.
 
-    To learn more about built in Terraform functions within CDKTN, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/functions
+    To learn more about built in Terraform functions within CDKTN, refer to: https://cdktn.io/docs/concepts/functions
     . Please change your code to pass a valid value for this argument."
   `);
 });

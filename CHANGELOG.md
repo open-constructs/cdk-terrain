@@ -329,7 +329,7 @@ Since long-term support for Node.js 18 has ended, we updated our minimum compati
 
 **AWS Provider changes (breaking)**
 
-The AWS pre-built provider for Go is currently too large to be installed due to a hard limit in Go. This release adds skipping the `statement` block in the `rule` block of the `aws_wafv2_web_acl` and `aws_wafv2_rule_group` resources. Our [resource docs page](https://developer.hashicorp.com/terraform/cdktf/concepts/resources#special-cases) previously already mentioned that these resources have skipped attributes but they weren't actually skipped. This almost doubled AWS provider bindings in size due to the recursive nature of the `statement` block.
+The AWS pre-built provider for Go is currently too large to be installed due to a hard limit in Go. This release adds skipping the `statement` block in the `rule` block of the `aws_wafv2_web_acl` and `aws_wafv2_rule_group` resources. Our [resource docs page](https://cdktn.io/docs/concepts/resources#special-cases) previously already mentioned that these resources have skipped attributes but they weren't actually skipped. This almost doubled AWS provider bindings in size due to the recursive nature of the `statement` block.
 If you are using any of these two resources, the `statement` now has to be passed as a plain object instead and its keys have to be snake-cased (e.g. `and_statement` or `regex_match_statement`).
 
 ### feat
@@ -358,7 +358,7 @@ If you are using any of these two resources, the `statement` now has to be passe
 
 ### Module names / import paths changing
 
-To resolve [\#3026](https://github.com/hashicorp/terraform-cdk/issues/3026) we improved the logic for generating names for [Terraform Modules](https://developer.hashicorp.com/terraform/cdktf/concepts/modules). This makes the default module names nicer, but also leads to breaking changes for Python, C#, and Java. When updating CDKTF, please generate the new bindings with `cdktf get` after updating the CLI and update your module imports.
+To resolve [\#3026](https://github.com/hashicorp/terraform-cdk/issues/3026) we improved the logic for generating names for [Terraform Modules](https://cdktn.io/docs/concepts/modules). This makes the default module names nicer, but also leads to breaking changes for Python, C#, and Java. When updating CDKTF, please generate the new bindings with `cdktf get` after updating the CLI and update your module imports.
 
 ### Removal of deprecated backends
 
@@ -1257,7 +1257,7 @@ A broken import that only appeared in the bundled `cdktf-cli` that we publish br
 ## 0.14.0
 
 **Breaking changes**
-Back in October, we [announced significant performance improvements with CDKTF version 0.13](https://www.hashicorp.com/blog/cdk-for-terraform-0-13-significantly-improves-performance). These improvements required breaking changes for which we provided backward-compatible provider bindings in version 0.13. As announced, the 0.12 (non-namespaced) provider bindings will no longer work starting with CDKTF 0.14. Refer to the [upgrade guide for 0.13](https://developer.hashicorp.com/terraform/cdktf/release/upgrade-guide-v0-13) to learn how to update your imports for these changes.
+Back in October, we [announced significant performance improvements with CDKTF version 0.13](https://www.hashicorp.com/blog/cdk-for-terraform-0-13-significantly-improves-performance). These improvements required breaking changes for which we provided backward-compatible provider bindings in version 0.13. As announced, the 0.12 (non-namespaced) provider bindings will no longer work starting with CDKTF 0.14. Refer to the [upgrade guide for 0.13](https://cdktn.io/docs/release/upgrade-guide-v0-13) to learn how to update your imports for these changes.
 
 ### feat
 

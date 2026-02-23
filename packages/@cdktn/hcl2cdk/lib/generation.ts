@@ -690,7 +690,7 @@ async function asExpression(
       t.addComment(
         importExpression,
         "leading",
-        `This import was configured with a provider. CDKTN does support this, but the cdktn convert command does not yet. Please add the provider reference manually. See https://developer.hashicorp.com/terraform/cdktf/concepts/resources#importing-resources for more information.`,
+        `This import was configured with a provider. CDKTN does support this, but the cdktn convert command does not yet. Please add the provider reference manually. See https://cdktn.io/docs/concepts/resources#importing-resources for more information.`,
       );
     }
 

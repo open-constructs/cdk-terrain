@@ -35,13 +35,13 @@ Choose a language:
 
 Refer to the [CDKTF documentation](https://developer.hashicorp.com/terraform/cdktf) for more detail about how to build and manage CDKTN applications, including:
 
-- [Application Architecture](https://developer.hashicorp.com/terraform/cdktf/concepts/cdktf-architecture): Learn the tools and processes that CDKTN uses to leverage the Terraform ecosystem and convert code into Terraform configuration files. It also explains the major components of a CDKTN application and how those pieces fit together.
+- [Application Architecture](https://cdktn.io/docs/concepts/cdktn-architecture): Learn the tools and processes that CDKTN uses to leverage the Terraform ecosystem and convert code into Terraform configuration files. It also explains the major components of a CDKTN application and how those pieces fit together.
 
-- [Project Setup](https://developer.hashicorp.com/terraform/cdktf/create-and-deploy/project-setup): Learn how to create a new CDKTN project from a pre-built or custom template. Also learn how to convert an existing HCL project into a CDKTN application.
+- [Project Setup](https://cdktn.io/docs/create-and-deploy/project-setup): Learn how to create a new CDKTN project from a pre-built or custom template. Also learn how to convert an existing HCL project into a CDKTN application.
 
-- [Unit Tests](https://developer.hashicorp.com/terraform/cdktf/test/unit-tests): Learn how to test your application in Typescript with jest.
+- [Unit Tests](https://cdktn.io/docs/test/unit-tests): Learn how to test your application in Typescript with jest.
 
-- [Examples](https://developer.hashicorp.com/terraform/cdktf/examples-and-guides/examples): Reference example projects in every supported language and review explanatory videos and other resources.
+- [Examples](https://cdktn.io/docs/examples-and-guides/examples): Reference example projects in every supported language and review explanatory videos and other resources.
 
 ## Community
 

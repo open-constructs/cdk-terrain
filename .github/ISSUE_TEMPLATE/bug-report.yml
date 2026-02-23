@@ -135,7 +135,7 @@ body:
       placeholder: |
         - #123
         - #456
-        - https://developer.hashicorp.com/terraform/cdktf/concepts/aspects
+        - https://cdktn.io/docs/concepts/aspects
     validations:
       required: false
 

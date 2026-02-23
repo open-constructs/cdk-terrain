@@ -186,7 +186,7 @@ export class MigrateIds implements IAspect {
       Annotations.of(node)
         .addWarning(`Found module with new id ${node.friendlyUniqueId}. Moving this module requires a manual state migration.
 If this module has not been moved yet, run "terraform state mv module.${oldId} module.${node.friendlyUniqueId}" in the output directory "${stackOutdir}" to migrate the existing state to its new id.
-Refer to the following page for more information: https://developer.hashicorp.com/terraform/cdktf/examples-and-guides/refactoring#moving-or-renaming-modules`);
+Refer to the following page for more information: https://cdktn.io/docs/examples-and-guides/refactoring#moving-or-renaming-modules`);
     }
   }
 }

@@ -126,7 +126,7 @@ test("getting Stack for construct which was added to root app returns friendly e
 
     You can only use constructs as part of a TerraformStack.
 
-    To learn more about Constructs vs. TerraformStacks, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/constructs#:~:text=Constructs%20vs.%20Stacks
+    To learn more about Constructs vs. TerraformStacks, refer to: https://cdktn.io/docs/concepts/constructs#:~:text=Constructs%20vs.%20Stacks
     "
   `);
 });

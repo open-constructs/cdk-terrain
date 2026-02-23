@@ -10,7 +10,7 @@ export const noAppFound = (constructPath: string) =>
   new Error(
     `No app could be identified for the construct at path '${constructPath}' (likely a TerraformStack).
 The scope of CDKTN's TerraformStack class is a single App instance created by 'const app = new App()'. The App is your project's root, holding project configuration and validations.
-Learn more about the App: https://developer.hashicorp.com/terraform/cdktf/concepts/cdktf-architecture#app-class:~:text=and%20Resource.-,App%20Class,-Each%20CDKTF%20project
+Learn more about the App: https://cdktn.io/docs/concepts/cdktn-architecture#app-class
     `,
   );
 
@@ -35,15 +35,15 @@ export const assetOutOfScopeOfCDKTFJson = (id: string, configPath: string) =>
 
 The cdktf.json file is needed to establish the base for the relative path (the '.' in './foo/bar').
 
-Place a cdktf.json at the root of your project. Learn more: https://developer.hashicorp.com/terraform/cdktf/create-and-deploy/configuration-file
-Learn more about TerraformAsset: https://developer.hashicorp.com/terraform/cdktf/concepts/assets
+Place a cdktf.json at the root of your project. Learn more: https://cdktn.io/docs/create-and-deploy/configuration-file
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets
 `,
   );
 
 export const assetExpectsDirectory = (id: string, configPath: string) =>
   new Error(
     `TerraformAsset ${id} expects path to point to a directory. Instead, this file was passed: '${configPath}'. Please correct the path to point to a directory.
-Learn more about TerraformAsset: https://developer.hashicorp.com/terraform/cdktf/concepts/assets
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets
     `,
   );
 
@@ -51,7 +51,7 @@ export const assetTypeNotImplemented = () =>
   new Error(`Asset type is not implemented.
 Possible Asset types include: FILE, DIRECTORY, and ARCHIVE.
 Take one of these values from the AssetType Enum.
-Learn more about TerraformAsset: https://developer.hashicorp.com/terraform/cdktf/concepts/assets
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets
   `);
 
 export const dynamicBlockNotSupported = (_foreachExpression: string) =>
@@ -116,7 +116,7 @@ export const movedToResourceOfDifferentType = (
 The destination "${moveTarget}"'s resource type ${destinationResourceType} differs from the original resource type (${originalResourceType}) you are trying to move.
 
 If this was intentional, try importing the existing resource into your target instead. Learn more:
-https://developer.hashicorp.com/terraform/cdktf/concepts/resources#importing-resources
+https://cdktn.io/docs/concepts/resources#importing-resources
 
 Note that you must manually remove the original resource from your state file after importing it. Use the "terraform state rm" command in the output directory of the stack you defined this resource in. Learn more:
 https://developer.hashicorp.com/terraform/cli/commands/state/rm
@@ -138,7 +138,7 @@ Move by id: {
 
 Only one move operation can occur per plan/apply. Remove one of the operations.
 
-Learn more about moving resources: https://developer.hashicorp.com/terraform/cdktf/examples-and-guides/refactoring#:~:text=Moving%20%26%20Renaming%20Resources%20Within%20a%20Stack
+Learn more about moving resources: https://cdktn.io/docs/examples-and-guides/refactoring#:~:text=Moving%20%26%20Renaming%20Resources%20Within%20a%20Stack
 `);
 
 export const resourceGivenTwoMoveOperationsById = (
@@ -160,7 +160,7 @@ The resource ${id} has been given two different move operations.
 
 Only one move operation can occur per plan/apply. Remove one of the operations.
 
-Learn more about moving resources: https://developer.hashicorp.com/terraform/cdktf/examples-and-guides/refactoring#:~:text=Moving%20%26%20Renaming%20Resources%20Within%20a%20Stack
+Learn more about moving resources: https://cdktn.io/docs/examples-and-guides/refactoring#:~:text=Moving%20%26%20Renaming%20Resources%20Within%20a%20Stack
 `);
 
 export const resourceGivenTwoMoveOperationsByTarget = (
@@ -172,7 +172,7 @@ export const resourceGivenTwoMoveOperationsByTarget = (
 
 A resource can only be moved once per plan/apply.
 
-Learn more about moving resources: https://developer.hashicorp.com/terraform/cdktf/examples-and-guides/refactoring#:~:text=Moving%20%26%20Renaming%20Resources%20Within%20a%20Stack
+Learn more about moving resources: https://cdktn.io/docs/examples-and-guides/refactoring#:~:text=Moving%20%26%20Renaming%20Resources%20Within%20a%20Stack
 `);
 
 export const stackContainsDisallowedChar = (
@@ -198,7 +198,7 @@ export const noStackForConstruct = (constructPath: string, hint: string) =>
 
 You can only use constructs as part of a TerraformStack.
 
-To learn more about Constructs vs. TerraformStacks, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/constructs#:~:text=Constructs%20vs.%20Stacks
+To learn more about Constructs vs. TerraformStacks, refer to: https://cdktn.io/docs/concepts/constructs#:~:text=Constructs%20vs.%20Stacks
 `);
 
 export const stackHasCircularDependency = (
@@ -209,7 +209,7 @@ export const stackHasCircularDependency = (
 
 TerraformStack ${dependency} is already dependent on ${thisStack} directly, or dependent on a TerraformStack within ${thisStack}.
 
-To learn more about circular dependency references, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/stacks#:~:text=Cross%2DStack%20References
+To learn more about circular dependency references, refer to: https://cdktn.io/docs/concepts/stacks#:~:text=Cross%2DStack%20References
 `);
 
 export const stackValidationFailure = (errorList: string) =>
@@ -225,7 +225,7 @@ Ensure you are passing the result of Testing.fullSynth('stack instance') to '${f
 
 Testing.fullSynth returns a file path to a temporary testing environment. Testing.synth returns the JSON representation of your stack.
 
-To learn more about testing in CDKTN, refer to: https://developer.hashicorp.com/terraform/cdktf/test/unit-tests`);
+To learn more about testing in CDKTN, refer to: https://cdktn.io/docs/test/unit-tests`);
 
 export const matchersFoundErrorsInStack = (
   errorCount: any,
@@ -242,13 +242,13 @@ export const jestNotInstantiated = () =>
 
 Ensure you have a 'setup.js' file in your project's directory that calls 'cdktn.Testing.setupJest()'.
 
-To learn more about setting up testing, refer to: https://developer.hashicorp.com/terraform/cdktf/test/unit-tests#:~:text=Add%20Testing%20to%20Your%20Application
+To learn more about setting up testing, refer to: https://cdktn.io/docs/test/unit-tests#:~:text=Add%20Testing%20to%20Your%20Application
 `);
 
 export const expectNotGloballyAccessible = () =>
   new Error(`The expect function is not globally accessible.
 
-To learn more about setting up testing, refer to: https://developer.hashicorp.com/terraform/cdktf/test/unit-tests#:~:text=Add%20Testing%20to%20Your%20Application
+To learn more about setting up testing, refer to: https://cdktn.io/docs/test/unit-tests#:~:text=Add%20Testing%20to%20Your%20Application
 `);
 
 export const invalidStack = (functionName: string, stackContent: string) =>
@@ -262,13 +262,13 @@ Testing.synth returns the JSON representation of your stack. CDKTN can use asser
 
 Testing.fullSynth returns a file path to a temporary testing environment.
 
-To learn more about testing in CDKTN, refer to: https://developer.hashicorp.com/terraform/cdktf/test/unit-tests
+To learn more about testing in CDKTN, refer to: https://cdktn.io/docs/test/unit-tests
 `);
 
 export const targetNotResolvableWithOverrides = (target: string) =>
   new Error(`Target (${target}) cannot be a resolvable token if you specified overrides. Replace the value of the field you are overriding with a static value.
 
-To learn more about Tokens, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/tokens
+To learn more about Tokens, refer to: https://cdktn.io/docs/concepts/tokens
 `);
 
 export const sourceOrTargetNotAnObject = (
@@ -301,7 +301,7 @@ new CloudBackend(stack, {
   workspaces: new NamedCloudWorkspace("my-app"),
 });
 
-To learn more about Remote Backends, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/remote-backends
+To learn more about Remote Backends, refer to: https://cdktn.io/docs/concepts/remote-backends
 `);
 
 export const valueContainsUnescapedQuotes = (value: string) =>
@@ -314,7 +314,7 @@ Fn.rawString('${value}')
 
 Doing this ensures CDKTN and Terraform interpret your values correctly.
 
-To learn more about built in Terraform functions within CDKTN, refer to: https://developer.hashicorp.com/terraform/cdktf/concepts/functions
+To learn more about built in Terraform functions within CDKTN, refer to: https://cdktn.io/docs/concepts/functions
 `,
   );
 
@@ -469,8 +469,8 @@ Because we don't know the length of the list, we can not differentiate if the li
 - If you want to access a singular item, use 'Fn.element(list, 0)'. Do not use 'list[0]'.
 - If you want to loop over the list use 'TerraformIterator.fromList(list)'. Do not use a 'for' or 'forEach' loop.
 
-Learn more about tokens: https://developer.hashicorp.com/terraform/cdktf/concepts/tokens
-Learn more about iterators: https://developer.hashicorp.com/terraform/cdktf/concepts/iterators`;
+Learn more about tokens: https://cdktn.io/docs/concepts/tokens
+Learn more about iterators: https://cdktn.io/docs/concepts/iterators`;
 
 const MAP_ERROR_EXPLANATION = `
 In CDKTN, we represent maps, with values unknown until after runtime, as objects with a single key-value pair where the value is a string token. For example: '{ "&{TfToken[Token.1]}": "String Map Token Value" }'.
@@ -482,8 +482,8 @@ Because we don't know the contents of the map, we can not differentiate if the m
 - To access a singular item use 'Fn.lookup(map, key)'. Do not use 'map[key]'.
 - If you want to loop over the map use 'TerraformIterator.fromMap(map)'. Do not use a 'for' loop or iterate over 'Object.entries(map)' with 'forEach'.
 
-Learn more about tokens: https://developer.hashicorp.com/terraform/cdktf/concepts/tokens
-Learn more about iterators: https://developer.hashicorp.com/terraform/cdktf/concepts/iterators`;
+Learn more about tokens: https://cdktn.io/docs/concepts/tokens
+Learn more about iterators: https://cdktn.io/docs/concepts/iterators`;
 
 export const encodedListTokenInScalarStringContext = () =>
   new Error(`Found an encoded list token string in a scalar string context.

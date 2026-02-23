@@ -22,7 +22,7 @@ describe("MigrateIds", () => {
         level: "@cdktf/warn",
         message: `Found module with new id vpc. Moving this module requires a manual state migration.
 If this module has not been moved yet, run "terraform state mv module.staging_vpc_C4EA2553 module.vpc" in the output directory "cdktf.out/stacks/staging" to migrate the existing state to its new id.
-Refer to the following page for more information: https://developer.hashicorp.com/terraform/cdktf/examples-and-guides/refactoring#moving-or-renaming-modules`,
+Refer to the following page for more information: https://cdktn.io/docs/examples-and-guides/refactoring#moving-or-renaming-modules`,
       },
     ]);
   });
