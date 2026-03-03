@@ -260,11 +260,8 @@ jobs:
           MAVEN_OPTS: "--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED" # See https://stackoverflow.com/questions/70153962/nexus-staging-maven-plugin-maven-deploy-failed-an-api-incompatibility-was-enco
 
   release_nuget:
-    name: Release to GitHub Packages (NuGet)
+    name: Release to NuGet
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     needs:
       - prepare-release
       - integration_test
@@ -284,8 +281,7 @@ jobs:
       - name: Release
         run: npx -p publib publib-nuget
         env:
-          NUGET_SERVER: "https://nuget.pkg.github.com/open-constructs/index.json"
-          NUGET_API_KEY: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
   release_golang:
     name: Release Go to Github Repo
