@@ -96,7 +96,7 @@ describe("provider add command", () => {
       ]);
     });
 
-    it("detects correct cdktf version", async () => {
+    it("detects correct cdktn version", async () => {
       const res = await driver.exec("cdktn", ["debug"]);
       expect(res.stdout).toContain("cdktf: 0.13.0");
     });

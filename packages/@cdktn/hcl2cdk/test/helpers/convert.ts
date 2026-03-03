@@ -11,8 +11,23 @@ import {
   TerraformProviderConstraint,
 } from "@cdktn/commons";
 import { readSchema } from "@cdktn/provider-schema";
+import type { FixturesManifest } from "../globalSetup";
 
 const includeSynthTests = Boolean(process.env.CI);
+
+// Load pre-generated fixtures manifest from globalSetup
+let _manifest: FixturesManifest | undefined;
+function getManifest(): FixturesManifest {
+  if (_manifest) return _manifest;
+  const manifestPath = process.env.HCL2CDK_FIXTURES_MANIFEST;
+  if (!manifestPath) {
+    throw new Error(
+      "HCL2CDK_FIXTURES_MANIFEST env var not set. Ensure globalSetup ran successfully.",
+    );
+  }
+  _manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+  return _manifest!;
+}
 
 export enum Synth {
   yes_all_languages, // Synth and snapshot all languages
@@ -113,81 +128,23 @@ export const binding = {
 };
 
 type AbsolutePath = string;
-const providerBindingCache: Record<
-  ProviderFqn,
-  Promise<AbsolutePath> | undefined
-> = {};
-
-async function generateBindings(
-  binding: ProviderDefinition,
-): Promise<AbsolutePath> {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cdktf-provider-"));
-  await fs.writeFile(
-    path.resolve(tempDir, "cdktf.json"),
-    JSON.stringify({
-      language: "typescript",
-      app: "npx ts-node main.ts",
-      terraformProviders:
-        binding.type === ProviderType.provider ? [binding.fqn] : [],
-      terraformModules:
-        binding.type === ProviderType.module ? [binding.fqn] : [],
-    }),
-  );
-  await execa(cdktnBin, ["get"], { cwd: tempDir });
-
-  return path.resolve(tempDir, ".gen", binding.path);
-}
 
 async function copyBindingsForProvider(
   binding: ProviderDefinition,
   targetDirectory: AbsolutePath,
 ) {
-  const absoluteBindingPathPromise = providerBindingCache[binding.fqn]
-    ? providerBindingCache[binding.fqn]
-    : generateBindings(binding);
-
-  providerBindingCache[binding.fqn] = absoluteBindingPathPromise;
+  const manifest = getManifest();
+  const absoluteBindingPath = manifest.providerBindings[binding.fqn];
+  if (!absoluteBindingPath) {
+    throw new Error(
+      `No pre-generated binding found for ${binding.fqn}. Ensure globalSetup generates it.`,
+    );
+  }
 
   const target = path.resolve(targetDirectory, ".gen", binding.path);
   await fs.mkdirp(target);
-  const absolutePath = await absoluteBindingPathPromise;
-
-  await fs.copy(absolutePath!, target);
+  await fs.copy(absoluteBindingPath, target);
 }
-
-// Prepare for tests / warm up cache
-const prepareBaseProject = (language: string) =>
-  // eslint-disable-next-line no-async-promise-executor
-  new Promise<string>(async (resolve) => {
-    const projectDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), "cdktf-convert-base-"),
-    );
-    await execa(
-      cdktnBin,
-      [
-        "init",
-        "--local",
-        `--dist=${cdktnDist}`,
-        "--project-name='hello'",
-        "--project-description='world'",
-        `--template=${language}`,
-        "--enable-crash-reporting=false",
-      ],
-      {
-        cwd: projectDir,
-      },
-    );
-
-    resolve(projectDir);
-  });
-
-const requiredLanguages = includeSynthTests
-  ? ["typescript", "python", "csharp"]
-  : ["typescript"];
-const baseProjectPromisePerLanguage = requiredLanguages.reduce(
-  (acc, language) => ({ ...acc, [language]: prepareBaseProject(language) }),
-  {} as Record<string, Promise<string>>,
-);
 
 const fileEndings: Record<string, string> = {
   typescript: ".ts",
@@ -342,14 +299,13 @@ async function getProjectDirectory(
   language: string,
   providers: ProviderDefinition[],
 ) {
-  const baseProjectPromise = baseProjectPromisePerLanguage[language];
-  if (!baseProjectPromise) {
+  const manifest = getManifest();
+  const baseDir = manifest.baseProjects[language];
+  if (!baseDir) {
     throw new Error(
       `Unsupported language used to synthesize code: ${language}`,
     );
   }
-
-  const baseDir = await baseProjectPromise;
   const projectDir = await fs.mkdtemp(
     path.join(os.tmpdir(), "cdktf-convert-test-"),
   );
@@ -395,10 +351,11 @@ async function getProviderSchema(providers: ProviderDefinition[]) {
     LANGUAGES[0],
   );
 
-  return await readSchema(
-    constraints,
-    process.env.CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH,
-  );
+  const schemaCacheDir =
+    process.env.CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH ||
+    getManifest().schemaCacheDir;
+
+  return await readSchema(constraints, schemaCacheDir);
 }
 
 function filterSchema(

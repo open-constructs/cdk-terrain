@@ -62,7 +62,7 @@ export class TestIterators extends TerraformStack {
     //     }
     //   }
     // }
-    // CDKTF:
+    // CDKTN:
     new ArchiveProvider.dataArchiveFile.DataArchiveFile(this, "inline", {
       type: "zip",
       outputPath: "${path.module}/out2.zip",
@@ -155,7 +155,7 @@ export class TestIteratorsSynthOnly extends TerraformStack {
     //     }
     //   }
     // }
-    // CDKTF:
+    // CDKTN:
     new NomadProvider.volume.Volume(this, "mysqlvolume", {
       pluginId: "aws-ebs0",
       name: "mysql-volume",
@@ -203,7 +203,7 @@ export class TestIteratorsSynthOnly extends TerraformStack {
     //   validation_record_fqdns = [for record in aws_route53_record.example : record.fqdn]
     // }
 
-    // CDKTF:
+    // CDKTN:
     new AwsProvider(this, "aws");
 
     const example = new AcmCertificate(this, "cert", {

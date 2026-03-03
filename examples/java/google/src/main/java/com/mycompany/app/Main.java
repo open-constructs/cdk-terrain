@@ -34,10 +34,10 @@ public class Main extends TerraformStack {
             .credentials(credentials)
             .build();
 
-        ComputeNetwork network = ComputeNetwork.Builder.create(this, "Network").name("cdktf-network").build();
+        ComputeNetwork network = ComputeNetwork.Builder.create(this, "Network").name("cdktn-network").build();
 
         ComputeInstance.Builder.create(this, "ComputeInstance")
-            .name("cdktf-instance")
+            .name("cdktn-instance")
             .machineType("f1-micro")
             .bootDisk(ComputeInstanceBootDisk.builder()
             .initializeParams(ComputeInstanceBootDiskInitializeParams.builder()

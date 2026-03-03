@@ -28,7 +28,7 @@
 
  Upgrades:
    npm run get           Import/update Terraform providers and modules (you should check-in this directory)
-   npm run upgrade       Upgrade cdktf modules to latest version
-   npm run upgrade:next  Upgrade cdktf modules to latest "@next" version (last commit)
+   npm run upgrade       Upgrade cdktn modules to latest version
+   npm run upgrade:next  Upgrade cdktn modules to latest "@next" version (last commit)
 
 ========================================================================================================

@@ -16,7 +16,7 @@ import { cannotCalcIdForEmptySetOfComponents } from "./errors";
 import * as path from "path";
 
 /**
- * We have to copy this from the old CDKTF version for now, so that we can
+ * We have to copy this from the old CDKTN version for now, so that we can
  * calculate the old logical IDs for now and for later for the migration.
  */
 

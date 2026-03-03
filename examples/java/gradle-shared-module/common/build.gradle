@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 apply plugin: 'application'
 
 application {
-    mainClass = 'com.example.cdktf.common.BaseApplicationModule'
+    mainClass = 'com.example.cdktn.common.BaseApplicationModule'
 }
 
 dependencies {

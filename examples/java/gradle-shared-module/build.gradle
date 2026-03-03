@@ -28,7 +28,7 @@ subprojects {
     }
 
     def getTask = task get(type: Exec) {
-        group = "cdktf"
+        group = "cdktn"
         onlyIf {
             def cdktfJson = new JsonSlurper()
                     .parseText(project.file("cdktf.json").text)
@@ -36,14 +36,14 @@ subprojects {
             !cdktfJson.terraformProviders?.isEmpty() && !cdktfJson.terraformModules?.isEmpty()
         }
         workingDir(projectDir)
-        commandLine("cdktf")
+        commandLine("cdktn")
         args("get")
     }
 
     def synthTask = task synth(type: Exec) {
-        group = "cdktf"
+        group = "cdktn"
         workingDir(projectDir)
-        commandLine("cdktf")
+        commandLine("cdktn")
         args("synth")
     }
 }
@@ -69,7 +69,7 @@ subprojects {
 if(System.getenv("CI")?.toBoolean()) {
     // We're applying dependency substitution during CI
     // to ensure that we test against the latest local version
-    // of the cdktf artifact.
+    // of the cdktn artifact.
     subprojects {
         configurations {
             all {

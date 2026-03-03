@@ -1354,7 +1354,7 @@ Abbreviated version below, for a guide see [Upgrade Guide for 0.13](https://www.
 
 ```typescript
 // Before version 0.13
-import { Container, Image, DockerProvider } from "@ckdtf/provider-docker";
+import { Container, Image, DockerProvider } from "@cdktf/provider-docker";
 
 // Version 0.13
 import { Image } from "@cdktf/provider-docker/lib/image";

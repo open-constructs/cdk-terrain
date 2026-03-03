@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 
-// uses the functions.json file to generate the bindings for CDKTF
+// uses the functions.json file to generate the bindings for CDKTN
 
 import fs from "fs/promises";
 import * as path from "path";

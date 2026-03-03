@@ -13,4 +13,6 @@ module.exports = {
     "ts",
     "tsx"
   ],
+  globalSetup: "./test/globalSetup.ts",
+  globalTeardown: "./test/globalTeardown.ts",
 }

@@ -3,7 +3,7 @@
 // import { Testing } from "cdktn";
 // import "cdktn/lib/testing/adapters/jest";
 
-describe("My CDKTF Application", () => {
+describe("My CDKTN Application", () => {
   it.todo("should be tested");
 
   // // All Unit testst test the synthesised terraform code, it does not create real-world resources

@@ -57,7 +57,7 @@ npm init -y > /dev/null
 npm install --global-style cdktn-cli
 
 # stop the local registry now that we installed the CLI
-# Some tests install cdktf in an older version from NPM
+# Some tests install cdktn in an older version from NPM
 # Which we'd block via the local registry otherwise
 stopLocalRegistry
 
