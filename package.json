@@ -18,7 +18,7 @@
         "test:ci": "lerna run --scope 'cdktn*' --scope @cdktn/* test:ci",
         "test:update": "lerna run --concurrency 2 --no-bail --scope 'cdktn*' --scope '@cdktn/*' test:update",
         "watch": "lerna run --parallel  --stream --scope @cdktn/* --scope 'cdktn*' watch-preserve-output",
-        "lint:workspace": "eslint --flag unstable_config_lookup_from_file .",
+        "lint:workspace": "eslint --flag v10_config_lookup_from_file .",
         "lint:prettier": "prettier --check .",
         "lint:examples": "node tools/lint-examples.js",
         "link-packages": "lerna exec --scope 'cdktn*' --scope @cdktn/* yarn link",
@@ -86,8 +86,10 @@
         "lerna": "^8.2.1",
         "lint-staged": "^15.5.2",
         "prettier": "^3.8.1",
+        "semver": "^7.7.4",
         "standard-version": "^9.5.0",
-        "tsc-files": "^1.1.4"
+        "tsc-files": "^1.1.4",
+        "typescript-eslint": "^8.57.0"
     },
     "resolutions": {
         "**/@types/react": "18.3.18",
