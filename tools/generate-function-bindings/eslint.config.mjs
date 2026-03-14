@@ -45,4 +45,11 @@ export default [
     },
   },
   prettierConfig,
+  {
+    languageOptions: {
+      parserOptions: {
+        tsconfigOverride: import.meta.dirname,
+      },
+    },
+  },
 ];
