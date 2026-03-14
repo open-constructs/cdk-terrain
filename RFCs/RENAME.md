@@ -84,7 +84,6 @@ To ease the transition, we must support legacy configuration and patterns where 
 **CRITICAL:** Changing internal IDs affects the synthesized Terraform JSON, which triggers resource replacement in Terraform state.
 
 - **`Symbol.for("cdktf.TerraformModuleAsset")`**:
-
   - _Issue:_ Used for runtime type checks and internal logic.
   - _Option A (Clean Break):_ Change to `cdktn.TerraformModuleAsset`. Requires all libraries to be recompiled against `cdktn`. Mixed versions will fail runtime symbol lookups.
   - _Option B (Dual Support):_ Register both symbols or keep the legacy symbol string for a transition period.
@@ -108,13 +107,11 @@ To ease the transition, we must support legacy configuration and patterns where 
 We will need to provide a robust `cdktn upgrade` or `cdktn migrate` command.
 
 1.  **Dependency Updates:**
-
     - Uninstall `@cdktf/*`.
     - Install `@cdktn/*`.
     - Update `package.json` scripts (e.g., `cdktf synth` -> `cdktn synth`).
 
 2.  **Code Refactoring:**
-
     - **Imports:** Regex-replace `import ... from "cdktf"` to `"cdktn"`.
     - **Namespaces:** Replace `com.hashicorp.cdktf` (Java), `HashiCorp.Cdktf` (C#).
     - **Constructs:** If any construct names changed (unlikely for core, but possible for providers).

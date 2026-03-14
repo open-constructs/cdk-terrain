@@ -110,5 +110,4 @@ export interface ConsulBackendConfig {
 }
 
 export interface DataTerraformRemoteStateConsulConfig
-  extends DataTerraformRemoteStateConfig,
-    ConsulBackendConfig {}
+  extends DataTerraformRemoteStateConfig, ConsulBackendConfig {}

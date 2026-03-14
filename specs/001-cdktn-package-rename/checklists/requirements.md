@@ -45,20 +45,17 @@ The specification was updated based on user-identified edge cases around depende
 3. **User Story 4**: Emphasized that local provider generation is the clean migration path with zero `cdktf` dependencies.
 
 4. **Functional Requirements**: Added FR-023 through FR-032 covering:
-
    - Provider generator clean output (no `cdktf` deps)
    - Dual dependency transitional support
    - Migration tooling (`cdktn migrate` command)
 
 5. **Edge Cases**: Expanded to cover:
-
    - Dual dependency coexistence concerns (with research items)
    - Provider dependency mixing scenarios
    - Provider generator edge cases
    - Migration tooling edge cases
 
 6. **Success Criteria**: Added SC-007 through SC-009 for:
-
    - Dual dependency synthesis
    - Clean local provider generation
    - Migration tool functionality

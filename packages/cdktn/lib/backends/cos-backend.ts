@@ -148,5 +148,4 @@ export interface CosBackendAssumeRole {
 }
 
 export interface DataTerraformRemoteStateCosConfig
-  extends DataTerraformRemoteStateConfig,
-    CosBackendConfig {}
+  extends DataTerraformRemoteStateConfig, CosBackendConfig {}

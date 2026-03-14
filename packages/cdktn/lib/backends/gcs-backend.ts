@@ -116,5 +116,4 @@ export interface GcsBackendConfig {
 }
 
 export interface DataTerraformRemoteStateGcsConfig
-  extends DataTerraformRemoteStateConfig,
-    GcsBackendConfig {}
+  extends DataTerraformRemoteStateConfig, GcsBackendConfig {}

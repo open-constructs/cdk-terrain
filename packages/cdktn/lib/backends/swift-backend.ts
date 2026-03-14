@@ -86,5 +86,4 @@ export interface SwiftBackendConfig {
  * @deprecated CDK for Terraform no longer supports the swift backend. Terraform deprecated swift in v1.2.3 and removed it in v1.3.
  */
 export interface DataTerraformRemoteStateSwiftConfig
-  extends DataTerraformRemoteStateConfig,
-    SwiftBackendConfig {}
+  extends DataTerraformRemoteStateConfig, SwiftBackendConfig {}

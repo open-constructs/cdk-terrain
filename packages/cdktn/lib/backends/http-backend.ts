@@ -125,5 +125,4 @@ export interface HttpBackendConfig {
 }
 
 export interface DataTerraformRemoteStateHttpConfig
-  extends DataTerraformRemoteStateConfig,
-    HttpBackendConfig {}
+  extends DataTerraformRemoteStateConfig, HttpBackendConfig {}

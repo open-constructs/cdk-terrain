@@ -80,5 +80,4 @@ export interface PgBackendConfig {
 }
 
 export interface DataTerraformRemoteStatePgConfig
-  extends DataTerraformRemoteStateConfig,
-    PgBackendConfig {}
+  extends DataTerraformRemoteStateConfig, PgBackendConfig {}

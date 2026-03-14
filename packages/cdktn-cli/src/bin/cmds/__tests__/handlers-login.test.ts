@@ -54,9 +54,8 @@ describe("login", () => {
       .spyOn(TerraformLogin.prototype, "askToLogin")
       .mockResolvedValue("token-123");
 
-    const { getAccountDetails } = await import(
-      "../helper/terraform-cloud-client"
-    );
+    const { getAccountDetails } =
+      await import("../helper/terraform-cloud-client");
     await login({ tfeHostname: "foo-bar.com" });
     expect(getAccountDetails).toHaveBeenCalledWith("foo-bar.com", "token-123");
   });
@@ -74,9 +73,8 @@ describe("login", () => {
       .spyOn(TerraformLogin.prototype, "askToLogin")
       .mockResolvedValue("token-123");
 
-    const { getAccountDetails } = await import(
-      "../helper/terraform-cloud-client"
-    );
+    const { getAccountDetails } =
+      await import("../helper/terraform-cloud-client");
     await login({ tfeHostname: "foo-bar.com" });
     expect(getAccountDetails).toHaveBeenCalledWith(
       "foo-bar.com",

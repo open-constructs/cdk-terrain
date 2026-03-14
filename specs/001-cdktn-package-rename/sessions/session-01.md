@@ -368,19 +368,16 @@ bd close core-2v8 --reason "Completed cross-package import sweep: ..."
 ### DO NOT CHANGE
 
 1. **Symbol.for() strings** in `packages/cdktf/lib/**/*.ts`:
-
    - `Symbol.for("cdktf/App")`
    - `Symbol.for("cdktf/TerraformStack")`
    - `Symbol.for("cdktf/TerraformResource")`
    - etc. (18 total - see research.md)
 
 2. **Terraform logical IDs** in synthesized output:
-
    - `__cdktf_module_asset`
    - Other `__cdktf_*` prefixes
 
 3. **Configuration paths** (preserved for backward compatibility):
-
    - `cdktf.json` (config file)
    - `cdktf.out/` (output directory)
    - `CDKTF_*` environment variables
@@ -486,13 +483,11 @@ Phase 8: Polish & Validation
 ## Critical Next Steps
 
 1. **Start core-2v8** (Cross-package import sweep)
-
    - Update ALL import statements in TypeScript files
    - Update code generation templates
    - Verify no old imports remain
 
 2. **After core-2v8**: Update workflow package matrices
-
    - release.yml lines 130-138
    - release_next.yml lines 97-105
    - Update Sentry release tags

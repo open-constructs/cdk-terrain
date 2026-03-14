@@ -212,5 +212,4 @@ export interface AzurermBackendConfig {
 }
 
 export interface DataTerraformRemoteStateAzurermConfig
-  extends DataTerraformRemoteStateConfig,
-    AzurermBackendConfig {}
+  extends DataTerraformRemoteStateConfig, AzurermBackendConfig {}

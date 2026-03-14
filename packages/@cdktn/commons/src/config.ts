@@ -53,9 +53,7 @@ export function isLocalModule(source: string): boolean {
   return getLocalMatch(source) !== null;
 }
 
-export class TerraformModuleConstraint
-  implements TerraformDependencyConstraint
-{
+export class TerraformModuleConstraint implements TerraformDependencyConstraint {
   public readonly name: string;
   public readonly source: string;
   public readonly localSourceAbsolutePath?: string;
@@ -202,9 +200,7 @@ export class TerraformModuleConstraint
   }
 }
 
-export class TerraformProviderConstraint
-  implements TerraformDependencyConstraint
-{
+export class TerraformProviderConstraint implements TerraformDependencyConstraint {
   public readonly name: string;
   public readonly source: string;
   public readonly version?: string;

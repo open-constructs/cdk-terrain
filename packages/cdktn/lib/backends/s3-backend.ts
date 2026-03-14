@@ -446,5 +446,4 @@ export interface S3BackendAssumeRoleWithWebIdentityConfig {
 }
 
 export interface DataTerraformRemoteStateS3Config
-  extends DataTerraformRemoteStateConfig,
-    S3BackendConfig {}
+  extends DataTerraformRemoteStateConfig, S3BackendConfig {}

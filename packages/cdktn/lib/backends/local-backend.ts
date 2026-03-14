@@ -77,5 +77,4 @@ export interface LocalBackendConfig {
 }
 
 export interface DataTerraformRemoteStateLocalConfig
-  extends DataTerraformRemoteStateConfig,
-    LocalBackendConfig {}
+  extends DataTerraformRemoteStateConfig, LocalBackendConfig {}

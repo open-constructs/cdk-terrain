@@ -160,5 +160,4 @@ export interface OssAssumeRole {
 }
 
 export interface DataTerraformRemoteStateOssConfig
-  extends DataTerraformRemoteStateConfig,
-    OssBackendConfig {}
+  extends DataTerraformRemoteStateConfig, OssBackendConfig {}

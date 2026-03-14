@@ -74,5 +74,4 @@ export class PrefixedRemoteWorkspaces implements IRemoteWorkspace {
 }
 
 export interface DataTerraformRemoteStateRemoteConfig
-  extends DataTerraformRemoteStateConfig,
-    RemoteBackendConfig {}
+  extends DataTerraformRemoteStateConfig, RemoteBackendConfig {}

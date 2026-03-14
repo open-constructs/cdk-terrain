@@ -340,7 +340,6 @@ CdktfResource.isTerraformResource(cdktnInstance); // TRUE
 2. **No automatic deduplication**: Unlike multiple versions of the same package, `cdktf` and `cdktn` are distinct packages. Bundlers will not deduplicate them.
 
 3. **Bundle size impact**: Approximately 2x the code if both packages are fully used. However:
-
    - Tree-shaking removes unused exports
    - Shared dependency (`constructs`) is deduplicated
    - Gzip compression reduces redundancy
@@ -472,7 +471,6 @@ cdktn.TerraformStack vs cdktf.TerraformStack
     "@cdktf/provider-aws": "^19.0.0"
   }
 }
-
 
 // Package manager installs both cdktn AND cdktf (via provider peer dep)
 ```
