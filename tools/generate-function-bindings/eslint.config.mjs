@@ -48,7 +48,7 @@ export default [
   {
     languageOptions: {
       parserOptions: {
-        tsconfigOverride: import.meta.dirname,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   },
