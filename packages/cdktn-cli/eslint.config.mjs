@@ -29,6 +29,7 @@ export default [
       "**/coverage",
       "**/*.d.ts",
       "**/*.js",
+      "**/*.mjs",
     ],
   },
   ...tseslint.config(eslint.configs.recommended, tseslint.configs.recommended),
@@ -53,6 +54,9 @@ export default [
 
     languageOptions: {
       parser: tsParser,
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
 
     rules: {

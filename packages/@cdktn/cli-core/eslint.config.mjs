@@ -30,6 +30,7 @@ export default [
       "**/coverage",
       "**/*.d.ts",
       "**/*.js",
+      "**/*.mjs",
       // prettier v2 managed inline snapshots
       "src/test/lib/cdktf-project.test.ts",
       "src/test/lib/terraform-logs.test.ts",
@@ -49,13 +50,16 @@ export default [
     (config) => ({
       ...config,
       files: ["**/*.ts", "**/*.tsx"],
-    }),
+    })
   ),
   {
     files: ["**/*.ts", "**/*.tsx"],
 
     languageOptions: {
       parser: tsParser,
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
 
     rules: {

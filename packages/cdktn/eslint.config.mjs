@@ -30,6 +30,7 @@ export default [
       "**/*.test*.ts",
       "**/*.d.ts",
       "**/*.js",
+      "**/*.mjs",
     ],
   },
   ...compat
@@ -53,6 +54,9 @@ export default [
 
     languageOptions: {
       parser: tsParser,
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
 
     rules: {
