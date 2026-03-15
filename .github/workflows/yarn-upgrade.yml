@@ -7,6 +7,7 @@ on:
   workflow_dispatch: {}
 
 # We special-case @types/node because we want to stay on the current major (minimum supported node release)
+# We special-case @types/node further because of an incompatibility with https-proxy-agent
 # We special-case @types/fs-extra because the current major (9.x) is broken with @types/node >= 10
 # We special-case typescript because it's not semantically versioned
 # We special-case constructs because we want to stay in control of the minimum compatible version
@@ -48,7 +49,7 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade dependencies at repository root
-          ncu --upgrade --filter=@types/node,@types/fs-extra --target=minor
+          ncu --upgrade --filter=@types/fs-extra --target=minor
           ncu --upgrade --filter=typescript --target=patch
           ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,lerna,@types/prettier --target=minor
 
@@ -172,7 +173,7 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade all the packages
-          lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --filter=@types/node,@types/fs-extra --target=minor
+          lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --filter=@types/fs-extra --target=minor
           lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --filter=typescript --target=patch
           lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor
       # This will ensure the current lockfile is up-to-date with the dependency specifications (necessary for "yarn upgrade" to run)
