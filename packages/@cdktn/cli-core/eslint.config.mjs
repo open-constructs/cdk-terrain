@@ -50,7 +50,7 @@ export default [
     (config) => ({
       ...config,
       files: ["**/*.ts", "**/*.tsx"],
-    })
+    }),
   ),
   {
     files: ["**/*.ts", "**/*.tsx"],
