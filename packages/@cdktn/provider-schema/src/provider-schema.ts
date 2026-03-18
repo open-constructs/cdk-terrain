@@ -73,8 +73,17 @@ const transformVariables = (variables: any) => {
           variableType = "any";
       }
     } else {
-      const matched = (variable["type"] as string)?.match(/\$\{(.*)\}/);
-      variableType = matched ? matched[1] : "any";
+      const rawVariableType = variable["type"];
+      if (
+        typeof rawVariableType === "string" &&
+        rawVariableType.startsWith("${") &&
+        rawVariableType.endsWith("}") &&
+        !rawVariableType.includes("\n")
+      ) {
+        variableType = rawVariableType.slice(2, -1);
+      } else {
+        variableType = "any";
+      }
     }
 
     const item: Input = {

@@ -11,12 +11,16 @@ if [[ -z "${GOROOT-}" ]]; then
   exit 1
 fi
 
-if [ ! -f "$GOROOT/misc/wasm/wasm_exec.js" ]
-then
-    echo "File $GOROOT/misc/wasm/wasm_exec.js does not exist!"
+WASM_EXEC_PATH=""
+if [ -f "$GOROOT/misc/wasm/wasm_exec.js" ]; then
+    WASM_EXEC_PATH="$GOROOT/misc/wasm/wasm_exec.js"
+elif [ -f "$GOROOT/lib/wasm/wasm_exec.js" ]; then
+    WASM_EXEC_PATH="$GOROOT/lib/wasm/wasm_exec.js"
+else
+    echo "File wasm_exec.js does not exist under either \$GOROOT/misc/wasm/ or \$GOROOT/lib/wasm/!"
     exit 1
 fi
 
-cp "$GOROOT/misc/wasm/wasm_exec.js" ./wasm/wasm_exec.js
+cp "$WASM_EXEC_PATH" ./wasm/wasm_exec.js
 
 echo "Copied build system wasm_exec.js file to wasm/ directory."

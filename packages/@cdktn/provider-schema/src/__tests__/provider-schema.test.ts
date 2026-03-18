@@ -64,6 +64,21 @@ describe("readSchema", () => {
     expect(sanitizeJson(result)).toMatchSnapshot();
   }, 120000);
 
+  it("generates a local module with inline comments in type constraints", async () => {
+    const module = new TerraformModuleConstraint({
+      name: "local_module",
+      fqn: "local_module",
+      source: path.resolve(
+        __dirname,
+        "fixtures",
+        "local-module-inline-comments",
+      ),
+    });
+    const target = new ConstructsMakerModuleTarget(module, Language.TYPESCRIPT);
+    const result = await readModuleSchema(target);
+    expect(sanitizeJson(result)).toMatchSnapshot();
+  }, 120000);
+
   it("generates a local json module", async () => {
     const module = new TerraformModuleConstraint({
       name: "local_module",
