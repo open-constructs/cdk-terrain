@@ -69,6 +69,35 @@ exports[`readSchema generates a local module 1`] = `
 }"
 `;
 
+exports[`readSchema generates a local module with inline comments in type constraints 1`] = `
+"{
+  "format_version": "STUBBED VERSION",
+  "local_module": {
+    "inputs": [
+      {
+        "default": null,
+        "description": "A list of IAM policy statements",
+        "name": "iam_policy_statements",
+        "required": false,
+        "type": "any"
+      },
+      {
+        "description": "The name",
+        "name": "name",
+        "required": true,
+        "type": "string"
+      }
+    ],
+    "name": "local_module",
+    "outputs": [
+      {
+        "name": "result"
+      }
+    ]
+  }
+}"
+`;
+
 exports[`readSchema generates a more complex schema 1`] = `
 "{
   "format_version": "STUBBED VERSION",
