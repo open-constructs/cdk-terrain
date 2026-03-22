@@ -78,16 +78,16 @@ This is a **JSII monorepo** (Lerna + Yarn workspaces) that compiles TypeScript t
 
 ### Core Packages
 
-| Package | Purpose |
-| --- | --- |
-| `packages/cdktn` | Core library — constructs (TerraformStack, TerraformResource, etc.). Uses JSII. |
-| `packages/cdktn-cli` | CLI entry point — thin wrapper around cli-core, uses esbuild (transpile only, no type checking; tsc runs as pre-commit hook) |
-| `packages/@cdktn/cli-core` | CLI implementation — commands, project management, Terraform execution |
-| `packages/@cdktn/provider-generator` | Generates TypeScript bindings from Terraform provider schemas |
-| `packages/@cdktn/provider-schema` | Fetches and parses Terraform provider schemas |
-| `packages/@cdktn/hcl2cdk` | Converts HCL to CDK code (`cdktn convert`) |
-| `packages/@cdktn/hcl2json` | WASM-based HCL parser (Go compiled to WASM) |
-| `packages/@cdktn/commons` | Shared utilities across packages |
+| Package                              | Purpose                                                                                                                      |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `packages/cdktn`                     | Core library — constructs (TerraformStack, TerraformResource, etc.). Uses JSII.                                              |
+| `packages/cdktn-cli`                 | CLI entry point — thin wrapper around cli-core, uses esbuild (transpile only, no type checking; tsc runs as pre-commit hook) |
+| `packages/@cdktn/cli-core`           | CLI implementation — commands, project management, Terraform execution                                                       |
+| `packages/@cdktn/provider-generator` | Generates TypeScript bindings from Terraform provider schemas                                                                |
+| `packages/@cdktn/provider-schema`    | Fetches and parses Terraform provider schemas                                                                                |
+| `packages/@cdktn/hcl2cdk`            | Converts HCL to CDK code (`cdktn convert`)                                                                                   |
+| `packages/@cdktn/hcl2json`           | WASM-based HCL parser (Go compiled to WASM)                                                                                  |
+| `packages/@cdktn/commons`            | Shared utilities across packages                                                                                             |
 
 ### Key Flows
 
