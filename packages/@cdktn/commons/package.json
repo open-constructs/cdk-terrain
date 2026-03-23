@@ -60,7 +60,7 @@
     "@types/fs-extra": "11.0.4",
     "@types/uuid": "9.0.8",
     "@types/validator": "13.15.10",
-    "@typescript-eslint/parser": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^9.39.4",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "7.37.5",
@@ -69,7 +69,7 @@
     "ts-jest": "29.4.6",
     "tsc-files": "1.1.4",
     "typescript": "5.4.5",
-    "typescript-eslint": "^8.57.0"
+    "typescript-eslint": "^8.57.1"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": "tsc-files ambient.d.ts --noEmit"

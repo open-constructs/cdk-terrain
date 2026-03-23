@@ -272,8 +272,8 @@ jobs:
         run: npx -p publib publib-golang
         env:
           GITHUB_TOKEN: ${{ secrets.TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN }}
-          GIT_USER_NAME: "CDK for Terraform Team"
-          GIT_USER_EMAIL: "github-team-tf-cdk@hashicorp.com"
+          GIT_USER_NAME: "CDK Terrain Bot"
+          GIT_USER_EMAIL: "gh-actions@cdktn.io"
 
   release_sentry:
     name: Finalize the sentry release
