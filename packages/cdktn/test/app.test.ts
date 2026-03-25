@@ -177,6 +177,44 @@ test("app synth executes Aspects", () => {
   `);
 });
 
+test("app synth silently ignores constructs scoped to app instead of a stack", () => {
+  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
+  const stack = new TerraformStack(app, "MyStack");
+  new TestProvider(stack, "TestProvider", {});
+
+  // Resource properly scoped to the stack
+  new TestResource(stack, "StackResource", { name: "in-stack" });
+
+  // Resource incorrectly scoped to the app — silently dropped
+  new TestResource(app, "OrphanedResource", { name: "orphan" });
+
+  // This behavior is undesired, and this test just shows it.
+  // See https://github.com/open-constructs/cdk-terrain/issues/57
+  expect(() => app.synth()).not.toThrow();
+
+  const stackSynth = JSON.parse(
+    fs.readFileSync(
+      path.resolve(outdir, "stacks", "MyStack", "cdk.tf.json"),
+      "utf8",
+    ),
+  );
+  // The stack resource is synthesized
+  expect(stackSynth.resource.test_resource).toBeDefined();
+  expect(
+    Object.values(stackSynth.resource.test_resource).some(
+      (r: any) => r.name === "in-stack",
+    ),
+  ).toBe(true);
+
+  // The orphaned resource does not appear anywhere
+  expect(
+    Object.values(stackSynth.resource.test_resource).some(
+      (r: any) => r.name === "orphan",
+    ),
+  ).toBe(false);
+});
+
 class MyResource extends TerraformResource {}
 
 describe("Cross Stack references", () => {
