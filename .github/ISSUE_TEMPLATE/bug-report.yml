@@ -67,6 +67,33 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: migration-context
+    attributes:
+      label: Migration Context
+      description: |
+        Did you previously use `cdktf` / `cdktf-cli` (the upstream HashiCorp project)?
+        If so, did you experience this same issue there?
+        This helps us determine if this is a pre-existing bug or a regression introduced during the cdktn migration.
+      options:
+        - I did not use cdktf before
+        - I used cdktf and saw the same issue there
+        - I used cdktf and did NOT see this issue there (possible regression)
+        - Not sure / don't remember
+    validations:
+      required: true
+
+  - type: input
+    id: upstream-issue
+    attributes:
+      label: Upstream cdktf Issue
+      description: |
+        If you experienced this issue in the original `cdktf` / `cdktf-cli`, is there an existing bug report on the archived [hashicorp/terraform-cdk](https://github.com/hashicorp/terraform-cdk/issues) repository?
+      placeholder: |
+        https://github.com/hashicorp/terraform-cdk/issues/1234
+    validations:
+      required: false
+
   - type: textarea
     id: providers
     attributes:
