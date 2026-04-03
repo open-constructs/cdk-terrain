@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`shard exports across multiple files to avoid generating files with more than a 1000 exports in a provider without namespaces: dashboard-resource 1`] = `
 "// generated from terraform resource schema

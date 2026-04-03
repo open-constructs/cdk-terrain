@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`getExpressionAst fails on malformed expressions 1`] = `[Error: getExpressionAst errors on input string '"\${module.foo.output"': main.tf:0,1-3: Unclosed template interpolation sequence; There is no closing brace for this interpolation sequence before the end of the quoted template. This might be caused by incorrect nesting inside the given expression. ]`;
 

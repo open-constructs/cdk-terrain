@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`generate a resource with nested type and no attributes 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/test/latest/docs/resources/nested_type_without_attributes_resource
