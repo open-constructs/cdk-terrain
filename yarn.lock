@@ -6669,7 +6669,7 @@ graphology@0.26.0:
   dependencies:
     events "^3.3.0"
 
-handlebars@^4.7.7, handlebars@^4.7.8:
+handlebars@^4.7.7:
   version "4.7.8"
   resolved "https://registry.npmjs.org/handlebars/-/handlebars-4.7.8.tgz#41c42c18b1be2365439188c77c6afae71c0cd9e9"
   integrity sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==
@@ -11760,21 +11760,6 @@ ts-jest@29.2.5:
     lodash.memoize "^4.1.2"
     make-error "^1.3.6"
     semver "^7.6.3"
-    yargs-parser "^21.1.1"
-
-ts-jest@29.4.6:
-  version "29.4.6"
-  resolved "https://registry.yarnpkg.com/ts-jest/-/ts-jest-29.4.6.tgz#51cb7c133f227396818b71297ad7409bb77106e9"
-  integrity sha512-fSpWtOO/1AjSNQguk43hb/JCo16oJDnMJf3CdEGNkqsEX3t0KX96xvyX1D7PfLCpVoKu4MfVrqUkFyblYoY4lA==
-  dependencies:
-    bs-logger "^0.2.6"
-    fast-json-stable-stringify "^2.1.0"
-    handlebars "^4.7.8"
-    json5 "^2.2.3"
-    lodash.memoize "^4.1.2"
-    make-error "^1.3.6"
-    semver "^7.7.3"
-    type-fest "^4.41.0"
     yargs-parser "^21.1.1"
 
 ts-jest@29.4.9:
