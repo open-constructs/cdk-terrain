@@ -6,6 +6,7 @@
 import path from "path";
 import * as fs from "fs-extra";
 import os from "os";
+import { EventEmitter } from "events";
 import { CdktfProject, init, get } from "../../lib/index";
 import { spawn } from "cross-spawn";
 import { exec, Language } from "@cdktn/commons";
@@ -32,11 +33,21 @@ jest.mock("@cdktn/commons", () => {
 jest.mock("cross-spawn", () => {
   return {
     spawn: jest.fn().mockImplementation((_file, _args) => {
-      return {
-        onData: () => undefined,
-        onExit: (listener: any) => listener({ exitCode: 0 }), // immediately fake a successful termination
+      const child = new EventEmitter() as EventEmitter & {
+        stdout: EventEmitter;
+        stdin: { write: () => void };
+        kill: () => void;
+      };
+
+      child.stdout = new EventEmitter();
+      child.stdin = {
         write: () => undefined,
       };
+      child.kill = () => undefined;
+
+      setImmediate(() => child.emit("close", 0));
+
+      return child;
     }),
   };
 });
