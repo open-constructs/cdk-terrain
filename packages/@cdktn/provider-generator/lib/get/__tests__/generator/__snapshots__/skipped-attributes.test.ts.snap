@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`skips attribute type attributes in the disallow list: data-quicksight-analysis 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/quicksight_analysis

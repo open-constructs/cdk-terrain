@@ -44,7 +44,7 @@ describe("multiple stacks", () => {
       expect(secondOut).toContain(`second`);
       expect(secondOut).not.toContain(`first`);
 
-      expect(() => driver.diff()).toThrowError("Found more than one stack");
+      expect(() => driver.diff()).toThrow("Found more than one stack");
     });
 
     onPosix("list posix", () => {
@@ -88,7 +88,7 @@ describe("multiple stacks", () => {
         `Apply complete!`,
       );
 
-      expect(driver.deploy()).rejects.toThrowError(
+      expect(driver.deploy()).rejects.toThrow(
         "Found more than one stack, please specify a target stack. Run cdktn deploy <stack> with one of these stacks: first, second",
       );
     });
@@ -98,7 +98,7 @@ describe("multiple stacks", () => {
         `Destroy complete!`,
       );
 
-      expect(() => driver.destroy()).toThrowError(
+      expect(() => driver.destroy()).toThrow(
         "Found more than one stack, please specify a target stack. Run cdktn destroy <stack> with one of these stacks: first, second",
       );
     });

@@ -4,7 +4,7 @@
  */
 
 import { interpret } from "xstate";
-import { spawnPty } from "../../lib/models/pty-process";
+import { spawnInteractive } from "../../lib/models/interactive-process";
 import {
   deployMachine,
   extractVariableNameFromPrompt,
@@ -90,7 +90,7 @@ describe("transitions", () => {
   });
 });
 
-function mockPty(ptyEvents: string[]): typeof spawnPty {
+function mockPty(ptyEvents: string[]): typeof spawnInteractive {
   const actions = {
     write: jest.fn(),
     writeLine: jest.fn(),

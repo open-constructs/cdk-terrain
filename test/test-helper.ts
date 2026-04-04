@@ -3,7 +3,7 @@
 import { TemplateServer } from "./template-server";
 import { spawn, execSync } from "child_process";
 import * as execa from "execa";
-import { spawn as ptySpawn } from "@cdktf/node-pty-prebuilt-multiarch";
+import { spawn as crossSpawn } from "cross-spawn";
 
 const os = require("os");
 const path = require("path");
@@ -308,11 +308,8 @@ export class TestDriver {
   };
 
   watch = () => {
-    const child = ptySpawn("cdktn", ["watch", "--auto-approve"], {
-      name: "xterm-color",
+    const child = crossSpawn("cdktn", ["watch", "--auto-approve"], {
       env: this.env,
-      cols: 80,
-      rows: 60,
       cwd: this.workingDirectory,
     });
     return child;

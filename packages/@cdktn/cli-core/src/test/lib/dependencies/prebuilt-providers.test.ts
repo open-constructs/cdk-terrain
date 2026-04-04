@@ -81,7 +81,7 @@ describe("prebuilt-providers", () => {
 
       await expect(
         getAllPrebuiltProviderVersions("@cdktf/test"),
-      ).rejects.toThrowError("Connection error");
+      ).rejects.toThrow("Connection error");
     });
 
     it("fails when npm responds with 5xx", async () => {
@@ -91,7 +91,7 @@ describe("prebuilt-providers", () => {
 
       await expect(
         getAllPrebuiltProviderVersions("@cdktf/test"),
-      ).rejects.toThrowError(/Unexpected error/);
+      ).rejects.toThrow(/Unexpected error/);
     });
 
     it("fails when package doesn't exist", async () => {
@@ -101,7 +101,7 @@ describe("prebuilt-providers", () => {
 
       await expect(
         getAllPrebuiltProviderVersions("@cdktf/test"),
-      ).rejects.toThrowError(/not found/i);
+      ).rejects.toThrow(/not found/i);
     });
 
     it("succeeds when package found", async () => {
@@ -181,7 +181,7 @@ describe("prebuilt-providers", () => {
 
       await expect(
         getNpmPackageName(ProviderConstraint.fromConfigEntry("test"), false),
-      ).rejects.toThrowError("Connection error");
+      ).rejects.toThrow("Connection error");
     });
 
     it("succeeds when cdk.tf redirect and Github work", async () => {
@@ -227,7 +227,7 @@ describe("prebuilt-providers", () => {
           ProviderConstraint.fromConfigEntry("test"),
           "0.12.2",
         ),
-      ).rejects.toThrowError("Connection error");
+      ).rejects.toThrow("Connection error");
     });
 
     it("returns null on connection error with npm", async () => {
@@ -246,7 +246,7 @@ describe("prebuilt-providers", () => {
           ProviderConstraint.fromConfigEntry("test"),
           "0.12.2",
         ),
-      ).rejects.toThrowError("Connection error");
+      ).rejects.toThrow("Connection error");
     });
 
     it("succeeds when both cdk.tf and npm work", async () => {

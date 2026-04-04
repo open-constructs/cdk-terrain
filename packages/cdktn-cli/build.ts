@@ -72,7 +72,6 @@ const config = {
     "@cdktn/hcl2cdk",
     "constructs",
     "yoga-layout-prebuilt",
-    "@cdktf/node-pty-prebuilt-multiarch",
   ],
   plugins: [
     nativeNodeModulesPlugin,

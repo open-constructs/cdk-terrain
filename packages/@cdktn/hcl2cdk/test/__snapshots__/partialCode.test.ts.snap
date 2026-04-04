@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`Partial code (missing properties) missing top-level required property snapshot csharp 1`] = `
 "using Constructs;

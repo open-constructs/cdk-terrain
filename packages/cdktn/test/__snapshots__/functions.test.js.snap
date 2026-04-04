@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`throws error on unescaped double quote string inputs " 1`] = `
 "Argument 0 of md5 failed the validation: Error: '"' can not be used as value directly since it has unescaped double quotes in it.

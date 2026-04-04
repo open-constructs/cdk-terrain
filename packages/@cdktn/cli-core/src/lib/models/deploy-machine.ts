@@ -12,18 +12,14 @@ import {
   Sender,
   Receiver,
 } from "xstate";
-import * as pty from "@cdktf/node-pty-prebuilt-multiarch";
 import { Errors, logger } from "@cdktn/commons";
 import { missingVariable } from "../errors";
 import stripAnsi from "strip-ansi";
 import { EOL } from "os";
-import { spawnPty } from "./pty-process";
-
-interface PtySpawnConfig {
-  file: Parameters<typeof pty.spawn>[0];
-  args: Parameters<typeof pty.spawn>[1];
-  options: Parameters<typeof pty.spawn>[2] & { cwd: string };
-}
+import {
+  spawnInteractive,
+  InteractiveSpawnConfig,
+} from "./interactive-process";
 
 interface DeployContext {
   exitCode?: number;
@@ -34,7 +30,7 @@ interface DeployContext {
 }
 
 export type DeployEvent =
-  | { type: "START"; pty: PtySpawnConfig }
+  | { type: "START"; pty: InteractiveSpawnConfig }
   | { type: "STOP" }
   | { type: "SEND_LINE"; input: string }
   | { type: "OUTPUT_RECEIVED"; output: string }
@@ -116,14 +112,14 @@ export function bufferUnterminatedLines(
   let buffer = "";
   function bufferedReceiverFunction(output: string) {
     buffer += output;
-    const lines = buffer.split(EOL);
+    const lines = buffer.split(/[\n\r]+/);
 
     // if the string ends with \n this will be an empty string
     // else it will contain an "unfinished" line
     // the fallback to an empty string is to make TS happy and should never happen
     buffer = lines.pop() || "";
 
-    if (lines.length > 0) handler(lines.join(EOL) + "\n");
+    if (lines.length > 0) handler(lines.join(EOL) + EOL);
   }
   bufferedReceiverFunction.getBuffer = () => buffer;
 
@@ -150,10 +146,7 @@ export function handleLineReceived(send: (event: DeployEvent) => void) {
       hideOutput = true;
       send({ type: "OUTPUT_RECEIVED", output });
       send({ type: "REQUEST_APPROVAL" });
-    } else if (
-      noColorLine.includes("var.") &&
-      noColorLine.includes("Enter a value:")
-    ) {
+    } else if (noColorLine.includes("var.")) {
       hideOutput = true;
 
       const variableName = extractVariableNameFromPrompt(output);
@@ -162,6 +155,9 @@ export function handleLineReceived(send: (event: DeployEvent) => void) {
         output: missingVariable(variableName),
       });
       send({ type: "VARIABLE_MISSING", variableName });
+    } else if (noColorLine.includes("Enter a value:")) {
+      // This comes along with above block, but is a separate line
+      hideOutput = true;
     } else if (
       noColorLine.includes(
         "Do you want to override the soft failed policy check?",
@@ -295,7 +291,7 @@ export const deployMachine = createMachine<
   {
     services: {
       runTerraformInPty: (context, event) =>
-        terraformPtyService(context, event, spawnPty),
+        terraformPtyService(context, event, spawnInteractive),
     },
   },
 );
@@ -303,7 +299,7 @@ export const deployMachine = createMachine<
 export function terraformPtyService(
   _context: DeployContext,
   event: DeployEvent,
-  spawn = spawnPty,
+  spawn = spawnInteractive,
 ): (send: Sender<DeployEvent>, onReceive: Receiver<DeployEvent>) => void {
   return (send: Sender<DeployEvent>, onReceive: Receiver<DeployEvent>) => {
     if (event.type !== "START") {
@@ -382,7 +378,7 @@ export function createAndStartDeployService(options: {
     }`,
   );
 
-  const config: PtySpawnConfig = {
+  const config: InteractiveSpawnConfig = {
     file: options.terraformBinaryName,
     args,
     options: {
@@ -434,7 +430,7 @@ export function createAndStartDestroyService(options: {
     }`,
   );
 
-  const config: PtySpawnConfig = {
+  const config: InteractiveSpawnConfig = {
     file: options.terraformBinaryName,
     args,
     options: {

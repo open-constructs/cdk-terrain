@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`broken attribute description comments 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/description_escaping

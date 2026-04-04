@@ -1,3 +1,38 @@
+## 0.22.1
+
+### feat
+
+- feat(gha): publish Maven artifacts to Maven Central [\#64](https://github.com/open-constructs/cdk-terrain/pull/64)
+- feat: restore NuGet.org publishing [\#50](https://github.com/open-constructs/cdk-terrain/pull/50)
+- feat(provider-generator): don't emit property params [\#43](https://github.com/open-constructs/cdk-terrain/pull/43)
+
+### fix
+
+- fix(cli): Pin init template to TypesScript 5.x [\#74](https://github.com/open-constructs/cdk-terrain/pull/74)
+- fix(gha): fix Go releases and update git identity [\#65](https://github.com/open-constructs/cdk-terrain/pull/65)
+- fix(provider-generator): handle inline comments with brackets in variable type parsing [\#61](https://github.com/open-constructs/cdk-terrain/pull/61)
+- fix: DEP0044 in TerraformOutput [\#2](https://github.com/open-constructs/cdk-terrain/pull/2)
+
+### chore
+
+- chore: Upgrade dependencies for all [\#69](https://github.com/open-constructs/cdk-terrain/pull/69)
+- chore(gha): Adding base14 Scout CI/CD observability workflow to instrument all the github actions. [\#52](https://github.com/open-constructs/cdk-terrain/pull/52)
+- chore(deps): Upgrade minimatch to 5.1.8 [\#49](https://github.com/open-constructs/cdk-terrain/pull/49)
+- chore: add cdktn keyword to all packages [\#46](https://github.com/open-constructs/cdk-terrain/pull/46)
+- chore: update links to point to cdktn.io [\#45](https://github.com/open-constructs/cdk-terrain/pull/45)
+- chore: update more references to cdktf [\#44](https://github.com/open-constructs/cdk-terrain/pull/44)
+- chore: fix typo in CONTRIBUTING.md [\#42](https://github.com/open-constructs/cdk-terrain/pull/42)
+- chore(deps): Upgrade validator to 13.15.22 [\#38](https://github.com/open-constructs/cdk-terrain/pull/38)
+- chore(deps): Upgrade glob to 10.5.0 [\#30](https://github.com/open-constructs/cdk-terrain/pull/30)
+- chore: Upgrade dependencies for all [\#22](https://github.com/open-constructs/cdk-terrain/pull/22)
+- chore: Upgrade dependencies for lib [\#18](https://github.com/open-constructs/cdk-terrain/pull/18)
+- chore(deps): bump the github-actions-backward-compatible group with 4 updates [\#15](https://github.com/open-constructs/cdk-terrain/pull/15)
+- chore(deps): bump the github-actions-breaking group with 11 updates [\#14](https://github.com/open-constructs/cdk-terrain/pull/14)
+
+### refactor
+
+- refactor(hcl2cdk): global setup/teardown along with parallel tests to speed the b… [\#41](https://github.com/open-constructs/cdk-terrain/pull/41)
+
 ## 0.22.0
 
 **Breaking Changes**

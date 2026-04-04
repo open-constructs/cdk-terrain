@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`generate an acm certifacte resource with complex computed types: acm-certificate 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/acm_certificate

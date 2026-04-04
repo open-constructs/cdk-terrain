@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`generate a cloudfront distribution resource: cloudfront 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution

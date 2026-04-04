@@ -40,8 +40,6 @@ packages:
     access: $all
 
   "@cdktf/*":
-    # includes "@cdktf/node-pty-prebuilt-multiarch":
-    # not handled by us
     # legacy scoped packages (for backward compatibility testing)
     proxy: npmjs
     access: $all

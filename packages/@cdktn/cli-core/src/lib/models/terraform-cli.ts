@@ -25,7 +25,7 @@ import {
 import { waitFor } from "xstate/lib/waitFor";
 import { missingVariable } from "../errors";
 import { terraformJsonSchema } from "../terraform-json";
-import { spawnPty } from "./pty-process";
+import { spawnInteractive } from "./interactive-process";
 import path from "path";
 import * as fs from "fs-extra";
 
@@ -137,7 +137,7 @@ export class TerraformCli implements Terraform {
     });
 
     const stdout = this.onStdout("init");
-    const { actions, exitCode } = spawnPty(
+    const { actions, exitCode } = spawnInteractive(
       {
         file: terraformBinaryName,
         args,

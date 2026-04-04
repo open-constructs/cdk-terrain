@@ -1,14 +1,14 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { TestDriver } from "../../test-helper";
-import { IPty, IDisposable } from "@cdktf/node-pty-prebuilt-multiarch";
 import stripAnsi = require("strip-ansi");
+import { ChildProcess } from "child_process";
 
 const onPosix = process.platform !== "win32" ? test : test.skip;
 
 describe.skip("full watch integration test", () => {
   let driver: TestDriver;
-  let child: IPty;
+  let child: ChildProcess;
   let childStopped: Promise<any> | undefined;
 
   beforeAll(async () => {
@@ -33,7 +33,7 @@ describe.skip("full watch integration test", () => {
 
       const { waitForLine } = screenOutput(child);
 
-      childStopped = new Promise((resolve) => child.onExit(resolve));
+      childStopped = new Promise((resolve) => child.on("exit", resolve));
 
       let line = await waitForLine(
         (line) => line.includes("Synthesizing hello-deploy"),
@@ -61,34 +61,28 @@ describe.skip("full watch integration test", () => {
 });
 
 const screenOutput = (
-  pty: IPty,
+  pty: ChildProcess,
 ): {
   waitForLine: (
     check: (line: string) => boolean,
     timeout?: number,
   ) => Promise<string>;
 } => {
-  let disposables: IDisposable[] = [];
   let subscriber:
     | ((line: string | undefined, exit: boolean) => void)
     | undefined;
   let lines: string[] = [];
   let exited: boolean = false;
 
-  disposables.push(
-    pty.onData((line) => {
-      // buffer until we get a new subscriber
-      if (subscriber === undefined) lines.push(line);
-      else subscriber(line, false);
-    }),
-  );
-  disposables.push(
-    pty.onExit(() => {
-      if (subscriber === undefined) exited = true;
-      else subscriber(undefined, true);
-      disposables.forEach((d) => d.dispose());
-    }),
-  );
+  pty.stdout.on("data", (line) => {
+    // buffer until we get a new subscriber
+    if (subscriber === undefined) lines.push(line);
+    else subscriber(line, false);
+  });
+  pty.on("exit", () => {
+    if (subscriber === undefined) exited = true;
+    else subscriber(undefined, true);
+  });
 
   const waitForLine = async (
     check: (line: string) => boolean,
