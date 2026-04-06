@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Export workflow trace
-        uses: base-14/otel-cicd-action@v1.0.0
+        uses: base-14/otel-cicd-action@v2
         with:
           otlpEndpoint: ${{ secrets.SCOUT_OTLP_ENDPOINT }}
           otelServiceName: cdk-terrain-ci
