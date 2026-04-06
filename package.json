@@ -89,7 +89,7 @@
         "semver": "^7.7.4",
         "standard-version": "^9.5.0",
         "tsc-files": "^1.1.4",
-        "typescript-eslint": "^8.57.0"
+        "typescript-eslint": "^8.58.0"
     },
     "resolutions": {
         "**/@types/react": "18.3.18",
