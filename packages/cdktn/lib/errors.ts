@@ -14,6 +14,14 @@ Learn more about the App: https://cdktn.io/docs/concepts/cdktn-architecture#app-
     `,
   );
 
+export const constructsOutsideOfStacks = (paths: string[]) => {
+  const bulletList = paths.map((p) => `  - ${p}`).join("\n");
+  return new Error(
+    `Found constructs outside of a TerraformStack (did you pass scope=app instead of scope=stack?):\n${bulletList}
+`,
+  );
+};
+
 export const appValidationFailure = (errorList: string) =>
   new Error(
     `App-level validation failed with the following errors:\n  ${errorList}

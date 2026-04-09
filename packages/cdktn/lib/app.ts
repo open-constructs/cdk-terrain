@@ -7,7 +7,12 @@ import { DISABLE_STACK_TRACE_IN_METADATA } from "./annotations";
 import { Manifest } from "./manifest";
 import { ISynthesisSession } from "./synthesize";
 import { TerraformStack } from "./terraform-stack";
-import { appValidationFailure, noAppFound } from "./errors";
+import {
+  appValidationFailure,
+  constructsOutsideOfStacks,
+  noAppFound,
+} from "./errors";
+import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "./features";
 
 const APP_SYMBOL = Symbol.for("cdktf/App");
 export const CONTEXT_ENV = "CDKTF_CONTEXT_JSON";
@@ -156,6 +161,15 @@ export class App extends Construct {
     const stacks = this.node
       .findAll()
       .filter<TerraformStack>(TerraformStack.isStack);
+
+    if (this.node.tryGetContext(FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS)) {
+      const orphans = this.node.children.filter(
+        (child) => !TerraformStack.isStack(child),
+      );
+      if (orphans.length > 0) {
+        throw constructsOutsideOfStacks(orphans.map((o) => o.node.path));
+      }
+    }
 
     stacks.forEach((stack) => stack.prepareStack());
     stacks.forEach((stack) => stack.synthesizer.synthesize(session));

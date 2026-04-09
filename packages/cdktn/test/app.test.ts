@@ -177,7 +177,9 @@ test("app synth executes Aspects", () => {
   `);
 });
 
-test("app synth silently ignores constructs scoped to app instead of a stack", () => {
+class MyResource extends TerraformResource {}
+
+test("app synth silently ignores constructs scoped to app instead of a stack by default", () => {
   const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
   const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
   const stack = new TerraformStack(app, "MyStack");
@@ -189,8 +191,6 @@ test("app synth silently ignores constructs scoped to app instead of a stack", (
   // Resource incorrectly scoped to the app — silently dropped
   new TestResource(app, "OrphanedResource", { name: "orphan" });
 
-  // This behavior is undesired, and this test just shows it.
-  // See https://github.com/open-constructs/cdk-terrain/issues/57
   expect(() => app.synth()).not.toThrow();
 
   const stackSynth = JSON.parse(
@@ -215,7 +215,30 @@ test("app synth silently ignores constructs scoped to app instead of a stack", (
   ).toBe(false);
 });
 
-class MyResource extends TerraformResource {}
+test("synthesis throws when a construct is scoped to app and failOnConstructsOutsideOfStacks is enabled", () => {
+  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const app = Testing.stubVersion(
+    new App({
+      stackTraces: false,
+      outdir,
+      context: { "cdktn:failOnConstructsOutsideOfStacks": true },
+    }),
+  );
+  const stack = new TerraformStack(app, "MyStack");
+  new TestProvider(stack, "TestProvider", {});
+
+  // Resource properly scoped to the stack
+  new TestResource(stack, "StackResource", { name: "in-stack" });
+
+  // Resource incorrectly scoped to the app
+  new TestResource(app, "OrphanedResource", { name: "orphan" });
+
+  expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+    "Found constructs outside of a TerraformStack (did you pass scope=app instead of scope=stack?):
+      - OrphanedResource
+    "
+  `);
+});
 
 describe("Cross Stack references", () => {
   class OriginStack extends TerraformStack {
