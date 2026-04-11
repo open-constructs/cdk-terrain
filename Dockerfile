@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-FROM public.ecr.aws/jsii/superchain:1-bookworm-slim-node20-nightly@sha256:cd75861281b3f9d503629a87e3529026b588500a752ae60b16c5f226344de2a7
+FROM public.ecr.aws/jsii/superchain:1-bookworm-slim-node22-nightly@sha256:06598e70ca71c3b8ebf3a8d6836449c682da10610026211c2d1b475974bb9d7b
 
 USER root
 
