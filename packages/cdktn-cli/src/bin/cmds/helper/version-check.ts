@@ -74,8 +74,7 @@ export async function latestVersionIfHigher(
     return null;
   }
 
-  // TODO: Check for cdktn-cli after release 1
-  const { stdout, stderr } = await exec("npm view cdktf-cli version");
+  const { stdout, stderr } = await exec("npm view cdktn-cli version");
   if (stderr && stderr.trim().length > 0) {
     console.error(
       `The 'npm view' command generated an error stream with content [${stderr.trim()}]`,
