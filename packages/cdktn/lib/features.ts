@@ -29,4 +29,6 @@
 export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
   "cdktn:failOnConstructsOutsideOfStacks";
 
-export const FUTURE_FLAGS = {};
+export const FUTURE_FLAGS = {
+  FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS: true,
+};
