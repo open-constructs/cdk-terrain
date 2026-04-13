@@ -27,8 +27,8 @@
  * directly to the App instead of to a TerraformStack.
  */
 export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
-  "cdktn:failOnConstructsOutsideOfStacks";
+  "failOnConstructsOutsideOfStacks";
 
 export const FUTURE_FLAGS = {
-  FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS: true,
+  [FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS]: "true",
 };
