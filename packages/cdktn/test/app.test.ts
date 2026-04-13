@@ -12,6 +12,7 @@ import {
   DataTerraformRemoteState,
   Fn,
 } from "../lib";
+import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "../lib/features";
 
 import { version } from "../package.json";
 import fs = require("fs");
@@ -221,7 +222,7 @@ test("synthesis throws when a construct is scoped to app and failOnConstructsOut
     new App({
       stackTraces: false,
       outdir,
-      context: { "failOnConstructsOutsideOfStacks": true },
+      context: { [FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS]: "true" },
     }),
   );
   const stack = new TerraformStack(app, "MyStack");
