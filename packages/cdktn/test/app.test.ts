@@ -221,7 +221,7 @@ test("synthesis throws when a construct is scoped to app and failOnConstructsOut
     new App({
       stackTraces: false,
       outdir,
-      context: { "cdktn:failOnConstructsOutsideOfStacks": true },
+      context: { "failOnConstructsOutsideOfStacks": true },
     }),
   );
   const stack = new TerraformStack(app, "MyStack");
