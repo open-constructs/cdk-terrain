@@ -122,6 +122,24 @@ type PackageJson = {
       version: string;
     };
   };
+  // Pre-built providers using cdktn now generate provider information under cdktn key
+  // At some point support for the cdktf key will be dropped
+  cdktn?: {
+    // provider is optional as we might set other cdktn related fields in the future
+    // for other libs (i.e. construct packages) while still using the cdktn key
+    provider?: {
+      /**
+       * name of the provider, will resolve to the full name as in the Terraform schema.
+       * e.g. registry.terraform.io/hashicorp/aws
+       */
+      name: string;
+      /**
+       * the actual version that was used to build the provider
+       * e.g. 4.12.1
+       */
+      version: string;
+    };
+  };
   peerDependencies?: {
     cdktf?: string;
     cdktn?: string;
@@ -146,7 +164,13 @@ type NpmPackageResult = {
 type NpmPackageSingleVersionResult = {
   name: string;
   version: string;
-  cdktf: {
+  cdktf?: {
+    provider: {
+      name: string;
+      version: string;
+    };
+  };
+  cdktn?: {
     provider: {
       name: string;
       version: string;
@@ -191,14 +215,15 @@ export async function getAllPrebuiltProviderVersions(
 
   const versions = Object.entries(result.versions)
     .map(([version, packageJson]) => {
-      const provider = packageJson.cdktf?.provider;
+      const provider =
+        packageJson.cdktn?.provider ?? packageJson.cdktf?.provider;
       if (
         !provider ||
         (!packageJson.peerDependencies?.cdktf &&
           !packageJson.peerDependencies?.cdktn)
       ) {
         logger.trace(
-          `skipping version ${version} of ${packageName} as it does not have a cdktf.provider or peerDependencies.cdktf/cdktn in package.json`,
+          `skipping version ${version} of ${packageName} as it does not have a cdktn/cdktf.provider or peerDependencies.cdktf/cdktn in package.json`,
         );
         return undefined;
       }
@@ -305,7 +330,7 @@ export async function getPrebuiltProviderVersionInformation(
   const url = `https://registry.npmjs.org/${packageName}/${packageVersion}`;
   const result = await cachedFetch<NpmPackageSingleVersionResult>(url);
 
-  let providerName = result.cdktf.provider.name;
+  let providerName = result.cdktn?.provider.name ?? result.cdktf?.provider.name;
   if (providerName) {
     providerName = providerName.replace("registry.terraform.io/", "");
     providerName = providerName.replace("hashicorp/", "");
@@ -315,7 +340,8 @@ export async function getPrebuiltProviderVersionInformation(
     packageName: result.name,
     packageVersion: result.version,
     providerName,
-    providerVersion: result.cdktf.provider.version,
+    providerVersion:
+      result.cdktn?.provider.version ?? result.cdktf?.provider.version,
     cdktfVersion: result.peerDependencies["cdktf"],
     cdktnVersion: result.peerDependencies["cdktn"],
   };

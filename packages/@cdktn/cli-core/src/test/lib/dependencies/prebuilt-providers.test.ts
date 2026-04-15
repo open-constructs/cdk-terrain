@@ -20,7 +20,7 @@ function buildNpmResponse(
   return {
     versions: {
       [version]: {
-        cdktf: {
+        [useCdktn ? "cdktn" : "cdktf"]: {
           provider: {
             name: `registry.terraform.io/hashicorp/${name}`,
             version: "0.3.1",
