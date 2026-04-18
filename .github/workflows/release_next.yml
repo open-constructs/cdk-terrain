@@ -22,7 +22,7 @@ jobs:
       tests: ${{ steps.build-test-matrix.outputs.tests }}
       version: ${{ steps.get_version.outputs.version }}
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     env:
       CHECKPOINT_DISABLE: "1"
     steps:
@@ -151,7 +151,7 @@ jobs:
       - unit_test
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -175,7 +175,7 @@ jobs:
       - unit_test
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -210,7 +210,7 @@ jobs:
       - unit_test
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - name: Download dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -238,7 +238,7 @@ jobs:
       - unit_test
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - name: Download dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -259,7 +259,7 @@ jobs:
       - unit_test
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - name: Download dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -285,7 +285,7 @@ jobs:
       - release_npm
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: version

@@ -18,7 +18,7 @@ jobs:
   prettier:
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: installing dependencies
@@ -31,7 +31,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:4942a4c6ed8286f403c7855dab56b0e11f9a7115e7e0afbcd49d7e69de4d6dc0
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: installing dependencies
