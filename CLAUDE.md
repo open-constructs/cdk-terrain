@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Prerequisites & Setup
 
-Tools managed by [mise](https://mise.jdx.dev/) (see `.mise.toml`): Node 20.20, Go 1.18, Python 3.11, Java corretto-20, .NET 6.0, Terraform 1.7.5.
+Tools managed by [mise](https://mise.jdx.dev/) (see `.mise.toml`): Node 20.20, go 1.25, Python 3.11, Java corretto-20, .NET 6.0, Terraform 1.7.5.
 
 Additional tools **not** managed by mise (install manually):
 

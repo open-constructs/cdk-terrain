@@ -99,7 +99,7 @@ Ensuring your PR titles follow this format helps us quickly identify the purpose
 To build and install `cdk-terrain` locally you need to install:
 
 - Node version (20.0+ - pinned in mise)
-- Go (1.18 - pinned in mise)
+- Go (1.25 - pinned in mise)
 - dotnet (v6.0 - pinned in mise)
 - pipenv (pinned in mise)
 

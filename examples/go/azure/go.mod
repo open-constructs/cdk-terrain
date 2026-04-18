@@ -1,6 +1,6 @@
 module github.com/open-constructs/cdk-terrain/examples/go/azure
 
-go 1.18
+go 1.25
 
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.4.3

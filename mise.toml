@@ -4,7 +4,7 @@
 [tools]
 node = "20.20"
 python = '3.11'
-go = '1.18'
+go = '1.25'
 java = "prefix:corretto-20"
 dotnet = "6.0"  # Match jsii-superchain DOTNET_CHANNEL
 "pipx:pipenv" = "latest"
