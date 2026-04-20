@@ -20,6 +20,6 @@
     "@cdktf/provider-aws": "21.22.1",
     "cdktf": "0.21.0",
     "cdktn": "0.0.0",
-    "constructs": "10.4.2"
+    "constructs": "10.6.0"
   }
 }

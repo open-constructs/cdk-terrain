@@ -40,7 +40,7 @@
     "@cdktn/commons": "0.0.0",
     "@cdktn/provider-schema": "0.0.0",
     "@types/node": "18.19.101",
-    "codemaker": "1.112.0",
+    "codemaker": "1.128.0",
     "fs-extra": "8.1.0",
     "glob": "10.5.0"
   },
