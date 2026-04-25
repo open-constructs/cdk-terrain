@@ -93,7 +93,7 @@
     },
     "resolutions": {
         "**/@types/react": "18.3.18",
-        "**/jsii": "5.8.9"
+        "**/jsii": "5.9.37"
     },
     "lint-staged": {
         "!(.claude|.agents|.specledger|specledger)/**/*.{ts,tsx,js,css,md}": "prettier --write",
