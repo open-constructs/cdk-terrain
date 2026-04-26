@@ -36,13 +36,13 @@ type myConfig struct {
 	data interface{}
 }
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string, config myConfig) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string, config myConfig) *myConvertedCode {
 	this := &myConvertedCode{}
 	newTerraformStack_Override(this, scope, name)
-	genprovidersdockerconfig.NewConfig(this, jsii.String("service_config"), &configConfig{
+	genprovidersdockerconfig.NewConfig(this, jsii.String("service_config"), &ConfigConfig{
 		name: jsii.String("my-config"),
 		data: config.data,
 	})

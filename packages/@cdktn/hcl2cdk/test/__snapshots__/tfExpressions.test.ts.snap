@@ -353,10 +353,10 @@ import "github.com/open-constructs/cdk-terrain-go/cdktn"
  */
 import "cdk.tf/go/stack/generated/aws/eip"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	newTerraformStack_Override(this, scope, name)
 	/*Terraform Variables are not always the best fit for getting inputs in the context of Terraform CDK.
@@ -370,7 +370,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		Description: jsii.String("Map of default tags to apply to resources"),
 		Type: cdktn.VariableType_Map(cdktn.VariableType_STRING()),
 	})
-	genprovidersawseip.NewEip(this, jsii.String("nat"), &eipConfig{
+	genprovidersawseip.NewEip(this, jsii.String("nat"), &EipConfig{
 		tags: map[string]*string{
 			"Name": jsii.String(cdktn.Token_asString(cdktn.Fn_lookupNested(defaultTags.value, []interface{}{
 				jsii.String("project"),

@@ -79,33 +79,33 @@ import "cdk.tf/go/stack/generated/aws/s3bucket"
 import "cdk.tf/go/stack/generated/aws/s3bucketobject"
 import "cdk.tf/go/stack/generated/aws/securitygroup"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	newTerraformStack_Override(this, scope, name)
-	genprovidersawsprovider.NewAwsProvider(this, jsii.String("aws"), &awsProviderConfig{
+	genprovidersawsprovider.NewAwsProvider(this, jsii.String("aws"), &AwsProviderConfig{
 		region: jsii.String("us-east-1"),
 	})
-	examplekms := genprovidersawskmskey.NewKmsKey(this, jsii.String("examplekms"), &kmsKeyConfig{
+	examplekms := genprovidersawskmskey.NewKmsKey(this, jsii.String("examplekms"), &KmsKeyConfig{
 		deletionWindowInDays: jsii.Number(7),
 		description: jsii.String("KMS key 1"),
 	})
-	examplebucket := genprovidersawss3bucket.NewS3Bucket(this, jsii.String("examplebucket"), &s3BucketConfig{
+	examplebucket := genprovidersawss3bucket.NewS3Bucket(this, jsii.String("examplebucket"), &S3BucketConfig{
 		acl: jsii.String("private"),
 		bucket: jsii.String("examplebuckettftest"),
 	})
-	genprovidersawss3bucketobject.NewS3BucketObject(this, jsii.String("examplebucket_object"), &s3BucketObjectConfig{
+	genprovidersawss3bucketobject.NewS3BucketObject(this, jsii.String("examplebucket_object"), &S3BucketObjectConfig{
 		bucket: examplebucket.bucket,
 		key: jsii.String("someobject"),
 		kmsKeyId: examplekms.arn,
 		source: jsii.String("index.html"),
 	})
-	genprovidersawssecuritygroup.NewSecurityGroup(this, jsii.String("allow_tls"), &securityGroupConfig{
+	genprovidersawssecuritygroup.NewSecurityGroup(this, jsii.String("allow_tls"), &SecurityGroupConfig{
 		description: jsii.String("Allow TLS inbound traffic"),
 		egress: []interface{}{
-			&securityGroupEgress{
+			&SecurityGroupEgress{
 				cidrBlocks: []*string{
 					jsii.String("0.0.0.0/0"),
 				},
@@ -118,19 +118,19 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			},
 		},
 		ingress: []interface{}{
-			&securityGroupIngress{
+			&SecurityGroupIngress{
 				description: jsii.String("TLS from VPC"),
 				fromPort: jsii.Number(443),
 				protocol: jsii.String("tcp"),
 				toPort: jsii.Number(443),
 			},
-			&securityGroupIngress{
+			&SecurityGroupIngress{
 				description: jsii.String("TLS from VPC"),
 				fromPort: jsii.Number(80),
 				protocol: jsii.String("tcp"),
 				toPort: jsii.Number(80),
 			},
-			&securityGroupIngress{
+			&SecurityGroupIngress{
 				fromPort: jsii.Number(8080),
 				protocol: jsii.String("tcp"),
 				toPort: jsii.Number(8080),
