@@ -39,7 +39,7 @@
   "dependencies": {
     "@cdktn/commons": "0.0.0",
     "@cdktn/provider-schema": "0.0.0",
-    "@types/node": "18.19.101",
+    "@types/node": "22.19.17",
     "codemaker": "1.112.0",
     "fs-extra": "8.1.0",
     "glob": "10.5.0"
@@ -49,7 +49,7 @@
     "@types/fs-extra": "8.1.5",
     "@types/glob": "7.2.0",
     "@types/jest": "30.0.0",
-    "@types/node": "20.19.37",
+    "@types/node": "22.19.17",
     "@types/reserved-words": "0.1.4",
     "jest": "^30.3.0",
     "ts-jest": "29.4.9",

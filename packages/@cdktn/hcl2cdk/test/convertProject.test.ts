@@ -78,7 +78,7 @@ app.synth();`,
           "upgrade:next": "npm i cdktn@next cdktn-cli@next"
         },
         "engines": {
-          "node": ">=20.9"
+          "node": ">=22.0"
         },
         "dependencies": {
           "cdktn": "latest",

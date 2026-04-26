@@ -60,7 +60,7 @@
     "@types/deep-equal": "1.0.4",
     "@types/glob": "8.1.0",
     "@types/jest": "30.0.0",
-    "@types/node": "20.19.37",
+    "@types/node": "22.19.17",
     "@types/prettier": "2.7.3",
     "@types/reserved-words": "0.1.4",
     "execa": "5.1.1",

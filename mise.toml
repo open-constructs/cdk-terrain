@@ -2,7 +2,7 @@
 # Issue tracking is now built into sl CLI (sl issue commands)
 
 [tools]
-node = "20.20"
+node = "22.22"
 python = '3.11'
 go = '1.25'
 java = "prefix:corretto-20"

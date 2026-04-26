@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@types/jest": "30.0.0",
-    "@types/node": "20.17.51",
+    "@types/node": "22.19.17",
     "cdktn-cli": "0.0.0",
     "jest": "^30.3.0",
     "tsx": "4.6.1",
