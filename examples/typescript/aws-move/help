@@ -39,12 +39,12 @@
   You can find all prebuilt providers on npm: https://www.npmjs.com/search?q=keywords:cdktf
   You can also install these providers directly through npm:
 
-  npm install @cdktf/provider-aws
-  npm install @cdktf/provider-google
-  npm install @cdktf/provider-azurerm
-  npm install @cdktf/provider-docker
-  npm install @cdktf/provider-github
-  npm install @cdktf/provider-null
+  npm install @cdktn/provider-aws
+  npm install @cdktn/provider-google
+  npm install @cdktn/provider-azurerm
+  npm install @cdktn/provider-docker
+  npm install @cdktn/provider-github
+  npm install @cdktn/provider-null
 
   You can also build any module or provider locally. Learn more https://cdk.tf/modules-and-providers
 
