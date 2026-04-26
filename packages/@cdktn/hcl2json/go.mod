@@ -1,6 +1,6 @@
 module github.com/open-constructs/cdk-terrain/hcl2json
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/hashicorp/hcl/v2 v2.23.0

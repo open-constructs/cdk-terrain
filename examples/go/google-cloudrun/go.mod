@@ -1,6 +1,6 @@
 module github.com/open-constructs/cdk-terrain/examples/go/google-cloudrun
 
-go 1.25
+go 1.25.0
 
 require github.com/aws/constructs-go/constructs/v10 v10.4.3
 

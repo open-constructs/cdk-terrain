@@ -1,6 +1,6 @@
 module cdk.tf/go/stack
 
-go 1.25
+go 1.25.0
 
 require github.com/aws/constructs-go/constructs/v10 v10.4.3
 
