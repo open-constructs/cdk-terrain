@@ -32,6 +32,8 @@
   },
   "license": "MPL-2.0",
   "dependencies": {
+    "@babel/parser": "7.27.2",
+    "@cdktn/commons": "0.0.0",
     "cdktn": "0.0.0",
     "log4js": "^6.7.0"
   },

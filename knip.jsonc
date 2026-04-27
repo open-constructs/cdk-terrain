@@ -154,10 +154,7 @@
         "@types/deepmerge",
         "@types/glob",
         "@types/node",
-        "@types/reserved-words",
-        // TODO: triage and add to package.json — each is imported but undeclared.
-        "jsii",
-        "jsii-pacmak"
+        "@types/reserved-words"
       ]
     },
     "packages/@cdktn/provider-schema": {
@@ -175,10 +172,7 @@
         // TODO: triage and remove entries — each is a declared dep with no detected usage.
         "@cdktn/provider-generator",
         "cdktn",
-        "log4js",
-        // TODO: triage and add to package.json — each is imported but undeclared.
-        "@babel/parser",
-        "@cdktn/commons"
+        "log4js"
       ]
     }
   }
