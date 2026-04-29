@@ -36,7 +36,7 @@ export class TerraformProviderLock {
     try {
       await fs.stat(this.lockFilePath);
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }

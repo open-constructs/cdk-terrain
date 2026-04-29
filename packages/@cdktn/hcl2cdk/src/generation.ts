@@ -165,7 +165,7 @@ export const valueToTs = async (
               }
 
               if (key === "dynamic") {
-                const { for_each, ...others } = value as any;
+                const { for_each: _for_each, ...others } = value as any;
                 const dynamicRef = Object.keys(others)[0];
                 return t.objectProperty(
                   t.identifier(
@@ -844,7 +844,7 @@ export async function modules(
   item: Module,
   graph: DirectedGraph,
 ) {
-  const [{ source, version, ...props }] = item;
+  const [{ source, version: _version, ...props }] = item;
 
   const moduleConstraint = new TerraformModuleConstraint(source);
 
@@ -935,7 +935,7 @@ export async function provider(
   item: Provider[0],
   graph: DirectedGraph,
 ) {
-  const { version, ...props } = item;
+  const { version: _version, ...props } = item;
 
   const importKey = key === "null" ? "NullProvider" : key;
 

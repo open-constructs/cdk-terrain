@@ -211,7 +211,6 @@ export class CdktfProject {
           return [
             key,
             // This is passed in to make typescript happy only
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             (_: V) => {
               value(update);
 

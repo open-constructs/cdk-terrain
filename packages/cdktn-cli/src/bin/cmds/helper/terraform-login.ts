@@ -134,7 +134,7 @@ the following file for use by subsequent Terraform commands:
       const terraformCredentials: TerraformCredentialsFile = credentialsFile;
 
       return terraformCredentials;
-    } catch (e) {
+    } catch {
       logger.debug(
         `Could not find terraform credentials file at ${terraformCredentialsFilePath}`,
       );

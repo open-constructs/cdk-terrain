@@ -11,7 +11,7 @@ function readCdktfJson(cwd = process.cwd()): { language: string } | undefined {
   try {
     const cdktfJsonPath = path.join(cwd, "cdktf.json");
     return fs.readJsonSync(cdktfJsonPath);
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }

@@ -113,7 +113,7 @@ export async function convert({
   let input: string | undefined = undefined;
   try {
     input = await readStreamAsString(process.stdin);
-  } catch (e) {
+  } catch {
     logger.debug(`No TTY stream passed to convert, using interactive input`);
     try {
       input = await editor({
@@ -122,7 +122,7 @@ export async function convert({
         postfix: ".tf",
         waitForUseInput: true,
       });
-    } catch (err) {
+    } catch {
       throw Errors.Usage(
         "No Terraform code to convert was provided. Please provide Terraform code to convert as stdin or run the command again and let the CLI open the editor.",
       );
@@ -431,7 +431,7 @@ export async function login(argv: { tfeHostname: string }) {
   try {
     token = await readStreamAsString(process.stdin);
     token = token.replace(/\n/g, "");
-  } catch (e) {
+  } catch {
     logger.debug(`No TTY stream passed to login`);
   }
 

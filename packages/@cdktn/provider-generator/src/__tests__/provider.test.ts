@@ -50,7 +50,7 @@ function resourceTypesPresentInSnapshot(
   const files = Object.keys(snapshot);
   for (const file of files) {
     const match = file.match(
-      `/providers\/${providerNameInPath}\/(.*?)\/index\.ts/`,
+      `/providers/${providerNameInPath}/(.*?)/index.ts/`,
     );
     // avoids any not resources from being pushed
     if (

@@ -974,7 +974,7 @@ EOF`;
   test("convert using operations while containing substring", async () => {
     const expression =
       // prettier-ignore
-      '"${length(var.image_id) > 4 && substr(var.image_id, 0, 4) == \"ami-\"}"';
+      '"${length(var.image_id) > 4 && substr(var.image_id, 0, 4) == "ami-"}"';
     const scope = getScope({});
     const result = await convertTerraformExpressionToTs(
       scope,

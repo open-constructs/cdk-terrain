@@ -89,7 +89,6 @@ const screenOutput = (
     timeout = 30_000,
   ): Promise<string> => {
     return new Promise((resolve, reject) => {
-      let timeoutId: NodeJS.Timeout; // timeout must be cancelled to allow Jest to terminate
       const subscription = (line: string | undefined, exit: boolean) => {
         if (exit) {
           reject(new Error("exited before waitForLine finished"));
@@ -100,7 +99,8 @@ const screenOutput = (
           clearTimeout(timeoutId);
         }
       };
-      timeoutId = setTimeout(() => {
+      // timeout must be cancelled to allow Jest to terminate
+      const timeoutId: NodeJS.Timeout = setTimeout(() => {
         reject(new Error("waitForLine timed out"));
       }, timeout);
       subscriber = subscription;

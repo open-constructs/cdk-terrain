@@ -47,7 +47,7 @@ async function fetchWrapped<T>(url: string): Promise<T> {
       agent,
       headers: { "User-Agent": "OpenConstructs/cdktn-cli" },
     });
-  } catch (e) {
+  } catch {
     // Fetch only fails here because of connectivity issues
     logger.error(
       "Unable to request pre-built provider information: Network error, please check if you're connected to the internet and try again",

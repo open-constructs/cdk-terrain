@@ -179,7 +179,7 @@ export async function findUsedReferences(
 
   if (item && "dynamic" in item) {
     const dyn = (item as any)["dynamic"];
-    const { for_each, ...others } = dyn;
+    const { for_each: _for_each, ...others } = dyn;
     const dynamicRef = Object.keys(others)[0];
     return await findUsedReferences([...nodeIds, dynamicRef], dyn);
   }
