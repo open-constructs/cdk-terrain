@@ -1,4 +1,4 @@
-name: Unit Tests - PR
+name: PR
 on:
   merge_group:
     types: [checks_requested]
@@ -11,8 +11,42 @@ on:
       - reopened
 
 jobs:
+  quality:
+    name: "Quality"
+    uses: ./.github/workflows/quality.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  build:
+    name: "Build"
+    uses: ./.github/workflows/build.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  examples:
+    name: "Examples Integration Tests - PR"
+    needs:
+      [
+        all_unit_tests,
+        cdktn,
+        cdktn_cli,
+        cdktn_provider_generator,
+        cdktn_hcl2json,
+        cdktn_hcl2cdk,
+        cdktn_commons,
+        cdktn_cli_core,
+      ]
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-examples') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/examples.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
   all_unit_tests:
     name: "All Unit Tests"
+    needs: [quality, build]
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -38,6 +72,7 @@ jobs:
 
   cdktn_cli_core:
     name: "@cdktn/cli Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/cli-core') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -52,6 +87,7 @@ jobs:
 
   cdktn_commons:
     name: "@cdktn/commons Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/commons') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -66,6 +102,7 @@ jobs:
 
   cdktn_hcl2cdk:
     name: "@cdktn/hcl2cdk Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/hcl2cdk') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -80,6 +117,7 @@ jobs:
 
   cdktn_hcl2json:
     name: "@cdktn/hcl2json Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/hcl2json') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -94,6 +132,7 @@ jobs:
 
   cdktn_provider_generator:
     name: "@cdktn/provider-generator Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/provider-generator') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -108,6 +147,7 @@ jobs:
 
   cdktn_cli:
     name: "cdktn-cli Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/cdktn-cli') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -122,6 +162,7 @@ jobs:
 
   cdktn:
     name: "cdktn Unit Tests"
+    needs: [quality, build]
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/cdktn') }}
     uses: ./.github/workflows/unit.yml
     strategy:
@@ -134,10 +175,8 @@ jobs:
       terraform_version: ${{ matrix.terraform_version }}
     secrets: inherit
 
-  results:
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    name: Unit Tests - PR - Result
+  integration_test:
+    name: "Integration Tests - PR"
     needs:
       [
         all_unit_tests,
@@ -148,6 +187,51 @@ jobs:
         cdktn_hcl2cdk,
         cdktn_commons,
         cdktn_cli_core,
+      ]
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/integration.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  provider_integration_test:
+    name: "Provider Integration Tests - PR"
+    needs:
+      [
+        all_unit_tests,
+        cdktn,
+        cdktn_cli,
+        cdktn_provider_generator,
+        cdktn_hcl2json,
+        cdktn_hcl2cdk,
+        cdktn_commons,
+        cdktn_cli_core,
+      ]
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-provider-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/provider-integration.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: "PR - Result"
+    needs:
+      [
+        quality,
+        build,
+        examples,
+        all_unit_tests,
+        cdktn,
+        cdktn_cli,
+        cdktn_provider_generator,
+        cdktn_hcl2json,
+        cdktn_hcl2cdk,
+        cdktn_commons,
+        cdktn_cli_core,
+        integration_test,
+        provider_integration_test,
       ]
     steps:
       - run: exit 1

@@ -112,8 +112,8 @@ jobs:
       terraform_version: ${{ matrix.terraform_version }}
     secrets: inherit
 
-  linting:
-    uses: ./.github/workflows/linting.yml
+  quality:
+    uses: ./.github/workflows/quality.yml
     with:
       concurrency_group_prefix: release-next
     secrets: inherit
@@ -314,7 +314,7 @@ jobs:
     needs:
       - examples
       - integration_test
-      - linting
+      - quality
       - prepare-release
       - release_golang
       - release_maven

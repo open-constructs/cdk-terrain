@@ -108,10 +108,10 @@ jobs:
       concurrency_group_prefix: release
     secrets: inherit
 
-  linting:
+  quality:
     needs:
       - prepare-release
-    uses: ./.github/workflows/linting.yml
+    uses: ./.github/workflows/quality.yml
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     with:
       concurrency_group_prefix: release
@@ -349,7 +349,7 @@ jobs:
       - examples
       - integration_test
       - provider_integration_test
-      - linting
+      - quality
       - prepare-release
       - release_github
       - release_golang

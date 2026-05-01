@@ -2,14 +2,15 @@ name: Build
 on:
   merge_group:
     types: [checks_requested]
-  pull_request:
-    paths:
-      - packages/**
-      - package.json
-      - yarn.lock
+  workflow_call:
+    inputs:
+      concurrency_group_prefix:
+        default: pr
+        required: false
+        type: string
 
 concurrency:
-  group: build-${{ github.head_ref }}
+  group: ${{ inputs.concurrency_group_prefix }}-build-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
