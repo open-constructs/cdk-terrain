@@ -45,7 +45,7 @@ jobs:
       - name: run lint (affected)
         if: github.event_name == 'pull_request'
         run: |
-          yarn lint:workspace
+          yarn nx affected -t lint --parallel=3 --format=gha --base="$NX_BASE" --head="$NX_HEAD"
       - name: run lint (all)
         if: github.event_name != 'pull_request'
         run: |
@@ -68,4 +68,3 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: run knip
         run: yarn knip --reporter github-actions --reporter symbols
-          yarn nx affected -t lint --parallel=3 --format=gha --base="$NX_BASE" --head="$NX_HEAD"

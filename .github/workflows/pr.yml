@@ -44,7 +44,7 @@ jobs:
             "@cdktn/commons",
             "@cdktn/cli-core",
           ]
-        terraform_version: ["1.6.5"]
+        terraform_version: ["1.6.5", "1.5.5"]
     with:
       concurrency_group_prefix: pr-all
       package: ${{ matrix.package }}
