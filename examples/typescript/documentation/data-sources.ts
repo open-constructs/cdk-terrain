@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 // DOCS_BLOCK_START:datasources,remote-state-datasources
-import { TerraformStack } from "cdktn";
+import { TerraformOutput, TerraformStack } from "cdktn";
 import { Construct } from "constructs";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 // DOCS_BLOCK_END:datasources,remote-state-datasources
@@ -29,6 +29,9 @@ export class DataSourcesStack extends TerraformStack {
 
     // DOCS_BLOCK_START:datasources
     const region = new DataAwsRegion(this, "region");
+    new TerraformOutput(this, "region_name", {
+      value: region.name,
+    });
     // DOCS_BLOCK_END:datasources
 
     // DOCS_BLOCK_START:remote-state-datasources

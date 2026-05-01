@@ -50,7 +50,7 @@ export class ProvidersStack extends TerraformStack {
     new ZoneRecord(this, "web-www", {
       zoneName: "example.com",
       name: "web",
-      value: instance.publicIp,
+      value: Token.asString(instance.publicIp),
       type: "A",
     });
     // DOCS_BLOCK_END:providers-import-classes
