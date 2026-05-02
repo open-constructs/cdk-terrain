@@ -30,7 +30,7 @@ export class ModuleGenerator {
     this.code.line(`// ${target.source}`);
 
     this.code.line(
-      `import { TerraformModule, TerraformModuleUserConfig } from 'cdktn';`,
+      `import { TerraformModule, type TerraformModuleUserConfig } from 'cdktn';`,
     );
     this.code.line(`import { Construct } from 'constructs';`);
 
