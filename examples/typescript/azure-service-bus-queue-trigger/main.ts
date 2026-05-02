@@ -28,7 +28,7 @@ class MyStack extends TerraformStack {
 
     // Instantiate Azure Provider
     new AzurermProvider(this, "AzureRm", {
-      features: {},
+      features: [{}],
     });
 
     // Creates the Resource Group for application
