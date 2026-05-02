@@ -42,21 +42,21 @@ jobs:
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/providerSchema
           echo "providerSchema=/usr/local/share/.cache/providerSchema" >> $GITHUB_OUTPUT
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.yarn }}
           key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
           restore-keys: |
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
           key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-unit
           restore-keys: |
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
           key: providerSchema-${{ runner.os }}-${{ inputs.terraform_version }}-unit-${{ inputs.package }}
