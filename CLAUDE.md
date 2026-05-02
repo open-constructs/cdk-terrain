@@ -128,7 +128,6 @@ PR labels control which CI jobs run:
 
 - `ci/skip-integration`, `ci/skip-provider-integration`, `ci/skip-unit`, `ci/skip-examples` — skip test suites
 - `ci/unit-only` — skip integration/provider-integration/examples
-- `ci/run-unit/<package>` — trigger specific package unit tests (e.g. `ci/run-unit/cdktn`)
 
 ## Debugging
 

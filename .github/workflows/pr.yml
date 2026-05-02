@@ -25,25 +25,6 @@ jobs:
       concurrency_group_prefix: pr
     secrets: inherit
 
-  examples:
-    name: "Examples Integration Tests - PR"
-    needs:
-      [
-        all_unit_tests,
-        cdktn,
-        cdktn_cli,
-        cdktn_provider_generator,
-        cdktn_hcl2json,
-        cdktn_hcl2cdk,
-        cdktn_commons,
-        cdktn_cli_core,
-      ]
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-examples') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
-    uses: ./.github/workflows/examples.yml
-    with:
-      concurrency_group_prefix: pr
-    secrets: inherit
-
   all_unit_tests:
     name: "All Unit Tests"
     needs: [quality, build]
@@ -63,131 +44,25 @@ jobs:
             "@cdktn/commons",
             "@cdktn/cli-core",
           ]
-        terraform_version: ["1.6.5", "1.5.5"]
+        terraform_version: ["1.6.5"]
     with:
       concurrency_group_prefix: pr-all
       package: ${{ matrix.package }}
       terraform_version: ${{ matrix.terraform_version }}
     secrets: inherit
 
-  cdktn_cli_core:
-    name: "@cdktn/cli Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/cli-core') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
+  examples:
+    name: "Examples Integration Tests - PR"
+    needs: [all_unit_tests]
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-examples') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/examples.yml
     with:
-      concurrency_group_prefix: pr-cdktn-cli-core
-      package: "@cdktn/cli-core"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
-
-  cdktn_commons:
-    name: "@cdktn/commons Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/commons') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-commons
-      package: "@cdktn/commons"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
-
-  cdktn_hcl2cdk:
-    name: "@cdktn/hcl2cdk Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/hcl2cdk') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-hcl2cdk
-      package: "@cdktn/hcl2cdk"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
-
-  cdktn_hcl2json:
-    name: "@cdktn/hcl2json Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/hcl2json') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-hcl2json
-      package: "@cdktn/hcl2json"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
-
-  cdktn_provider_generator:
-    name: "@cdktn/provider-generator Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/provider-generator') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-provider-generator
-      package: "@cdktn/provider-generator"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
-
-  cdktn_cli:
-    name: "cdktn-cli Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/cdktn-cli') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-cli
-      package: "cdktn-cli"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
-
-  cdktn:
-    name: "cdktn Unit Tests"
-    needs: [quality, build]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/cdktn') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn
-      package: "cdktn"
-      terraform_version: ${{ matrix.terraform_version }}
+      concurrency_group_prefix: pr
     secrets: inherit
 
   integration_test:
     name: "Integration Tests - PR"
-    needs:
-      [
-        all_unit_tests,
-        cdktn,
-        cdktn_cli,
-        cdktn_provider_generator,
-        cdktn_hcl2json,
-        cdktn_hcl2cdk,
-        cdktn_commons,
-        cdktn_cli_core,
-      ]
+    needs: [all_unit_tests]
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
     uses: ./.github/workflows/integration.yml
     with:
@@ -196,17 +71,7 @@ jobs:
 
   provider_integration_test:
     name: "Provider Integration Tests - PR"
-    needs:
-      [
-        all_unit_tests,
-        cdktn,
-        cdktn_cli,
-        cdktn_provider_generator,
-        cdktn_hcl2json,
-        cdktn_hcl2cdk,
-        cdktn_commons,
-        cdktn_cli_core,
-      ]
+    needs: [all_unit_tests]
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-provider-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
     uses: ./.github/workflows/provider-integration.yml
     with:
@@ -221,15 +86,8 @@ jobs:
       [
         quality,
         build,
-        examples,
         all_unit_tests,
-        cdktn,
-        cdktn_cli,
-        cdktn_provider_generator,
-        cdktn_hcl2json,
-        cdktn_hcl2cdk,
-        cdktn_commons,
-        cdktn_cli_core,
+        examples,
         integration_test,
         provider_integration_test,
       ]
