@@ -40,7 +40,7 @@
         "build-docker-jsii": "docker build --platform linux/amd64 --build-arg DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default') --build-arg AVAILABLE_TERRAFORM_VERSIONS=\"$(cat .terraform.versions.json | jq -r '.available | join(\" \")')\" -t terraconstructs/jsii-terraform .",
         "push-docker-jsii": "docker push terraconstructs/jsii-terraform",
         "dist-clean": "lerna run dist-clean --stream && rm -rf dist",
-        "prepare": "husky install",
+        "prepare": "husky",
         "prepare-next-release": "standard-version --prerelease pre --release-as minor --skip.changelog=true --skip.commit=true",
         "prepare-release": "tools/prepare-release.sh",
         "release": "standard-version",
@@ -102,12 +102,12 @@
         "typescript-eslint": "^8.58.0"
     },
     "resolutions": {
-        "**/@types/react": "18.3.18",
+        "**/@types/react": "18.3.28",
         "**/jsii": "5.9.37"
     },
     "lint-staged": {
         "!(.claude|.agents|.specledger|specledger)/**/*.{ts,tsx,js,css,md}": "prettier --write",
         "examples/**": "yarn lint:examples"
     },
-    "packageManager": "yarn@1.18.0"
+    "packageManager": "yarn@1.22.22"
 }
