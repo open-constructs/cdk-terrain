@@ -70,6 +70,9 @@ export const Watch = ({
         setCurrentState(state);
       },
     );
+    // Watch is started once on mount; re-running with new deps would spawn a
+    // second watcher. The session uses the props captured at mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

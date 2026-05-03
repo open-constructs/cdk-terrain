@@ -149,9 +149,11 @@ export class ResourceEmitter {
       `public constructor(scope: Construct, id: string, config: ${resource.configStruct.attributeType})`,
     );
 
-    resource.isProvider
-      ? this.emitProviderSuper(resource)
-      : this.emitResourceSuper(resource);
+    if (resource.isProvider) {
+      this.emitProviderSuper(resource);
+    } else {
+      this.emitResourceSuper(resource);
+    }
 
     // initialize config properties
     for (const att of resource.configStruct.assignableAttributes) {

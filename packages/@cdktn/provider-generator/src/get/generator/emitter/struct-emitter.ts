@@ -145,8 +145,7 @@ export class StructEmitter {
             if (!attTypeStruct)
               throw new Error(`${structTypeName} is not a struct`);
 
-            structsToImport[fileToImport] ??
-              (structsToImport[fileToImport] = []);
+            structsToImport[fileToImport] ??= [];
 
             const attReferences = att.getReferencedTypes(
               struct instanceof ConfigStruct,

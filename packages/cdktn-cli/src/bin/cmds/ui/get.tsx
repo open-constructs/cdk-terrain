@@ -85,7 +85,7 @@ export const Get = ({
         ),
       );
     }
-  }, [currentStatus]);
+  }, [currentStatus, exit, codeMakerOutput]);
 
   const isGenerating: boolean = currentStatus != Status.DONE;
   const statusText = `${currentStatus}...`;
