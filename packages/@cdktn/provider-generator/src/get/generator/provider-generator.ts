@@ -14,6 +14,14 @@ import { ResourceModel } from "./models";
 import { ResourceParser } from "./resource-parser";
 import { ResourceEmitter, StructEmitter } from "./emitter";
 
+export interface TerraformProviderGeneratorOptions {
+  /**
+   * File extension to write on emitted relative imports.
+   * Defaults to "" (CommonJS).
+   */
+  readonly importExtension?: string;
+}
+
 interface ProviderData {
   name: string;
   source: string;
@@ -86,15 +94,18 @@ export class TerraformProviderGenerator {
   private resourceParser = new ResourceParser();
   private resourceEmitter: ResourceEmitter;
   private structEmitter: StructEmitter;
+  private readonly importExtension: string;
   public versions: { [fqpn: string]: string | undefined } = {};
 
   constructor(
     private readonly code: CodeMaker,
     private readonly schema: ProviderSchema,
+    options: TerraformProviderGeneratorOptions = {},
   ) {
     this.code.indentation = 2;
+    this.importExtension = options.importExtension ?? "";
     this.resourceEmitter = new ResourceEmitter(this.code);
-    this.structEmitter = new StructEmitter(this.code);
+    this.structEmitter = new StructEmitter(this.code, this.importExtension);
   }
 
   private getProviderByConstraint(
@@ -251,7 +262,7 @@ export class TerraformProviderGenerator {
     for (const file of files) {
       const dirName = file.replace(`${folder}/`, "").replace("/index.ts", "");
       this.code.line(
-        `export * as ${toCamelCase(dirName)} from './${dirName}';`,
+        `export * as ${toCamelCase(dirName)} from './${dirName}/index${this.importExtension}';`,
       );
     }
     this.code.line();
@@ -295,15 +306,16 @@ export class TerraformProviderGenerator {
     this.code.line();
 
     if (resource.structsRequireSharding) {
+      const structsSpecifier = `./${resource.structsFolderName}/index${this.importExtension}`;
       if (resource.referencedTypes.length > 0) {
         this.code.line(
-          `import { ${resource.referencedTypes.join(", \n")}} from './${
-            resource.structsFolderName
-          }'`,
+          `import { ${resource.referencedTypes.join(
+            ", \n",
+          )}} from '${structsSpecifier}'`,
         );
       }
 
-      this.code.line(`export * from './${resource.structsFolderName}'`);
+      this.code.line(`export * from '${structsSpecifier}'`);
 
       resource.importStatements.forEach((statement) =>
         this.code.line(statement),

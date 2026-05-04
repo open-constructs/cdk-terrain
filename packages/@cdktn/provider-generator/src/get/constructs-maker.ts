@@ -14,6 +14,7 @@ import {
   ProviderSchema,
   ModuleSchema,
   Errors,
+  type LanguageOptions,
 } from "@cdktn/commons";
 import { DISPLAY_VERSION, Language } from "@cdktn/commons";
 import { TerraformProviderGenerator } from "./generator/provider-generator";
@@ -252,6 +253,10 @@ export interface GetOptions {
    * @default - jsii file is not emitted
    */
   readonly outputJsii?: string;
+  /**
+   * Language-specific code generation options.
+   */
+  readonly languageOptions?: LanguageOptions;
 }
 
 export class ConstructsMaker {
@@ -277,7 +282,9 @@ export class ConstructsMaker {
     schema: ProviderSchema,
   ) {
     const endTSTimer = logTimespan(`Generate Typescript for ${target.name}`);
-    const generator = new TerraformProviderGenerator(this.code, schema);
+    const generator = new TerraformProviderGenerator(this.code, schema, {
+      importExtension: this.options.languageOptions?.importExtension,
+    });
     generator.generate(target);
 
     this.versions = { ...this.versions, ...generator.versions };

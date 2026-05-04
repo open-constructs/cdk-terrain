@@ -5,7 +5,8 @@ import {
   Language,
   Errors,
   CONFIG_DEFAULTS,
-  TerraformDependencyConstraint,
+  type LanguageOptions,
+  type TerraformDependencyConstraint,
 } from "@cdktn/commons";
 import path from "path";
 import { logger } from "@cdktn/commons";
@@ -71,6 +72,19 @@ export class CdktfConfig {
 
   public get codeMakerOutput(): string {
     return this.getProperty("codeMakerOutput") as string;
+  }
+
+  public get languageOptions(): LanguageOptions | undefined {
+    const options = this.getProperty("languageOptions");
+    if (options === undefined || options === null) {
+      return undefined;
+    }
+    if (typeof options !== "object") {
+      throw Errors.External(
+        "cdktf.json `languageOptions` must be an object if set.",
+      );
+    }
+    return options;
   }
 
   public get terraformProviders(): (TerraformDependencyConstraint | string)[] {

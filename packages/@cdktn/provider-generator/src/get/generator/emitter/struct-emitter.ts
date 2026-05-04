@@ -8,11 +8,17 @@ import * as path from "path";
 import { STRUCT_SHARDING_THRESHOLD } from "../models/resource-model";
 import { AttributeModel } from "../models/attribute-model";
 import { sanitizedComment } from "../sanitized-comments";
+
 export class StructEmitter {
   attributesEmitter: AttributesEmitter;
+  private readonly importExtension: string;
 
-  constructor(private readonly code: CodeMaker) {
+  constructor(
+    private readonly code: CodeMaker,
+    importExtension: string,
+  ) {
     this.attributesEmitter = new AttributesEmitter(this.code);
+    this.importExtension = importExtension;
   }
 
   public emit(resource: ResourceModel) {
@@ -166,10 +172,9 @@ export class StructEmitter {
       // the structs only makes use of cdktn not constructs
       this.code.line(`import * as cdktn from 'cdktn';`);
       Object.entries(structsToImport).forEach(([fileToImport, structs]) => {
+        const target = path.basename(fileToImport, ".ts");
         this.code.line(
-          `import { ${[...new Set(structs)].join(
-            ",\n",
-          )} } from './${path.basename(fileToImport, ".ts")}'`,
+          `import { ${[...new Set(structs)].join(",\n")} } from './${target}${this.importExtension}'`,
         );
       });
 
@@ -193,7 +198,8 @@ export class StructEmitter {
 
     this.code.openFile(indexFilePath);
     structPaths.forEach((structPath) => {
-      this.code.line(`export * from './${path.basename(structPath, ".ts")}'`);
+      const target = path.basename(structPath, ".ts");
+      this.code.line(`export * from './${target}${this.importExtension}'`);
     });
     this.code.closeFile(indexFilePath);
   }

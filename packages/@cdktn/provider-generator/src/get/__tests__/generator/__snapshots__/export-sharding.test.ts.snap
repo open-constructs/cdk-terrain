@@ -14,8 +14,8 @@ DashboardTemplateVariablePresetList,
 DashboardWidget, 
 dashboardWidgetToTerraform, 
 dashboardWidgetToHclTerraform, 
-DashboardWidgetList} from './index-structs'
-export * from './index-structs'
+DashboardWidgetList} from './index-structs/index'
+export * from './index-structs/index'
 import { Construct } from 'constructs';
 import * as cdktn from 'cdktn';
 export interface DashboardConfig extends cdktn.TerraformMetaArguments {
@@ -183415,8 +183415,8 @@ Wafv2WebAclRuleList,
 Wafv2WebAclVisibilityConfig, 
 wafv2WebAclVisibilityConfigToTerraform, 
 wafv2WebAclVisibilityConfigToHclTerraform, 
-Wafv2WebAclVisibilityConfigOutputReference} from './index-structs'
-export * from './index-structs'
+Wafv2WebAclVisibilityConfigOutputReference} from './index-structs/index'
+export * from './index-structs/index'
 import { Construct } from 'constructs';
 import * as cdktn from 'cdktn';
 export interface Wafv2WebAclConfig extends cdktn.TerraformMetaArguments {
