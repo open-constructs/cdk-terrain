@@ -10,7 +10,9 @@
         // TODO: triage and remove entries — each is a declared dep with no detected usage.
         "changelog-parser",
         "infer-owner",
-        "semver"
+        "semver",
+        // Referenced only via `--format=gha` CLI flag in CI; knip can't detect this.
+        "eslint-formatter-gha"
       ]
     },
     "packages/cdktn": {
@@ -54,6 +56,30 @@
     },
     "tools/generate-function-bindings": {
       "project": ["scripts/**/*.ts"]
+    },
+    "test": {
+      "ignoreDependencies": [
+        // TODO: triage and remove entries — each is a declared dep with no detected usage.
+        "@types/express",
+        "express",
+        // TODO: triage and add to package.json — each is imported but undeclared.
+        "cdktn",
+        "constructs",
+        "cross-spawn"
+      ]
+    },
+    "tools/dependency-pinner": {
+      "ignoreDependencies": [
+        // TODO: triage and remove entries — each is a declared dep with no detected usage.
+        "execa"
+      ]
+    },
+    "tools/documentation-generation": {
+      "ignoreDependencies": [
+        // TODO: triage and remove entries — each is a declared dep with no detected usage.
+        "cdktn",
+        "constructs"
+      ]
     }
   }
 }
