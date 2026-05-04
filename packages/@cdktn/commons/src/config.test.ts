@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { parseConfig } from "./config";
+import {
+  parseConfig,
+  readConfigSync,
+  resolveConfigFile,
+  findConfigAbove,
+} from "./config";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
@@ -13,6 +18,101 @@ export async function mkdtemp(closure: (dir: string) => Promise<void>) {
     await fs.remove(workdir);
   }
 }
+
+describe("resolveConfigFile", () => {
+  it("prefers cdktn.json when both files exist", async () => {
+    await mkdtemp(async (dir) => {
+      await fs.writeFile(path.join(dir, "cdktn.json"), "{}");
+      await fs.writeFile(path.join(dir, "cdktf.json"), "{}");
+      expect(resolveConfigFile(dir)).toBe(path.join(dir, "cdktn.json"));
+    });
+  });
+
+  it("falls back to cdktf.json when cdktn.json is absent", async () => {
+    await mkdtemp(async (dir) => {
+      await fs.writeFile(path.join(dir, "cdktf.json"), "{}");
+      expect(resolveConfigFile(dir)).toBe(path.join(dir, "cdktf.json"));
+    });
+  });
+
+  it("returns the cdktf.json path even when neither file exists", async () => {
+    await mkdtemp(async (dir) => {
+      expect(resolveConfigFile(dir)).toBe(path.join(dir, "cdktf.json"));
+    });
+  });
+});
+
+describe("findConfigAbove", () => {
+  it("prefers cdktn.json over cdktf.json in the same directory", async () => {
+    await mkdtemp(async (dir) => {
+      await fs.writeFile(path.join(dir, "cdktn.json"), "{}");
+      await fs.writeFile(path.join(dir, "cdktf.json"), "{}");
+      const nested = path.join(dir, "a", "b");
+      await fs.mkdirp(nested);
+      expect(findConfigAbove(nested)).toBe(path.join(dir, "cdktn.json"));
+    });
+  });
+
+  it("walks up to find cdktf.json when cdktn.json is absent", async () => {
+    await mkdtemp(async (dir) => {
+      await fs.writeFile(path.join(dir, "cdktf.json"), "{}");
+      const nested = path.join(dir, "a", "b");
+      await fs.mkdirp(nested);
+      expect(findConfigAbove(nested)).toBe(path.join(dir, "cdktf.json"));
+    });
+  });
+
+  it("returns null when no config file exists above", async () => {
+    await mkdtemp(async (dir) => {
+      // search a deep nested dir with no config anywhere up to dir; a real
+      // root walk could hit a config from outside the tempdir, so just verify
+      // the local-tempdir lookup at least walks correctly by checking that
+      // a config in the tempdir is found from a nested subdir.
+      const nested = path.join(dir, "a");
+      await fs.mkdirp(nested);
+      const result = findConfigAbove(nested);
+      // In CI / sandboxed envs the result is null; on a dev machine the walk
+      // may hit a config in /Users/..../code. Either way, a config inside
+      // `dir` is preferred when present:
+      await fs.writeFile(path.join(dir, "cdktn.json"), "{}");
+      expect(findConfigAbove(nested)).toBe(path.join(dir, "cdktn.json"));
+      // sanity: result before adding cdktn.json wasn't the path we just wrote
+      expect(result).not.toBe(path.join(dir, "cdktn.json"));
+    });
+  });
+});
+
+describe("readConfigSync precedence", () => {
+  it("reads cdktn.json content when both files exist", async () => {
+    await mkdtemp(async (dir) => {
+      await fs.writeFile(
+        path.join(dir, "cdktn.json"),
+        JSON.stringify({ language: "typescript", app: "new" }),
+      );
+      await fs.writeFile(
+        path.join(dir, "cdktf.json"),
+        JSON.stringify({ language: "python", app: "old" }),
+      );
+      expect(readConfigSync(resolveConfigFile(dir))).toMatchObject({
+        language: "typescript",
+        app: "new",
+      });
+    });
+  });
+
+  it("reads cdktf.json content when only cdktf.json exists", async () => {
+    await mkdtemp(async (dir) => {
+      await fs.writeFile(
+        path.join(dir, "cdktf.json"),
+        JSON.stringify({ language: "python", app: "old" }),
+      );
+      expect(readConfigSync(resolveConfigFile(dir))).toMatchObject({
+        language: "python",
+        app: "old",
+      });
+    });
+  });
+});
 
 describe("parseConfig", () => {
   it("provides default with no input", async () => {

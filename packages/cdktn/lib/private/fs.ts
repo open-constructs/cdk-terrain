@@ -154,3 +154,30 @@ export function findFileAboveCwd(
 
   return null;
 }
+
+/**
+ * Walk up the directory tree from `startDir`. At each level, prefer
+ * cdktn.json over cdktf.json. Returns the absolute path to the first
+ * config file found, or null if none exists in any parent directory.
+ * @param startDir - directory to start the search from
+ */
+export function findConfigAbove(startDir = process.cwd()): string | null {
+  const dir = path.resolve(startDir);
+
+  const primary = path.join(dir, "cdktn.json");
+  if (fs.existsSync(primary)) {
+    return primary;
+  }
+
+  const legacy = path.join(dir, "cdktf.json");
+  if (fs.existsSync(legacy)) {
+    return legacy;
+  }
+
+  const parent = path.resolve(dir, "..");
+  if (parent === dir) {
+    return null;
+  }
+
+  return findConfigAbove(parent);
+}

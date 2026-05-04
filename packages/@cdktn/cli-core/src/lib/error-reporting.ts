@@ -6,9 +6,9 @@ import {
   getUserId,
   collectDebugInformation,
   DISPLAY_VERSION,
+  resolveConfigFile,
 } from "@cdktn/commons";
 import { logger } from "@cdktn/commons";
-import * as path from "path";
 import * as fs from "fs-extra";
 import ciInfo from "ci-info";
 
@@ -17,7 +17,7 @@ export function shouldReportCrash(
 ): boolean | undefined {
   try {
     const cdktfJson = JSON.parse(
-      fs.readFileSync(path.resolve(projectPath, "cdktf.json"), "utf8"),
+      fs.readFileSync(resolveConfigFile(projectPath), "utf8"),
     );
 
     return typeof cdktfJson.sendCrashReports === "boolean"
@@ -35,14 +35,10 @@ export function persistReportCrashReportDecision(
   decision: boolean,
   projectPath = process.cwd(),
 ) {
-  const cdktfJson = JSON.parse(
-    fs.readFileSync(path.resolve(projectPath, "cdktf.json"), "utf8"),
-  );
+  const configPath = resolveConfigFile(projectPath);
+  const cdktfJson = JSON.parse(fs.readFileSync(configPath, "utf8"));
   cdktfJson.sendCrashReports = decision;
-  fs.writeFileSync(
-    path.resolve(projectPath, "cdktf.json"),
-    JSON.stringify(cdktfJson, null, 2),
-  );
+  fs.writeFileSync(configPath, JSON.stringify(cdktfJson, null, 2));
 }
 
 function isPromise(p: any): p is Promise<any> {

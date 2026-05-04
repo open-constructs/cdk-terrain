@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import path from "path";
 import {
   CdktfProject,
   CdktfProjectOptions,
@@ -8,7 +7,12 @@ import {
 } from "./cdktf-project";
 import * as fs from "fs";
 import * as chokidar from "chokidar";
-import { logger, Errors, sendTelemetry } from "@cdktn/commons";
+import {
+  logger,
+  Errors,
+  sendTelemetry,
+  resolveConfigFile,
+} from "@cdktn/commons";
 import { CdktfStack } from "./cdktf-stack";
 
 // In this very first iteration we will find out which files to watch by asking the user to provide the files
@@ -16,21 +20,21 @@ import { CdktfStack } from "./cdktf-stack";
 // Mid-Term we might want to add a WatchFile / WatchDir construct that we can use (e.g. in assets) and that a user can use to specify their watch behaviour
 // See https://github.com/hashicorp/terraform-cdk/issues/1668
 function getOrWriteDefaultWatchConfig(projectPath = process.cwd()) {
-  const cdktfJsonPath = path.resolve(projectPath, "cdktf.json");
-  logger.debug(`Getting files to watch from cdktf.json at ${cdktfJsonPath}`);
+  const cdktfJsonPath = resolveConfigFile(projectPath);
+  logger.debug(`Getting files to watch from config at ${cdktfJsonPath}`);
 
   let cdktfJson;
   try {
     cdktfJson = JSON.parse(fs.readFileSync(cdktfJsonPath, "utf-8"));
   } catch (err: any) {
     throw Errors.Internal(
-      `Could not find cdktf.json file in ${projectPath}`,
+      `Could not find cdktn.json or cdktf.json file in ${projectPath}`,
       err,
     );
   }
 
   if (cdktfJson.watchPattern) {
-    logger.debug(`Found watchPattern in cdktf.json: ${cdktfJson.watchPattern}`);
+    logger.debug(`Found watchPattern in config: ${cdktfJson.watchPattern}`);
     return cdktfJson.watchPattern;
   }
   const language:
@@ -43,7 +47,7 @@ function getOrWriteDefaultWatchConfig(projectPath = process.cwd()) {
 
   if (!language) {
     throw Errors.Usage(
-      `No language specified in cdktf.json, please either specify a language or watchPattern to use the watch command`,
+      `No language specified in cdktn.json/cdktf.json, please either specify a language or watchPattern to use the watch command`,
     );
   }
 

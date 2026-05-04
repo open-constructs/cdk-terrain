@@ -1,11 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as path from "path";
-import { Errors } from "@cdktn/commons";
+import { Errors, resolveConfigFile } from "@cdktn/commons";
 export function isCdktfProjectDirectory(directory: string): boolean {
   try {
-    const cdktfPath = path.join(directory, "cdktf.json");
+    const cdktfPath = resolveConfigFile(directory);
     const cdktf = JSON.parse(fs.readFileSync(cdktfPath, "utf-8"));
     return cdktf.language && cdktf.app;
   } catch {
@@ -16,7 +15,7 @@ export function isCdktfProjectDirectory(directory: string): boolean {
 export function throwIfNotProjectDirectory(directory = process.cwd()): void {
   if (!isCdktfProjectDirectory(directory)) {
     throw Errors.Usage(
-      `${directory} is not a cdktf/cdktn project directory, no cdktf.json found or cdktf.json is missing language / app keys`,
+      `${directory} is not a cdktf/cdktn project directory, no cdktn.json or cdktf.json found, or the config is missing language / app keys`,
     );
   }
 }

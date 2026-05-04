@@ -3,12 +3,7 @@
 import { Construct } from "constructs";
 import * as fs from "fs";
 import * as path from "path";
-import {
-  copySync,
-  archiveSync,
-  hashPath,
-  findFileAboveCwd,
-} from "./private/fs";
+import { copySync, archiveSync, hashPath, findConfigAbove } from "./private/fs";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
 import { TerraformStack } from "./terraform-stack";
@@ -61,8 +56,7 @@ export class TerraformAsset extends Construct {
       this.sourcePath = config.path;
     } else {
       const cdktfJsonPath =
-        scope.node.tryGetContext("cdktfJsonPath") ??
-        findFileAboveCwd("cdktf.json");
+        scope.node.tryGetContext("cdktfJsonPath") ?? findConfigAbove();
       if (cdktfJsonPath) {
         // Relative paths are always considered to be relative to cdktf.json, but operations are performed relative to process.cwd
         const absolutePath = path.resolve(
