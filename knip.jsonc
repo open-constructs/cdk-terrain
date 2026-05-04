@@ -9,7 +9,6 @@
       "ignoreDependencies": [
         // TODO: triage and remove entries — each is a declared dep with no detected usage.
         "changelog-parser",
-        "eslint-plugin-import",
         "infer-owner",
         "semver"
       ]

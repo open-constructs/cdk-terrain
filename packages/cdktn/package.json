@@ -12,7 +12,6 @@
         "package:dotnet": "jsii-pacmak --targets dotnet",
         "package:js": "jsii-pacmak --targets js",
         "package:go": "jsii-pacmak --targets go",
-        "lint": "eslint .",
         "test": "jest",
         "test:ci": "jest --ci",
         "test:update": "jest -u",

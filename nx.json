@@ -8,7 +8,20 @@
       "!{projectRoot}/tsconfig.test.json"
     ]
   },
+  "plugins": [
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    }
+  ],
   "targetDefaults": {
+    "lint": {
+      "options": {
+        "max-warnings": 0
+      }
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"],

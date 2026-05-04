@@ -12,7 +12,6 @@
     "postbuild": "node build.js",
     "watch": "yarn compile-build-config && node build.js --watch",
     "watch-preserve-output": "yarn watch",
-    "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "pretest": "yarn build",
     "pretest:ci": "yarn build",

@@ -34,9 +34,20 @@ jobs:
       image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: "Add Git safe.directory"
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Derive SHAs for nx affected
+        uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
       - name: installing dependencies
         run: |
           yarn install --frozen-lockfile
-      - name: run workspace linting
+      - name: run lint (affected)
+        if: github.event_name == 'pull_request'
         run: |
-          yarn lint:workspace
+          yarn nx affected -t lint --parallel=3 --format=gha
+      - name: run lint (all)
+        if: github.event_name != 'pull_request'
+        run: |
+          yarn nx run-many -t lint --parallel=3 --format=gha
