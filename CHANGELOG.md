@@ -1,3 +1,80 @@
+## 0.23.0
+
+**Breaking changes**
+
+### Python 3.8 is no longer supported
+
+We have dropped support for Python 3.8, please update to Python 3.9 or higher.
+
+### Go 1.18-1.24 are no longer supported
+
+We have dropped support for Go 1.18 - 1.24, please update to Go 1.25 or higher.
+
+### TypeScript versions less than 4.5 are no longer suppored
+
+Provider generation now uses features from TypeScript 4.5.
+Note that there isn't an official minimum supported TypeScript at this time and using the latest 5.x version is recommended.
+
+**Upcoming Breaking Changes**
+
+Node version 22.x will become the minimum in an upcoming release as 20.x is now EoL.
+
+### feat
+
+- feat(provider-generator): use type modifier on imports [\#150](https://github.com/open-constructs/cdk-terrain/pull/150)
+- feat(lib): add StringMapMap class [\#110](https://github.com/open-constructs/cdk-terrain/pull/110)
+
+### chore
+
+- chore: clean up yarn install warnings [\#149](https://github.com/open-constructs/cdk-terrain/pull/149)
+- chore(deps): bump the github-actions-backward-compatible group with 6 updates [\#146](https://github.com/open-constructs/cdk-terrain/pull/146)
+- chore: Fix eslint warnings - phase 5 [\#140](https://github.com/open-constructs/cdk-terrain/pull/140)
+- chore: Fix eslint warnings - phase 4 [\#139](https://github.com/open-constructs/cdk-terrain/pull/139)
+- chore: Fix eslint warnings - phase 3 [\#138](https://github.com/open-constructs/cdk-terrain/pull/138)
+- chore: Fix eslint warnings - phase 2 [\#137](https://github.com/open-constructs/cdk-terrain/pull/137)
+- chore: Fix eslint warnings - phase 1 [\#135](https://github.com/open-constructs/cdk-terrain/pull/135)
+- chore(provider-generator): Update retry to terraform init for transient GitHub errors [\#134](https://github.com/open-constructs/cdk-terrain/pull/134)
+- chore: Remove unused dependencies from packages - phase 1 [\#133](https://github.com/open-constructs/cdk-terrain/pull/133)
+- chore(provider-generator): Add retry to terraform init for transient GitHub errors [\#132](https://github.com/open-constructs/cdk-terrain/pull/132)
+- chore(provider-generator): enable typescript declarationMap [\#131](https://github.com/open-constructs/cdk-terrain/pull/131)
+- chore: Fix Java flaky integration test [\#130](https://github.com/open-constructs/cdk-terrain/pull/130)
+- chore: Add missing dependencies to packages [\#129](https://github.com/open-constructs/cdk-terrain/pull/129)
+- chore: Standardise test scripts to only run tests [\#128](https://github.com/open-constructs/cdk-terrain/pull/128)
+- chore: Remove edited from the examples workflow pull_request types [\#127](https://github.com/open-constructs/cdk-terrain/pull/127)
+- chore: Add retry to build-example [\#126](https://github.com/open-constructs/cdk-terrain/pull/126)
+- chore: Bump verdaccio version and add npm install retries [\#122](https://github.com/open-constructs/cdk-terrain/pull/122)
+- chore: Remove `edited` from the test workflow pull_request types [\#121](https://github.com/open-constructs/cdk-terrain/pull/121)
+- chore: Replace depcheck CI check with knip [\#120](https://github.com/open-constructs/cdk-terrain/pull/120)
+- chore: Update test providers to support darwin arm64 [\#119](https://github.com/open-constructs/cdk-terrain/pull/119)
+- chore: Refine eslint configuration [\#118](https://github.com/open-constructs/cdk-terrain/pull/118)
+- chore: emit compiled TS to build/ instead of next to sources [\#116](https://github.com/open-constructs/cdk-terrain/pull/116)
+- chore: Add VSCode Settings and Extension Recommendations [\#114](https://github.com/open-constructs/cdk-terrain/pull/114)
+- chore: Fix eslint auto-fixable issues [\#113](https://github.com/open-constructs/cdk-terrain/pull/113)
+- chore: use new docker image in builds [\#108](https://github.com/open-constructs/cdk-terrain/pull/108)
+- chore: Update docker image to have Go 1.25 and Node 22 [\#97](https://github.com/open-constructs/cdk-terrain/pull/97)
+- chore: Upgrade dependencies for all [\#91](https://github.com/open-constructs/cdk-terrain/pull/91)
+- chore: Upgrade jest to v30 [\#89](https://github.com/open-constructs/cdk-terrain/pull/89)
+- chore(deps): bump the github-actions-backward-compatible group with 4 updates [\#88](https://github.com/open-constructs/cdk-terrain/pull/88)
+- chore(deps): bump the github-actions-breaking group with 5 updates [\#87](https://github.com/open-constructs/cdk-terrain/pull/87)
+- chore: add migration context to bug report issue templates [skip ci] [\#86](https://github.com/open-constructs/cdk-terrain/pull/86)
+- chore: npm-check-updates && yarn upgrade [\#84](https://github.com/open-constructs/cdk-terrain/pull/84)
+- chore: Upgrade dependencies for all [\#83](https://github.com/open-constructs/cdk-terrain/pull/83)
+- chore(lib): add test showing no failure if resource scoped to app [\#73](https://github.com/open-constructs/cdk-terrain/pull/73)
+- chore(deps): Run npx yarn-audit-fix --force [\#59](https://github.com/open-constructs/cdk-terrain/pull/59)
+- chore(cli): Replace node-pty with simple interactive process [\#55](https://github.com/open-constructs/cdk-terrain/pull/55)
+- chore: Upgrade dependencies for JSII [\#20](https://github.com/open-constructs/cdk-terrain/pull/20)
+
+### fix
+
+- fix(cli): anchor jest testPathIgnorePatterns in typescript template [\#147](https://github.com/open-constructs/cdk-terrain/pull/147)
+- fix(tests): Fix app.test and json-to-hcl.test race condition [\#125](https://github.com/open-constructs/cdk-terrain/pull/125)
+- fix(lib): ForExpression missing iteratorContext and OperatorExpression drops falsy right operands [\#112](https://github.com/open-constructs/cdk-terrain/pull/112)
+- fix(cli): support pre-built provider metadata with cdktn key [\#107](https://github.com/open-constructs/cdk-terrain/pull/107)
+- fix(cli): don't check cdktf-cli version [\#99](https://github.com/open-constructs/cdk-terrain/pull/99)
+- fix(deps): replace archiver with yazl [\#95](https://github.com/open-constructs/cdk-terrain/pull/95)
+- fix(lib): fail on constructs outside of stacks (under feature flag) [\#93](https://github.com/open-constructs/cdk-terrain/pull/93)
+- fix(gha): Fix GitHub release creation [\#90](https://github.com/open-constructs/cdk-terrain/pull/90)
+
 ## 0.22.1
 
 ### feat
