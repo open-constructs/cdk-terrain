@@ -60,9 +60,6 @@
             "examples/java/*",
             "examples/csharp/*",
             "examples/go/*",
-            "test",
-            "tools/dependency-pinner",
-            "tools/documentation-generation",
             "tools/generate-function-bindings",
             ".yalc/*",
             ".yalc/@*/*"
