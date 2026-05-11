@@ -73,7 +73,7 @@
         "@types/node": "18.19.130",
         "@types/semver": "7.7.1",
         "constructs": "10.6.0",
-        "jest": "^30.3.0",
+        "jest": "^30.4.2",
         "jsii": "5.9.37",
         "jsii-pacmak": "1.128.0",
         "ts-jest": "29.4.9",
@@ -81,7 +81,7 @@
     },
     "dependencies": {
         "json-stable-stringify": "1.3.0",
-        "semver": "7.7.4",
+        "semver": "7.8.0",
         "yazl": "3.3.1"
     },
     "bundledDependencies": [
