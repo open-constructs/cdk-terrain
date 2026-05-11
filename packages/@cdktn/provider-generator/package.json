@@ -49,7 +49,7 @@
     "@types/fs-extra": "8.1.5",
     "@types/jest": "30.0.0",
     "@types/node": "20.19.37",
-    "jest": "^30.3.0",
+    "jest": "^30.4.2",
     "ts-jest": "29.4.9",
     "typescript": "5.4.5"
   }
