@@ -74,8 +74,8 @@
         "@types/semver": "7.7.1",
         "constructs": "10.6.0",
         "jest": "^30.3.0",
-        "jsii": "5.9.37",
-        "jsii-pacmak": "1.128.0",
+        "jsii": "5.9.40",
+        "jsii-pacmak": "1.129.0",
         "ts-jest": "29.4.9",
         "typescript": "5.4.5"
     },
