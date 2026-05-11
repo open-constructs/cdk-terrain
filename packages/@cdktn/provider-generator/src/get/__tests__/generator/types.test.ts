@@ -567,9 +567,7 @@ test("map of map of string attribute", async () => {
 
 test("case-insensitive base name collision", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "case-insensitive-base-name-collision.test"),
-  );
+  const workdir = tmp("case-insensitive-base-name-collision.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
