@@ -20,6 +20,7 @@
         "watch": "lerna run --parallel  --stream --scope @cdktn/* --scope 'cdktn*' watch-preserve-output",
         "lint:workspace": "nx run-many -t lint",
         "lint:affected": "nx affected -t lint",
+        "lint:fix": "nx run-many -t lint --fix",
         "lint:prettier": "prettier --check .",
         "lint:examples": "node tools/lint-examples.js",
         "link-packages": "lerna exec --scope 'cdktn*' --scope @cdktn/* yarn link",
