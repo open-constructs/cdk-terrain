@@ -82,6 +82,10 @@ export function spawnInteractive(
     onData(chunk.toLocaleString());
   });
 
+  p.stderr?.on("data", (chunk: Buffer) => {
+    onData(chunk.toLocaleString());
+  });
+  
   const exitCode = new Promise<number>((resolve) => {
     p.once("close", (code: number) => {
       if (code !== 0) {
