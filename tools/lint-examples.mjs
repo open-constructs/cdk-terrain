@@ -43,7 +43,7 @@ function isCdktfOrExampleProject(dir) {
 }
 
 /**
- * Walks `root` recursively and collects every directory that looks like a CDKTF or example project root. 
+ * Walks `root` recursively and collects every directory that looks like a CDKTF or example project root.
  * Descend stops at each project root, so nested sub-projects under an already-matched directory are not returned.
  *
  * @param {string} root Absolute path to the directory to walk.
@@ -70,7 +70,7 @@ function collectCdktfOrExampleProjectDirs(root) {
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * Reports a lint failure. Under GitHub Actions (`GITHUB_ACTIONS=true`) the message is emitted as a 
+ * Reports a lint failure. Under GitHub Actions (`GITHUB_ACTIONS=true`) the message is emitted as a
  * `::error file=...::` workflow command so it surfaces as a PR annotation; otherwise it's a plain stderr line.
  *
  * @param {string} file Repository-relative path to the offending file. Used
@@ -97,7 +97,7 @@ const exampleProjects = collectCdktfOrExampleProjectDirs(
 ).map((p) => p.replace(REPO_ROOT + "/", ""));
 
 /**
- * Output of `lerna list --all --json` — every workspace package lerna can see, with `name`, `location`, 
+ * Output of `lerna list --all --json` — every workspace package lerna can see, with `name`, `location`,
  * `version`, and `private` fields. Used to cross-check that each example directory is registered as a lerna
  * package.
  *
