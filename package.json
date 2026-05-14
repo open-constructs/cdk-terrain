@@ -22,7 +22,7 @@
         "lint:affected": "nx affected -t lint",
         "lint:fix": "nx run-many -t lint --fix",
         "lint:prettier": "prettier --check .",
-        "lint:examples": "node tools/lint-examples.js",
+        "lint:examples": "node tools/lint-examples.mjs",
         "link-packages": "lerna exec --scope 'cdktn*' --scope @cdktn/* yarn link",
         "integration": "cd test && yarn edge:install && ./run-against-dist npx jest --runInBand",
         "integration:update": "cd test && yarn && yarn edge:install && NODE_OPTIONS='--max-old-space-size=7168' ./run-against-dist npx jest -u --runInBand",

@@ -50,6 +50,8 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           yarn nx run-many -t lint --parallel=3 --format=gha
+      - name: lint examples
+        run: yarn lint:examples
 
   knip:
     runs-on: ubuntu-latest
