@@ -142,6 +142,14 @@ jobs:
         with:
           name: dist
           path: dist
+      - name: Recreate packages/cdktn/dist/go layout for Go examples
+        # Go examples' go.mod files use `replace ... => ../../../packages/cdktn/dist/go/cdktn`,
+        # which points at the per-package build output. The matrix job only has the aggregated
+        # `dist/` artifact, so symlink the per-package path to the aggregated location.
+        if: startsWith(matrix.target, '@examples/go') || endsWith(matrix.target, '-documentation')
+        run: |
+          mkdir -p packages/cdktn/dist/go
+          ln -sfn "$PWD/dist/go/cdktn" packages/cdktn/dist/go/cdktn
       - name: Run example integration test
         run: test/run-against-dist node tools/build-example.js ${TEST_TARGET}
         env:
