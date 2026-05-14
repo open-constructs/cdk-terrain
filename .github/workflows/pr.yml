@@ -54,7 +54,7 @@ jobs:
   examples:
     name: "Examples Integration Tests - PR"
     needs: [all_unit_tests]
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-examples') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    if: ${{ always() && !cancelled() && needs.all_unit_tests.result != 'failure' && !contains(github.event.pull_request.labels.*.name, 'ci/skip-examples') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
     uses: ./.github/workflows/examples.yml
     with:
       concurrency_group_prefix: pr
@@ -63,7 +63,7 @@ jobs:
   integration_test:
     name: "Integration Tests - PR"
     needs: [all_unit_tests]
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    if: ${{ always() && !cancelled() && needs.all_unit_tests.result != 'failure' && !contains(github.event.pull_request.labels.*.name, 'ci/skip-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
     uses: ./.github/workflows/integration.yml
     with:
       concurrency_group_prefix: pr
@@ -72,7 +72,7 @@ jobs:
   provider_integration_test:
     name: "Provider Integration Tests - PR"
     needs: [all_unit_tests]
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-provider-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    if: ${{ always() && !cancelled() && needs.all_unit_tests.result != 'failure' && !contains(github.event.pull_request.labels.*.name, 'ci/skip-provider-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
     uses: ./.github/workflows/provider-integration.yml
     with:
       concurrency_group_prefix: pr
