@@ -67,8 +67,6 @@ jobs:
             go-${{ runner.os }}-
       - name: Install dependencies
         run: yarn install --frozen-lockfile --prefer-offline
-      - name: Align version
-        run: tools/align-version.sh "-dev.$GITHUB_RUN_ID"
       - name: Build packages
         run: yarn build
         env:
@@ -85,6 +83,7 @@ jobs:
 
   examples:
     needs: [build-example-matrix, prepare-examples]
+    name: "${{ matrix.target }} @ tf${{ matrix.terraform }}${{ matrix.hclOutput && ' (HCL)' || '' }}"
     # Go documentation example generates bindings for AWS and other providers and hence requires a lot of memory
     runs-on: ${{ matrix.target == '@examples/go-documentation' && 'depot-ubuntu-24.04-16' || 'ubuntu-latest' }}
     strategy:
