@@ -289,7 +289,7 @@ onTf1_6AndNewer(
       * Docs at Terraform Registry: {@link https://registry.terraform.io/modules/milliHQ/next-js/aws/1.0.0-canary.5 milliHQ/next-js/aws}
       */
       export class NextJs extends TerraformModule {
-        private readonly inputs: { [name: string]: any } = { }
+        private readonly inputs: { [name: string]: any } = { };
         public constructor(scope: Construct, id: string, config: NextJsConfig = {}) {
           super(scope, id, {
             ...config,
@@ -473,34 +473,34 @@ onTf1_6AndNewer(
           this.inputs['vpc_subnet_ids'] = value;
         }
         public get apiEndpointOutput() {
-          return this.getString('api_endpoint')
+          return this.getString('api_endpoint');
         }
         public get apiEndpointAccessPolicyArnOutput() {
-          return this.getString('api_endpoint_access_policy_arn')
+          return this.getString('api_endpoint_access_policy_arn');
         }
         public get cloudfrontCustomErrorResponseOutput() {
-          return this.getString('cloudfront_custom_error_response')
+          return this.getString('cloudfront_custom_error_response');
         }
         public get cloudfrontDefaultCacheBehaviorOutput() {
-          return this.getString('cloudfront_default_cache_behavior')
+          return this.getString('cloudfront_default_cache_behavior');
         }
         public get cloudfrontDefaultRootObjectOutput() {
-          return this.getString('cloudfront_default_root_object')
+          return this.getString('cloudfront_default_root_object');
         }
         public get cloudfrontDomainNameOutput() {
-          return this.getString('cloudfront_domain_name')
+          return this.getString('cloudfront_domain_name');
         }
         public get cloudfrontHostedZoneIdOutput() {
-          return this.getString('cloudfront_hosted_zone_id')
+          return this.getString('cloudfront_hosted_zone_id');
         }
         public get cloudfrontOrderedCacheBehaviorsOutput() {
-          return this.getString('cloudfront_ordered_cache_behaviors')
+          return this.getString('cloudfront_ordered_cache_behaviors');
         }
         public get cloudfrontOriginsOutput() {
-          return this.getString('cloudfront_origins')
+          return this.getString('cloudfront_origins');
         }
         public get uploadBucketIdOutput() {
-          return this.getString('upload_bucket_id')
+          return this.getString('upload_bucket_id');
         }
         protected synthesizeAttributes() {
           return this.inputs;

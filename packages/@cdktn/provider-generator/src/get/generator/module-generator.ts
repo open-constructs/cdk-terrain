@@ -104,7 +104,7 @@ export class ModuleGenerator {
     comment.end();
     this.code.openBlock(`export class ${baseName} extends TerraformModule`);
 
-    this.code.line(`private readonly inputs: { [name: string]: any } = { }`);
+    this.code.line(`private readonly inputs: { [name: string]: any } = { };`);
 
     const allOptional = spec.inputs.find((x) => x.required) ? "" : " = {}";
 
@@ -143,7 +143,7 @@ export class ModuleGenerator {
     for (const output of spec.outputs) {
       const outputName = toCamelCase(output.name);
       this.code.openBlock(`public get ${outputName}Output()`);
-      this.code.line(`return this.getString('${output.name}')`);
+      this.code.line(`return this.getString('${output.name}');`);
       this.code.closeBlock();
     }
 

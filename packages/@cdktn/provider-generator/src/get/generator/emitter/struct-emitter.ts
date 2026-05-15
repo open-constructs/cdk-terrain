@@ -174,7 +174,7 @@ export class StructEmitter {
       Object.entries(structsToImport).forEach(([fileToImport, structs]) => {
         const target = path.basename(fileToImport, ".ts");
         this.code.line(
-          `import { ${[...new Set(structs)].join(",\n")} } from './${target}${this.importExtension}'`,
+          `import { ${[...new Set(structs)].join(",\n")} } from './${target}${this.importExtension}';`,
         );
       });
 
@@ -199,7 +199,7 @@ export class StructEmitter {
     this.code.openFile(indexFilePath);
     structPaths.forEach((structPath) => {
       const target = path.basename(structPath, ".ts");
-      this.code.line(`export * from './${target}${this.importExtension}'`);
+      this.code.line(`export * from './${target}${this.importExtension}';`);
     });
     this.code.closeFile(indexFilePath);
   }
@@ -332,7 +332,7 @@ export class StructEmitter {
     this.code.openBlock(
       `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean)`,
     );
-    this.code.line(`super(terraformResource, terraformAttribute, wrapsSet)`);
+    this.code.line(`super(terraformResource, terraformAttribute, wrapsSet);`);
     this.code.closeBlock();
 
     this.code.line();
@@ -372,7 +372,7 @@ export class StructEmitter {
     this.code.openBlock(
       `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string)`,
     );
-    this.code.line(`super(terraformResource, terraformAttribute)`);
+    this.code.line(`super(terraformResource, terraformAttribute);`);
     this.code.closeBlock();
 
     this.code.line();
@@ -420,7 +420,7 @@ export class StructEmitter {
     this.code.openBlock(
       `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean)`,
     );
-    this.code.line(`super(terraformResource, terraformAttribute, wrapsSet)`);
+    this.code.line(`super(terraformResource, terraformAttribute, wrapsSet);`);
     this.code.closeBlock();
 
     this.code.line();
@@ -461,7 +461,7 @@ export class StructEmitter {
     this.code.openBlock(
       `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string)`,
     );
-    this.code.line(`super(terraformResource, terraformAttribute)`);
+    this.code.line(`super(terraformResource, terraformAttribute);`);
     this.code.closeBlock();
 
     this.code.line();
@@ -507,7 +507,7 @@ export class StructEmitter {
     this.code.openBlock(
       `constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean)`,
     );
-    this.code.line(`super(terraformResource, terraformAttribute, wrapsSet)`);
+    this.code.line(`super(terraformResource, terraformAttribute, wrapsSet);`);
     this.code.closeBlock();
 
     this.code.line();
