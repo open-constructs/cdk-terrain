@@ -1,3 +1,26 @@
+## 0.23.1
+
+### fix
+- fix(cli): forward stderr output in spawnInteractive [\#173](https://github.com/open-constructs/cdk-terrain/pull/173)
+- fix(provider-generator): Fix code generation failures caused by case insensitive name collisions [\#165](https://github.com/open-constructs/cdk-terrain/pull/165)
+- fix(tests): pin Verdaccio registry on publish/install in run-against-dist [\#157](https://github.com/open-constructs/cdk-terrain/pull/157)
+
+### test
+- test(hcl2cdk): speed up synth tests and stop leaking temp dirs [\#174](https://github.com/open-constructs/cdk-terrain/pull/174)
+
+### chore
+- chore: clean up leaked temp directories in unit tests - Provider Generator types test fix [\#172](https://github.com/open-constructs/cdk-terrain/pull/172)
+- chore: CI build-example-matrix: replace lerna with node script [\#166](https://github.com/open-constructs/cdk-terrain/pull/166)
+- chore: clean up leaked temp directories in unit tests [\#163](https://github.com/open-constructs/cdk-terrain/pull/163)
+- chore: cdktn tests: isolate test outdirs to fix mkdirSync race [\#161](https://github.com/open-constructs/cdk-terrain/pull/161)
+- chore: CI Lint: switch to nx affected with GitHub annotations [\#159](https://github.com/open-constructs/cdk-terrain/pull/159)
+- chore(cli): refine dependencies [\#158](https://github.com/open-constructs/cdk-terrain/pull/158)
+- chore: Refine Nx Cache Configuration [\#156](https://github.com/open-constructs/cdk-terrain/pull/156)
+- chore: Add eslint max-warnings=0 [\#155](https://github.com/open-constructs/cdk-terrain/pull/155)
+- chore(tests): migrate python integration tests to cdktn-native package matrix [\#154](https://github.com/open-constructs/cdk-terrain/pull/154)
+- chore: Add missing dependencies to packages - Update knip config [\#144](https://github.com/open-constructs/cdk-terrain/pull/144)
+- chore: Refine provider-integration GitHub workflows [\#142](https://github.com/open-constructs/cdk-terrain/pull/142)
+
 ## 0.23.0
 
 **Breaking changes**
