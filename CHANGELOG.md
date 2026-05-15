@@ -1,14 +1,17 @@
 ## 0.23.1
 
 ### fix
+
 - fix(cli): forward stderr output in spawnInteractive [\#173](https://github.com/open-constructs/cdk-terrain/pull/173)
 - fix(provider-generator): Fix code generation failures caused by case insensitive name collisions [\#165](https://github.com/open-constructs/cdk-terrain/pull/165)
 - fix(tests): pin Verdaccio registry on publish/install in run-against-dist [\#157](https://github.com/open-constructs/cdk-terrain/pull/157)
 
 ### test
+
 - test(hcl2cdk): speed up synth tests and stop leaking temp dirs [\#174](https://github.com/open-constructs/cdk-terrain/pull/174)
 
 ### chore
+
 - chore: clean up leaked temp directories in unit tests - Provider Generator types test fix [\#172](https://github.com/open-constructs/cdk-terrain/pull/172)
 - chore: CI build-example-matrix: replace lerna with node script [\#166](https://github.com/open-constructs/cdk-terrain/pull/166)
 - chore: clean up leaked temp directories in unit tests [\#163](https://github.com/open-constructs/cdk-terrain/pull/163)
