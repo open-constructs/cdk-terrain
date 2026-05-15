@@ -6,7 +6,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "get": "cdktn get",
-    "build": "yarn get",
+    "build": "yarn get && tsc",
     "synth": "cdktn synth",
     "compile": "tsc --pretty",
     "watch": "tsc -w",
