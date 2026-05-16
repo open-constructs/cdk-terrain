@@ -28,11 +28,53 @@ export const LANGUAGES = [
 
 const CONTEXT_ENV = "CDKTF_CONTEXT_JSON";
 
-const CONFIG_FILE = "cdktf.json";
+const PRIMARY_CONFIG_FILE = "cdktn.json";
+const LEGACY_CONFIG_FILE = "cdktf.json";
 export const CONFIG_DEFAULTS = {
   output: "cdktf.out",
   codeMakerOutput: ".gen",
 };
+
+/**
+ * Resolve the config file path inside `directory`. Returns the path to
+ * cdktn.json when it exists, otherwise the path to cdktf.json (whether
+ * or not it exists — the caller decides what to do if the file is missing).
+ */
+export function resolveConfigFile(directory: string = process.cwd()): string {
+  const primary = path.join(directory, PRIMARY_CONFIG_FILE);
+  if (fs.existsSync(primary)) {
+    return primary;
+  }
+  return path.join(directory, LEGACY_CONFIG_FILE);
+}
+
+/**
+ * Walk up the directory tree from `startDir`. At each level, prefer
+ * cdktn.json over cdktf.json. Returns the absolute path to the first
+ * config file found, or null if none exists in any parent directory.
+ */
+export function findConfigAbove(
+  startDir: string = process.cwd(),
+): string | null {
+  const dir = path.resolve(startDir);
+
+  const primary = path.join(dir, PRIMARY_CONFIG_FILE);
+  if (fs.existsSync(primary)) {
+    return primary;
+  }
+
+  const legacy = path.join(dir, LEGACY_CONFIG_FILE);
+  if (fs.existsSync(legacy)) {
+    return legacy;
+  }
+
+  const parent = path.resolve(dir, "..");
+  if (parent === dir) {
+    return null;
+  }
+
+  return findConfigAbove(parent);
+}
 
 function isPresent(input: any[] | undefined): boolean {
   return Array.isArray(input) && input.length > 0;
@@ -281,9 +323,7 @@ export const parseConfig = (configJSON?: string) => {
   return config;
 };
 
-export function readConfigSync(
-  configFile = path.join(process.cwd(), CONFIG_FILE),
-): Config {
+export function readConfigSync(configFile = resolveConfigFile()): Config {
   let configFileContent: string | undefined;
 
   if (fs.existsSync(configFile)) {

@@ -1,16 +1,14 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import yargs from "yargs";
-import { Errors } from "@cdktn/commons";
+import { Errors, resolveConfigFile } from "@cdktn/commons";
 import { BaseCommand } from "./helper/base-command";
 import { requireHandlers } from "./helper/utilities";
-import * as path from "path";
 import * as fs from "fs-extra";
 
 function readCdktfJson(cwd = process.cwd()): { language: string } | undefined {
   try {
-    const cdktfJsonPath = path.join(cwd, "cdktf.json");
-    return fs.readJsonSync(cdktfJsonPath);
+    return fs.readJsonSync(resolveConfigFile(cwd));
   } catch {
     return undefined;
   }
@@ -41,7 +39,7 @@ class Command extends BaseCommand {
       })
       .option("provider", {
         describe:
-          "The conversion needs to know which providers are used in addition to the ones in your cdktf.json file. We search for a cdktf.json below your current working directory.",
+          "The conversion needs to know which providers are used in addition to the ones in your cdktf.json or cdktn.json file. We search for a cdktf.json or cdktn.json below your current working directory.",
         type: "array",
         default: [],
       })

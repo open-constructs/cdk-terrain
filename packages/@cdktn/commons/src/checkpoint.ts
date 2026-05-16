@@ -9,6 +9,7 @@ import { logger, processLoggerError } from "./logging";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { DISPLAY_VERSION } from "./version";
+import { resolveConfigFile } from "./config";
 
 const BASE_URL = `https://checkpoint-api.hashicorp.com/v1/`;
 
@@ -133,7 +134,7 @@ function getId(
 }
 
 export function getProjectId(projectPath = process.cwd()): string {
-  return getId(path.resolve(projectPath, "cdktf.json"), "projectId");
+  return getId(resolveConfigFile(projectPath), "projectId");
 }
 
 export function getUserId(): string {

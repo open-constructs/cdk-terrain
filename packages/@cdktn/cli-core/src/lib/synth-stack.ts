@@ -296,12 +296,12 @@ Command output on stdout:
 }
 
 function getRelativeTerraformModules() {
-  let cfg;
+  let cfg: CdktfConfig;
 
   try {
     cfg = CdktfConfig.read();
   } catch (e) {
-    logger.trace("Could not read cdktf.json: " + e);
+    logger.trace("Could not read cdktn.json or cdktf.json: " + e);
     return [];
   }
 

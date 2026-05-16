@@ -6,26 +6,10 @@ import {
   Errors,
   CONFIG_DEFAULTS,
   TerraformDependencyConstraint,
+  findConfigAbove,
 } from "@cdktn/commons";
 import path from "path";
 import { logger } from "@cdktn/commons";
-
-function findFileAboveCwd(
-  file: string,
-  rootPath = process.cwd(),
-): string | null {
-  const fullPath = path.resolve(rootPath, file);
-  if (fs.existsSync(fullPath)) {
-    return fullPath;
-  }
-
-  const parentDir = path.resolve(rootPath, "..");
-  if (fs.existsSync(parentDir) && parentDir !== rootPath) {
-    return findFileAboveCwd(file, parentDir);
-  }
-
-  return null;
-}
 
 // TODO: move this to @cdktn/commons
 // tracked here https://github.com/hashicorp/terraform-cdk/issues/1814
@@ -98,13 +82,13 @@ export class CdktfConfig {
   }
 
   public static read(path: string = process.cwd()): CdktfConfig {
-    const cdktfConfigPath = findFileAboveCwd("cdktf.json", path);
+    const cdktfConfigPath = findConfigAbove(path);
     if (!cdktfConfigPath) {
       throw Errors.External(
-        "Could not find cdktf.json. Make sure there is a cdktf.json file in the current directory or one of its parents.",
+        "Could not find cdktn.json or cdktf.json. Make sure there is a cdktn.json (or cdktf.json) file in the current directory or one of its parents.",
       );
     }
-    logger.trace(`cdktf.json found at ${cdktfConfigPath}`);
+    logger.trace(`config found at ${cdktfConfigPath}`);
 
     return new CdktfConfig(cdktfConfigPath);
   }

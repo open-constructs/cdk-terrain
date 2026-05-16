@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import * as path from "path";
 import * as os from "os";
 import { logger } from "./logging";
 import { exec } from "./util";
@@ -8,11 +7,12 @@ import { terraformVersion } from "./terraform";
 import { DISPLAY_VERSION } from "./version";
 import { pathExists, readFileSync } from "fs-extra";
 import { getGradlePackageVersion, isGradleProject } from "./gradle";
+import { resolveConfigFile } from "./config";
 
 export function getLanguage(projectPath = process.cwd()): string | undefined {
   try {
     const cdktfJson = JSON.parse(
-      readFileSync(path.resolve(projectPath, "cdktf.json"), "utf-8"),
+      readFileSync(resolveConfigFile(projectPath), "utf-8"),
     );
     return cdktfJson.language;
   } catch {

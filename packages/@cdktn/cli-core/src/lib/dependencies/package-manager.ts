@@ -8,6 +8,7 @@ import {
   isGradleProject,
   getGradleDependencies,
   getDependencyInformationFromLine,
+  resolveConfigFile,
 } from "@cdktn/commons";
 import { existsSync } from "fs-extra";
 import path from "path";
@@ -253,14 +254,11 @@ class PythonPackageManager extends PackageManager {
   private get appCommand() {
     try {
       return JSON.parse(
-        fs.readFileSync(
-          path.resolve(this.workingDirectory, "cdktf.json"),
-          "utf8",
-        ),
+        fs.readFileSync(resolveConfigFile(this.workingDirectory), "utf8"),
       )["app"];
     } catch (e: any) {
       throw Errors.Usage(
-        `Could not find find and parse cdktf.json in ${this.workingDirectory}`,
+        `Could not find and parse cdktn.json or cdktf.json in ${this.workingDirectory}`,
         e,
       );
     }
