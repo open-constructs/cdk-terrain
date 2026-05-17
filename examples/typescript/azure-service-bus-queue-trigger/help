@@ -41,6 +41,6 @@
   npm install @cdktf/provider-github
   npm install @cdktf/provider-null
 
-  You can also build any module or provider locally. Learn more https://cdk.tf/modules-and-providers
+  You can also build any module or provider locally. Learn more https://cdktn.io/docs/concepts/providers
 
 ========================================================================================================
