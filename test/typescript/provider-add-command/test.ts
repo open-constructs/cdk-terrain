@@ -13,41 +13,41 @@ describe("provider add command", () => {
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
         DISABLE_VERSION_CHECK: "true",
-      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-cli
       await driver.setupTypescriptProject();
 
-      await driver.exec("npm", ["install", "cdktf@0.10.4"]);
+      await driver.exec("npm", ["install", "cdktn@0.23.1"]);
     }, 500_000);
 
     it("detects correct cdktn version", async () => {
       const res = await driver.exec("cdktn", ["debug"]);
-      expect(res.stdout).toContain("cdktf: 0.10.4");
+      expect(res.stdout).toContain("cdktn: 0.23.1");
     });
 
     test("installs pre-built provider using npm", async () => {
       const res = await driver.exec("cdktn", [
         "provider",
         "add",
-        "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
+        "random@=3.9.0",
       ]);
       expect(res.stdout).toContain(
         `Checking whether pre-built provider exists for the following constraints:`,
       );
       expect(res.stdout).toContain(`provider: random`);
-      expect(res.stdout).toContain(`version : =3.1.3`);
+      expect(res.stdout).toContain(`version : =3.9.0`);
       expect(res.stdout).toContain(`language: typescript`);
-      expect(res.stdout).toContain(`cdktf   : 0.10.4`);
+      expect(res.stdout).toContain(`cdktn   : 0.23.1`);
       expect(res.stdout).toContain(`Found pre-built provider.`);
       expect(res.stdout).toContain(
-        `Adding package @cdktf/provider-random @ 0.2.55`,
+        `Adding package @cdktn/provider-random @ 14.1.0`,
       );
       expect(res.stdout).toContain(
-        `Installing package @cdktf/provider-random @ 0.2.55 using npm.`,
+        `Installing package @cdktn/provider-random @ 14.1.0 using npm.`,
       );
       expect(res.stdout).toContain(`Package installed.`);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random"),
+        packageJsonWithDependency("@cdktn/provider-random"),
       );
     }, 120_000);
   });
