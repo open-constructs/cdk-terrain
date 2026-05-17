@@ -11,6 +11,7 @@ import { GetOptions } from "@cdktn/provider-generator";
 import {
   IsErrorType,
   Language,
+  LanguageOptions,
   sendTelemetry,
   TerraformDependencyConstraint,
 } from "@cdktn/commons";
@@ -19,6 +20,7 @@ import { get, GetStatus as Status } from "@cdktn/cli-core";
 interface GetConfig {
   codeMakerOutput: string;
   language: Language;
+  languageOptions?: LanguageOptions;
   constraints: TerraformDependencyConstraint[];
   parallelism: number;
   force?: boolean;
@@ -34,6 +36,7 @@ export const Get = ({
   force,
   silent = false,
   providerSchemaCachePath,
+  languageOptions,
 }: GetConfig): React.ReactElement => {
   const [currentStatus, setCurrentStatus] = React.useState<Status>(
     Status.STARTING,
@@ -44,6 +47,7 @@ export const Get = ({
     codeMakerOutput: codeMakerOutput,
     targetLanguage: language,
     jsiiParallelism: parallelism,
+    languageOptions,
   };
 
   React.useEffect(() => {

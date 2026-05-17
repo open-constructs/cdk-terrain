@@ -349,6 +349,7 @@ export async function get(argv: {
         force,
         silent: argv.silent,
         providerSchemaCachePath: argv.experimentalProviderSchemaCachePath,
+        languageOptions: config.languageOptions,
       }),
     );
   } finally {
@@ -705,6 +706,7 @@ export async function providerUpgrade(argv: any) {
     const constructsOptions: GetOptions = {
       codeMakerOutput: config.codeMakerOutput,
       targetLanguage: language,
+      languageOptions: config.languageOptions,
       jsiiParallelism: 1,
     };
 
