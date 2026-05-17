@@ -1,14 +1,14 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { AzurermProvider } from "@cdktf/provider-azurerm/lib/provider";
-import { ApplicationInsights } from "@cdktf/provider-azurerm/lib/application-insights";
-import { AppServicePlan } from "@cdktf/provider-azurerm/lib/app-service-plan";
-import { FunctionApp } from "@cdktf/provider-azurerm/lib/function-app";
-import { ResourceGroup } from "@cdktf/provider-azurerm/lib/resource-group";
-import { ServicebusNamespace } from "@cdktf/provider-azurerm/lib/servicebus-namespace";
-import { ServicebusQueue } from "@cdktf/provider-azurerm/lib/servicebus-queue";
-import { ServicebusQueueAuthorizationRule } from "@cdktf/provider-azurerm/lib/servicebus-queue-authorization-rule";
-import { StorageAccount } from "@cdktf/provider-azurerm/lib/storage-account";
+import { AzurermProvider } from "@cdktn/provider-azurerm/lib/provider";
+import { ApplicationInsights } from "@cdktn/provider-azurerm/lib/application-insights";
+import { AppServicePlan } from "@cdktn/provider-azurerm/lib/app-service-plan";
+import { FunctionApp } from "@cdktn/provider-azurerm/lib/function-app";
+import { ResourceGroup } from "@cdktn/provider-azurerm/lib/resource-group";
+import { ServicebusNamespace } from "@cdktn/provider-azurerm/lib/servicebus-namespace";
+import { ServicebusQueue } from "@cdktn/provider-azurerm/lib/servicebus-queue";
+import { ServicebusQueueAuthorizationRule } from "@cdktn/provider-azurerm/lib/servicebus-queue-authorization-rule";
+import { StorageAccount } from "@cdktn/provider-azurerm/lib/storage-account";
 import { App, TerraformStack, Fn } from "cdktn";
 import { Construct } from "constructs";
 

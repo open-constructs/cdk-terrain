@@ -3,8 +3,8 @@
 // DOCS_BLOCK_START:hcl-interop
 import { Construct } from "constructs";
 import { TerraformOutput, TerraformStack, TerraformVariable } from "cdktn";
-import { Pet } from "@cdktf/provider-random/lib/pet";
-import { RandomProvider } from "@cdktf/provider-random/lib/provider";
+import { Pet } from "@cdktn/provider-random/lib/pet";
+import { RandomProvider } from "@cdktn/provider-random/lib/provider";
 
 export class HCLInteropStack extends TerraformStack {
   constructor(scope: Construct, name: string) {

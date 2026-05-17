@@ -1114,15 +1114,15 @@
   resolved "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@cdktf/provider-aws@21.22.1":
-  version "21.22.1"
-  resolved "https://registry.yarnpkg.com/@cdktf/provider-aws/-/provider-aws-21.22.1.tgz#e5667ef699d25996ff9d1c936afd6eb9e1a45679"
-  integrity sha512-BuSHeaQFUL9l33pBzIMRT7cTQ69AM2mLtijjteCPhVQRmvuhuj9Lvfymf7knAMhYqAT6+Lrls9jiGVW/Us3zrQ==
+"@cdktn/provider-aws@24.1.0":
+  version "24.1.0"
+  resolved "https://registry.yarnpkg.com/@cdktn/provider-aws/-/provider-aws-24.1.0.tgz#7b9d42a963c728e4abd9d75f20e416d9e7d4b3d4"
+  integrity sha512-G7ETnOAhM7crDBrhgfypedNkWeDgdWNEQadL582qmvar13k2Ry2sWrYZJNERi8IXVtqq5CVwVl1aHUt64b8+xA==
 
-"@cdktf/provider-azurerm@14.23.1":
-  version "14.23.1"
-  resolved "https://registry.yarnpkg.com/@cdktf/provider-azurerm/-/provider-azurerm-14.23.1.tgz#a0a3d6a6dcb291186a7da0efa8c913f7ec6229ae"
-  integrity sha512-3H20Ozj7dOKmIj6mqorHZEjLNo5wO/MBEVHwu6k53fln/0EciGQa9sDLWBYSb0o40Ycpih9lFp/k6SGRbFlQVg==
+"@cdktn/provider-azurerm@16.1.0":
+  version "16.1.0"
+  resolved "https://registry.yarnpkg.com/@cdktn/provider-azurerm/-/provider-azurerm-16.1.0.tgz#16319fa3095426d4528a547a11253a1779fb4973"
+  integrity sha512-ArrHLoh/ebmY2yymKIxh2wL4HWqgvrK4EOVDfbOnNW8/qKA6/+EjIMBTacfA9C2tUq5zgBoNzImIZyqOiT/JYg==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -4305,7 +4305,7 @@ case@^1.6.3:
   resolved "https://registry.npmjs.org/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
-cdktf@0.21.0, cdktf@^0.21.0:
+cdktf@0.21.0:
   version "0.21.0"
   resolved "https://registry.yarnpkg.com/cdktf/-/cdktf-0.21.0.tgz#0d56cf415345d35de119a7f7075d4ee2792146ae"
   integrity sha512-bdTOOyrFSXw0p5d7/3dye7ZWYzrUatyMjWEAAwTGoqghjygRj6Q55y1QZnSB021NRDzYZ3BhFGsOkpmIjQMzNQ==
