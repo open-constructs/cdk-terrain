@@ -53,17 +53,21 @@ echo "Installing CLI from 'dist'..."
 staging=$(mktemp -d)
 cd ${staging}
 npm init -y > /dev/null
+# Use the same package manager (and version) the rest of the repo uses
+package_manager=$(node -p "require('${cdktf_root}/package.json').packageManager")
+package_manager_name=${package_manager%%@*}
+corepack use "$package_manager"
 # There's only one version in our local registry, so we don't need to specify a version here
 # Retry to ride out transient ECONNRESETs from Verdaccio's upstream fetch
 for attempt in 1 2 3; do
-  if npm install --registry=http://localhost:4873/ --install-strategy=shallow --fetch-retries=5 cdktn-cli; then
+  if "$package_manager_name" add cdktn-cli --registry=http://localhost:4873/; then
     break
   fi
   if [ "$attempt" = "3" ]; then
-    echo "npm install failed after 3 attempts"
+    echo "CLI install failed after 3 attempts"
     exit 1
   fi
-  echo "npm install attempt $attempt failed, retrying in $((attempt * 10))s..."
+  echo "CLI install attempt $attempt failed, retrying in $((attempt * 10))s..."
   sleep $((attempt * 10))
 done
 
@@ -75,7 +79,11 @@ stopLocalRegistry
 export TEST_PATH_CDKTF_CLI=${staging}/node_modules/.bin
 export PATH=$TEST_PATH_CDKTF_CLI:$PATH
 
-echo "Installed CDKTN-CLI version: $(cdktn --version)"
+if ! cdktn_version=$(cdktn --version); then
+  echo "ERROR: 'cdktn --version' failed after install. See the output above for the underlying error."
+  exit 1
+fi
+echo "Installed CDKTN-CLI version: ${cdktn_version}"
 
 # restore working directory
 cd $cwd
