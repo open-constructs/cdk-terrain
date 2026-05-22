@@ -37,11 +37,8 @@ export function spawnInteractive(
   const { args, options } = config;
   const file = config.file;
 
-  const writable = process.stdin.writable;
-
-  // Generally want interactive input for handling various prompts; however,
-  // also need to be able to write specific responses, so create a pipe if not normally possible.
-  options.stdio = [writable ? "inherit" : "pipe", "pipe", "pipe"];
+  // Input and output is processed and modified by the caller.
+  options.stdio = "pipe";
 
   logger.trace(
     `Spawning process with file=${file}, args=${
