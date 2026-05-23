@@ -102,6 +102,7 @@
         "lerna": "^8.2.1",
         "lint-staged": "^15.5.2",
         "prettier": "^3.8.1",
+        "publib": "^0.2.1047",
         "semver": "^7.7.4",
         "standard-version": "^9.5.0",
         "tsc-files": "^1.1.4",

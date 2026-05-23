@@ -41,17 +41,17 @@
   ],
   "dependencies": {
     "@types/node": "20.19.1",
-    "constructs": "10.6.0"
-  },
-  "peerDependencies": {
+    "constructs": "10.6.0",
     "@cdktn/hcl-tools": "0.0.0",
     "@cdktn/hcl2cdk": "0.0.0",
     "@cdktn/hcl2json": "0.0.0",
-    "cdktn": "0.0.0",
-    "jsii": "5.9.37",
-    "jsii-pacmak": "1.128.0",
     "yargs": "17.7.2",
     "yoga-layout-prebuilt": "1.10.0"
+  },
+  "peerDependencies": {
+    "cdktn": "0.0.0",
+    "jsii": "5.9.37",
+    "jsii-pacmak": "1.128.0"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

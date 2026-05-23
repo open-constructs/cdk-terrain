@@ -25,7 +25,16 @@
         // Read at runtime via pkg.dependencies.constructs lookup in
         // @cdktn/cli-core/src/lib/init.ts (after esbuild bundles, pkg-up
         // resolves cdktn-cli's package.json — not cli-core's).
-        "constructs"
+        "constructs",
+        // Not bundled with esbuild
+        // Reference is otherwise lost as cli-core (what actually references it) is bundled.
+        "@cdktn/hcl-tools",
+        // Not bundled with esbuild
+        // Reference is otherwise lost as provider-schema (what actually references it) is bundled.
+        "@cdktn/hcl2json",
+        // Not bundled with esbuild due to a bug with 1.x versions during bundling.
+        // Reference is otherwise lost as ink (what actually references it) is bundled.
+        "yoga-layout-prebuilt"
       ]
     },
     "packages/@cdktn/cli-core": {
