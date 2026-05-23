@@ -179,6 +179,7 @@ jobs:
       skip_setup: true
       concurrency_group_prefix: release
       dist_artifact_name: dist-release
+      edge_bindings_artifact_name: edge-provider-bindings-release
     secrets: inherit
 
   provider_integration_test:
@@ -278,6 +279,7 @@ jobs:
       skip_setup: true
       concurrency_group_prefix: release-next
       dist_artifact_name: dist-next
+      edge_bindings_artifact_name: edge-provider-bindings-next
     secrets: inherit
 
   provider_integration_test_next:
