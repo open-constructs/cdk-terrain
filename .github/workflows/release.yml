@@ -179,6 +179,7 @@ jobs:
       skip_setup: true
       concurrency_group_prefix: release
       dist_artifact_name: dist-release
+      edge_bindings_artifact_name: edge-provider-bindings-release
     secrets: inherit
 
   provider_integration_test:
@@ -278,6 +279,7 @@ jobs:
       skip_setup: true
       concurrency_group_prefix: release-next
       dist_artifact_name: dist-next
+      edge_bindings_artifact_name: edge-provider-bindings-next
     secrets: inherit
 
   provider_integration_test_next:
@@ -329,6 +331,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish_release:
+    permissions:
+      contents: read
+      id-token: write
     needs:
       - prepare-release
       - integration_test
@@ -379,6 +384,9 @@ jobs:
   # Release — next
   # ---------------------------------------------------------------------------
   publish_next:
+    permissions:
+      contents: read
+      id-token: write
     needs:
       - prepare-next
       - integration_test_next
