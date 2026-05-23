@@ -628,7 +628,7 @@ export class StructEmitter {
     );
     this.code.openBlock(`if (cdktn.isComplexElement(struct))`);
     this.code.line(
-      `throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");`,
+      `throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");`,
     );
     this.code.closeBlock();
 
@@ -668,7 +668,7 @@ export class StructEmitter {
     );
     this.code.openBlock(`if (cdktn.isComplexElement(struct))`);
     this.code.line(
-      `throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");`,
+      `throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");`,
     );
     this.code.closeBlock();
 

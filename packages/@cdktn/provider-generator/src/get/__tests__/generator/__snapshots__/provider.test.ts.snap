@@ -166,7 +166,7 @@ export interface AwsProviderAssumeRole {
 export function awsProviderAssumeRoleToTerraform(struct?: AwsProviderAssumeRole): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
     external_id: cdktn.stringToTerraform(struct!.externalId),
@@ -180,7 +180,7 @@ export function awsProviderAssumeRoleToTerraform(struct?: AwsProviderAssumeRole)
 export function awsProviderAssumeRoleToHclTerraform(struct?: AwsProviderAssumeRole): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
     external_id: {
@@ -1029,7 +1029,7 @@ export interface AwsProviderEndpoints {
 export function awsProviderEndpointsToTerraform(struct?: AwsProviderEndpoints | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
     accessanalyzer: cdktn.stringToTerraform(struct!.accessanalyzer),
@@ -1174,7 +1174,7 @@ export function awsProviderEndpointsToTerraform(struct?: AwsProviderEndpoints | 
 export function awsProviderEndpointsToHclTerraform(struct?: AwsProviderEndpoints | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
     accessanalyzer: {
@@ -2011,7 +2011,7 @@ export interface AwsProviderIgnoreTags {
 export function awsProviderIgnoreTagsToTerraform(struct?: AwsProviderIgnoreTags): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
     key_prefixes: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.keyPrefixes),
@@ -2023,7 +2023,7 @@ export function awsProviderIgnoreTagsToTerraform(struct?: AwsProviderIgnoreTags)
 export function awsProviderIgnoreTagsToHclTerraform(struct?: AwsProviderIgnoreTags): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
     key_prefixes: {
@@ -2686,7 +2686,7 @@ export interface ElasticstackProviderElasticsearch {
 export function elasticstackProviderElasticsearchToTerraform(struct?: ElasticstackProviderElasticsearch): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
     api_key: cdktn.stringToTerraform(struct!.apiKey),
@@ -2707,7 +2707,7 @@ export function elasticstackProviderElasticsearchToTerraform(struct?: Elasticsta
 export function elasticstackProviderElasticsearchToHclTerraform(struct?: ElasticstackProviderElasticsearch): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
     api_key: {

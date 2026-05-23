@@ -47,7 +47,7 @@ class Command extends BaseCommand {
       })
       .option("enable-crash-reporting", {
         type: "boolean",
-        desc: "Enable crash reporting for the CLI, refer to https://cdk.tf/crash-reporting for more details",
+        desc: "Enable crash reporting for the CLI, refer to https://cdktn.io/docs/telemetry#crash-reporting for more details",
       })
       .option("providers", {
         describe: "Providers to add to your project",

@@ -296,7 +296,7 @@ Type of target: ${targetType}
 export const constructDependencyBelowV10 = () =>
   new Error(`Version mismatch! CDKTN version 0.6 requires your constructs version to be v10 or above.
 
-Update your constructs dependency: https://cdk.tf/upgrade-constructs-v10
+Update your constructs dependency: https://cdktn.io/docs/release/upgrade-guide-v0-6
 `);
 
 export const cloudBackendWorkspaceIsNotDefinedByName = () =>
@@ -552,6 +552,6 @@ export const assetCanNotCreateZipArchive = (
 
 export const terraformModuleHasChildren = (pathName: string) => {
   return new Error(
-    `Trying to add children to a TerraformModule at '${pathName}'. TerraformModules cannot have children, if you want to group resources or constructs in general together please use the Constructs class instead. See https://cdk.tf/constructs for more details.`,
+    `Trying to add children to a TerraformModule at '${pathName}'. TerraformModules cannot have children, if you want to group resources or constructs in general together please use the Constructs class instead. See https://cdktn.io/docs/concepts/constructs for more details.`,
   );
 };
