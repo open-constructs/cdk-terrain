@@ -1,6 +1,6 @@
 ========================================================================================================
 
-  Your cdktn typescript project is ready!
+  Your CDKTN TypeScript project is ready!
 
   cat help                Print this message
 
@@ -30,9 +30,14 @@
     npm run upgrade        Upgrade cdktn modules to latest version
     npm run upgrade:next   Upgrade cdktn modules to latest "@next" version (last commit)
 
- Use Prebuilt Providers:
+ Use Providers:
 
-  You can add one or multiple of the prebuilt providers listed below:
+  You can add prebuilt providers (if available) or locally generated ones using the add command:
+  
+  cdktn provider add "aws@~>3.0" null kreuzwerker/docker
+
+  You can find all prebuilt providers on npm: https://www.npmjs.com/search?q=keywords:cdktn
+  You can also install these providers directly through npm:
 
   npm install @cdktn/provider-aws
   npm install @cdktn/provider-google

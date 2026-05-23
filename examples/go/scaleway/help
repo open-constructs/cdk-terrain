@@ -21,4 +21,12 @@
 
   Learn more about using modules and providers https://cdktn.io/docs/concepts/providers
 
+Use Providers:
+
+  Use the add command to add providers:
+  
+  cdktn provider add "aws@~>3.0" null kreuzwerker/docker
+
+  Learn more: https://cdktn.io/docs/concepts/providers
+
 ========================================================================================================

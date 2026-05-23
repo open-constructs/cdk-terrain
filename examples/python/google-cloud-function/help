@@ -21,4 +21,22 @@
 
   Learn more about using modules and providers https://cdktn.io/docs/concepts/providers
 
+Use Providers:
+
+  You can add prebuilt providers (if available) or locally generated ones using the add command:
+  
+  cdktn provider add "aws@~>3.0" null kreuzwerker/docker
+
+  You can find all prebuilt providers on PyPI: https://pypi.org/user/cdktn-team/
+  You can also install these providers directly through pipenv:
+
+  pipenv install cdktn-provider-aws
+  pipenv install cdktn-provider-google
+  pipenv install cdktn-provider-azurerm
+  pipenv install cdktn-provider-docker
+  pipenv install cdktn-provider-github
+  pipenv install cdktn-provider-null
+
+  You can also build any module or provider locally. Learn more: https://cdktn.io/docs/concepts/providers
+
 ========================================================================================================
