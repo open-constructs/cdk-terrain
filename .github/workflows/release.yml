@@ -349,6 +349,7 @@ jobs:
       - integration_test
       - provider_integration_test
       - unit_test
+      - publish_release
     if: needs.prepare-release.outputs.release_status == 'unreleased'
     container:
       image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
