@@ -10,6 +10,9 @@ env:
   SENTRY_ORG: cdktn
   SENTRY_PROJECT: cdktn
 
+concurrency:
+  group: release
+
 jobs:
   # ---------------------------------------------------------------------------
   # Stable channel: publishes the version already in package.json (skipped if
