@@ -43,8 +43,7 @@ jobs:
       image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     permissions:
       contents: read
-      # --- npm OIDC trusted publishing (uncomment after configuring trusted publishers on npmjs.com) ---
-      # id-token: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -62,8 +61,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_DIST_TAG: ${{ inputs.npm_dist_tag }}
-          # --- npm OIDC trusted publishing (uncomment + remove NPM_TOKEN above after configuring trusted publishers on npmjs.com) ---
-          # NPM_TRUSTED_PUBLISHER: "true"
+          NPM_TRUSTED_PUBLISHER: "true"
 
   release_pypi:
     name: Release to PyPi (${{ inputs.channel }})
