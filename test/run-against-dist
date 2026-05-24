@@ -7,23 +7,12 @@ scriptdir=$(cd $(dirname $0) && pwd)
 source "$scriptdir"/local-registry.sh
 
 function cleanup {
+  set +x
   # Restore the original NPM and Yarn registry URLs and stop Verdaccio
   stopLocalRegistry
 }
 
-function handle_error {
-  cleanup
-  exit 1
-}
-
-function handle_exit {
-  cleanup
-  exit
-}
-
-# Cleanup before exit on any termination signal
-trap 'set +x; handle_error' ERR
-trap 'set +x; handle_exit' SIGQUIT SIGTERM SIGINT SIGKILL SIGHUP
+trap cleanup EXIT
 
 export CDKTF_DIST="${scriptdir}/../dist"
 cwd=$PWD
