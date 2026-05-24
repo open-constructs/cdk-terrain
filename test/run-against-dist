@@ -34,12 +34,21 @@ startLocalRegistry "$scriptdir"/verdaccio.yaml
 
 cd ${CDKTF_DIST}
 
-# verify this is indeed a "dist" directory
-if [ ! -d "js" ] || [ ! -d "python" ] || [ ! -d "java" ] || [ ! -d "dotnet" ] || [ ! -d "go" ] ; then
-  echo "ERROR: unable to find the subdirectories 'js', 'python', 'java', 'dotnet' and 'go' which should be in the 'dist' directory"
-  echo "Did you run 'yarn run package' to create the 'dist' directory?"
+# The JS dist is always required — this script publishes cdktn-cli from
+# dist/js and the CLI drives every language's tests. Per-language dists are
+# only consumed by the jest tests passed in via $@, so missing ones surface
+# as clear test failures rather than blocking the whole run.
+if [ ! -d "js" ]; then
+  echo "ERROR: unable to find the 'js' subdirectory in the 'dist' directory"
+  echo "Did you run 'yarn run package' (or 'yarn run package:js') to create the 'dist' directory?"
   exit 1
 fi
+
+for lang in python java dotnet go; do
+  if [ ! -d "$lang" ]; then
+    echo "WARNING: dist/$lang is missing — tests for that language will fail. Run 'yarn run package:$lang' if you need it."
+  fi
+done
 
 echo "Publishing CLI from 'dist'..."
 for pkg in ${CDKTF_DIST}/js/*.tgz
