@@ -3,22 +3,21 @@
 # Source: https://github.com/facebook/create-react-app/blob/0a827f69ab0d2ee3871ba9b71350031d8a81b7ae/tasks/local-registry.sh
 
 custom_registry_url=localhost:4873
-original_npm_registry_url=`npm get registry`
-original_yarn_registry_url=`yarn config get registry`
-default_verdaccio_package=verdaccio@^6.5.2
+original_npm_registry_url="$(npm get registry)"
+original_yarn_registry_url="$(yarn config get registry)"
 
 function startLocalRegistry {
   # Start local registry
-  tmp_registry_log=`mktemp`
+  tmp_registry_log="$(mktemp)"
   echo "Verdaccio Registry log file: $tmp_registry_log"
   
-  storage_dir="$(dirname $1)/storage"
+  storage_dir="$(dirname "$1")/storage"
   echo "Cleaning storage dir ($storage_dir).."
-  rm -rf $storage_dir
+  rm -rf "$storage_dir"
 
   # Enable job control so the background job becomes its own process group leader.
   set -m
-  npx ${VERDACCIO_PACKAGE:-$default_verdaccio_package} -c $1 &>$tmp_registry_log &
+  npx -c "verdaccio -c $1" &> "$tmp_registry_log" &
   verdaccio_pid="$!"
   set +m
   

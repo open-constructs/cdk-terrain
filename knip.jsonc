@@ -74,7 +74,9 @@
         // TODO: triage and add to package.json — each is imported but undeclared.
         "cdktn",
         "constructs",
-        "cross-spawn"
+        "cross-spawn",
+        // Only used in local-registry.sh.
+        "verdaccio"
       ]
     }
   }
