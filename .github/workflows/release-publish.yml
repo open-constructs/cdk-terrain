@@ -56,7 +56,7 @@ jobs:
           path: dist
       - name: Upgrade npm for OIDC trusted publisher support
         # OIDC publishing requires npm >= 11.5.0 — https://github.com/npm/cli/pull/8336
-        # TODO 
+        # TODO: Remove when Node is updated to version 24+
         run: npm install --global npm@11.15.0
       - name: Release
         run: npx --no publib-npm
