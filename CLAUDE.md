@@ -35,8 +35,10 @@ yarn package          # Build + create distributable packages (requires mvn, rsy
 ### Testing
 
 ```bash
-yarn test             # Run all unit tests
-yarn test:update      # Update snapshots
+yarn test                          # Run all unit tests (via nx run-many)
+yarn test:update                   # Update snapshots
+yarn nx test @cdktn/commons        # Run one package's tests
+yarn nx test @cdktn/commons --watch # Iterative dev loop: reruns on file change
 
 # Some unit tests require dist packages to be built first (they auto-skip if missing):
 yarn package
@@ -50,6 +52,9 @@ yarn integration:update                       # Update integration snapshots
 ```
 
 On Linux with limited tmpfs: `TMPDIR=/var/tmp yarn test`
+
+`yarn nx test <pkg> --watch` is the recommended dev loop — Nx builds the
+`^build` chain once, then jest's watch UI reruns affected tests on each save.
 
 ### Running CLI locally
 

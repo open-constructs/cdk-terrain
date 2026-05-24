@@ -2,6 +2,9 @@
   "name": "cdktn-cli",
   "version": "0.0.0",
   "description": "CDK Terrain CLI",
+  "nx": {
+    "tags": ["unit-test"]
+  },
   "bin": {
     "cdktn": "bundle/bin/cdktn"
   },
@@ -12,12 +15,7 @@
     "postbuild": "node build.js",
     "watch": "yarn compile-build-config && node build.js --watch",
     "watch-preserve-output": "yarn watch",
-    "pretest": "yarn build",
-    "pretest:ci": "yarn build",
-    "test": "jest",
-    "test:ci": "jest --ci",
     "test:update": "jest -u",
-    "jest-watch": "jest --watch",
     "package": "./package.sh",
     "package:js": "./package.sh",
     "dist-clean": "rm -rf dist"
@@ -70,7 +68,6 @@
     "@npmcli/ci-detect": "1.4.0",
     "@sentry/node": "7.120.4",
     "@types/fs-extra": "8.1.5",
-    "@types/jest": "30.0.0",
     "@types/pidusage": "2.0.5",
     "@types/react": "18.3.28",
     "@types/semver": "7.7.1",
@@ -87,7 +84,6 @@
     "ink-spinner": "4.0.3",
     "ink-table": "3.1.0",
     "ink-testing-library": "2.1.0",
-    "jest": "^30.3.0",
     "nock": "13.5.6",
     "open": "7.4.2",
     "pidtree": "0.6.0",
@@ -96,7 +92,6 @@
     "react": "18.3.1",
     "semver": "7.7.4",
     "strip-ansi": "6.0.1",
-    "ts-jest": "29.4.9",
     "tsc-files": "1.1.4",
     "typescript": "5.4.5",
     "uuid": "8.3.2"

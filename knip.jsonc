@@ -64,6 +64,18 @@
     },
     "tools/generate-function-bindings": {
       "project": ["scripts/**/*.ts"]
+    },
+    "test": {
+      "project": ["**/*.ts"],
+      "ignoreDependencies": [
+        // TODO: triage and remove entries — each is a declared dep with no detected usage.
+        "@types/express",
+        "express",
+        // TODO: triage and add to package.json — each is imported but undeclared.
+        "cdktn",
+        "constructs",
+        "cross-spawn"
+      ]
     }
   }
 }

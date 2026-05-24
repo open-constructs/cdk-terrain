@@ -22,8 +22,6 @@ jobs:
     runs-on: depot-ubuntu-24.04-16
     container:
       image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
-    env:
-      CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
 
     steps:
@@ -64,26 +62,24 @@ jobs:
       - name: installing dependencies
         run: |
           yarn install --frozen-lockfile --prefer-offline
-      - name: compile
-        run: |
-          tools/align-version.sh
-          npx lerna run --scope '${{ inputs.package }}' build
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
-      - name: compile cdktn-cli and package
+      - name: align versions
+        run: tools/align-version.sh
+      - name: package (when testing @cdktn/hcl2cdk)
+        # hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which reads
+        # jsii tarballs from the workspace-root dist/ directory.
         if: inputs.package == '@cdktn/hcl2cdk'
-        run: |
-          npx lerna run --scope 'cdktn-cli' build
-          yarn package
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+        run: yarn package
       - name: test
+        # nx test runs the @nx/jest plugin target, with `^build` honored via
+        # nx.json targetDefaults — upstream packages are built automatically.
         run: |
           unset TF_PLUGIN_CACHE_DIR
-          npx lerna run --scope '${{ inputs.package }}' test:ci
+          yarn nx test '${{ inputs.package }}' --ci --coverage --reporters=default --reporters=github-actions
         env:
           TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
           CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
+
+      - name: Coverage summary
+        if: always()
+        run: node tools/test-coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"

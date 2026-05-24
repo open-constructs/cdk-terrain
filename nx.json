@@ -14,6 +14,12 @@
       "options": {
         "targetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
+      }
     }
   ],
   "targetDefaults": {
@@ -36,6 +42,18 @@
       "inputs": ["production", "^production"],
       "outputs": ["{projectRoot}/dist"],
       "cache": true
+    },
+    "test": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ]
+    },
+    "test:update": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ]
     }
   }
 }

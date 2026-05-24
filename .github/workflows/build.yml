@@ -49,6 +49,11 @@ jobs:
           restore-keys: |
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
+      - name: Create TF_PLUGIN_CACHE_DIR if set
+        run: |
+          if [ -n "${TF_PLUGIN_CACHE_DIR:-}" ]; then
+            mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          fi
       - name: install dependencies
         run: yarn install
       - name: build and package

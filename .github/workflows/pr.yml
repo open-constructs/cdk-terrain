@@ -29,26 +29,9 @@ jobs:
     name: "All Unit Tests"
     needs: [quality, build]
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        package:
-          [
-            cdktn,
-            cdktn-cli,
-            "@cdktn/hcl2cdk",
-            "@cdktn/hcl2json",
-            "@cdktn/provider-schema",
-            "@cdktn/provider-generator",
-            "@cdktn/commons",
-            "@cdktn/cli-core",
-          ]
-        terraform_version: ["1.5.5", "1.6.5"]
+    uses: ./.github/workflows/pr-unit.yml
     with:
-      concurrency_group_prefix: pr-all
-      package: ${{ matrix.package }}
-      terraform_version: ${{ matrix.terraform_version }}
+      concurrency_group_prefix: pr
     secrets: inherit
 
   examples:
