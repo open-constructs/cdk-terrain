@@ -6,7 +6,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "get": "cdktn get",
-    "build": "yarn get",
+    "build": "yarn get && tsc",
     "synth": "cdktn synth",
     "compile": "tsc --pretty",
     "watch": "tsc -w",
@@ -26,7 +26,6 @@
   "devDependencies": {
     "@types/jest": "30.0.0",
     "@types/node": "20.17.51",
-    "cdktf-cli": "0.21.0",
     "cdktn-cli": "0.0.0",
     "jest": "^30.3.0",
     "ts-node": "10.9.1",

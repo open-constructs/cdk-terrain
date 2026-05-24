@@ -1,19 +1,17 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App, TerraformHclModule, TerraformStack, Testing } from "../lib";
+import { TerraformHclModule, TerraformStack, Testing } from "../src";
 import * as path from "path";
-import { TerraformModuleAsset } from "../lib/terraform-module-asset";
+import { TerraformModuleAsset } from "../src/terraform-module-asset";
 
 describe("createAssetsFromLocalModules", () => {
   test("remote source without skipAssetCreationFromLocalModules", () => {
     const remoteSource = "terraform-aws-modules/eks/aws";
 
-    const app = Testing.stubVersion(
-      new App({
-        stackTraces: false,
-        context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
-      }),
-    );
+    const app = Testing.app({
+      enableFutureFlags: false,
+      context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
+    });
     const stack = new TerraformStack(app, "MyStack");
 
     const moduleOptionsNotExists = new TerraformHclModule(
@@ -30,12 +28,10 @@ describe("createAssetsFromLocalModules", () => {
   test("remote source with skipAssetCreationFromLocalModules set to true", () => {
     const remoteSource = "terraform-aws-modules/eks/aws";
 
-    const app = Testing.stubVersion(
-      new App({
-        stackTraces: false,
-        context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
-      }),
-    );
+    const app = Testing.app({
+      enableFutureFlags: false,
+      context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
+    });
     const stack = new TerraformStack(app, "MyStack");
 
     const moduleOptionsTrue = new TerraformHclModule(
@@ -53,12 +49,10 @@ describe("createAssetsFromLocalModules", () => {
   test("remote source with skipAssetCreationFromLocalModules set to false", () => {
     const remoteSource = "terraform-aws-modules/eks/aws";
 
-    const app = Testing.stubVersion(
-      new App({
-        stackTraces: false,
-        context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
-      }),
-    );
+    const app = Testing.app({
+      enableFutureFlags: false,
+      context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
+    });
     const stack = new TerraformStack(app, "MyStack");
 
     const moduleOptionsFalse = new TerraformHclModule(
@@ -76,15 +70,13 @@ describe("createAssetsFromLocalModules", () => {
   test("local source without skipAssetCreationFromLocalModules", () => {
     const localSource = "../";
 
-    const app = Testing.stubVersion(
-      new App({
-        stackTraces: false,
-        context: {
-          cdktfJsonPath: path.resolve(__dirname, "fixtures/app"),
-          cdktfRelativeModules: [localSource],
-        },
-      }),
-    );
+    const app = Testing.app({
+      enableFutureFlags: false,
+      context: {
+        cdktfJsonPath: path.resolve(__dirname, "fixtures/app"),
+        cdktfRelativeModules: [localSource],
+      },
+    });
     const stack = new TerraformStack(app, "MyStack");
 
     const moduleOptionsNotExists = new TerraformHclModule(
@@ -105,15 +97,13 @@ describe("createAssetsFromLocalModules", () => {
     const localSource = "../";
     const cdktfJsonPath = path.resolve(__dirname, "fixtures/app");
 
-    const app = Testing.stubVersion(
-      new App({
-        stackTraces: false,
-        context: {
-          cdktfJsonPath,
-          cdktfRelativeModules: [localSource],
-        },
-      }),
-    );
+    const app = Testing.app({
+      enableFutureFlags: false,
+      context: {
+        cdktfJsonPath,
+        cdktfRelativeModules: [localSource],
+      },
+    });
     const stack = new TerraformStack(app, "MyStack");
 
     const moduleOptionsTrue = new TerraformHclModule(
@@ -134,12 +124,10 @@ describe("createAssetsFromLocalModules", () => {
   test("local source with skipAssetCreationFromLocalModules set to true", () => {
     const localSource = "../";
 
-    const app = Testing.stubVersion(
-      new App({
-        stackTraces: false,
-        context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
-      }),
-    );
+    const app = Testing.app({
+      enableFutureFlags: false,
+      context: { cdktfJsonPath: path.resolve(__dirname, "fixtures/app") },
+    });
     const stack = new TerraformStack(app, "MyStack");
 
     const moduleOptionsFalse = new TerraformHclModule(

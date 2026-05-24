@@ -1,6 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
+import * as os from "os";
 import { confirm, password } from "@inquirer/prompts";
 import * as open from "open";
 import * as chalk from "chalk";
@@ -8,7 +9,7 @@ import * as terraformCloudClient from "./terraform-cloud-client";
 import { Errors, logger } from "@cdktn/commons";
 
 const chalkColour = new chalk.Instance();
-const homedir = require("os").homedir();
+const homedir = os.homedir();
 const terraformCredentialsFilePath = `${homedir}/.terraform.d/credentials.tfrc.json`;
 
 const nonIteractiveLoginWithNoTokenError = (invalid: boolean) =>

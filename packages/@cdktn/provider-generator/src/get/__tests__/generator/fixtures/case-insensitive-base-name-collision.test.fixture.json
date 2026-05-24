@@ -1,0 +1,82 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/oracle/oci": {
+      "resource_schemas": {
+        "oci_load_balancer_backend_set": {
+          "version": 1,
+          "block": {
+            "attributes": {
+              "name": {
+                "type": "string",
+                "required": true
+              }
+            }
+          },
+          "block_types": {}
+        },
+        "oci_load_balancer_backendset": {
+          "version": 1,
+          "block": {
+            "attributes": {
+              "name": {
+                "type": "string",
+                "required": true
+              }
+            }
+          },
+          "block_types": {}
+        }
+      },
+      "data_source_schemas": {
+        "oci_devops_repository_mirror_record": {
+          "version": 1,
+          "block": {
+            "attributes": {
+              "id": {
+                "type": "string",
+                "computed": true
+              }
+            }
+          },
+          "block_types": {}
+        },
+        "oci_devops_repository_mirrorrecord_history": {
+          "version": 1,
+          "block": {
+            "attributes": {
+              "id": {
+                "type": "string",
+                "computed": true
+              }
+            }
+          },
+          "block_types": {}
+        },
+        "oci_load_balancer_backend_sets": {
+          "version": 1,
+          "block": {
+            "attributes": {
+              "id": {
+                "type": "string",
+                "computed": true
+              }
+            }
+          },
+          "block_types": {}
+        },
+        "oci_load_balancer_backendsets": {
+          "version": 1,
+          "block": {
+            "attributes": {
+              "id": {
+                "type": "string",
+                "computed": true
+              }
+            }
+          },
+          "block_types": {}
+        }
+      }
+    }
+  }
+}

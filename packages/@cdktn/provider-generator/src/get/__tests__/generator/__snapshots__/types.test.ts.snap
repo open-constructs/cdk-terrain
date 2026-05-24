@@ -295,6 +295,614 @@ export class BooleanMap extends cdktn.TerraformResource {
 "
 `;
 
+exports[`case-insensitive base name collision: data-oci-devops-repository-mirror-record 1`] = `
+"// https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirror_record
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface DataOciDevopsRepositoryMirrorRecordConfig extends cdktn.TerraformMetaArguments {
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirror_record oci_devops_repository_mirror_record}
+*/
+export class DataOciDevopsRepositoryMirrorRecord extends cdktn.TerraformDataSource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "oci_devops_repository_mirror_record";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a DataOciDevopsRepositoryMirrorRecord resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the DataOciDevopsRepositoryMirrorRecord to import
+  * @param importFromId The id of the existing DataOciDevopsRepositoryMirrorRecord that should be imported. Refer to the {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirror_record#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the DataOciDevopsRepositoryMirrorRecord to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "oci_devops_repository_mirror_record", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirror_record oci_devops_repository_mirror_record} Data Source
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options DataOciDevopsRepositoryMirrorRecordConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: DataOciDevopsRepositoryMirrorRecordConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'oci_devops_repository_mirror_record',
+      terraformGeneratorMetadata: {
+        providerName: 'oci'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // id - computed: true, optional: false, required: false
+  public get id() {
+    return this.getStringAttribute('id');
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+    };
+    return attrs;
+  }
+}
+"
+`;
+
+exports[`case-insensitive base name collision: data-oci-devops-repository-mirrorrecord-history 1`] = `
+"// https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirrorrecord_history
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface DataOciDevopsRepositoryMirrorrecordHistoryConfig extends cdktn.TerraformMetaArguments {
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirrorrecord_history oci_devops_repository_mirrorrecord_history}
+*/
+export class DataOciDevopsRepositoryMirrorrecordHistory extends cdktn.TerraformDataSource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "oci_devops_repository_mirrorrecord_history";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a DataOciDevopsRepositoryMirrorrecordHistory resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the DataOciDevopsRepositoryMirrorrecordHistory to import
+  * @param importFromId The id of the existing DataOciDevopsRepositoryMirrorrecordHistory that should be imported. Refer to the {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirrorrecord_history#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the DataOciDevopsRepositoryMirrorrecordHistory to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "oci_devops_repository_mirrorrecord_history", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/devops_repository_mirrorrecord_history oci_devops_repository_mirrorrecord_history} Data Source
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options DataOciDevopsRepositoryMirrorrecordHistoryConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: DataOciDevopsRepositoryMirrorrecordHistoryConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'oci_devops_repository_mirrorrecord_history',
+      terraformGeneratorMetadata: {
+        providerName: 'oci'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // id - computed: true, optional: false, required: false
+  public get id() {
+    return this.getStringAttribute('id');
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+    };
+    return attrs;
+  }
+}
+"
+`;
+
+exports[`case-insensitive base name collision: data-oci-load-balancer-backend-sets 1`] = `
+"// https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backend_sets
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface DataOciLoadBalancerBackendSetsConfig extends cdktn.TerraformMetaArguments {
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backend_sets oci_load_balancer_backend_sets}
+*/
+export class DataOciLoadBalancerBackendSets extends cdktn.TerraformDataSource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "oci_load_balancer_backend_sets";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a DataOciLoadBalancerBackendSets resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the DataOciLoadBalancerBackendSets to import
+  * @param importFromId The id of the existing DataOciLoadBalancerBackendSets that should be imported. Refer to the {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backend_sets#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the DataOciLoadBalancerBackendSets to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "oci_load_balancer_backend_sets", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backend_sets oci_load_balancer_backend_sets} Data Source
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options DataOciLoadBalancerBackendSetsConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: DataOciLoadBalancerBackendSetsConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'oci_load_balancer_backend_sets',
+      terraformGeneratorMetadata: {
+        providerName: 'oci'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // id - computed: true, optional: false, required: false
+  public get id() {
+    return this.getStringAttribute('id');
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+    };
+    return attrs;
+  }
+}
+"
+`;
+
+exports[`case-insensitive base name collision: data-oci-load-balancer-backendsets-a 1`] = `
+"// https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backendsets
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface DataOciLoadBalancerBackendsetsAConfig extends cdktn.TerraformMetaArguments {
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backendsets oci_load_balancer_backendsets}
+*/
+export class DataOciLoadBalancerBackendsetsA extends cdktn.TerraformDataSource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "oci_load_balancer_backendsets";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a DataOciLoadBalancerBackendsetsA resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the DataOciLoadBalancerBackendsetsA to import
+  * @param importFromId The id of the existing DataOciLoadBalancerBackendsetsA that should be imported. Refer to the {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backendsets#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the DataOciLoadBalancerBackendsetsA to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "oci_load_balancer_backendsets", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/load_balancer_backendsets oci_load_balancer_backendsets} Data Source
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options DataOciLoadBalancerBackendsetsAConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: DataOciLoadBalancerBackendsetsAConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'oci_load_balancer_backendsets',
+      terraformGeneratorMetadata: {
+        providerName: 'oci'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // id - computed: true, optional: false, required: false
+  public get id() {
+    return this.getStringAttribute('id');
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+    };
+    return attrs;
+  }
+}
+"
+`;
+
+exports[`case-insensitive base name collision: index.ts 1`] = `
+"// generated by cdktn get
+export * as loadBalancerBackendSet from './load-balancer-backend-set/index';
+export * as loadBalancerBackendsetA from './load-balancer-backendset-a/index';
+export * as dataOciDevopsRepositoryMirrorRecord from './data-oci-devops-repository-mirror-record/index';
+export * as dataOciDevopsRepositoryMirrorrecordHistory from './data-oci-devops-repository-mirrorrecord-history/index';
+export * as dataOciLoadBalancerBackendSets from './data-oci-load-balancer-backend-sets/index';
+export * as dataOciLoadBalancerBackendsetsA from './data-oci-load-balancer-backendsets-a/index';
+
+"
+`;
+
+exports[`case-insensitive base name collision: lazy-index.ts 1`] = `
+"// generated by cdktn get
+Object.defineProperty(exports, 'loadBalancerBackendSet', { get: function () { return require('./load-balancer-backend-set'); } });
+Object.defineProperty(exports, 'loadBalancerBackendsetA', { get: function () { return require('./load-balancer-backendset-a'); } });
+Object.defineProperty(exports, 'dataOciDevopsRepositoryMirrorRecord', { get: function () { return require('./data-oci-devops-repository-mirror-record'); } });
+Object.defineProperty(exports, 'dataOciDevopsRepositoryMirrorrecordHistory', { get: function () { return require('./data-oci-devops-repository-mirrorrecord-history'); } });
+Object.defineProperty(exports, 'dataOciLoadBalancerBackendSets', { get: function () { return require('./data-oci-load-balancer-backend-sets'); } });
+Object.defineProperty(exports, 'dataOciLoadBalancerBackendsetsA', { get: function () { return require('./data-oci-load-balancer-backendsets-a'); } });
+
+"
+`;
+
+exports[`case-insensitive base name collision: load-balancer-backend-set 1`] = `
+"// https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backend_set
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface LoadBalancerBackendSetConfig extends cdktn.TerraformMetaArguments {
+  /**
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backend_set#name LoadBalancerBackendSet#name}
+  */
+  readonly name: string;
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backend_set oci_load_balancer_backend_set}
+*/
+export class LoadBalancerBackendSet extends cdktn.TerraformResource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "oci_load_balancer_backend_set";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a LoadBalancerBackendSet resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the LoadBalancerBackendSet to import
+  * @param importFromId The id of the existing LoadBalancerBackendSet that should be imported. Refer to the {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backend_set#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the LoadBalancerBackendSet to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "oci_load_balancer_backend_set", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backend_set oci_load_balancer_backend_set} Resource
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options LoadBalancerBackendSetConfig
+  */
+  public constructor(scope: Construct, id: string, config: LoadBalancerBackendSetConfig) {
+    super(scope, id, {
+      terraformResourceType: 'oci_load_balancer_backend_set',
+      terraformGeneratorMetadata: {
+        providerName: 'oci'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+    this._name = config.name;
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // name - computed: false, optional: false, required: true
+  private _name?: string; 
+  public get name() {
+    return this.getStringAttribute('name');
+  }
+  public set name(value: string) {
+    this._name = value;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get nameInput() {
+    return this._name;
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+      name: cdktn.stringToTerraform(this._name),
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+      name: {
+        value: cdktn.stringToHclTerraform(this._name),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+    };
+
+    // remove undefined attributes
+    return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined ))
+  }
+}
+"
+`;
+
+exports[`case-insensitive base name collision: load-balancer-backendset-a 1`] = `
+"// https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backendset
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface LoadBalancerBackendsetAConfig extends cdktn.TerraformMetaArguments {
+  /**
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backendset#name LoadBalancerBackendsetA#name}
+  */
+  readonly name: string;
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backendset oci_load_balancer_backendset}
+*/
+export class LoadBalancerBackendsetA extends cdktn.TerraformResource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "oci_load_balancer_backendset";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a LoadBalancerBackendsetA resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the LoadBalancerBackendsetA to import
+  * @param importFromId The id of the existing LoadBalancerBackendsetA that should be imported. Refer to the {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backendset#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the LoadBalancerBackendsetA to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "oci_load_balancer_backendset", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/load_balancer_backendset oci_load_balancer_backendset} Resource
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options LoadBalancerBackendsetAConfig
+  */
+  public constructor(scope: Construct, id: string, config: LoadBalancerBackendsetAConfig) {
+    super(scope, id, {
+      terraformResourceType: 'oci_load_balancer_backendset',
+      terraformGeneratorMetadata: {
+        providerName: 'oci'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+    this._name = config.name;
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // name - computed: false, optional: false, required: true
+  private _name?: string; 
+  public get name() {
+    return this.getStringAttribute('name');
+  }
+  public set name(value: string) {
+    this._name = value;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get nameInput() {
+    return this._name;
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+      name: cdktn.stringToTerraform(this._name),
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+      name: {
+        value: cdktn.stringToHclTerraform(this._name),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+    };
+
+    // remove undefined attributes
+    return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined ))
+  }
+}
+"
+`;
+
 exports[`computed complex attribute 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/computed_complex
 // generated from terraform resource schema
@@ -411,7 +1019,7 @@ export class ComputedComplexEgressList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -577,7 +1185,7 @@ export class ComputedComplexNestedResourcesAutoscalingGroupsList extends cdktn.C
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -658,7 +1266,7 @@ export class ComputedComplexNestedResourcesList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -830,7 +1438,7 @@ export class BlockTypeNestedComputedListInputsStartingPositionConfigurationList 
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -959,7 +1567,7 @@ export class BlockTypeNestedComputedListInputsList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -1454,7 +2062,7 @@ export class ComputedOptionalComplexEgressList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -1806,7 +2414,7 @@ export class DeeplyNestedBlockTypesLifecycleRuleList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -2371,13 +2979,13 @@ export class FunctionResource extends cdktn.TerraformResource {
 
 exports[`incompatible resource names: index.ts 1`] = `
 "// generated by cdktn get
-export * as stringResource from './string-resource';
-export * as objectResource from './object-resource';
-export * as functionResource from './function-resource';
-export * as staticResource from './static-resource';
-export * as providerResource from './provider-resource';
-export * as licenseResource from './license-resource';
-export * as versionResource from './version-resource';
+export * as stringResource from './string-resource/index';
+export * as objectResource from './object-resource/index';
+export * as functionResource from './function-resource/index';
+export * as staticResource from './static-resource/index';
+export * as providerResource from './provider-resource/index';
+export * as licenseResource from './license-resource/index';
+export * as versionResource from './version-resource/index';
 
 "
 `;
@@ -3166,7 +3774,7 @@ export class ComplexLlListList extends cdktn.MapList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3185,7 +3793,7 @@ export class ComplexLlList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3265,7 +3873,7 @@ export class ComplexLsListList extends cdktn.MapList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3284,7 +3892,7 @@ export class ComplexLsList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3364,7 +3972,7 @@ export class ComplexSlListList extends cdktn.MapList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3383,7 +3991,7 @@ export class ComplexSlList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3463,7 +4071,7 @@ export class ComplexSsListList extends cdktn.MapList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3482,7 +4090,7 @@ export class ComplexSsList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -3728,7 +4336,7 @@ export class DataAirbyteSourceSchemaCatalogSyncCatalogList extends cdktn.Complex
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -5491,7 +6099,7 @@ export class BlockTypeSetListTimeoutsSetList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -5607,7 +6215,7 @@ export class BlockTypeSetListTimeoutsListStructList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**

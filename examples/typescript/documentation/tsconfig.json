@@ -16,11 +16,11 @@
     "target": "ES2018",
     "incremental": true,
     "paths": {
-      "@cdktf/provider-aws/lib/*": ["./.gen/providers/aws/*/index.ts"],
-      "@cdktf/provider-dnsimple/lib/*": ["./.gen/providers/dnsimple/*/index.ts"],
-      "@cdktf/provider-github/lib/*": ["./.gen/providers/github/*/index.ts"],
-      "@cdktf/provider-kubernetes/lib/*": ["./.gen/providers/kubernetes/*/index.ts"],
-      "@cdktf/provider-random/lib/*": ["./.gen/providers/random/*/index.ts"]
+      "@cdktn/provider-aws/lib/*": ["./.gen/providers/aws/*/index.ts"],
+      "@cdktn/provider-dnsimple/lib/*": ["./.gen/providers/dnsimple/*/index.ts"],
+      "@cdktn/provider-github/lib/*": ["./.gen/providers/github/*/index.ts"],
+      "@cdktn/provider-kubernetes/lib/*": ["./.gen/providers/kubernetes/*/index.ts"],
+      "@cdktn/provider-random/lib/*": ["./.gen/providers/random/*/index.ts"]
     }
   },
   "include": [ "**/*.ts" ],

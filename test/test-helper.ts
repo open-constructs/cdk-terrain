@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: MPL-2.0
 import { TemplateServer } from "./template-server";
 import { spawn, execSync } from "child_process";
-import * as execa from "execa";
+import execa from "execa";
 import { spawn as crossSpawn } from "cross-spawn";
 
-const os = require("os");
-const path = require("path");
-const fs = require("fs");
-const fse = require("fs-extra");
-const stripAnsi = require("strip-ansi");
+import * as os from "os";
+import * as path from "path";
+import * as fs from "fs";
+import * as fse from "fs-extra";
+import stripAnsi from "strip-ansi";
 
 function execSyncLogErrors(...args: Parameters<typeof execSync>) {
   try {
@@ -425,6 +425,9 @@ export class TestDriver {
       "PATH",
       `${path.join(this.workingDirectory, ".venv", "bin")}:${process.env.PATH}`,
     );
+
+    // Upgrade pip to avoid wheel-installer assertion bugs on old wheels
+    await this.exec("pip install --upgrade pip");
   };
 
   readLocalFile = (fileName: string): string => {

@@ -1,19 +1,19 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
 import { CodeMaker } from "codemaker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 // this is a workaround for a bug introduced in TS 3.9.x and seems to be unlikely to get fixed.
 // Since jsii relies on TS < 4 at the moment we can't use newer TS versions which have this fixed (^4.1).
 // see https://github.com/hashicorp/terraform-cdk/pull/1248 for more context
 test("shard exports across multiple files to avoid generating files with more than a 1000 exports", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "export-sharding.test"),
-  );
+  const workdir = tmp("export-sharding.test");
 
   const spec = JSON.parse(
     fs.readFileSync(
@@ -129,9 +129,7 @@ test("shard exports across multiple files to avoid generating files with more th
 
 test("shard exports across multiple files to avoid generating files with more than a 1000 exports in a provider without namespaces", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "export-sharding-no-namespace.test"),
-  );
+  const workdir = tmp("export-sharding-no-namespace.test");
 
   const spec = JSON.parse(
     fs.readFileSync(

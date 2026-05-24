@@ -4,7 +4,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { execSync } from "child_process";
-import { archiveSync } from "../lib/private/fs";
+import { unzipSync } from "fflate";
+import { archiveSync } from "../src/private/fs";
 
 function createTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-archive-test-"));
@@ -152,5 +153,72 @@ describe("archiveSync", () => {
   test("throws on nonexistent source directory", () => {
     const zipPath = path.join(destDir, "output.zip");
     expect(() => archiveSync("/nonexistent/path", zipPath)).toThrow();
+  });
+});
+
+describe("archiveSync fflate regression", () => {
+  let srcDir: string;
+  let destDir: string;
+
+  beforeEach(() => {
+    srcDir = createTempDir();
+    destDir = createTempDir();
+  });
+
+  afterEach(() => {
+    fs.rmSync(srcDir, { recursive: true, force: true });
+    fs.rmSync(destDir, { recursive: true, force: true });
+  });
+
+  test("fflate unzipSync round-trips byte-for-byte", () => {
+    const inputs: Record<string, Buffer> = {
+      "a.txt": Buffer.from("alpha"),
+      "nested/b.txt": Buffer.from("beta beta beta"),
+      "binary.bin": Buffer.from([0x00, 0x01, 0xff, 0xfe, 0x80, 0x7f]),
+      "empty.txt": Buffer.from(""),
+    };
+    for (const [rel, content] of Object.entries(inputs)) {
+      const full = path.join(srcDir, rel);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, content);
+    }
+
+    const zipPath = path.join(destDir, "output.zip");
+    archiveSync(srcDir, zipPath);
+
+    const unzipped = unzipSync(fs.readFileSync(zipPath));
+    expect(Object.keys(unzipped).sort()).toEqual(Object.keys(inputs).sort());
+    for (const [rel, expected] of Object.entries(inputs)) {
+      expect(Buffer.from(unzipped[rel])).toEqual(expected);
+    }
+  });
+
+  test("output is a structurally valid ZIP archive", () => {
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "hello");
+    const zipPath = path.join(destDir, "output.zip");
+    archiveSync(srcDir, zipPath);
+
+    const bytes = fs.readFileSync(zipPath);
+    // Local file header signature at offset 0: PK\x03\x04
+    expect(bytes.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+    // End of central directory record signature must appear in the tail
+    const eocd = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
+    expect(bytes.lastIndexOf(eocd)).toBeGreaterThan(0);
+  });
+
+  test("level: 9 actually engages compression", () => {
+    // 64 KiB of repetitive data must compress to well under the level-1
+    // ceiling we'd expect from a stored-or-barely-deflated stream.
+    const repetitive = Buffer.alloc(64 * 1024, "a");
+    fs.writeFileSync(path.join(srcDir, "big.txt"), repetitive);
+
+    const zipPath = path.join(destDir, "output.zip");
+    archiveSync(srcDir, zipPath);
+
+    const zipSize = fs.statSync(zipPath).size;
+    // At level 9, 64 KiB of one byte should compress to a few hundred bytes
+    // including ZIP framing. 2 KiB is a generous ceiling that still catches
+    // any future regression to store-mode or near-zero compression.
+    expect(zipSize).toBeLessThan(2048);
   });
 });

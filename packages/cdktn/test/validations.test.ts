@@ -1,17 +1,17 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App, TerraformStack, Testing } from "../lib";
+import { App, TerraformStack, Testing } from "../src";
 
-import fs = require("fs");
-import path = require("path");
-import os = require("os");
 import { Construct, IValidation } from "constructs";
 import { TestResource } from "./helper/resource";
-import { ValidateBinaryVersion } from "../lib/validations";
+import { ValidateBinaryVersion } from "../src/validations";
 import { TestProvider } from "./helper/provider";
+import { createTmpHelper } from "./helper/tmp";
+
+const tmp = createTmpHelper();
 
 test("validations are executed recursively", () => {
-  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const outdir = tmp("cdktf.outdir.");
   const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
   const stack = new TerraformStack(app, "MyStack");
 
@@ -65,7 +65,7 @@ class CustomConstruct extends Construct {
 
 describe("ValidateBinaryVersion", () => {
   test("validates the version of a binary", () => {
-    const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+    const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
     const stack = new TerraformStack(app, "MyStack");
     new TestProvider(stack, "foo", {});
@@ -89,7 +89,7 @@ describe("ValidateBinaryVersion", () => {
   });
 
   test("validation passes if the version is correct", () => {
-    const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+    const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
     const stack = new TerraformStack(app, "MyStack");
     new TestProvider(stack, "foo", {});
@@ -107,7 +107,7 @@ describe("ValidateBinaryVersion", () => {
   });
 
   test("validation fails if version command fails", () => {
-    const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+    const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
     const stack = new TerraformStack(app, "MyStack");
     new TestProvider(stack, "foo", {});
@@ -127,7 +127,7 @@ describe("ValidateBinaryVersion", () => {
   });
 
   test("validation fails if version command returns no version string", () => {
-    const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+    const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
     const stack = new TerraformStack(app, "MyStack");
     new TestProvider(stack, "foo", {});

@@ -1,9 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformStack, Manifest, App, Annotations, Testing } from "../lib";
+import { TerraformStack, Manifest, App, Annotations, Testing } from "../src";
 import * as fs from "fs";
 import * as path from "path";
-import * as os from "os";
+import { createTmpHelper } from "./helper/tmp";
+
+const tmp = createTmpHelper();
 
 test("filename", () => {
   expect(Manifest.fileName).toEqual("manifest.json");
@@ -14,16 +16,16 @@ test("stacksFolder", () => {
 });
 
 test("create stacks folder", () => {
-  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const outdir = tmp("cdktf.outdir.");
   new Manifest("0.0.0", outdir, false);
   expect(fs.existsSync(path.join(outdir, Manifest.stacksFolder))).toBeTruthy();
 });
 
 test("get stack manifest", () => {
-  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const outdir = tmp("cdktf.outdir.");
   const manifest = new Manifest("0.0.0", outdir, false);
 
-  const app = new App();
+  const app = Testing.app({ stubVersion: false, enableFutureFlags: false });
   const stackManifest = manifest.forStack(
     new TerraformStack(app, "this-is-a-stack"),
   );
@@ -42,10 +44,10 @@ test("get stack manifest", () => {
 });
 
 test("write manifest", () => {
-  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const outdir = tmp("cdktf.outdir.");
   const manifest = new Manifest("0.0.0", outdir, false);
 
-  const app = new App();
+  const app = Testing.app({ stubVersion: false, enableFutureFlags: false });
   manifest.forStack(new TerraformStack(app, "this-is-a-stack"));
 
   manifest.writeToFile();
@@ -78,7 +80,7 @@ describe("manifest annotations", () => {
   afterAll(() => delete process.env.CDKTF_CONTINUE_SYNTH_ON_ERROR_ANNOTATIONS);
 
   test("exist after synth", () => {
-    const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+    const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ outdir, stackTraces: false }));
     const stack = new TerraformStack(app, "this-is-a-stack");
     Annotations.of(stack).addInfo("an info");

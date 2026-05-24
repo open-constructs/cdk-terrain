@@ -35,8 +35,10 @@ yarn package          # Build + create distributable packages (requires mvn, rsy
 ### Testing
 
 ```bash
-yarn test             # Run all unit tests
-yarn test:update      # Update snapshots
+yarn test                          # Run all unit tests (via nx run-many)
+yarn test:update                   # Update snapshots
+yarn nx test @cdktn/commons        # Run one package's tests
+yarn nx test @cdktn/commons --watch # Iterative dev loop: reruns on file change
 
 # Some unit tests require dist packages to be built first (they auto-skip if missing):
 yarn package
@@ -50,6 +52,9 @@ yarn integration:update                       # Update integration snapshots
 ```
 
 On Linux with limited tmpfs: `TMPDIR=/var/tmp yarn test`
+
+`yarn nx test <pkg> --watch` is the recommended dev loop — Nx builds the
+`^build` chain once, then jest's watch UI reruns affected tests on each save.
 
 ### Running CLI locally
 
@@ -106,7 +111,7 @@ This is a **JSII monorepo** (Lerna + Yarn workspaces) that compiles TypeScript t
 
 ## Feature Flags
 
-Feature flags in `packages/cdktn/lib/features.ts` enable breaking behavior changes behind opt-in flags. New projects get flags enabled via `cdktf.json`. Add new flags to `FUTURE_FLAGS` map.
+Feature flags in `packages/cdktn/src/features.ts` enable breaking behavior changes behind opt-in flags. New projects get flags enabled via `cdktf.json`. Add new flags to `FUTURE_FLAGS` map.
 
 ## Constitution
 
@@ -128,7 +133,6 @@ PR labels control which CI jobs run:
 
 - `ci/skip-integration`, `ci/skip-provider-integration`, `ci/skip-unit`, `ci/skip-examples` — skip test suites
 - `ci/unit-only` — skip integration/provider-integration/examples
-- `ci/run-unit/<package>` — trigger specific package unit tests (e.g. `ci/run-unit/cdktn`)
 
 ## Debugging
 

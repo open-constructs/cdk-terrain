@@ -3,7 +3,7 @@
 // DOCS_BLOCK_START:modules-install,modules-create,modules-local
 import { Construct } from "constructs";
 import { TerraformStack } from "cdktn";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
 // DOCS_BLOCK_END:modules-install,modules-create,modules-local
 
 // DOCS_BLOCK_START:modules-create

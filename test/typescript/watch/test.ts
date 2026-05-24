@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { TestDriver } from "../../test-helper";
-import stripAnsi = require("strip-ansi");
+import stripAnsi from "strip-ansi";
 import { ChildProcess } from "child_process";
 
 const onPosix = process.platform !== "win32" ? test : test.skip;

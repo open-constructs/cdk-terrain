@@ -3,7 +3,7 @@
 // DOCS_BLOCK_START:functions
 import { TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
 // DOCS_BLOCK_END:functions
 // DOCS_BLOCK_START:operators,functions,functions-raw
 import { Fn, TerraformOutput } from "cdktn";
@@ -12,7 +12,7 @@ import { Fn, TerraformOutput } from "cdktn";
 import { Op } from "cdktn";
 // DOCS_BLOCK_END:operators,functions-raw
 // DOCS_BLOCK_START:functions-raw,functions
-import { DataAwsAvailabilityZones } from "@cdktf/provider-aws/lib/data-aws-availability-zones";
+import { DataAwsAvailabilityZones } from "@cdktn/provider-aws/lib/data-aws-availability-zones";
 // DOCS_BLOCK_END:functions-raw,functions
 
 // DOCS_BLOCK_START:functions

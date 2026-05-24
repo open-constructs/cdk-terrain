@@ -1,14 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { CodeMaker } from "codemaker";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 test("generate a resource with nested types", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "nested-types.test"));
+  const workdir = tmp("nested-types.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "nested-types.test.fixture.json"),
@@ -27,9 +29,7 @@ test("generate a resource with nested types", async () => {
 
 test("generate a resource with nested type and no attributes", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "nested-type-without-attributes.test"),
-  );
+  const workdir = tmp("nested-type-without-attributes.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(

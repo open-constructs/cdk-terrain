@@ -1,10 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, TerraformOutput, Fn } from "../lib";
-import { TerraformVariable } from "../lib/terraform-variable";
-import { TerraformLocal } from "../lib/terraform-local";
-import { ref } from "../lib/tfExpression";
-import { Token } from "../lib/tokens/token";
+import { Testing, TerraformStack, TerraformOutput, Fn } from "../src";
+import { TerraformVariable } from "../src/terraform-variable";
+import { TerraformLocal } from "../src/terraform-local";
+import { ref } from "../src/tfExpression";
+import { Token } from "../src/tokens/token";
 
 test("static values", () => {
   const app = Testing.app();

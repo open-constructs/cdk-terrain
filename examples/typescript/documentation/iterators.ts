@@ -1,13 +1,13 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { GithubProvider } from "@cdktf/provider-github/lib/provider";
-import { Team } from "@cdktf/provider-github/lib/team";
-import { DataGithubOrganization } from "@cdktf/provider-github/lib/data-github-organization";
-import { TeamMembers } from "@cdktf/provider-github/lib/team-members";
-import { AcmCertificate } from "@cdktf/provider-aws/lib/acm-certificate";
-import { AcmCertificateValidation } from "@cdktf/provider-aws/lib/acm-certificate-validation";
-import { DataAwsRoute53Zone } from "@cdktf/provider-aws/lib/data-aws-route53-zone";
-import { Route53Record } from "@cdktf/provider-aws/lib/route53-record";
+import { GithubProvider } from "@cdktn/provider-github/lib/provider";
+import { Team } from "@cdktn/provider-github/lib/team";
+import { DataGithubOrganization } from "@cdktn/provider-github/lib/data-github-organization";
+import { TeamMembers } from "@cdktn/provider-github/lib/team-members";
+import { AcmCertificate } from "@cdktn/provider-aws/lib/acm-certificate";
+import { AcmCertificateValidation } from "@cdktn/provider-aws/lib/acm-certificate-validation";
+import { DataAwsRoute53Zone } from "@cdktn/provider-aws/lib/data-aws-route53-zone";
+import { Route53Record } from "@cdktn/provider-aws/lib/route53-record";
 // DOCS_BLOCK_START:iterators,iterators-complex-types
 import {
   TerraformIterator,
@@ -17,12 +17,12 @@ import {
   Token,
 } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
-import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
+import { S3Bucket } from "@cdktn/provider-aws/lib/s3-bucket";
 
 // DOCS_BLOCK_END:iterators,iterators-complex-types
 import { TerraformAsset } from "cdktn";
-import { S3BucketObject } from "@cdktf/provider-aws/lib/s3-bucket-object";
+import { S3BucketObject } from "@cdktn/provider-aws/lib/s3-bucket-object";
 // DOCS_BLOCK_START:iterators,iterators-complex-types
 export class IteratorsStack extends TerraformStack {
   constructor(scope: Construct, id: string) {

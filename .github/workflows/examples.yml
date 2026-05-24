@@ -25,15 +25,65 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - id: set-examples
+      - name: Build example matrix
+        id: set-examples
+        run: echo "examples=$(node tools/build-example-matrix.mjs)" | tee -a $GITHUB_OUTPUT
+
+  prepare-examples:
+    runs-on: ubuntu-latest
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    env:
+      CHECKPOINT_DISABLE: "1"
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
+      - name: Ensure correct user
+        run: chown -R root /__w/cdk-terrain
+      - name: Get cache directory paths
+        id: global-cache-dir-path
         run: |
-          tfDefault=$(cat .terraform.versions.json | jq -r '.default')
-          examples=$(npx lerna list --scope "@examples/*" | jq  -R -s -c --arg tfDefault "${tfDefault}" 'split("\n") | map(select(length > 0)) | { target: values, terraform: [$tfDefault], hclOutput: [false, true] }')
-          echo $examples
-          echo "examples=$examples" >> $GITHUB_OUTPUT
+          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          mkdir -p /usr/local/share/.cache/go
+          echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
+      - name: Cache yarn
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
+          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
+          restore-keys: |
+            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
+            yarn-${{ runner.os }}-
+      - name: Cache go
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.go }}
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-examples
+          restore-keys: |
+            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
+            go-${{ runner.os }}-
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --prefer-offline
+      - name: Build packages
+        run: yarn build
+        env:
+          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+      - name: Create dist bundle
+        run: yarn package
+        env:
+          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+      - name: Upload dist
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-examples
+          path: dist
 
   examples:
-    needs: build-example-matrix
+    needs: [build-example-matrix, prepare-examples]
+    name: "${{ matrix.target }} @ tf${{ matrix.terraform }}${{ matrix.hclOutput && ' (HCL)' || '' }}"
     # Go documentation example generates bindings for AWS and other providers and hence requires a lot of memory
     runs-on: ${{ matrix.target == '@examples/go-documentation' && 'depot-ubuntu-24.04-16' || 'ubuntu-latest' }}
     strategy:
@@ -45,12 +95,12 @@ jobs:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
-      - name: ensure correct user
+      - name: Ensure correct user
         run: chown -R root /__w/cdk-terrain
-      # Setup caches for yarn, terraform, and go
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
@@ -59,43 +109,48 @@ jobs:
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Restore yarn cache
+        # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-examples
+          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
           restore-keys: |
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache terraform plugins
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
           key: terraform-${{ runner.os }}-${{ matrix.terraform }}-examples
           restore-keys: |
             terraform-${{ runner.os }}-${{ matrix.terraform }}
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache go
+        # Only Go examples and the cross-language `*-documentation` examples need GOCACHE
+        if: startsWith(matrix.target, '@examples/go') || endsWith(matrix.target, '-documentation')
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
           key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-examples
           restore-keys: |
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
-      - name: installing dependencies
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --prefer-offline
+      - name: Download dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist-examples
+          path: dist
+      - name: Recreate packages/cdktn/dist/go layout for Go examples
+        # Go examples' go.mod files use `replace ... => ../../../packages/cdktn/dist/go/cdktn`,
+        # which points at the per-package build output. The matrix job only has the aggregated
+        # `dist/` artifact, so symlink the per-package path to the aggregated location.
+        if: startsWith(matrix.target, '@examples/go') || endsWith(matrix.target, '-documentation')
         run: |
-          yarn install --frozen-lockfile --prefer-offline
-      - name: lint
-        run: yarn lint:examples
-      - name: align version (Python only)
-        if: startsWith(matrix.target, '@examples/python') # lint:examples ensures this prefix
-        run: tools/align-version.sh "-dev.$GITHUB_RUN_ID"
-      - name: compile
-        run: yarn build
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ matrix.terraform }}"
-          TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
-      - name: create bundle
-        run: yarn package
-      - name: examples integration tests
+          mkdir -p packages/cdktn/dist/go
+          ln -sfn "$PWD/dist/go/cdktn" packages/cdktn/dist/go/cdktn
+      - name: Run example integration test
         run: test/run-against-dist node tools/build-example.js ${TEST_TARGET}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

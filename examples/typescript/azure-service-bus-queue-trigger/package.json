@@ -5,7 +5,7 @@
   "types": "main.ts",
   "license": "MPL-2.0",
   "scripts": {
-    "build": "cdktn get",
+    "build": "tsc",
     "synth": "cdktn synth",
     "compile": "tsc --pretty",
     "watch": "tsc -w",
@@ -18,8 +18,7 @@
     "node": ">=20.9"
   },
   "dependencies": {
-    "@cdktf/provider-azurerm": "9.0.6",
-    "cdktf": "^0.21.0",
+    "@cdktn/provider-azurerm": "16.1.0",
     "cdktn": "^0.0.0",
     "constructs": "10.6.0"
   },

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
 import * as path from "path";
-import * as os from "os";
 import { execSync } from "child_process";
 import {
   LANGUAGES,
@@ -11,6 +10,9 @@ import {
 } from "@cdktn/commons";
 import { readSchema } from "@cdktn/provider-schema";
 import { convertProject, getTerraformConfigFromDir } from "../src";
+import { createTmpHelper } from "./helpers/tmp";
+
+const tmp = createTmpHelper();
 
 const providerRequirements = ["kreuzwerker/docker@ ~>2.15.0"];
 const CDKTF_CLI = path.resolve(
@@ -129,12 +131,12 @@ app.synth();`,
   ]);
 
 const terraformProject = (files: [string, string][]) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf-convert."));
+  const dir = tmp("cdktf-convert.");
   createFiles(dir, files);
 
   return {
     importPath: dir,
-    targetPath: fs.mkdtempSync(path.join(os.tmpdir(), "cdktf-converted.")),
+    targetPath: tmp("cdktf-converted."),
   };
 };
 
@@ -239,7 +241,11 @@ describe.skip("convertProject", () => {
     fs.writeFileSync(
       path.resolve(targetPath, "cdktf.json"),
       JSON.stringify(
-        cdktfJson(require(path.resolve(targetPath, "cdktf.json"))),
+        cdktfJson(
+          JSON.parse(
+            fs.readFileSync(path.resolve(targetPath, "cdktf.json"), "utf-8"),
+          ),
+        ),
       ),
       "utf8",
     );

@@ -1,19 +1,21 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { ZipFile } from "yazl";
+import { Zip, ZipDeflate } from "fflate";
 import * as http from "http";
 import * as fs from "fs";
 import * as path from "path";
 import { AddressInfo } from "net";
 
-function addDirectory(zip: ZipFile, dir: string, prefix: string) {
+function addDirectory(zip: Zip, dir: string, prefix: string) {
   for (const entry of fs.readdirSync(dir)) {
     const fullPath = path.join(dir, entry);
     const zipPath = prefix ? `${prefix}/${entry}` : entry;
     if (fs.statSync(fullPath).isDirectory()) {
       addDirectory(zip, fullPath, zipPath);
     } else {
-      zip.addFile(fullPath, zipPath);
+      const file = new ZipDeflate(zipPath, { level: 9 });
+      zip.add(file);
+      file.push(fs.readFileSync(fullPath), true);
     }
   }
 }
@@ -39,8 +41,16 @@ export class TemplateServer {
       "Content-Type": "application/zip",
     });
 
-    const zip = new ZipFile();
-    zip.outputStream.pipe(res);
+    const zip = new Zip((err, data, final) => {
+      if (err) {
+        res.destroy(err);
+        return;
+      }
+      res.write(data);
+      if (final) {
+        res.end();
+      }
+    });
     addDirectory(zip, this.srcDirectory, "");
     zip.end();
   };

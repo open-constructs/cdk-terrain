@@ -1,8 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs-extra";
+import { createRequire } from "node:module";
 import path from "path";
 import * as pkgUp from "pkg-up";
+
+const localRequire = createRequire(__filename);
 
 export const readPackageJson = () => {
   const pkgPath = pkgUp.sync({ cwd: __dirname });
@@ -28,9 +31,9 @@ export const requireHandlers = () => {
   // otherwise return the file path relative to the project root
   const filePath = path.join(__dirname, "..", "handlers.js");
   if (fs.existsSync(filePath)) {
-    return require(filePath);
+    return localRequire(filePath);
   }
-  return require(
+  return localRequire(
     path.join(projectRootPath(), "bundle", "bin", "cmds", "handlers.js"),
   );
 };

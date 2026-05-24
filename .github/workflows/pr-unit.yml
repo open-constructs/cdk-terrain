@@ -1,156 +1,194 @@
 name: Unit Tests - PR
 on:
-  merge_group:
-    types: [checks_requested]
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - labeled
-      - unlabeled
-      - reopened
+  workflow_call:
+    inputs:
+      concurrency_group_prefix:
+        default: pr
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ inputs.concurrency_group_prefix }}-unit-affected-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  all_unit_tests:
-    name: "All Unit Tests"
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
-    uses: ./.github/workflows/unit.yml
+  affected_no_terraform:
+    name: "Affected Unit Tests (no terraform)"
+    runs-on: depot-ubuntu-24.04-16
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: "Add Git safe.directory" # Go 1.18+ embeds repo info in builds
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
+
+      - name: Derive base/head SHAs for nx affected
+        uses: nrwl/nx-set-shas@38457b511e60ee4e1da09255b658e480748a1af4 # v5.0.1
+
+      - name: Get cache directory paths
+        id: global-cache-dir-path
+        run: |
+          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          mkdir -p /usr/local/share/.cache/go
+          echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
+      - name: Restore yarn cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
+          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
+          restore-keys: |
+            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
+            yarn-${{ runner.os }}-
+      - name: Restore go cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.go }}
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-unit
+          restore-keys: |
+            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
+            go-${{ runner.os }}-
+
+      - name: Create TF_PLUGIN_CACHE_DIR if set
+        run: |
+          if [ -n "${TF_PLUGIN_CACHE_DIR:-}" ]; then
+            mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          fi
+
+      - name: installing dependencies
+        run: yarn install --frozen-lockfile --prefer-offline
+
+      - name: package (only when @cdktn/hcl2cdk is affected)
+        # @cdktn/hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which
+        # reads jsii tarballs from the workspace-root dist/ directory; that
+        # output isn't produced by an Nx target chain, only by `yarn package`
+        # + tools/collect-dist.sh. Run it conditionally so unrelated PRs
+        # don't pay the multi-language packaging cost.
+        run: |
+          if yarn --silent nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/hcl2cdk'; then
+            echo "@cdktn/hcl2cdk affected; running yarn package"
+            yarn package
+          else
+            echo "@cdktn/hcl2cdk not affected; skipping yarn package"
+          fi
+
+      - name: nx affected - test (excluding terraform-dependent projects)
+        run: |
+          yarn nx affected -t test \
+            --exclude='*,!tag:unit-test' \
+            --parallel=2 \
+            --base="$NX_BASE" --head="$NX_HEAD" \
+            --coverage \
+            --reporters=default --reporters=github-actions
+        env:
+          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+
+      - name: Coverage summary
+        if: always()
+        run: node tools/test-coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+
+  affected_terraform:
+    name: "Affected Unit Tests (terraform)"
+    runs-on: depot-ubuntu-24.04-16
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        package:
-          [
-            cdktn,
-            cdktn-cli,
-            "@cdktn/hcl2cdk",
-            "@cdktn/hcl2json",
-            "@cdktn/provider-schema",
-            "@cdktn/provider-generator",
-            "@cdktn/commons",
-            "@cdktn/cli-core",
-          ]
         terraform_version: ["1.6.5", "1.5.5"]
-    with:
-      concurrency_group_prefix: pr-all
-      package: ${{ matrix.package }}
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: "Add Git safe.directory"
+        run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
 
-  cdktn_cli_core:
-    name: "@cdktn/cli Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/cli-core') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-cli-core
-      package: "@cdktn/cli-core"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: Derive base/head SHAs for nx affected
+        uses: nrwl/nx-set-shas@38457b511e60ee4e1da09255b658e480748a1af4 # v5.0.1
 
-  cdktn_commons:
-    name: "@cdktn/commons Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/commons') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-commons
-      package: "@cdktn/commons"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: Get cache directory paths
+        id: global-cache-dir-path
+        run: |
+          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          mkdir -p /usr/local/share/.cache/go
+          echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
+          mkdir -p /usr/local/share/.cache/providerSchema
+          echo "providerSchema=/usr/local/share/.cache/providerSchema" >> $GITHUB_OUTPUT
+      - name: Restore yarn cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
+          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
+          restore-keys: |
+            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
+            yarn-${{ runner.os }}-
+      - name: Restore go cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.go }}
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-unit
+          restore-keys: |
+            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
+            go-${{ runner.os }}-
+      - name: Restore provider schema cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
+          key: providerSchema-${{ runner.os }}-${{ matrix.terraform_version }}-unit-affected
 
-  cdktn_hcl2cdk:
-    name: "@cdktn/hcl2cdk Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/hcl2cdk') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-hcl2cdk
-      package: "@cdktn/hcl2cdk"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: Create TF_PLUGIN_CACHE_DIR if set
+        run: |
+          if [ -n "${TF_PLUGIN_CACHE_DIR:-}" ]; then
+            mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          fi
 
-  cdktn_hcl2json:
-    name: "@cdktn/hcl2json Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/hcl2json') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-hcl2json
-      package: "@cdktn/hcl2json"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: installing dependencies
+        run: yarn install --frozen-lockfile --prefer-offline
 
-  cdktn_provider_generator:
-    name: "@cdktn/provider-generator Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/@cdktn/provider-generator') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-provider-generator
-      package: "@cdktn/provider-generator"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: package (only when @cdktn/cli-core is affected)
+        run: |
+          if yarn --silent nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/cli-core'; then
+            echo "@cdktn/cli-core affected; running yarn package"
+            yarn package
+          else
+            echo "@cdktn/cli-core not affected; skipping yarn package"
+          fi
 
-  cdktn_cli:
-    name: "cdktn-cli Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/cdktn-cli') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn-cli
-      package: "cdktn-cli"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: nx affected - test (terraform-dependent projects)
+        run: |
+          unset TF_PLUGIN_CACHE_DIR
+          yarn nx affected -t test \
+            --exclude='*,!tag:unit-test:terraform' \
+            --parallel=2 \
+            --base="$NX_BASE" --head="$NX_HEAD" \
+            --coverage \
+            --reporters=default --reporters=github-actions
+        env:
+          TERRAFORM_BINARY_NAME: "terraform${{ matrix.terraform_version }}"
+          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+          CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
 
-  cdktn:
-    name: "cdktn Unit Tests"
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci/run-unit/cdktn') }}
-    uses: ./.github/workflows/unit.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        terraform_version: ["1.6.5"]
-    with:
-      concurrency_group_prefix: pr-cdktn
-      package: "cdktn"
-      terraform_version: ${{ matrix.terraform_version }}
-    secrets: inherit
+      - name: Coverage summary
+        if: always()
+        run: node tools/test-coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
   results:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: Unit Tests - PR - Result
-    needs:
-      [
-        all_unit_tests,
-        cdktn,
-        cdktn_cli,
-        cdktn_provider_generator,
-        cdktn_hcl2json,
-        cdktn_hcl2cdk,
-        cdktn_commons,
-        cdktn_cli_core,
-      ]
+    needs: [affected_no_terraform, affected_terraform]
     steps:
-      - run: exit 1
+      - name: Fail if any required job failed or was cancelled
+        run: exit 1
         if: >-
           ${{
                contains(needs.*.result, 'failure')

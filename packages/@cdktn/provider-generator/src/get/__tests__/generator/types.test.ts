@@ -1,16 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
 import { CodeMaker } from "codemaker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 test("computed optional complex attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "computed-complex-option.test"),
-  );
+  const workdir = tmp("computed-complex-option.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -33,9 +33,7 @@ test("computed optional complex attribute", async () => {
 
 test("computed complex attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "computed-complex.test"),
-  );
+  const workdir = tmp("computed-complex.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "computed-complex.test.fixture.json"),
@@ -54,9 +52,7 @@ test("computed complex attribute", async () => {
 
 test("computed complex nested attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "computed-complex-nested.test"),
-  );
+  const workdir = tmp("computed-complex-nested.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -79,7 +75,7 @@ test("computed complex nested attribute", async () => {
 
 test("string list attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "string-list.test"));
+  const workdir = tmp("string-list.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "string-list.test.fixture.json"),
@@ -98,7 +94,7 @@ test("string list attribute", async () => {
 
 test("number list attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "number-list.test"));
+  const workdir = tmp("number-list.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "number-list.test.fixture.json"),
@@ -117,7 +113,7 @@ test("number list attribute", async () => {
 
 test("boolean list attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "boolean-list.test"));
+  const workdir = tmp("boolean-list.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "boolean-list.test.fixture.json"),
@@ -136,7 +132,7 @@ test("boolean list attribute", async () => {
 
 test("string map attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "string-map.test"));
+  const workdir = tmp("string-map.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "string-map.test.fixture.json"),
@@ -155,7 +151,7 @@ test("string map attribute", async () => {
 
 test("number map attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "number-map.test"));
+  const workdir = tmp("number-map.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "number-map.test.fixture.json"),
@@ -174,7 +170,7 @@ test("number map attribute", async () => {
 
 test("boolean map attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "boolean-map.test"));
+  const workdir = tmp("boolean-map.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "boolean-map.test.fixture.json"),
@@ -193,7 +189,7 @@ test("boolean map attribute", async () => {
 
 test("deeply nested block types", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "block-types.test"));
+  const workdir = tmp("block-types.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -216,9 +212,7 @@ test("deeply nested block types", async () => {
 
 test("single block type", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "single-block-type.test"),
-  );
+  const workdir = tmp("single-block-type.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "single-block-type.test.fixture.json"),
@@ -237,7 +231,7 @@ test("single block type", async () => {
 
 test("set / list block type", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "set-list-block.test"));
+  const workdir = tmp("set-list-block.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "block-type-set-list.test.fixture.json"),
@@ -256,9 +250,7 @@ test("set / list block type", async () => {
 
 test("computed nested complex list block type", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "nested-computed-list-block.test"),
-  );
+  const workdir = tmp("nested-computed-list-block.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -284,9 +276,7 @@ test("computed nested complex list block type", async () => {
 
 test("primitive string", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "primitive-string.test"),
-  );
+  const workdir = tmp("primitive-string.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "primitive-string.test.fixture.json"),
@@ -305,9 +295,7 @@ test("primitive string", async () => {
 
 test("primitive number", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "primitive-number.test"),
-  );
+  const workdir = tmp("primitive-number.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "primitive-number.test.fixture.json"),
@@ -326,9 +314,7 @@ test("primitive number", async () => {
 
 test("primitive boolean", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "primitive-boolean.test"),
-  );
+  const workdir = tmp("primitive-boolean.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "primitive-boolean.test.fixture.json"),
@@ -347,9 +333,7 @@ test("primitive boolean", async () => {
 
 test("primitive dynamic", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "primitive-dynamic.test"),
-  );
+  const workdir = tmp("primitive-dynamic.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "primitive-dynamic.test.fixture.json"),
@@ -368,9 +352,7 @@ test("primitive dynamic", async () => {
 
 test("ignored attributes", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "ignored-attributes.test"),
-  );
+  const workdir = tmp("ignored-attributes.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "ignored-attributes.test.fixture.json"),
@@ -389,9 +371,7 @@ test("ignored attributes", async () => {
 
 test("incompatible attribute names", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "incompatible-attribute-names.test"),
-  );
+  const workdir = tmp("incompatible-attribute-names.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -414,9 +394,7 @@ test("incompatible attribute names", async () => {
 
 test("incompatible resource names", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "incompatible-resource-names.test"),
-  );
+  const workdir = tmp("incompatible-resource-names.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -462,9 +440,7 @@ test("incompatible resource names", async () => {
 
 test("list of string map attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "list-of-string-map.test"),
-  );
+  const workdir = tmp("list-of-string-map.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "list-of-string-map.test.fixture.json"),
@@ -483,9 +459,7 @@ test("list of string map attribute", async () => {
 
 test("map of string list attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "map-of-string-list.test"),
-  );
+  const workdir = tmp("map-of-string-list.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "map-of-string-list.test.fixture.json"),
@@ -504,7 +478,7 @@ test("map of string list attribute", async () => {
 
 test("reset and input name conflicts", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "name-conflict.test"));
+  const workdir = tmp("name-conflict.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "name-conflict.test.fixture.json"),
@@ -523,9 +497,7 @@ test("reset and input name conflicts", async () => {
 
 test("list of list attributes", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "list-list-object.test"),
-  );
+  const workdir = tmp("list-list-object.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "list-list-object.test.fixture.json"),
@@ -544,9 +516,7 @@ test("list of list attributes", async () => {
 
 test("list of list of strings", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "list-list-string.test"),
-  );
+  const workdir = tmp("list-list-string.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "list-list-string.test.fixture.json"),
@@ -574,9 +544,7 @@ test("list of list of strings", async () => {
 
 test("map of map of string attribute", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "map-of-map-of-string.test"),
-  );
+  const workdir = tmp("map-of-map-of-string.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -595,4 +563,49 @@ test("map of map of string attribute", async () => {
     "utf-8",
   );
   expect(output).toMatchSnapshot();
+});
+
+test("case-insensitive base name collision", async () => {
+  const code = new CodeMaker();
+  const workdir = tmp("case-insensitive-base-name-collision.test");
+  const spec = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        __dirname,
+        "fixtures",
+        "case-insensitive-base-name-collision.test.fixture.json",
+      ),
+      "utf-8",
+    ),
+  );
+  new TerraformProviderGenerator(code, spec).generateAll();
+  await code.save(workdir);
+
+  const files = fs.readdirSync(path.join(workdir, "providers/oci"));
+  const topLevelFiles = ["index.ts", "lazy-index.ts"];
+
+  // Verify that colliding base names are disambiguated with a "-a" suffix.
+  expect(files).toContain("load-balancer-backend-set");
+  expect(files).toContain("load-balancer-backendset-a");
+
+  expect(files).toContain("data-oci-load-balancer-backend-sets");
+  expect(files).toContain("data-oci-load-balancer-backendsets-a");
+
+  // No two directories should collide case-insensitively
+  const lowercaseFiles = files.map((f) => f.toLowerCase());
+  const uniqueLowercaseFiles = [...new Set(lowercaseFiles)];
+  expect(lowercaseFiles).toEqual(uniqueLowercaseFiles);
+
+  for (const file of files) {
+    const output = fs.readFileSync(
+      path.join(
+        workdir,
+        "providers/oci/",
+        file,
+        topLevelFiles.includes(file) ? "" : "index.ts",
+      ),
+      "utf-8",
+    );
+    expect(output).toMatchSnapshot(file);
+  }
 });

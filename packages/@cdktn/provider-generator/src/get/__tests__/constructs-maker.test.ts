@@ -45,7 +45,7 @@ describe("constructsMaker", () => {
     });
 
     afterAll(async () => {
-      // await fs.remove(tmpDir);
+      await fs.remove(tmpDir);
     });
 
     it("works in root directory", async () => {

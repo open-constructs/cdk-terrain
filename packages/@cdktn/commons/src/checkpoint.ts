@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import https = require("https");
+import * as https from "https";
 import { format } from "url";
 import { v4 as uuidv4 } from "uuid";
 import * as os from "os";
@@ -105,7 +105,7 @@ function getId(
 
   let jsonFile;
   try {
-    jsonFile = require(filePath); // we found the file
+    jsonFile = JSON.parse(fs.readFileSync(filePath, "utf-8")); // we found the file
   } catch {
     // we found no file, create one if we're forcing a creation
     if (forceCreation) {

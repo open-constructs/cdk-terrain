@@ -10,14 +10,14 @@ import {
   VariableType,
   CloudBackend,
   NamedCloudWorkspace,
-} from "../lib";
+} from "../src";
 import {
   OtherTestResource,
   TestModule,
   TestProvider,
   TestResource,
 } from "./helper";
-import * as b from "../lib/backends";
+import * as b from "../src/backends";
 import { Construct } from "constructs";
 
 test("string local", async () => {

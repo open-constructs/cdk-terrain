@@ -18,3 +18,15 @@ cd ${scriptdir}/..
 suffix="${1:-}"
 version="$(node -p "require('./package.json').version")${suffix}"
 npx lerna version ${version} --yes --exact --force-publish=* --no-git-tag-version --no-push
+
+# `lerna version` does not rewrite peerDependencies, so rewrite any "0.0.0"
+# entries here to the aligned version.
+while IFS= read -r pkg; do
+  jq --arg v "${version}" '
+    if .peerDependencies then
+      .peerDependencies |= with_entries(
+        if .value == "0.0.0" then .value = $v else . end
+      )
+    else . end
+  ' "${pkg}" > "${pkg}.tmp" && mv "${pkg}.tmp" "${pkg}"
+done < <(git ls-files 'packages/*/package.json' 'packages/@*/*/package.json')

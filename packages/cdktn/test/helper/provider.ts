@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { IResolvable, listMapper, TerraformProvider } from "../../lib";
+import { IResolvable, listMapper, TerraformProvider } from "../../src";
 import { Construct } from "constructs";
 
 export interface TestProviderConfig {

@@ -23,4 +23,4 @@ class ProviderListCommand extends BaseCommand {
   }
 }
 
-module.exports = new ProviderListCommand();
+export default new ProviderListCommand();

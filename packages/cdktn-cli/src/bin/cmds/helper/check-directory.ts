@@ -1,11 +1,12 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import * as fs from "fs";
 import * as path from "path";
 import { Errors } from "@cdktn/commons";
 export function isCdktfProjectDirectory(directory: string): boolean {
   try {
     const cdktfPath = path.join(directory, "cdktf.json");
-    const cdktf = require(cdktfPath);
+    const cdktf = JSON.parse(fs.readFileSync(cdktfPath, "utf-8"));
     return cdktf.language && cdktf.app;
   } catch {
     return false;

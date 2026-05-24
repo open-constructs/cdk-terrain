@@ -1,16 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
 import { CodeMaker } from "codemaker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 test("broken attribute description comments", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "description-escaping.test"),
-  );
+  const workdir = tmp("description-escaping.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -39,9 +39,7 @@ test("broken attribute description comments", async () => {
 
 test("malformed code blocks which break in python rst", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "markdown-description-with-code-blocks.test"),
-  );
+  const workdir = tmp("markdown-description-with-code-blocks.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -64,9 +62,7 @@ test("malformed code blocks which break in python rst", async () => {
 
 test("comment ending sequence in comment", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "comment-ending-sequence.test"),
-  );
+  const workdir = tmp("comment-ending-sequence.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(

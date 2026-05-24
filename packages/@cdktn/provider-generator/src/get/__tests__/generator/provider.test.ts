@@ -1,14 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
 import { CodeMaker } from "codemaker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 test("generate provider", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "provider.test"));
+  const workdir = tmp("provider.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "aws-provider.test.fixture.json"),
@@ -27,7 +29,7 @@ test("generate provider", async () => {
 
 test("generate provider with only block_types", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "provider.test"));
+  const workdir = tmp("provider.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(

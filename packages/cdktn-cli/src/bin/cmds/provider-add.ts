@@ -31,4 +31,4 @@ class Command extends BaseCommand {
   }
 }
 
-module.exports = new Command();
+export default new Command();

@@ -1,0 +1,83 @@
+name: PR
+on:
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - labeled
+      - unlabeled
+      - reopened
+
+jobs:
+  quality:
+    name: "Quality"
+    uses: ./.github/workflows/quality.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  build:
+    name: "Build"
+    uses: ./.github/workflows/build.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  all_unit_tests:
+    name: "All Unit Tests"
+    needs: [quality, build]
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
+    uses: ./.github/workflows/pr-unit.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  examples:
+    name: "Examples Integration Tests - PR"
+    needs: [all_unit_tests]
+    if: ${{ always() && !cancelled() && needs.all_unit_tests.result != 'failure' && !contains(github.event.pull_request.labels.*.name, 'ci/skip-examples') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/examples.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  integration_test:
+    name: "Integration Tests - PR"
+    needs: [all_unit_tests]
+    if: ${{ always() && !cancelled() && needs.all_unit_tests.result != 'failure' && !contains(github.event.pull_request.labels.*.name, 'ci/skip-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/integration.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  provider_integration_test:
+    name: "Provider Integration Tests - PR"
+    needs: [all_unit_tests]
+    if: ${{ always() && !cancelled() && needs.all_unit_tests.result != 'failure' && !contains(github.event.pull_request.labels.*.name, 'ci/skip-provider-integration') && !contains(github.event.pull_request.labels.*.name, 'ci/unit-only') }}
+    uses: ./.github/workflows/provider-integration.yml
+    with:
+      concurrency_group_prefix: pr
+    secrets: inherit
+
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: "PR - Result"
+    needs:
+      [
+        quality,
+        build,
+        all_unit_tests,
+        examples,
+        integration_test,
+        provider_integration_test,
+      ]
+    steps:
+      - run: exit 1
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+          }}

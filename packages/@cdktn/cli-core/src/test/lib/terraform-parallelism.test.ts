@@ -5,15 +5,13 @@
 
 import path from "path";
 import * as fs from "fs-extra";
-import os from "os";
 import { EventEmitter } from "events";
-import { CdktfProject, init, get } from "../../lib/index";
+import { CdktfProject, init } from "../../lib/index";
 import { spawn } from "cross-spawn";
-import { exec, Language } from "@cdktn/commons";
-import { describeIfDistExists } from "../test-helpers";
+import { exec } from "@cdktn/commons";
+import { createTmpHelper, describeIfDistExists } from "../test-helpers";
 
-// this is required for the get() call in beforeAll() to work
-let execMockActive = false;
+const tmp = createTmpHelper();
 
 jest.mock("@cdktn/commons", () => {
   const originalModule = jest.requireActual("@cdktn/commons");
@@ -21,12 +19,9 @@ jest.mock("@cdktn/commons", () => {
   return {
     __esmodule: true,
     ...originalModule,
-    exec: jest.fn().mockImplementation(async (...args: any[]) => {
-      // Fake all commands that we invoke
-
-      if (execMockActive) return Promise.resolve(JSON.stringify({}));
-      return originalModule.exec(...args);
-    }),
+    // Stub every spawned command. The tests assert on `cross-spawn` calls (terraform apply/plan/destroy parallelism
+    // flags); they don't need real `exec` output.
+    exec: jest.fn().mockImplementation(async () => JSON.stringify({})),
   };
 });
 
@@ -105,7 +100,7 @@ const stackWithName = (name: string) => {
 
 describeIfDistExists(__dirname)("terraform parallelism", () => {
   beforeAll(async () => {
-    const workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf."));
+    const workingDirectory = tmp("cdktf.");
     await init({
       destination: workingDirectory,
       templatePath: path.join(__dirname, "../../../templates/typescript"),
@@ -127,27 +122,8 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
       path.resolve(workingDirectory, "cdktf.json"),
     );
 
-    await get({
-      constraints: [
-        {
-          name: "null",
-          version: "3.1.0",
-          source: "null",
-          fqn: "hashicorp/null",
-        },
-      ],
-      constructsOptions: {
-        codeMakerOutput: path.resolve(workingDirectory, ".gen"),
-        targetLanguage: Language.TYPESCRIPT,
-      },
-      providerSchemaCachePath:
-        process.env.CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH,
-    });
-
-    execMockActive = true;
-
     inNewWorkingDirectory = function inNewWorkingDirectory() {
-      const wd = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf."));
+      const wd = tmp("cdktf.");
       const outDir = path.resolve(wd, "out");
 
       fs.copySync(workingDirectory, wd);

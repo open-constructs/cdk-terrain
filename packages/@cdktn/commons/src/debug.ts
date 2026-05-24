@@ -6,12 +6,14 @@ import { logger } from "./logging";
 import { exec } from "./util";
 import { terraformVersion } from "./terraform";
 import { DISPLAY_VERSION } from "./version";
-import { pathExists } from "fs-extra";
+import { pathExists, readFileSync } from "fs-extra";
 import { getGradlePackageVersion, isGradleProject } from "./gradle";
 
 export function getLanguage(projectPath = process.cwd()): string | undefined {
   try {
-    const cdktfJson = require(path.resolve(projectPath, "cdktf.json"));
+    const cdktfJson = JSON.parse(
+      readFileSync(path.resolve(projectPath, "cdktf.json"), "utf-8"),
+    );
     return cdktfJson.language;
   } catch {
     // We can not detect the language

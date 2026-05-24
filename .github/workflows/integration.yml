@@ -11,6 +11,16 @@ on:
         default: pr
         required: false
         type: string
+      dist_artifact_name:
+        description: Name of the dist artifact created
+        default: dist-integration
+        required: false
+        type: string
+      edge_bindings_artifact_name:
+        description: Name of the edge provider bindings artifact created
+        default: edge-provider-bindings
+        required: false
+        type: string
 
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-integration-${{ github.head_ref }}
@@ -28,7 +38,8 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
@@ -40,14 +51,16 @@ jobs:
           echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache yarn
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.yarn }}
           key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
           restore-keys: |
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache go
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
           key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-integration
@@ -56,9 +69,6 @@ jobs:
             go-${{ runner.os }}-
       - name: install dependencies
         run: yarn install --frozen-lockfile --prefer-offline
-      - name: set version
-        if: ${{ !inputs.skip_setup }}
-        run: tools/align-version.sh "-dev.$GITHUB_RUN_ID"
       - name: build and package
         if: ${{ !inputs.skip_setup }}
         run: |
@@ -68,23 +78,23 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
       - name: Upload dist
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !inputs.skip_setup }}
         with:
-          name: dist
+          name: ${{ inputs.dist_artifact_name }}
           path: dist
       - name: Upload edge-provider bindings
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !inputs.skip_setup }}
         with:
-          name: edge-provider-bindings
+          name: ${{ inputs.edge_bindings_artifact_name }}
           path: packages/@cdktn/provider-generator/edge-provider-bindings
       - name: installing test dependencies
         run: |
           cd test && yarn install --frozen-lockfile --prefer-offline
-      - id: build-test-matrix
-        run: |
-          ./tools/build-test-matrix.sh
+      - name: Build test matrix
+        id: build-test-matrix
+        run: node tools/build-test-matrix.mjs
 
   linux_integration:
     needs: prepare-integration-tests
@@ -103,7 +113,8 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
       # Setup caches for yarn, terraform, and go
@@ -115,42 +126,42 @@ jobs:
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      # only restore as an individual cache as per matrix explodes our cache usage
-      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
+      - name: Restore yarn cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.yarn }}
           key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
           restore-keys: |
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache terraform
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          # put matrix before integration to not restore caches from other sibling matrix jobs
-          key: terraform-${{ runner.os }}-${{ matrix.terraform }}-matrix-integration-${{ matrix.target }}
+          key: terraform-${{ runner.os }}-${{ matrix.terraform }}-integration
           restore-keys: |
             terraform-${{ runner.os }}-${{ matrix.terraform }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache go
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
-          # put matrix before integration to not restore caches from other sibling matrix jobs
-          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-matrix-integration-${{ matrix.target }}
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-integration
           restore-keys: |
-            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-integration
-            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
       - name: Download dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dist
+          name: ${{ inputs.dist_artifact_name }}
           path: dist
       - name: Download edge-provider bindings
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: edge-provider-bindings
+          name: ${{ inputs.edge_bindings_artifact_name }}
           path: test/edge-provider-bindings
       - name: install test dependencies
-        run: cd test && yarn
+        run: cd test && yarn install --frozen-lockfile --prefer-offline
       - name: integration tests
         run: cd test && ./run-against-dist npx jest ${TEST_TARGET}
         env:
@@ -176,7 +187,8 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       # Setup caches for yarn, terraform, and go
       - name: Get cache directory paths
         id: global-cache-dir-path
@@ -187,28 +199,28 @@ jobs:
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      # only restore as an individual cache as per matrix explodes our cache usage
-      - uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
+      - name: Restore yarn cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.yarn }}
           key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
           restore-keys: |
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache terraform
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          # put matrix before integration to not restore caches from other sibling matrix jobs
-          key: terraform-${{ runner.os }}-${{ matrix.terraform }}-matrix-integration-${{ matrix.target }}
+          key: terraform-${{ runner.os }}-${{ matrix.terraform }}-integration
           restore-keys: |
             terraform-${{ runner.os }}-${{ matrix.terraform }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - name: Cache go
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
-          # put matrix before integration to not restore caches from other sibling matrix jobs
-          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-matrix-integration-${{ matrix.target }}
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-integration
           restore-keys: |
-            go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-integration
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
       - name: HashiCorp - Setup Terraform
@@ -226,18 +238,18 @@ jobs:
       - name: Download dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dist
+          name: ${{ inputs.dist_artifact_name }}
           path: dist
       - name: Download edge-provider bindings
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: edge-provider-bindings
+          name: ${{ inputs.edge_bindings_artifact_name }}
           path: test/edge-provider-bindings
       # tmp fix for https://github.com/npm/cli/issues/4980
       - name: update npm
         run: npm install -g npm@8.12.1
       - name: install test dependencies
-        run: cd test && yarn
+        run: cd test && yarn install --frozen-lockfile --prefer-offline
       - name: integration tests
         run: cd test && ./run-against-dist.bat "npx jest --ci ${env:TEST_TARGET}"
         env:

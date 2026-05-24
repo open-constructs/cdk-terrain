@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-const esbuild = require("esbuild");
+import * as esbuild from "esbuild";
 import * as fs from "fs-extra";
 
 const enableWatch = process.argv.find((arg) => arg === "--watch") === "--watch";
@@ -52,7 +52,7 @@ const nativeNodeModulesPlugin = {
   },
 };
 
-const config = {
+const config: esbuild.BuildOptions = {
   entryPoints: ["src/bin/cdktn.ts", "src/bin/cmds/handlers.ts"],
   outbase: "src",
   bundle: true,

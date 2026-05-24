@@ -1,0 +1,168 @@
+name: Release Publish
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: Release channel — "release" or "next". Used in job display names only.
+        required: true
+        type: string
+      dist_artifact_name:
+        description: Name of the dist artifact uploaded by the prepare job.
+        required: true
+        type: string
+      npm_dist_tag:
+        description: npm dist-tag (e.g. "next"). Leave empty for the default "latest".
+        required: false
+        type: string
+        default: ""
+    secrets:
+      TWINE_USERNAME:
+        required: true
+      TWINE_PASSWORD:
+        required: true
+      MAVEN_USERNAME:
+        required: true
+      MAVEN_PASSWORD:
+        required: true
+      MAVEN_GPG_PRIVATE_KEY:
+        required: true
+      MAVEN_GPG_PRIVATE_KEY_PASSPHRASE:
+        required: true
+      NUGET_API_KEY:
+        required: true
+      TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN:
+        required: true
+
+jobs:
+  release_npm:
+    name: Release to NPM (${{ inputs.channel }})
+    runs-on: ubuntu-latest
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
+      - name: installing dependencies
+        run: yarn install --frozen-lockfile
+      - name: Download build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.dist_artifact_name }}
+          path: dist
+      - name: Upgrade npm for OIDC trusted publisher support
+        # OIDC publishing requires npm >= 11.5.0 — https://github.com/npm/cli/pull/8336
+        # TODO: Remove when Node is updated to version 24+
+        run: npm install --global npm@11.15.0
+      - name: Release
+        run: npx --no publib-npm
+        env:
+          NPM_DIST_TAG: ${{ inputs.npm_dist_tag }}
+          NPM_TRUSTED_PUBLISHER: "true"
+
+  release_pypi:
+    name: Release to PyPi (${{ inputs.channel }})
+    runs-on: ubuntu-latest
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.dist_artifact_name }}
+          path: dist
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
+      # We use twine directly for publishing instead of publib-pypi
+      # Publib-pypi does the same twine command (https://github.com/cdklabs/publib/blob/main/bin/publib-pypi)
+      # but also tries to install twine which is already globally
+      # available in the docker image we use. It upgrades twine,
+      # introducing risks of breaking changes. (Though not likely, twine is ancient)
+      # We can not keep the install since the update to python 3.11 in the docker image
+      # forbids global installs since the global pip is system managed.
+      # Running this install in a virtualenv would be possible but would require
+      # changes for the publib-pypi script. This is the easiest solution for now.
+      - name: Release
+        run: |
+          cd dist/python
+          twine upload --verbose --skip-existing *
+        env:
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+
+  release_maven:
+    name: Release to Maven Central (${{ inputs.channel }})
+    runs-on: ubuntu-latest
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
+      - name: installing dependencies
+        run: yarn install --frozen-lockfile
+      - name: Download build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.dist_artifact_name }}
+          path: dist
+      - name: Release
+        run: npx --no publib-maven
+        env:
+          MAVEN_SERVER_ID: central-ossrh
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PRIVATE_KEY_PASSPHRASE: ${{ secrets.MAVEN_GPG_PRIVATE_KEY_PASSPHRASE }}
+          MAVEN_OPTS: "--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED" # See https://stackoverflow.com/questions/70153962/nexus-staging-maven-plugin-maven-deploy-failed-an-api-incompatibility-was-enco
+
+  release_nuget:
+    name: Release to NuGet (${{ inputs.channel }})
+    runs-on: ubuntu-latest
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
+      - name: installing dependencies
+        run: yarn install --frozen-lockfile
+      - name: Download dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.dist_artifact_name }}
+          path: dist
+      - name: Release
+        run: npx --no publib-nuget
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  release_golang:
+    name: Release Go to Github Repo (${{ inputs.channel }})
+    runs-on: ubuntu-latest
+    container:
+      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: ensure correct user
+        run: chown -R root /__w/cdk-terrain
+      - name: installing dependencies
+        run: yarn install --frozen-lockfile
+      - name: Download dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.dist_artifact_name }}
+          path: dist
+      - name: Release
+        run: npx --no publib-golang
+        env:
+          GITHUB_TOKEN: ${{ secrets.TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN }}
+          GIT_USER_NAME: "CDK Terrain Bot"
+          GIT_USER_EMAIL: "gh-actions@cdktn.io"

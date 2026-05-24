@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import * as execa from "execa";
-import * as hasAnsi from "has-ansi";
+import execa from "execa";
+import hasAnsi from "has-ansi";
 import { onPosix, TestDriver } from "../../test-helper";
 
 describe("no-color option for cdktn deploy, diff, destroy", () => {

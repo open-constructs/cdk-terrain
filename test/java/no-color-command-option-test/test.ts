@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import * as execa from "execa";
-import * as hasAnsi from "has-ansi";
+import execa from "execa";
+import hasAnsi from "has-ansi";
 import { onPosix, TestDriver } from "../../test-helper";
 
 // No-Color in Gradle is either defined through command line options (--console=plain)

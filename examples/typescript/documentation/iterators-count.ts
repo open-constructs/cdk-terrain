@@ -3,8 +3,8 @@
 
 import { TerraformCount, TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
-import { Instance } from "@cdktf/provider-aws/lib/instance";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
+import { Instance } from "@cdktn/provider-aws/lib/instance";
 
 export class IteratorsCountStack extends TerraformStack {
   constructor(scope: Construct, id: string) {

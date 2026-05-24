@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { TerraformStack, Fn, Token, Testing } from "../lib";
+import { TerraformStack, Fn, Token, Testing } from "../src";
 import {
   conditional,
   propertyAccess,
@@ -9,9 +9,9 @@ import {
   call,
   Expression,
   rawString,
-} from "../lib/tfExpression";
-import { resolve } from "../lib/_tokens";
-import { Op } from "../lib/terraform-operators";
+} from "../src/tfExpression";
+import { resolve } from "../src/_tokens";
+import { Op } from "../src/terraform-operators";
 import { TestResource } from "./helper";
 
 const appScope = new Construct(undefined as any, "randomScope");

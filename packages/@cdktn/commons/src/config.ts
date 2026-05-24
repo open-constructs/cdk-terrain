@@ -29,6 +29,29 @@ export const LANGUAGES = [
 const CONTEXT_ENV = "CDKTF_CONTEXT_JSON";
 
 const CONFIG_FILE = "cdktf.json";
+
+export interface TypeScriptLanguageOptions {
+  /**
+   * Suffix to append to relative imports.
+   * Defaults to "" (CommonJS).
+   * Use ".js" or ".ts" for ESM-compatible imports.
+   */
+  readonly importExtension?: string;
+}
+
+// For now, these languages have no language-specific options.
+export type PythonLanguageOptions = Record<string, never>;
+export type CSharpLanguageOptions = Record<string, never>;
+export type JavaLanguageOptions = Record<string, never>;
+export type GoLanguageOptions = Record<string, never>;
+
+export type LanguageOptions =
+  | TypeScriptLanguageOptions
+  | PythonLanguageOptions
+  | CSharpLanguageOptions
+  | JavaLanguageOptions
+  | GoLanguageOptions;
+
 export const CONFIG_DEFAULTS = {
   output: "cdktf.out",
   codeMakerOutput: ".gen",
@@ -246,15 +269,43 @@ export class TerraformProviderConstraint implements TerraformDependencyConstrain
   }
 }
 
-export interface Config {
+interface ConfigBase {
   readonly app?: string;
-  readonly language?: Language;
   readonly output: string;
   readonly codeMakerOutput: string;
   terraformProviders?: TerraformProviderConstraint[];
   terraformModules?: TerraformModuleConstraint[];
   readonly context?: { [key: string]: any };
 }
+
+/**
+ * Language-specific code generation options, discriminated by `language`.
+ * Only TypeScript currently has tunable options; all other languages
+ * accept an empty `languageOptions` object as a future extension point.
+ */
+export type Config = ConfigBase &
+  (
+    | {
+        readonly language?: Language.TYPESCRIPT;
+        readonly languageOptions?: TypeScriptLanguageOptions;
+      }
+    | {
+        readonly language: Language.PYTHON;
+        readonly languageOptions?: PythonLanguageOptions;
+      }
+    | {
+        readonly language: Language.CSHARP;
+        readonly languageOptions?: CSharpLanguageOptions;
+      }
+    | {
+        readonly language: Language.JAVA;
+        readonly languageOptions?: JavaLanguageOptions;
+      }
+    | {
+        readonly language: Language.GO;
+        readonly languageOptions?: GoLanguageOptions;
+      }
+  );
 
 export const parseConfig = (configJSON?: string) => {
   const config: Config = {

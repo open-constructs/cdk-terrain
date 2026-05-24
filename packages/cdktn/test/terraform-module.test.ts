@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, TerraformModule, App } from "../lib";
+import { Testing, TerraformStack, TerraformModule, App } from "../src";
 import { TestProvider } from "./helper";
 
 function getApp(): App {

@@ -16,12 +16,12 @@ import {
 // DOCS_BLOCK_END:remote-state
 
 // DOCS_BLOCK_START:outputs-usage
-import { RandomProvider } from "@cdktf/provider-random/lib/provider";
-import { Pet } from "@cdktf/provider-random/lib/pet";
+import { RandomProvider } from "@cdktn/provider-random/lib/provider";
+import { Pet } from "@cdktn/provider-random/lib/pet";
 // DOCS_BLOCK_END:outputs-usage
 
-import { Instance } from "@cdktf/provider-aws/lib/instance";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
+import { Instance } from "@cdktn/provider-aws/lib/instance";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
 
 export class VariablesStack extends TerraformStack {
   constructor(scope: Construct, id: string) {

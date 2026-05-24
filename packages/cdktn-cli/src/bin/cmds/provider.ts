@@ -1,6 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import yargs from "yargs";
+import getCmd from "./get";
+import providerAddCmd from "./provider-add";
+import providerUpgradeCmd from "./provider-upgrade";
+import providerListCmd from "./provider-list";
 
 class Command implements yargs.CommandModule {
   public readonly command = "provider";
@@ -9,14 +13,14 @@ class Command implements yargs.CommandModule {
 
   public readonly builder = (args: yargs.Argv) =>
     args
-      .command(require("./get"))
-      .command(require("./provider-add"))
-      .command(require("./provider-upgrade"))
-      .command(require("./provider-list"));
+      .command(getCmd)
+      .command(providerAddCmd)
+      .command(providerUpgradeCmd)
+      .command(providerListCmd);
 
   public readonly handler = () => {
     yargs.showHelp();
   };
 }
 
-module.exports = new Command();
+export default new Command();

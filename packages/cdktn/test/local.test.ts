@@ -5,7 +5,7 @@ import {
   TerraformStack,
   TerraformLocal,
   TerraformOutput,
-} from "../lib";
+} from "../src";
 import { TestResource } from "./helper";
 import { TestProvider } from "./helper/provider";
 

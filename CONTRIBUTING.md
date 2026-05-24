@@ -364,13 +364,13 @@ created through `cdktn init`.
 The pattern is simple:
 
 1. Define a new const under
-   [cdktn/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktn/lib/features.ts)
+   [cdktn/src/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktn/src/features.ts)
    with the name of the context key that **enables** this new feature (for
    example, `EXCLUDE_STACK_ID_FROM_LOGICAL_IDS`).
 2. Use `node.tryGetContext(ENABLE_XXX)` to check if this feature is enabled
    in your code. If it is not defined, revert to the legacy behavior.
 3. Add your feature flag to the `FUTURE_FLAGS` map in
-   [cdktn/lib/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktn/lib/features.ts).
+   [cdktn/src/features.ts](https://github.com/open-constructs/cdk-terrain/blob/main/packages/cdktn/src/features.ts).
    This map is inserted to generated `cdktf.json` files for new projects created
    through `cdktn init`.
 4. In your PR title (which goes into CHANGELOG), add a `(under feature flag)` suffix. e.g:

@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, TerraformHclModule } from "../lib";
+import { Testing, TerraformStack, TerraformHclModule } from "../src";
 import { TestModule, TestProvider } from "./helper";
 
 test("minimal configuration", () => {

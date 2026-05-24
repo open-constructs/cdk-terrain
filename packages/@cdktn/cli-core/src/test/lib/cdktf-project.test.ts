@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as os from "os";
 import { CdktfProject, get, init } from "../../lib/index";
 import { Language } from "@cdktn/commons";
 import { SynthesizedStack } from "../../lib/synth-stack";
 import { getMultipleStacks } from "../../lib/helpers/stack-helpers";
 import { LogMessage } from "../../lib/cdktf-project";
-import { describeIfDistExists } from "../test-helpers";
+import { createTmpHelper, describeIfDistExists } from "../test-helpers";
+
+const tmp = createTmpHelper();
 
 function eventNames(events: any[]) {
   return events
@@ -41,7 +42,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
     outDir: string;
   };
   beforeAll(async () => {
-    const workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf."));
+    const workingDirectory = tmp("cdktf.");
     await init({
       destination: workingDirectory,
       templatePath: path.join(__dirname, "../../../templates/typescript"),
@@ -81,7 +82,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
     });
 
     inNewWorkingDirectory = function inNewWorkspace() {
-      const wd = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf."));
+      const wd = tmp("cdktf.");
       const outDir = path.resolve(wd, "out");
 
       fs.copySync(workingDirectory, wd);

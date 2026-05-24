@@ -2,30 +2,56 @@
 // SPDX-License-Identifier: MPL-2.0
 import { TestDriver } from "../../test-helper";
 
+/** PyPI version pin for the cdktn library installed into the test project. */
+const CDKTN_PIN = "cdktn~=0.22.1";
+
+/**
+ * Provider added without `--force-local`, so it resolves to a pre-built
+ * package. Picks Terraform local 2.7.0 so the resolver chooses
+ * cdktn-provider-local 12.0.0.
+ */
+const PREBUILT_PROVIDER = "local@=2.7.0";
+
+/** Terraform local version inside the pre-built package; surfaced in `provider list` output. */
+const PREBUILT_PROVIDER_TF_VERSION = "2.7.0";
+
+/** cdktn-provider-local package version resolved from {@link PREBUILT_PROVIDER}. */
+const PREBUILT_PKG_VERSION = "12.0.0";
+
+/** cdktn peer-dependency declared by {@link PREBUILT_PKG_VERSION}; surfaced in `provider list` output. */
+const PREBUILT_CDKTN_PEER = "^0.22.0";
+
+/**
+ * Provider added with `--force-local`, bypassing the pre-built lookup. Any
+ * Terraform provider works; `null` is small and stable.
+ */
+const LOCAL_PROVIDER = "null@=3.2.4";
+
+/** Terraform null version expected to surface in `provider list` for {@link LOCAL_PROVIDER}. */
+const LOCAL_PROVIDER_TF_VERSION = "3.2.4";
+
 describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
+      // disable version check: locally-installed cdktn-cli is 0.0.0 (from dist),
+      // project pins a published cdktn version
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+    });
     await driver.setupPythonProject();
 
-    await driver.exec("pipenv", ["install", "cdktf~=0.10.4"]);
+    await driver.exec("pipenv", ["install", CDKTN_PIN]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", [
-        "provider",
-        "add",
-        "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
-      ]);
+      await driver.exec("cdktn", ["provider", "add", PREBUILT_PROVIDER]);
 
       await driver.exec("cdktn", [
         "provider",
         "add",
-        "local@=2.2.3",
+        LOCAL_PROVIDER,
         "--force-local",
       ]);
     });
@@ -42,19 +68,19 @@ describe("provider list command", () => {
 
       expect(output.local[0]).toEqual(
         expect.objectContaining({
-          providerName: "local",
-          providerConstraint: "=2.2.3",
-          providerVersion: "2.2.3",
+          providerName: "null",
+          providerConstraint: "=3.2.4",
+          providerVersion: LOCAL_PROVIDER_TF_VERSION,
         }),
       );
 
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "cdktf-cdktf-provider-random",
-          packageVersion: "0.2.64",
-          providerName: "random",
-          providerVersion: "3.2.0",
-          cdktfVersion: "^0.10.3",
+          packageName: "cdktn-provider-local",
+          packageVersion: PREBUILT_PKG_VERSION,
+          providerName: "local",
+          providerVersion: PREBUILT_PROVIDER_TF_VERSION,
+          cdktnVersion: PREBUILT_CDKTN_PEER,
         }),
       );
     }, 120_000);

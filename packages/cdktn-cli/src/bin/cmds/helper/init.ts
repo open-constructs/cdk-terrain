@@ -245,7 +245,9 @@ This means that your Terraform state file will be stored locally on disk in a fi
     );
 
     const renderedCdktfJson = cdktfJson(
-      require(path.resolve(destination, "cdktf.json")),
+      JSON.parse(
+        fs.readFileSync(path.resolve(destination, "cdktf.json"), "utf-8"),
+      ),
     );
     fs.writeFileSync(
       path.resolve(destination, "cdktf.json"),

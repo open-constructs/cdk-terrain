@@ -13,6 +13,19 @@ import {
   collectDebugInformation,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
+import initCmd from "./cmds/init";
+import getCmd from "./cmds/get";
+import convertCmd from "./cmds/convert";
+import deployCmd from "./cmds/deploy";
+import destroyCmd from "./cmds/destroy";
+import diffCmd from "./cmds/diff";
+import listCmd from "./cmds/list";
+import loginCmd from "./cmds/login";
+import synthCmd from "./cmds/synth";
+import watchCmd from "./cmds/watch";
+import outputCmd from "./cmds/output";
+import debugCmd from "./cmds/debug";
+import providerCmd from "./cmds/provider";
 
 const ensurePluginCache = (): string => {
   const pluginCachePath =
@@ -72,19 +85,19 @@ const customCompletion = function (
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 yargs
-  .command(require("./cmds/init"))
-  .command(require("./cmds/get"))
-  .command(require("./cmds/convert"))
-  .command(require("./cmds/deploy"))
-  .command(require("./cmds/destroy"))
-  .command(require("./cmds/diff"))
-  .command(require("./cmds/list"))
-  .command(require("./cmds/login"))
-  .command(require("./cmds/synth"))
-  .command(require("./cmds/watch"))
-  .command(require("./cmds/output"))
-  .command(require("./cmds/debug"))
-  .command(require("./cmds/provider"))
+  .command(initCmd)
+  .command(getCmd)
+  .command(convertCmd)
+  .command(deployCmd)
+  .command(destroyCmd)
+  .command(diffCmd)
+  .command(listCmd)
+  .command(loginCmd)
+  .command(synthCmd)
+  .command(watchCmd)
+  .command(outputCmd)
+  .command(debugCmd)
+  .command(providerCmd)
   .recommendCommands()
   .exitProcess(false)
   .wrap(yargs.terminalWidth())

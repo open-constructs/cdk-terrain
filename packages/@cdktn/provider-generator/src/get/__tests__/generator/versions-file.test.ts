@@ -1,10 +1,12 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs-extra";
-import * as os from "os";
 import * as path from "path";
 import { Language, TerraformDependencyConstraint } from "@cdktn/commons";
 import { ConstructsMaker, GetOptions } from "../../constructs-maker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 jest.setTimeout(600_000);
 global.setImmediate =
@@ -40,9 +42,7 @@ describe("versions.json file generation", () => {
   test.each(languages)(
     "generates a file for the %s language",
     async (language) => {
-      const workdir = fs.mkdtempSync(
-        path.join(os.tmpdir(), "versions-file.test"),
-      );
+      const workdir = tmp("versions-file.test");
 
       const options: GetOptions = {
         codeMakerOutput: workdir,

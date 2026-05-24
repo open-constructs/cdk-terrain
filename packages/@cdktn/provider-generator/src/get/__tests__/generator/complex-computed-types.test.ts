@@ -1,16 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
 import { CodeMaker } from "codemaker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 test("generate an acm certifacte resource with complex computed types", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "complex-computed-types.test"),
-  );
+  const workdir = tmp("complex-computed-types.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "fixtures", "aws_acm_certificate.test.fixture.json"),

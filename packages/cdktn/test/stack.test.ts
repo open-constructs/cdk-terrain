@@ -3,19 +3,16 @@
 import {
   TerraformResource,
   TerraformStack,
-  App,
   Testing,
   TerraformOutput,
   LocalBackend,
-} from "../lib";
-import { TerraformModule } from "../lib/terraform-module";
+} from "../src";
+import { TerraformModule } from "../src/terraform-module";
 import { TestProvider } from "./helper";
 import { Construct } from "constructs";
 
 test("stack synthesis merges all elements into a single output", () => {
-  const app = Testing.stubVersion(
-    Testing.enableFutureFlags(new App({ stackTraces: false })),
-  );
+  const app = Testing.app();
   const stack = new TerraformStack(app, "MyStack");
 
   new TestProvider(stack, "test-provider", {
@@ -63,7 +60,7 @@ test("stack synthesis merges all elements into a single output", () => {
 });
 
 test("stack synthesis no flags", () => {
-  const app = Testing.stubVersion(new App({ stackTraces: false }));
+  const app = Testing.app({ enableFutureFlags: false });
   const stack = new TerraformStack(app, "MyStack");
 
   new TestProvider(stack, "test-provider", {
@@ -88,7 +85,7 @@ test("stack synthesis no flags", () => {
 });
 
 test("stack validation returns error when provider is missing", () => {
-  const app = Testing.stubVersion(new App({ stackTraces: false }));
+  const app = Testing.app({ enableFutureFlags: false });
   const stack = new TerraformStack(app, "MyStack");
 
   new MyResource(stack, "Resource1", {
@@ -106,7 +103,7 @@ test("stack validation returns error when provider is missing", () => {
 });
 
 test("stack validation returns no error when provider is not set", () => {
-  const app = Testing.stubVersion(new App({ stackTraces: false }));
+  const app = Testing.app({ enableFutureFlags: false });
   const stack = new TerraformStack(app, "MyStack");
 
   new MyResource(stack, "Resource1", {
@@ -118,7 +115,7 @@ test("stack validation returns no error when provider is not set", () => {
 });
 
 test("getting Stack for construct which was added to root app returns friendly error", () => {
-  const app = Testing.stubVersion(new App({ stackTraces: false }));
+  const app = Testing.app({ enableFutureFlags: false });
   new TerraformStack(app, "MyStack");
 
   expect(() => new LocalBackend(app, {})).toThrowErrorMatchingInlineSnapshot(`
@@ -133,14 +130,14 @@ test("getting Stack for construct which was added to root app returns friendly e
 
 describe("output id map", () => {
   test("output id map is empty when no outputs are added", () => {
-    const app = Testing.stubVersion(new App({ stackTraces: false }));
+    const app = Testing.app({ enableFutureFlags: false });
     const stack = new TerraformStack(app, "MyStack");
 
     expect(stack.toTerraform()["//"].outputs).toEqual({});
   });
 
   test("output id map is populated when outputs are added", () => {
-    const app = Testing.stubVersion(new App({ stackTraces: false }));
+    const app = Testing.app({ enableFutureFlags: false });
     const stack = new TerraformStack(app, "MyStack");
 
     new TerraformOutput(stack, "output1", {
@@ -165,7 +162,7 @@ describe("output id map", () => {
   });
 
   test("output id map is populated with nested custom constructs", () => {
-    const app = Testing.stubVersion(new App({ stackTraces: false }));
+    const app = Testing.app({ enableFutureFlags: false });
     const stack = new TerraformStack(app, "MyStack");
 
     class MyCustomConstruct extends Construct {

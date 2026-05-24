@@ -4,6 +4,9 @@
   "description": "Exposes API to generate Terraform CDK provider bindings",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "nx": {
+    "tags": ["unit-test:terraform"]
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -12,10 +15,7 @@
     "postbuild": "node ./build/__tests__/edge-provider-schema/cli.js ./edge-provider-bindings",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
-    "test": "jest",
-    "test:ci": "jest --ci",
     "test:update": "jest -u",
-    "jest-watch": "jest --watch",
     "package": "./package.sh",
     "dist-clean": "rm -rf dist",
     "package:js": "./package.sh"
@@ -47,10 +47,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "8.1.5",
-    "@types/jest": "30.0.0",
     "@types/node": "20.19.37",
-    "jest": "^30.3.0",
-    "ts-jest": "29.4.9",
     "typescript": "5.4.5"
   }
 }

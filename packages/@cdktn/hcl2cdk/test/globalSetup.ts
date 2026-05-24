@@ -89,8 +89,21 @@ const bindings: Record<string, ProviderDefinition> = {
   },
 };
 
-async function generateBinding(binding: ProviderDefinition): Promise<string> {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cdktf-provider-"));
+/**
+ * Generates TypeScript bindings for one provider or module by running `cdktn get` in a fresh temp dir under
+ * `parentDir`, and returns the absolute path to the generated `.gen/<binding.path>` subtree. The temp dir lives under
+ * `parentDir` (the fixtures root) so `globalTeardown` reclaims it along with the rest of the fixtures.
+ *
+ * @param binding The provider or module to generate bindings for (fqn, type, path inside `.gen`).
+ * @param parentDir Parent directory under which the per-binding temp dir is created — pass `fixturesDir` so cleanup
+ *   happens via `globalTeardown`.
+ * @returns Absolute path to the generated binding root (i.e. `<tempDir>/.gen/<binding.path>`).
+ */
+async function generateBinding(
+  binding: ProviderDefinition,
+  parentDir: string,
+): Promise<string> {
+  const tempDir = await fs.mkdtemp(path.join(parentDir, "cdktf-provider-"));
   await fs.writeFile(
     path.resolve(tempDir, "cdktf.json"),
     JSON.stringify({
@@ -107,9 +120,22 @@ async function generateBinding(binding: ProviderDefinition): Promise<string> {
   return path.resolve(tempDir, ".gen", binding.path);
 }
 
-async function prepareBaseProject(language: string): Promise<string> {
+/**
+ * Initialises a fresh CDKTN project for the given language by running `cdktn init --local --template=<language>` in a
+ * new temp dir under `parentDir`, and returns the absolute path to that project. The project is treated as a read-only
+ * base — each test gets its own provisioned copy via `copyBaseProject` (which symlinks the heavy `node_modules`).
+ *
+ * @param language Template to initialise (e.g. `typescript`, `python`, `csharp`).
+ * @param parentDir Parent directory under which the per-language temp project dir is created — pass `fixturesDir` so
+ *   cleanup happens via `globalTeardown`.
+ * @returns Absolute path to the initialised base project.
+ */
+async function prepareBaseProject(
+  language: string,
+  parentDir: string,
+): Promise<string> {
   const projectDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), "cdktf-convert-base-"),
+    path.join(parentDir, "cdktf-convert-base-"),
   );
   await execa(
     cdktnBin,
@@ -144,7 +170,7 @@ module.exports = async function globalSetup() {
   const bindingEntries = Object.values(bindings);
   const bindingResults = await Promise.all(
     bindingEntries.map(async (b) => {
-      const absolutePath = await generateBinding(b);
+      const absolutePath = await generateBinding(b, fixturesDir);
       return [b.fqn, absolutePath] as [string, string];
     }),
   );
@@ -159,7 +185,7 @@ module.exports = async function globalSetup() {
   );
   const baseProjectEntries = await Promise.all(
     requiredLanguages.map(async (lang) => {
-      const projectDir = await prepareBaseProject(lang);
+      const projectDir = await prepareBaseProject(lang, fixturesDir);
       return [lang, projectDir] as [string, string];
     }),
   );
@@ -170,13 +196,15 @@ module.exports = async function globalSetup() {
   await fs.mkdirp(schemaCacheDir);
 
   console.log("[globalSetup] Pre-caching provider schemas...");
-  for (const entry of bindingEntries) {
-    const constraint =
-      entry.type === ProviderType.provider
-        ? new TerraformProviderConstraint(entry.fqn)
-        : new TerraformModuleConstraint(entry.fqn);
-    await readSchema([constraint], schemaCacheDir);
-  }
+  await Promise.all(
+    bindingEntries.map(async (entry) => {
+      const constraint =
+        entry.type === ProviderType.provider
+          ? new TerraformProviderConstraint(entry.fqn)
+          : new TerraformModuleConstraint(entry.fqn);
+      await readSchema([constraint], schemaCacheDir);
+    }),
+  );
 
   const manifest: FixturesManifest = {
     providerBindings,

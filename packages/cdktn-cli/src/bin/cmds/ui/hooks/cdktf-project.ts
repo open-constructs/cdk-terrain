@@ -139,6 +139,9 @@ export function useCdktfProject<T>(
       .catch((err) => {
         exit(new Error(err));
       });
+    // The project is created and started once on mount. Re-running on dep
+    // changes would spawn duplicate projects and re-invoke `projectCallback`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

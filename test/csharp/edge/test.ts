@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as path from "path";
 import * as fs from "fs-extra";
-const { execSync } = require("child_process");
+import { execSync } from "child_process";
 import { QueryableStack, TestDriver, onlyJson } from "../../test-helper";
 
 describe("csharp full integration test synth", () => {

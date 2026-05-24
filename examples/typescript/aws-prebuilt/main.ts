@@ -3,10 +3,10 @@
 import { Construct } from "constructs";
 import { App, TerraformStack, TerraformOutput } from "cdktn";
 
-import { DataAwsRegion } from "@cdktf/provider-aws/lib/data-aws-region";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
-import { DynamodbTable } from "@cdktf/provider-aws/lib/dynamodb-table";
-import { SnsTopic } from "@cdktf/provider-aws/lib/sns-topic";
+import { DataAwsRegion } from "@cdktn/provider-aws/lib/data-aws-region";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
+import { DynamodbTable } from "@cdktn/provider-aws/lib/dynamodb-table";
+import { SnsTopic } from "@cdktn/provider-aws/lib/sns-topic";
 
 export class HelloTerra extends TerraformStack {
   constructor(scope: Construct, id: string) {

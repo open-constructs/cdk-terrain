@@ -101,6 +101,7 @@ export async function runGetInDir(dir: string, clean = true) {
       codeMakerOutput: path.resolve(dir, config.codeMakerOutput),
       targetLanguage: config.language,
       jsiiParallelism: 1,
+      languageOptions: config.languageOptions,
     },
     cleanDirectory: clean,
   });

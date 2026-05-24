@@ -111,7 +111,10 @@ function deduplicateAttributesWithSameName(
 class Parser {
   private structs = new Array<Struct>();
 
-  constructor(private classNames: string[]) {}
+  constructor(
+    private classNames: string[],
+    private usedBaseNames: Map<string, string>,
+  ) {}
 
   private uniqueClassName(className: string): string {
     if (this.classNames.includes(className)) {
@@ -119,6 +122,32 @@ class Parser {
     }
     this.classNames.push(className);
     return className;
+  }
+
+  /**
+   * Ensure base names are unique case-insensitively.
+   *
+   * Affected languages:
+   * - Go: JSII-generated Go package names are fully lowercased, so
+   *   `load-balancer-backendset` and `load-balancer-backend-set` both
+   *   become package `loadbalancerbackendset`, causing a hard build failure:
+   *   "case-insensitive file name collision".
+   * - C#: JSII generates PascalCase directories like
+   *   `LoadBalancerBackendset/` and `LoadBalancerBackendSet/` which the C#
+   *   compiler treats case-insensitively, causing CS2002 and CS0234 errors.
+   */
+  private uniqueBaseName(baseName: string): string {
+    const pascalName = toPascalCase(baseName);
+    const key = pascalName.toLowerCase();
+    const existing = this.usedBaseNames.get(key);
+
+    if (existing !== undefined && existing !== pascalName) {
+      baseName = `${baseName}A`;
+      return this.uniqueBaseName(baseName);
+    }
+
+    this.usedBaseNames.set(key, pascalName);
+    return baseName;
   }
 
   public resourceFrom(
@@ -162,6 +191,7 @@ class Parser {
     }
 
     baseName = sanitizeClassOrNamespaceName(baseName, isProvider);
+    baseName = this.uniqueBaseName(baseName);
 
     const className = this.uniqueClassName(toPascalCase(baseName));
     // avoid naming collision - see https://github.com/hashicorp/terraform-cdk/issues/299
@@ -683,6 +713,7 @@ class Parser {
 
 export class ResourceParser {
   private uniqueClassnames: string[] = [];
+  private uniqueBaseNames: Map<string, string> = new Map();
   private resources: Record<string, ResourceModel> = {};
 
   public parse(
@@ -696,7 +727,7 @@ export class ResourceParser {
       return this.resources[type];
     }
 
-    const parser = new Parser(this.uniqueClassnames);
+    const parser = new Parser(this.uniqueClassnames, this.uniqueBaseNames);
     const resource = parser.resourceFrom(
       fqpn,
       type,

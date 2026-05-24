@@ -29,11 +29,11 @@ To do so, run:
 yarn run generate
 ```
 
-This will update the generated file in `packages/cdktn/lib/functions/terraform-functions.generated.ts`
+This will update the generated file in `packages/cdktn/src/functions/terraform-functions.generated.ts`
 
 ### Overriding functions
 
-The `scripts/generate.ts` file contains a constant named `INTERNAL_METHODS` that will cause those functions to be internalized (by adding a `_` prefix and the `@internal` docstring required by JSII). This allows to either skip exposing a function or (which we currently use it for) to export that function with a slightly different signature through `packages/cdktn/lib/terraform-functions.ts`. We currently do this for some functions that Terraform uses variadic parameters for that would otherwise have a poor UX in CDKTN. Refer to the aforementioned file for examples and more background information.
+The `scripts/generate.ts` file contains a constant named `INTERNAL_METHODS` that will cause those functions to be internalized (by adding a `_` prefix and the `@internal` docstring required by JSII). This allows to either skip exposing a function or (which we currently use it for) to export that function with a slightly different signature through `packages/cdktn/src/terraform-functions.ts`. We currently do this for some functions that Terraform uses variadic parameters for that would otherwise have a poor UX in CDKTN. Refer to the aforementioned file for examples and more background information.
 
 ## Running both commands at once
 

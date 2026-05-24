@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import monorepo from "eslint-plugin-monorepo";
+import nx from "@nx/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettierConfig from "eslint-plugin-prettier/recommended";
 
 export const baseConfig = [
+  ...nx.configs["flat/base"],
   {
     ignores: [
       "**/node_modules",
@@ -27,16 +28,24 @@ export const baseConfig = [
   {
     files: ["**/*.ts", "**/*.tsx"],
 
-    plugins: {
-      monorepo,
-    },
-
     languageOptions: {
       parser: tsParser,
     },
 
     rules: {
-      "monorepo/no-relative-import": "error",
+      "@nx/enforce-module-boundaries": [
+        "error",
+        {
+          enforceBuildableLibDependency: true,
+          allow: ["^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$"],
+          depConstraints: [
+            {
+              sourceTag: "*",
+              onlyDependOnLibsWithTags: ["*"],
+            },
+          ],
+        },
+      ],
 
       "@typescript-eslint/no-explicit-any": 0,
       "@typescript-eslint/explicit-function-return-type": 0,

@@ -1,6 +1,6 @@
 {
     "name": "root",
-    "version": "0.22.1",
+    "version": "0.23.1",
     "private": true,
     "scripts": {
         "build-and-package": "lerna run --scope 'cdktn*' --scope @cdktn/* build,package && tools/collect-dist.sh",
@@ -13,14 +13,14 @@
         "package:js": "lerna run package:js && tools/collect-dist.sh",
         "package:go": "lerna run package:go && tools/collect-dist.sh",
         "package-windows": "set GOWORK=off && lerna run package && tools\\collect-dist.bat",
-        "pretest": "yarn lint:workspace && yarn lint:prettier",
-        "test": "lerna run --scope 'cdktn*' --scope @cdktn/* --concurrency 2 test",
-        "test:ci": "lerna run --scope 'cdktn*' --scope @cdktn/* test:ci",
-        "test:update": "lerna run --concurrency 2 --no-bail --scope 'cdktn*' --scope '@cdktn/*' test:update",
+        "test": "nx run-many -t test -p 'cdktn*' '@cdktn/*' --parallel=2",
+        "test:update": "nx run-many -t test:update -p 'cdktn*' '@cdktn/*' --parallel=2 --nxBail=false",
         "watch": "lerna run --parallel  --stream --scope @cdktn/* --scope 'cdktn*' watch-preserve-output",
-        "lint:workspace": "eslint --flag v10_config_lookup_from_file .",
+        "lint:workspace": "nx run-many -t lint",
+        "lint:affected": "nx affected -t lint",
+        "lint:fix": "nx run-many -t lint --fix",
         "lint:prettier": "prettier --check .",
-        "lint:examples": "node tools/lint-examples.js",
+        "lint:examples": "node tools/lint-examples.mjs",
         "link-packages": "lerna exec --scope 'cdktn*' --scope @cdktn/* yarn link",
         "integration": "cd test && yarn edge:install && ./run-against-dist npx jest --runInBand",
         "integration:update": "cd test && yarn && yarn edge:install && NODE_OPTIONS='--max-old-space-size=7168' ./run-against-dist npx jest -u --runInBand",
@@ -40,7 +40,7 @@
         "build-docker-jsii": "docker build --platform linux/amd64 --build-arg DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default') --build-arg AVAILABLE_TERRAFORM_VERSIONS=\"$(cat .terraform.versions.json | jq -r '.available | join(\" \")')\" -t terraconstructs/jsii-terraform .",
         "push-docker-jsii": "docker push terraconstructs/jsii-terraform",
         "dist-clean": "lerna run dist-clean --stream && rm -rf dist",
-        "prepare": "husky install",
+        "prepare": "husky",
         "prepare-next-release": "standard-version --prerelease pre --release-as minor --skip.changelog=true --skip.commit=true",
         "prepare-release": "tools/prepare-release.sh",
         "release": "standard-version",
@@ -64,37 +64,45 @@
             ".yalc/@*/*"
         ],
         "nohoist": [
+            "fflate",
+            "**/fflate",
+            "**/fflate/**",
             "json-stable-stringify",
             "**/json-stable-stringify",
             "**/json-stable-stringify/**",
             "semver",
             "**/semver",
-            "**/semver/**",
-            "yazl",
-            "**/yazl",
-            "**/yazl/**"
+            "**/semver/**"
         ]
     },
     "devDependencies": {
         "@eslint/js": "^9.39.4",
+        "@nx/eslint": "^20.8.2",
+        "@nx/eslint-plugin": "^20.8.2",
+        "@nx/jest": "^20.8.2",
+        "@swc/core": "~1.15.5",
+        "@swc/helpers": "~0.5.18",
+        "@swc/jest": "~0.2.38",
+        "@types/jest": "30.0.0",
         "@types/prettier": "2.6.0",
         "@typescript-eslint/parser": "^8.58.0",
         "changelog-parser": "^2.8.1",
         "eslint": "^9.39.4",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-import": "^2.32.0",
+        "eslint-formatter-gha": "^2.0.1",
         "eslint-plugin-jsdoc": "^50.8.0",
-        "eslint-plugin-monorepo": "^0.3.2",
         "eslint-plugin-no-instanceof": "1.0.1",
         "eslint-plugin-prettier": "^5.5.5",
         "eslint-plugin-react": "7.37.5",
         "eslint-plugin-react-hooks": "^5.2.0",
         "husky": ">=6",
         "infer-owner": "^1.0.4",
+        "jest": "^30.3.0",
         "knip": "^6.6.3",
         "lerna": "^8.2.1",
         "lint-staged": "^15.5.2",
         "prettier": "^3.8.1",
+        "publib": "^0.2.1047",
         "semver": "^7.7.4",
         "standard-version": "^9.5.0",
         "tsc-files": "^1.1.4",
@@ -102,12 +110,12 @@
         "typescript-eslint": "^8.58.0"
     },
     "resolutions": {
-        "**/@types/react": "18.3.18",
+        "**/@types/react": "18.3.28",
         "**/jsii": "5.9.37"
     },
     "lint-staged": {
         "!(.claude|.agents|.specledger|specledger)/**/*.{ts,tsx,js,css,md}": "prettier --write",
         "examples/**": "yarn lint:examples"
     },
-    "packageManager": "yarn@1.18.0"
+    "packageManager": "yarn@1.22.22"
 }

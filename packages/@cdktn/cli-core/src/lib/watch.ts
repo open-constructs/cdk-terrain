@@ -21,7 +21,7 @@ function getOrWriteDefaultWatchConfig(projectPath = process.cwd()) {
 
   let cdktfJson;
   try {
-    cdktfJson = require(cdktfJsonPath);
+    cdktfJson = JSON.parse(fs.readFileSync(cdktfJsonPath, "utf-8"));
   } catch (err: any) {
     throw Errors.Internal(
       `Could not find cdktf.json file in ${projectPath}`,

@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: MPL-2.0
 import { TerraformStack, TerraformVariable } from "cdktn";
 import { Construct } from "constructs";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
-import { DataAwsRegion } from "@cdktf/provider-aws/lib/data-aws-region";
-import { DynamodbTable } from "@cdktf/provider-aws/lib/dynamodb-table";
-import { SnsTopic } from "@cdktf/provider-aws/lib/sns-topic";
-import { SecurityGroup } from "@cdktf/provider-aws/lib/security-group";
-import { Namespace } from "@cdktf/provider-kubernetes/lib/namespace";
-import { Deployment } from "@cdktf/provider-kubernetes/lib/deployment";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
+import { DataAwsRegion } from "@cdktn/provider-aws/lib/data-aws-region";
+import { DynamodbTable } from "@cdktn/provider-aws/lib/dynamodb-table";
+import { SnsTopic } from "@cdktn/provider-aws/lib/sns-topic";
+import { SecurityGroup } from "@cdktn/provider-aws/lib/security-group";
+import { Namespace } from "@cdktn/provider-kubernetes/lib/namespace";
+import { Deployment } from "@cdktn/provider-kubernetes/lib/deployment";
 import { KubernetesProvider } from "./.gen/providers/kubernetes/provider";
 
 // DOCS_BLOCK_START:resources-define

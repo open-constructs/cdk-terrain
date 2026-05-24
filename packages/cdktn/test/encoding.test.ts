@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { IResolvable, IResolveContext } from "../lib";
-import { TokenString } from "../lib/tokens/private/encoding";
+import { IResolvable, IResolveContext } from "../src";
+import { TokenString } from "../src/tokens/private/encoding";
 
 class TestResolvable implements IResolvable {
   creationStack: string[];

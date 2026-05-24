@@ -5,7 +5,6 @@
 
 const { execSync } = require('child_process');
 const { readFileSync, writeFileSync } = require('fs');
-const { readFile } = require('fs-extra');
 const os = require('os');
 
 exports.pre = (variables) => {

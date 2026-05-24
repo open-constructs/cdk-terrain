@@ -3,7 +3,6 @@
 import { convert } from "../../src/index";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as os from "os";
 import execa from "execa";
 import {
   LANGUAGES,
@@ -12,6 +11,15 @@ import {
 } from "@cdktn/commons";
 import { readSchema } from "@cdktn/provider-schema";
 import type { FixturesManifest } from "../globalSetup";
+import { createTmpHelper } from "./tmp";
+
+const tmp = createTmpHelper();
+
+// Tests `process.chdir(projectDir)` for jsii-rosetta. If a test leaves cwd inside a projectDir that tmp()'s afterAll later removes, the worker's next test load sees uv_cwd ENOENT.
+const _originalCwd = process.cwd();
+if (typeof afterEach === "function") {
+  afterEach(() => process.chdir(_originalCwd));
+}
 
 const includeSynthTests = Boolean(process.env.CI);
 
@@ -63,6 +71,11 @@ type SchemaFilter = {
 
 const cdktnBin = path.join(__dirname, "../../../../cdktn-cli/bundle/bin/cdktn");
 const cdktnDist = path.join(__dirname, "../../../../../dist");
+const tsxPkgJsonPath = require.resolve("tsx/package.json");
+const tsxBin = path.join(
+  path.dirname(tsxPkgJsonPath),
+  fs.readJsonSync(tsxPkgJsonPath).bin,
+);
 
 export const binding = {
   aws: {
@@ -146,6 +159,27 @@ async function copyBindingsForProvider(
   await fs.copy(absoluteBindingPath, target);
 }
 
+/**
+ * Provisions `projectDir` from `baseDir`.
+ *
+ * Copies everything except `node_modules`, then drops a directory symlink in its place. `node_modules` is the heavy
+ * bit of the base project (hundreds of MB) and the test runner only reads from it — sharing it across tests avoids
+ * per-test copy cost. The base project must therefore be treated as read-only for the lifetime of the test suite.
+ *
+ * @param baseDir Source project (output of `cdktn init`) created once in globalSetup.
+ * @param projectDir Destination for this test's project.
+ */
+async function copyBaseProject(baseDir: string, projectDir: string) {
+  await fs.copy(baseDir, projectDir, {
+    filter: (src) => path.basename(src) !== "node_modules",
+  });
+  await fs.symlink(
+    path.join(baseDir, "node_modules"),
+    path.join(projectDir, "node_modules"),
+    "dir",
+  );
+}
+
 const fileEndings: Record<string, string> = {
   typescript: ".ts",
   python: ".py",
@@ -190,7 +224,7 @@ app.synth()
 };
 
 const getAppCommand: Record<string, (stackName: string) => string> = {
-  typescript: (stackName) => `npx ts-node ${stackName}.ts`,
+  typescript: (stackName) => `${tsxBin} ${stackName}.ts`,
   python: (stackName) => `pipenv run python ${stackName}.py`,
   csharp: (stackName) => `dotnet run --project ${stackName}.csproj`,
 };
@@ -251,15 +285,27 @@ const preSynth: Record<
   },
 };
 
+/**
+ * Writes the converted code to a project directory and spawns `cdktn synth`
+ * against it, asserting that synth reports success on stdout.
+ *
+ * @param language Target language for the synth (typescript, python, csharp).
+ * @param name Human-readable test-case name.
+ * @param code Output of `convert()` for the HCL input
+ * @param providers Provider bindings the converted code imports.
+ * @param projectDir An existing project dir to reuse.
+ */
 async function synthForLanguage(
   language: string,
   name: string,
   code: { all: string; code: string; imports: string },
   providers: ProviderDefinition[] = [],
+  projectDir?: string,
 ) {
   const stackName = name.replace(/\s/g, "-");
-  const projectDirPromise = getProjectDirectory(language, providers);
-  const projectDir = await projectDirPromise;
+  if (!projectDir) {
+    projectDir = await getProjectDirectory(language, providers);
+  }
 
   // Have a before all somewhere above bootstrap a TS project
   // __dirname should be replaceed by the bootstrapped directory
@@ -306,12 +352,10 @@ async function getProjectDirectory(
       `Unsupported language used to synthesize code: ${language}`,
     );
   }
-  const projectDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), "cdktf-convert-test-"),
-  );
+  const projectDir = tmp("cdktf-convert-test-");
 
   await Promise.all([
-    fs.copy(baseDir, projectDir),
+    copyBaseProject(baseDir, projectDir),
     ...providers.map((provider) =>
       copyBindingsForProvider(provider, projectDir),
     ),
@@ -469,7 +513,13 @@ const createTestCase =
               );
               process.chdir(projectDir); // JSII rosetta needs to be run in the project directory with bindings included
               const convertResult = await runConvert(language);
-              await synthForLanguage(language, name, convertResult, providers);
+              await synthForLanguage(
+                language,
+                name,
+                convertResult,
+                providers,
+                projectDir,
+              );
             },
             500_000,
           );

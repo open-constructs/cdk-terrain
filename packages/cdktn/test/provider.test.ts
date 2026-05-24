@@ -1,9 +1,9 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, TerraformProvider } from "../lib";
+import { Testing, TerraformStack, TerraformProvider } from "../src";
 import { Construct } from "constructs";
 import { TestProvider } from "./helper/provider";
-import { TerraformVariable } from "../lib/terraform-variable";
+import { TerraformVariable } from "../src/terraform-variable";
 
 test("minimal configuration", () => {
   const app = Testing.app();

@@ -22,8 +22,6 @@ jobs:
     runs-on: depot-ubuntu-24.04-16
     container:
       image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
-    env:
-      CHECKPOINT_DISABLE: "1"
     timeout-minutes: 60
 
     steps:
@@ -42,21 +40,21 @@ jobs:
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/providerSchema
           echo "providerSchema=/usr/local/share/.cache/providerSchema" >> $GITHUB_OUTPUT
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.yarn }}
           key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
           restore-keys: |
             yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
             yarn-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
           key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-unit
           restore-keys: |
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
           key: providerSchema-${{ runner.os }}-${{ inputs.terraform_version }}-unit-${{ inputs.package }}
@@ -64,26 +62,24 @@ jobs:
       - name: installing dependencies
         run: |
           yarn install --frozen-lockfile --prefer-offline
-      - name: compile
-        run: |
-          tools/align-version.sh
-          npx lerna run --scope '${{ inputs.package }}' build
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
-      - name: compile cdktn-cli and package
+      - name: align versions
+        run: tools/align-version.sh
+      - name: package (when testing @cdktn/hcl2cdk)
+        # hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which reads
+        # jsii tarballs from the workspace-root dist/ directory.
         if: inputs.package == '@cdktn/hcl2cdk'
-        run: |
-          npx lerna run --scope 'cdktn-cli' build
-          yarn package
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+        run: yarn package
       - name: test
+        # nx test runs the @nx/jest plugin target, with `^build` honored via
+        # nx.json targetDefaults — upstream packages are built automatically.
         run: |
           unset TF_PLUGIN_CACHE_DIR
-          npx lerna run --scope '${{ inputs.package }}' test:ci
+          yarn nx test '${{ inputs.package }}' --ci --coverage --reporters=default --reporters=github-actions
         env:
           TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
           CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
+
+      - name: Coverage summary
+        if: always()
+        run: node tools/test-coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"

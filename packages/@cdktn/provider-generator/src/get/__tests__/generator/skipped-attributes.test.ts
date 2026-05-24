@@ -1,16 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
 import { CodeMaker } from "codemaker";
+import { createTmpHelper } from "../util";
+
+const tmp = createTmpHelper();
 
 test("skips block type attributes in the disallow list", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "skip-attributes.test"),
-  );
+  const workdir = tmp("skip-attributes.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -40,9 +40,7 @@ test("skips block type attributes in the disallow list", async () => {
 
 test("skips attribute type attributes in the disallow list", async () => {
   const code = new CodeMaker();
-  const workdir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "skip-attributes.test"),
-  );
+  const workdir = tmp("skip-attributes.test");
   const spec = JSON.parse(
     fs.readFileSync(
       path.join(
