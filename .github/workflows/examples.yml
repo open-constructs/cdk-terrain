@@ -109,6 +109,8 @@ jobs:
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
+          mkdir -p /usr/local/share/.cache/gradle
+          echo "gradle=/usr/local/share/.cache/gradle" >> $GITHUB_OUTPUT
       - name: Restore yarn cache
         # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -135,6 +137,13 @@ jobs:
           restore-keys: |
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
+      - name: Cache gradle
+        if: endsWith(matrix.target, '-gradle')
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.gradle }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('examples/java/*-gradle/gradle/wrapper/gradle-wrapper.properties') }}-examples
+          restore-keys: gradle-${{ runner.os }}-
       - name: Install dependencies
         run: yarn install --frozen-lockfile --prefer-offline
       - name: Download dist
@@ -159,4 +168,5 @@ jobs:
           MAVEN_OPTS: "-Xmx3G"
           TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.terraform }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+          GRADLE_USER_HOME: ${{ steps.global-cache-dir-path.outputs.gradle }}
           SYNTH_HCL_OUTPUT: ${{ matrix.hclOutput }}
