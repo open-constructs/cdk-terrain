@@ -75,7 +75,7 @@
         "cdktn",
         "constructs",
         "cross-spawn",
-        // Only used in local-registry.sh.
+        // Only called via spawn in test/local-registry.mjs.
         "verdaccio"
       ]
     }

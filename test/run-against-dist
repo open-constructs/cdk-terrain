@@ -1,25 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-scriptdir=$(cd $(dirname $0) && pwd)
-
-# Load functions for working with local NPM registry (Verdaccio)
-source "$scriptdir"/local-registry.sh
+scriptdir="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 function cleanup {
   set +x
-  # Restore the original NPM and Yarn registry URLs and stop Verdaccio
-  stopLocalRegistry
+  # Restore the original npm registry URL and stop Verdaccio
+  node "$scriptdir"/local-registry.mjs stop || true
 }
 
+# Fires on any exit path (normal completion, error via `set -e`, or signal).
 trap cleanup EXIT
 
 export CDKTF_DIST="${scriptdir}/../dist"
 cwd=$PWD
 cdktf_root="${scriptdir}/.."
 
-# Start the local NPM registry
-startLocalRegistry "$scriptdir"/verdaccio.yaml
+# Start the local NPM registry (Verdaccio)
+node "$scriptdir"/local-registry.mjs start "$scriptdir"/verdaccio.yaml
 
 cd ${CDKTF_DIST}
 
@@ -48,7 +46,7 @@ done
 
 # install the CLI from dist/js in a temporary area and add to path
 echo "Installing CLI from 'dist'..."
-staging=$(mktemp -d)
+staging="$(mktemp -d)"
 cd ${staging}
 npm init -y > /dev/null
 # Use the same package manager (and version) the rest of the repo uses
@@ -72,7 +70,7 @@ done
 # stop the local registry now that we installed the CLI
 # Some tests install cdktn in an older version from NPM
 # Which we'd block via the local registry otherwise
-stopLocalRegistry
+node "$scriptdir"/local-registry.mjs stop
 
 export TEST_PATH_CDKTF_CLI=${staging}/node_modules/.bin
 export PATH=$TEST_PATH_CDKTF_CLI:$PATH
