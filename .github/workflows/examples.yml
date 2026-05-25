@@ -141,7 +141,10 @@ jobs:
         if: endsWith(matrix.target, '-gradle')
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          path: ${{ steps.global-cache-dir-path.outputs.gradle }}
+          # Skip daemon/, notifications/, native/ — only the distribution + module jars are worth keeping
+          path: |
+            ${{ steps.global-cache-dir-path.outputs.gradle }}/caches/modules-2
+            ${{ steps.global-cache-dir-path.outputs.gradle }}/wrapper/dists
           key: gradle-${{ runner.os }}-${{ hashFiles('examples/java/*-gradle/gradle/wrapper/gradle-wrapper.properties') }}-examples
           restore-keys: gradle-${{ runner.os }}-
       - name: Install dependencies
