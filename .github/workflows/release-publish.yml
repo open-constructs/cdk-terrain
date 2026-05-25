@@ -47,6 +47,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: installing dependencies
         run: yarn install --frozen-lockfile
       - name: Download build artifacts
@@ -77,6 +81,10 @@ jobs:
           path: dist
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       # We use twine directly for publishing instead of publib-pypi
       # Publib-pypi does the same twine command (https://github.com/cdklabs/publib/blob/main/bin/publib-pypi)
       # but also tries to install twine which is already globally
@@ -104,6 +112,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: installing dependencies
         run: yarn install --frozen-lockfile
       - name: Download build artifacts
@@ -131,6 +143,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: installing dependencies
         run: yarn install --frozen-lockfile
       - name: Download dist
@@ -153,6 +169,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: installing dependencies
         run: yarn install --frozen-lockfile
       - name: Download dist

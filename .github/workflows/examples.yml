@@ -43,6 +43,10 @@ jobs:
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: Ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
@@ -101,6 +105,10 @@ jobs:
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: Ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
