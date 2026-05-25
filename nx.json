@@ -1,6 +1,10 @@
 {
   "namedInputs": {
-    "default": ["{projectRoot}/**/*"],
+    "sharedGlobals": [
+      "{workspaceRoot}/.nvmrc",
+      "{workspaceRoot}/mise.toml"
+    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
       "default",
       "!{projectRoot}/**/*.test.ts",
