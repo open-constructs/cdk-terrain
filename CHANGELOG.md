@@ -1,6 +1,7 @@
 ## 0.23.2
 
 ### chore
+
 - chore: Update npm version to support OIDC trusted publishing [\#205](https://github.com/open-constructs/cdk-terrain/pull/205)
 - chore: Fix publib running to use npx rather than yarn [\#203](https://github.com/open-constructs/cdk-terrain/pull/203)
 - chore(tests): Add test for Node type stripping [\#198](https://github.com/open-constructs/cdk-terrain/pull/198)
