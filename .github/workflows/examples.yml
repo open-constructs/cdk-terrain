@@ -147,13 +147,15 @@ jobs:
             ${{ steps.global-cache-dir-path.outputs.gradle }}/wrapper/dists
           key: gradle-${{ runner.os }}-${{ hashFiles('examples/java/*-gradle/gradle/wrapper/gradle-wrapper.properties') }}-examples
           restore-keys: gradle-${{ runner.os }}-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
       - name: Download dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: dist-examples
           path: dist
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --prefer-offline
+      - name: Install test dependencies
+        run: cd test && yarn install --frozen-lockfile --prefer-offline
       - name: Recreate packages/cdktn/dist/go layout for Go examples
         # Go examples' go.mod files use `replace ... => ../../../packages/cdktn/dist/go/cdktn`,
         # which points at the per-package build output. The matrix job only has the aggregated
