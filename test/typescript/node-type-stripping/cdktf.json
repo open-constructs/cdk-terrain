@@ -1,0 +1,11 @@
+{
+  "language": "typescript",
+  "app": "node main.ts",
+  "terraformProviders": [
+    "null@3.3.0"
+  ],
+  "languageOptions": {
+    "importExtension": ".ts"
+  },
+  "context": {}
+}

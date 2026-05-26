@@ -54,8 +54,12 @@ jobs:
         with:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
+      - name: Upgrade npm for OIDC trusted publisher support
+        # OIDC publishing requires npm >= 11.5.0 — https://github.com/npm/cli/pull/8336
+        # TODO: Remove when Node is updated to version 24+
+        run: npm install --global npm@11.15.0
       - name: Release
-        run: yarn publib-npm
+        run: npx --no publib-npm
         env:
           NPM_DIST_TAG: ${{ inputs.npm_dist_tag }}
           NPM_TRUSTED_PUBLISHER: "true"
@@ -108,7 +112,7 @@ jobs:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
       - name: Release
-        run: yarn publib-maven
+        run: npx --no publib-maven
         env:
           MAVEN_SERVER_ID: central-ossrh
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
@@ -135,7 +139,7 @@ jobs:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
       - name: Release
-        run: yarn publib-nuget
+        run: npx --no publib-nuget
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
@@ -157,7 +161,7 @@ jobs:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
       - name: Release
-        run: yarn publib-golang
+        run: npx --no publib-golang
         env:
           GITHUB_TOKEN: ${{ secrets.TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN }}
           GIT_USER_NAME: "CDK Terrain Bot"
