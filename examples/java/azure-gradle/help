@@ -27,7 +27,7 @@ Use Providers:
   
   cdktn provider add "aws@~>3.0" null kreuzwerker/docker
 
-  All prebuilt providers are available on Maven Central: https://mvnrepository.com/artifact/com.hashicorp
+  All prebuilt providers are available on Maven Central: https://mvnrepository.com/artifact/io.cdktn
   You can also add these providers directly to your pom.xml file.
 
   You can also build any module or provider locally. Learn more: https://cdktn.io/docs/concepts/providers
