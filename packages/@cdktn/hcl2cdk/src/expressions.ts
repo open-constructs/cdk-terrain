@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as t from "@babel/types";
 import template from "@babel/template";
-import { camelCase, leaveCommentText, logger } from "./utils";
+import { camelCase, fileBugCommentText, logger } from "./utils";
 import {
   IteratorVariableReference,
   ProgramScope,
@@ -79,8 +79,7 @@ function traversalToVariableName(
 ) {
   if (!tex.isScopeTraversalExpression(node)) {
     logger.error(
-      `Unexpected expression type ${node.type} with value ${node.meta.value} passed to convert to a variable. 
-        ${leaveCommentText}`,
+      `Unexpected expression type ${node.type} with value ${node.meta.value} passed to convert to a variable. ${fileBugCommentText}`,
     );
     return "";
   }
@@ -509,7 +508,7 @@ function convertFunctionCallExpressionToTs(
 
   if (!mapping) {
     logger.error(
-      `Unknown function ${functionName} encountered. ${leaveCommentText}`,
+      `Unknown function ${functionName} encountered. ${fileBugCommentText}`,
     );
     const argumentExpressions = node.children.map((child) =>
       convertTFExpressionAstToTs(scope, child),

@@ -7,7 +7,7 @@ import {
   getReferencesInExpression,
   TFExpressionSyntaxTree as tex,
 } from "@cdktn/hcl2json";
-import { leaveCommentText, logger } from "./utils";
+import { logger } from "./utils";
 import { ProgramScope, Reference, TerraformResourceBlock } from "./types";
 import { variableName } from "./variables";
 
@@ -104,10 +104,9 @@ export async function extractReferencesFromExpression(
       // This is most likely a false positive, so we just ignore it
       // We include the log below to help debugging
       logger.error(
-        `Found a reference that is unknown: ${input} has reference "${value}".The id was not found in ${JSON.stringify(
+        `Found a reference that is unknown: ${input} has reference "${value}". The id was not found in ${JSON.stringify(
           nodeIds,
-        )} with temporary values ${JSON.stringify(scopedIds)}.
-${leaveCommentText}`,
+        )} with temporary values ${JSON.stringify(scopedIds)}.`,
       );
       return carry;
     }

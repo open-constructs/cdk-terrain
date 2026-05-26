@@ -4,7 +4,7 @@ import camelcase from "camelcase";
 
 export { logger } from "@cdktn/commons";
 
-export const leaveCommentText = `Please leave a comment at https://github.com/hashicorp/terraform-cdk/issues/842 if you run into this issue.`;
+export const fileBugCommentText = `This is likely a bug in cdktn. Please report it at https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug&template=bug-report.md&title=.`;
 
 export const camelCase = (str: string) => camelcase(str.replace(/[-/]/g, "_"));
 export const pascalCase = (str: string) =>
