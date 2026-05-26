@@ -27,7 +27,7 @@ Use Providers:
   
   cdktn provider add "aws@~>3.0" null kreuzwerker/docker
 
-  You can find all prebuilt providers on nuget: https://www.nuget.org/packages?q=HashiCorp.Cdktf.Providers
+  You can find all prebuilt providers on nuget: https://www.nuget.org/packages?q=Io.Cdktn.Providers
   You can also install these providers directly through dotnet:
 
   dotnet add package HashiCorp.Cdktf.Providers.Aws
