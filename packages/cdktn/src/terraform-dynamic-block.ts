@@ -4,7 +4,7 @@ import { dynamicBlockNotSupported } from "./errors";
 import { TerraformDynamicExpression } from "./terraform-dynamic-expression";
 import { ITerraformIterator } from "./terraform-iterator";
 import { IResolvable, IResolveContext, Lazy, Token } from "./tokens";
-import { captureStackTrace } from "./tokens/private/stack-trace";
+import { captureCreationStack } from "./tokens/private/stack-trace";
 
 const DYNAMIC_BLOCK_SYMBOL = Symbol.for("cdktf/TerraformDynamicBlock");
 
@@ -21,7 +21,7 @@ export class TerraformDynamicBlock implements IResolvable {
     content: { [key: string]: any };
   }) {
     Object.defineProperty(this, DYNAMIC_BLOCK_SYMBOL, { value: true });
-    this.creationStack = captureStackTrace();
+    this.creationStack = captureCreationStack();
     this.forEach = args.forEach;
     this.content = args.content;
   }

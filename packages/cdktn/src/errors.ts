@@ -446,16 +446,15 @@ export const indexTooLargeToEncode = (index: number) =>
 
 export const argToIntrinsicMustBePlainValue = (
   value: any,
-  creationStack: string[],
-) =>
-  new Error(
-    `You can only use a plain value (not a function) while creating an Intrinsic token. We received the value '${value}' created at:\n${creationStack.join(
-      "\n",
-    )}. If you want to use a function, please use the Lazy class. For example:  Lazy.anyValue({ produce: () => "Hello World" }).`,
+  creationStack: string[] | undefined,
+) => {
+  const createdAt = creationStack?.length
+    ? ` created at:\n${creationStack.join("\n")}`
+    : "";
+  return new Error(
+    `You can only use a plain value (not a function) while creating an Intrinsic token. We received the value '${value}'${createdAt}. If you want to use a function, please use the Lazy class. For example:  Lazy.anyValue({ produce: () => "Hello World" }).`,
   );
-
-export const intrinsicNewError = (message: string, createdAt: string) =>
-  new Error(`${message}\nToken created:\n    at ${createdAt}\nError thrown:`);
+};
 
 export const unableToResolveCircularReference = (pathName: string) =>
   new Error(`Unable to resolve object tree with circular reference at '${pathName}'.

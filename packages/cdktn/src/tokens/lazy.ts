@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 // Copied from https://github.com/aws/constructs/blob/e01e47f78ef1e9b600efcd23ff7705aa8d384017/lib/lazy.ts
-import { captureStackTrace } from "./private/stack-trace";
+import { captureCreationStack } from "./private/stack-trace";
 import { IPostProcessor, IResolvable, IResolveContext } from "./resolvable";
 import { Token } from "./token";
 
@@ -153,7 +153,7 @@ export abstract class LazyBase implements IResolvable {
   private postProcessors: IPostProcessor[] = [];
 
   constructor() {
-    this.creationStack = captureStackTrace();
+    this.creationStack = captureCreationStack();
   }
 
   public resolve(context: IResolveContext): any {

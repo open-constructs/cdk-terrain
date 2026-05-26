@@ -24,3 +24,16 @@ export function captureStackTrace(below?: Function): string[] {
     .slice(1)
     .map((s) => s.replace(/^\s*at\s+/, ""));
 }
+
+/**
+ * Captures a stack trace for a resolvable's `creationStack`, unless disabled
+ * via the `CDKTN_DISABLE_CREATION_STACK` env var. When disabled, returns `[]`
+ * to skip the (expensive) `Error.captureStackTrace` call.
+ */
+export function captureCreationStack(): string[] {
+  const flag = process.env.CDKTN_DISABLE_CREATION_STACK;
+  if (flag === "true" || flag === "1") {
+    return [];
+  }
+  return captureStackTrace(captureCreationStack);
+}

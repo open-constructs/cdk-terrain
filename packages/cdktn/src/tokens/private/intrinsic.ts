@@ -1,13 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 // copied from https://github.com/aws/constructs/blob/e01e47f78ef1e9b600efcd23ff7705aa8d384017/lib/private/intrinsic.ts
-import {
-  argToIntrinsicMustBePlainValue,
-  intrinsicNewError,
-} from "../../errors";
+import { argToIntrinsicMustBePlainValue } from "../../errors";
 import { IResolvable, IResolveContext } from "../resolvable";
 import { Token } from "../token";
-import { captureStackTrace } from "./stack-trace";
+import { captureCreationStack } from "./stack-trace";
 
 /**
  * Token subclass that represents values intrinsic to the target document language
@@ -29,7 +26,7 @@ export class Intrinsic implements IResolvable {
   private readonly value: any;
 
   constructor(value: any) {
-    this.creationStack = captureStackTrace();
+    this.creationStack = captureCreationStack();
     if (isFunction(value)) {
       throw argToIntrinsicMustBePlainValue(value, this.creationStack);
     }
@@ -69,14 +66,6 @@ export class Intrinsic implements IResolvable {
     // So return a string representation that indicates this thing is a token
     // and needs resolving.
     return `<unresolved-token>`;
-  }
-
-  /**
-   * Creates a throwable Error object that contains the token creation stack trace.
-   * @param message Error message
-   */
-  protected newError(message: string): any {
-    return intrinsicNewError(message, this.creationStack.join("\n    at "));
   }
 }
 

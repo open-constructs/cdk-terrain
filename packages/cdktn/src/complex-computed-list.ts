@@ -11,7 +11,7 @@ import {
   TerraformIterator,
   DynamicListTerraformIterator,
 } from ".";
-import { captureStackTrace } from "./tokens/private/stack-trace";
+import { captureCreationStack } from "./tokens/private/stack-trace";
 import { providerVersionMismatch } from "./errors";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
@@ -27,7 +27,7 @@ abstract class ComplexResolvable implements IResolvable, ITerraformAddressable {
     protected terraformResource: IInterpolatingParent,
     protected terraformAttribute: string,
   ) {
-    this.creationStack = captureStackTrace();
+    this.creationStack = captureCreationStack();
   }
 
   abstract computeFqn(): string;

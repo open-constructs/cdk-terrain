@@ -200,7 +200,7 @@ export class DefaultTokenResolver implements ITokenResolver {
     } catch (e) {
       const err = e as any;
       let message = `Resolution error: ${err.message}.`;
-      if (t.creationStack && t.creationStack.length > 0) {
+      if (t.creationStack?.length) {
         message += `\nObject creation stack:\n  at ${t.creationStack.join(
           "\n  at ",
         )}`;
