@@ -5,7 +5,7 @@
   cat help                Prints this message
 
   Compile:
-    ./gradlew run         Compiles and runs your Java packages
+    mvn compile           Compiles your Java packages
 
   Synthesize:
     cdktn synth [stack]   Synthesize Terraform resources to cdktf.out/
