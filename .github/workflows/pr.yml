@@ -10,9 +10,25 @@ on:
       - unlabeled
       - reopened
 
+concurrency:
+  group: >-
+    ${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled')
+        && !startsWith(github.event.label.name, 'ci/')
+        && format('pr-noop-{0}', github.run_id)
+        || format('pr-{0}', github.event.pull_request.number || github.run_id) }}
+  cancel-in-progress: true
+
 jobs:
+  ci_label_filter:
+    name: "CI Label Filter"
+    if: ${{ !((github.event.action == 'labeled' || github.event.action == 'unlabeled') && !startsWith(github.event.label.name, 'ci/')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: "true"
+
   quality:
     name: "Quality"
+    needs: [ci_label_filter]
     uses: ./.github/workflows/quality.yml
     with:
       concurrency_group_prefix: pr
@@ -20,6 +36,7 @@ jobs:
 
   build:
     name: "Build"
+    needs: [ci_label_filter]
     uses: ./.github/workflows/build.yml
     with:
       concurrency_group_prefix: pr
@@ -67,6 +84,7 @@ jobs:
     name: "PR - Result"
     needs:
       [
+        ci_label_filter,
         quality,
         build,
         all_unit_tests,

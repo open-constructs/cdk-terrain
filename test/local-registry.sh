@@ -16,8 +16,11 @@ function startLocalRegistry {
   echo "Cleaning storage dir ($storage_dir).."
   rm -rf $storage_dir
 
-  nohup npx ${VERDACCIO_PACKAGE:-$default_verdaccio_package} -c $1 &>$tmp_registry_log &
+  # Enable job control so the background job becomes its own process group leader.
+  set -m
+  npx ${VERDACCIO_PACKAGE:-$default_verdaccio_package} -c $1 &>$tmp_registry_log &
   verdaccio_pid="$!"
+  set +m
   
   # Wait for Verdaccio to boot
   echo "Waiting for local Registry to start"
@@ -32,8 +35,16 @@ function startLocalRegistry {
 }
 
 function stopLocalRegistry {
+  # Noop if we never started Verdaccio
+  [ -z "${verdaccio_pid:-}" ] && return 0
+
   # Restore the original NPM and Yarn registry URLs and stop Verdaccio
   npm set registry "$original_npm_registry_url"
   yarn config set registry "$original_yarn_registry_url"
-  kill $verdaccio_pid
+
+  # Kill Verdaccio's process group.
+  # We ignore errors since Verdaccio may have died or never started successfully.
+  kill -TERM -- "-$verdaccio_pid" 2>/dev/null || true
+
+  unset verdaccio_pid
 }

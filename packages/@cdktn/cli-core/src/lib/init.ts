@@ -68,7 +68,11 @@ export async function init({
   providersForceLocal,
   silent,
 }: InitArgs) {
-  const deps: any = await determineDeps(cdktfVersion, dist);
+  const deps: any = await determineDeps(
+    cdktfVersion,
+    dist,
+    path.basename(templatePath),
+  );
 
   const futureFlags = Object.entries(FUTURE_FLAGS)
     .map(([key, value]) => `    "${key}": "${value}"`)
@@ -107,9 +111,24 @@ export interface Deps {
   cdktf_version: string;
   constructs_version: string;
 }
+type DistKey = Exclude<keyof Deps, "cdktf_version" | "constructs_version">;
+
+// Each built-in template only consumes the dist artifact for its own
+// language. Skipping the others lets `cdktn init --dist` work when only
+// some language dists are present (e.g. CI ran `yarn package:js` only).
+const distKeysByTemplate: Record<string, DistKey[]> = {
+  typescript: ["npm_cdktf"],
+  python: ["pypi_cdktf"],
+  "python-pip": ["pypi_cdktf"],
+  java: ["mvn_cdktf"],
+  csharp: ["nuget_cdktf"],
+  go: ["go_cdktf"],
+};
+
 export async function determineDeps(
   version: string = pkg.version,
   dist?: string,
+  template?: string,
 ): Promise<Deps> {
   // TS: cdktf-0.10.1-dev.2160938258
   // Py: cdktf-0.10.1.dev1658821493.whl
@@ -136,7 +155,16 @@ export async function determineDeps(
       go_cdktf: path.resolve(dist, "go", `cdktn`),
     };
 
-    for (const file of Object.values(ret)) {
+    // If we know the template, only validate its artifact; otherwise fall
+    // back to validating everything (preserves prior behavior for unknown /
+    // remote templates).
+    const keysToValidate: DistKey[] =
+      template && distKeysByTemplate[template]
+        ? distKeysByTemplate[template]
+        : (Object.keys(ret) as DistKey[]);
+
+    for (const key of keysToValidate) {
+      const file = ret[key];
       if (!(await fs.pathExists(file))) {
         throw Errors.Internal(
           `unable to find ${file} under the "dist" directory (${dist})`,
