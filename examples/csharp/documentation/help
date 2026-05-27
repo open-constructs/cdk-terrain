@@ -30,12 +30,12 @@ Use Providers:
   You can find all prebuilt providers on nuget: https://www.nuget.org/packages?q=Io.Cdktn.Providers
   You can also install these providers directly through dotnet:
 
-  dotnet add package HashiCorp.Cdktf.Providers.Aws
-  dotnet add package HashiCorp.Cdktf.Providers.Google
-  dotnet add package HashiCorp.Cdktf.Providers.Azurerm
-  dotnet add package HashiCorp.Cdktf.Providers.Docker
-  dotnet add package HashiCorp.Cdktf.Providers.Github
-  dotnet add package HashiCorp.Cdktf.Providers.Null
+  dotnet add package Io.Cdktn.Providers.Aws
+  dotnet add package Io.Cdktn.Providers.Google
+  dotnet add package Io.Cdktn.Providers.Azurerm
+  dotnet add package Io.Cdktn.Providers.Docker
+  dotnet add package Io.Cdktn.Providers.Github
+  dotnet add package Io.Cdktn.Providers.Null
 
   You can also build any module or provider locally. Learn more: https://cdktn.io/docs/concepts/providers
 
