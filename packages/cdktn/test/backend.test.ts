@@ -265,3 +265,17 @@ test("s3 backend", () => {
 
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
+
+test("s3 backend with use_lockfile", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new b.S3Backend(stack, {
+    bucket: "mybucket",
+    key: "path/to/my/key",
+    region: "us-east-1",
+    useLockfile: true,
+  });
+
+  expect(Testing.synth(stack)).toMatchSnapshot();
+});

@@ -319,6 +319,20 @@ export interface S3BackendConfig {
    * This behavior does not align with the authentication flow of the AWS CLI or SDK's, and will be removed in the future.
    */
   readonly useLegacyWorkflow?: boolean;
+
+  /**
+   * Whether the backend should use S3-native state locking (Terraform 1.10+).
+   *
+   * When `true`, Terraform acquires a `<key>.tflock` object in the state bucket
+   * for the duration of state-modifying operations. This is the modern
+   * replacement for `dynamodbTable`, which is deprecated in Terraform 1.10+.
+   *
+   * When using this option, ensure your Terraform CLI is at least version 1.10.
+   *
+   * @default false
+   */
+  readonly useLockfile?: boolean;
+
   /**
    * (Optional) The endpoint configuration block.
    */
