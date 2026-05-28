@@ -50,7 +50,7 @@
   },
   "peerDependencies": {
     "cdktn": "0.0.0",
-    "jsii": "5.9.37",
+    "jsii": "5.9.43",
     "jsii-pacmak": "1.128.0"
   },
   "lint-staged": {

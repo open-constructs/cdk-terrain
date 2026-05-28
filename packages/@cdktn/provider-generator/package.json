@@ -42,7 +42,7 @@
     "codemaker": "1.128.0",
     "fs-extra": "8.1.0",
     "glob": "10.5.0",
-    "jsii": "5.9.37",
+    "jsii": "5.9.43",
     "jsii-pacmak": "1.128.0"
   },
   "devDependencies": {

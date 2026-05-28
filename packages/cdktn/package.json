@@ -81,7 +81,7 @@
         "@types/node": "18.19.130",
         "@types/semver": "7.7.1",
         "constructs": "10.6.0",
-        "jsii": "5.9.37",
+        "jsii": "5.9.43",
         "jsii-pacmak": "1.128.0",
         "typescript": "5.4.5"
     },
