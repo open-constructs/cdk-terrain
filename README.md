@@ -1,16 +1,16 @@
 # CDK Terrain
 
 > [!IMPORTANT]
-> This is a work in progress and details on this README will be updated as work progresses.
-> Refer to the [FAQ](./FAQ.md) for clarifications
+> CDK Terrain migration guides available at [migrating to v0.23](https://cdktn.io/docs/release/upgrade-guide-v0-23)
+> Refer to the [FAQ](./FAQ.md) for clarifications about this fork
 
 CDK Terrain (CDKTN) is a community fork of the Cloud Development Kit for Terraform (CDKTF).
 CDKTF/CDKTN allows you to use familiar programming languages to define cloud infrastructure
-and provision it through HashiCorp Terraform or OpenTofu. This gives you access to the
-entire Terraform/OpenTofu ecosystem without learning HashiCorp Configuration Language (HCL)
+and provision it through OpenTofu or Terraform. This gives you access to the
+entire OpenTofu/Terraform ecosystem without learning HashiCorp Configuration Language (HCL)
 and lets you leverage the power of your existing toolchain for testing, dependency management, etc.
 
-We currently support TypeScript, Python and Go.
+We currently support TypeScript, Python, Java, C# and Go.
 
 ![terraform platform](./docs/terraform-platform.png)
 
@@ -21,19 +21,14 @@ CDKTN includes two packages:
 
 ## Get Started
 
-Choose a language:
+- [Overview](https://cdktn.io/docs)
+- [Examples and Guides](https://cdktn.io/docs/examples-and-guides/examples) covering Typescript, Python, Java, C# and Go
 
-- [TypeScript](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-build?in=terraform%2Fcdktf&variants=cdk-language%3Atypescript)
-- [Python](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-build?in=terraform%2Fcdktf&variants=cdk-language%3Apython)
-- [Java](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-build?in=terraform%2Fcdktf&variants=cdk-language%3Ajava)
-- [C#](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-build?in=terraform%2Fcdktf&variants=cdk-language%3Acsharp)
-- [Go](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-build?in=terraform%2Fcdktf&variants=cdk-language%3Ago)
-
-> **Hands-on:** Try the tutorials in the [CDK for Terraform](https://learn.hashicorp.com/collections/terraform/cdktf) collection on HashiCorp Learn.
+> **Hands-on:** Try the tutorials in the [Tutorials](https://cdktn.io/docs/tutorials/install) section.
 
 ## Documentation
 
-Refer to the [CDKTF documentation](https://developer.hashicorp.com/terraform/cdktf) for more detail about how to build and manage CDKTN applications, including:
+Refer to the [documentation](https://cdktn.io/docs) for more detail about how to build and manage CDKTN applications, including:
 
 - [Application Architecture](https://cdktn.io/docs/concepts/cdktn-architecture): Learn the tools and processes that CDKTN uses to leverage the Terraform ecosystem and convert code into Terraform configuration files. It also explains the major components of a CDKTN application and how those pieces fit together.
 
