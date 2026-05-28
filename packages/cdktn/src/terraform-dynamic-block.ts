@@ -4,13 +4,11 @@ import { dynamicBlockNotSupported } from "./errors";
 import { TerraformDynamicExpression } from "./terraform-dynamic-expression";
 import { ITerraformIterator } from "./terraform-iterator";
 import { IResolvable, IResolveContext, Lazy, Token } from "./tokens";
-import { captureStackTrace } from "./tokens/private/stack-trace";
 
 const DYNAMIC_BLOCK_SYMBOL = Symbol.for("cdktf/TerraformDynamicBlock");
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class TerraformDynamicBlock implements IResolvable {
-  public readonly creationStack: string[];
   public readonly forEach: ITerraformIterator;
   public readonly iterator = "each"; // name of temporary variable used in iteration, needed in the future when allowing nesting iterators
   public readonly content: { [key: string]: any };
@@ -21,7 +19,6 @@ export class TerraformDynamicBlock implements IResolvable {
     content: { [key: string]: any };
   }) {
     Object.defineProperty(this, DYNAMIC_BLOCK_SYMBOL, { value: true });
-    this.creationStack = captureStackTrace();
     this.forEach = args.forEach;
     this.content = args.content;
   }

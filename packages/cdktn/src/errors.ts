@@ -444,18 +444,10 @@ export const indexTooLargeToEncode = (index: number) =>
     If you reach the maximum number of allowed Tokens (a limitation imposed by the way we encode Tokens and separate them from real numeric values) you can work around this issue by dividing a single application into multiple applications.`,
   );
 
-export const argToIntrinsicMustBePlainValue = (
-  value: any,
-  creationStack: string[],
-) =>
+export const argToIntrinsicMustBePlainValue = (value: any) =>
   new Error(
-    `You can only use a plain value (not a function) while creating an Intrinsic token. We received the value '${value}' created at:\n${creationStack.join(
-      "\n",
-    )}. If you want to use a function, please use the Lazy class. For example:  Lazy.anyValue({ produce: () => "Hello World" }).`,
+    `You can only use a plain value (not a function) while creating an Intrinsic token. We received the value '${value}'. If you want to use a function, please use the Lazy class. For example:  Lazy.anyValue({ produce: () => "Hello World" }).`,
   );
-
-export const intrinsicNewError = (message: string, createdAt: string) =>
-  new Error(`${message}\nToken created:\n    at ${createdAt}\nError thrown:`);
 
 export const unableToResolveCircularReference = (pathName: string) =>
   new Error(`Unable to resolve object tree with circular reference at '${pathName}'.
