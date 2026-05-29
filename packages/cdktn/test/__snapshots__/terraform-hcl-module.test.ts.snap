@@ -76,8 +76,7 @@ exports[`depend on module 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -187,8 +186,7 @@ exports[`reference module 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -217,8 +215,7 @@ exports[`reference module list 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {

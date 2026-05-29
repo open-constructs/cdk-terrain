@@ -67,9 +67,9 @@
             "fflate",
             "**/fflate",
             "**/fflate/**",
-            "json-stable-stringify",
-            "**/json-stable-stringify",
-            "**/json-stable-stringify/**",
+            "safe-stable-stringify",
+            "**/safe-stable-stringify",
+            "**/safe-stable-stringify/**",
             "semver",
             "**/semver",
             "**/semver/**"

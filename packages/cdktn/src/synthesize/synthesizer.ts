@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as path from "path";
 import * as fs from "fs";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import stringify = require("json-stable-stringify");
+import stringify from "safe-stable-stringify";
 import { TerraformStack } from "../terraform-stack";
 import { IStackSynthesizer, ISynthesisSession } from "./types";
 import { AnnotationMetadataEntryType, Annotations } from "../annotations";
@@ -99,7 +98,7 @@ export class StackSynthesizer implements IStackSynthesizer {
 
       fs.writeFileSync(
         path.join(session.outdir, stackManifest.stackMetadataPath!),
-        stringify(hcl.metadata, { space: 2 }) as string,
+        stringify(hcl.metadata, null, 2) as string,
       );
 
       return;
@@ -109,7 +108,7 @@ export class StackSynthesizer implements IStackSynthesizer {
 
     fs.writeFileSync(
       path.join(session.outdir, stackManifest.synthesizedStackPath),
-      stringify(jsonTfConfig, { space: 2 }) as string,
+      stringify(jsonTfConfig, null, 2) as string,
     );
   }
 }

@@ -4,8 +4,7 @@ exports[`self with nested keys 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {

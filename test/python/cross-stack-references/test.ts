@@ -22,8 +22,7 @@ describe("python cross stack references", () => {
       "{
         "stacks": {
           "fns": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "fns",
             "dependencies": [
               "source"
@@ -34,8 +33,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/fns"
           },
           "functionOutput": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "functionOutput",
             "dependencies": [
               "source"
@@ -46,8 +44,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/functionOutput"
           },
           "passthrough": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "passthrough",
             "dependencies": [
               "source"
@@ -58,8 +55,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/passthrough"
           },
           "sink": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "sink",
             "dependencies": [
               "source"
@@ -70,11 +66,9 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/sink"
           },
           "source": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "source",
-            "dependencies": [
-            ],
+            "dependencies": [],
             "name": "source",
             "stackMetadataPath": "stacks/source/metadata.json",
             "synthesizedStackPath": "stacks/source/cdk.tf.json",
@@ -91,8 +85,7 @@ describe("python cross stack references", () => {
       "{
         "stacks": {
           "fns": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "fns",
             "dependencies": [
               "source"
@@ -103,8 +96,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/fns"
           },
           "functionOutput": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "functionOutput",
             "dependencies": [
               "source"
@@ -115,8 +107,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/functionOutput"
           },
           "passthrough": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "passthrough",
             "dependencies": [
               "source"
@@ -127,8 +118,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/passthrough"
           },
           "sink": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "sink",
             "dependencies": [
               "source"
@@ -139,11 +129,9 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks/sink"
           },
           "source": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "source",
-            "dependencies": [
-            ],
+            "dependencies": [],
             "name": "source",
             "stackMetadataPath": "stacks/source/metadata.json",
             "synthesizedStackPath": "stacks/source/cdk.tf",
@@ -160,8 +148,7 @@ describe("python cross stack references", () => {
       "{
         "stacks": {
           "fns": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "fns",
             "dependencies": [
               "source"
@@ -172,8 +159,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\fns"
           },
           "functionOutput": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "functionOutput",
             "dependencies": [
               "source"
@@ -184,8 +170,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\functionOutput"
           },
           "passthrough": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "passthrough",
             "dependencies": [
               "source"
@@ -196,8 +181,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\passthrough"
           },
           "sink": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "sink",
             "dependencies": [
               "source"
@@ -208,11 +192,9 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\sink"
           },
           "source": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "source",
-            "dependencies": [
-            ],
+            "dependencies": [],
             "name": "source",
             "stackMetadataPath": "stacks\\\\source\\\\metadata.json",
             "synthesizedStackPath": "stacks\\\\source\\\\cdk.tf.json",
@@ -229,8 +211,7 @@ describe("python cross stack references", () => {
       "{
         "stacks": {
           "fns": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "fns",
             "dependencies": [
               "source"
@@ -241,8 +222,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\fns"
           },
           "functionOutput": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "functionOutput",
             "dependencies": [
               "source"
@@ -253,8 +233,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\functionOutput"
           },
           "passthrough": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "passthrough",
             "dependencies": [
               "source"
@@ -265,8 +244,7 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\passthrough"
           },
           "sink": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "sink",
             "dependencies": [
               "source"
@@ -277,11 +255,9 @@ describe("python cross stack references", () => {
             "workingDirectory": "stacks\\\\sink"
           },
           "source": {
-            "annotations": [
-            ],
+            "annotations": [],
             "constructPath": "source",
-            "dependencies": [
-            ],
+            "dependencies": [],
             "name": "source",
             "stackMetadataPath": "stacks\\\\source\\\\metadata.json",
             "synthesizedStackPath": "stacks\\\\source\\\\cdk.tf",

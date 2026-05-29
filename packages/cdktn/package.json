@@ -77,7 +77,6 @@
     },
     "license": "MPL-2.0",
     "devDependencies": {
-        "@types/json-stable-stringify": "1.2.0",
         "@types/node": "18.19.130",
         "@types/semver": "7.7.1",
         "constructs": "10.6.0",
@@ -87,12 +86,12 @@
     },
     "dependencies": {
         "fflate": "0.8.2",
-        "json-stable-stringify": "1.3.0",
+        "safe-stable-stringify": "2.5.0",
         "semver": "7.7.4"
     },
     "bundledDependencies": [
         "fflate",
-        "json-stable-stringify",
+        "safe-stable-stringify",
         "semver"
     ],
     "stability": "experimental",

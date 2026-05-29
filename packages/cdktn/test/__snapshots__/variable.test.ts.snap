@@ -99,8 +99,7 @@ exports[`reference 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {

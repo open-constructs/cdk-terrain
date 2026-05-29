@@ -71,8 +71,7 @@ exports[`with generator metadata 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "terraform": {

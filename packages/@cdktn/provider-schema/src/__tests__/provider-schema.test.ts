@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import * as path from "path";
-import stableStringify from "json-stable-stringify";
+import stableStringify from "safe-stable-stringify";
 import {
   TerraformModuleConstraint,
   TerraformProviderConstraint,
@@ -19,9 +19,7 @@ import {
 
 function sanitizeJson(value: any) {
   value["format_version"] = "STUBBED VERSION";
-  return stableStringify(value, {
-    space: 2,
-  });
+  return stableStringify(value, null, 2);
 }
 
 describe("readSchema", () => {

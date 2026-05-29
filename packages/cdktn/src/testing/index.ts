@@ -1,11 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-import fs = require("fs");
-import path = require("path");
-import os = require("os");
-import stringify = require("json-stable-stringify");
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+
+import stringify from "safe-stable-stringify";
 import { App, TerraformStack } from "..";
 import { Manifest } from "../manifest";
 import { FUTURE_FLAGS } from "../features";
@@ -135,7 +135,7 @@ export class Testing {
     }
     const cleaned = removeMetadata(tfConfig);
 
-    return stringify(cleaned, { space: 2 }) as string;
+    return stringify(cleaned, null, 2) as string;
   }
 
   /**
