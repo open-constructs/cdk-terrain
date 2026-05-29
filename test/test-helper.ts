@@ -84,11 +84,7 @@ export class TestDriver {
     // it installed the cdktn CLI in
     const newPath = `${process.env.TEST_PATH_CDKTF_CLI}:${process.env.PATH}`;
     this.env = Object.assign(
-      {
-        CI: 1,
-        // Suppress node DeprecationWarnings etc. so tests can assert on empty stderr
-        NODE_NO_WARNINGS: "1",
-      },
+      { CI: 1 },
       process.env,
       { PATH: newPath },
       addToEnv,
