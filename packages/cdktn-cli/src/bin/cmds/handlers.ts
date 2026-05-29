@@ -26,6 +26,7 @@ import {
 
 import { checkForEmptyDirectory, runInit } from "./helper/init";
 import { renderInk } from "./helper/render-ink";
+import { isNonInteractiveStdout, renderPlain } from "./helper/render-plain";
 import { terraformCheck } from "./helper/terraform-check";
 import * as terraformCloudClient from "./helper/terraform-cloud-client";
 import { TerraformLogin } from "./helper/terraform-login";
@@ -209,6 +210,33 @@ export async function deploy(argv: any) {
     onOutputsRetrieved = (outputs: NestedTerraformOutputs) =>
       saveOutputs(outputsPath!, outputs, includeSensitiveOutputs);
   }
+
+  if (isNonInteractiveStdout()) {
+    if (!autoApprove) {
+      throw Errors.Usage(
+        "deploy requires --auto-approve when stdout is not a TTY (redirected / piped output).",
+      );
+    }
+    await renderPlain({ outDir, synthCommand: command }, async (project) => {
+      await project.deploy({
+        stackNames: stacks,
+        autoApprove,
+        ignoreMissingStackDependencies,
+        parallelism,
+        refreshOnly,
+        terraformParallelism,
+        vars,
+        varFiles,
+        noColor,
+        migrateState,
+        skipSynth,
+        skipProviderLock,
+      });
+      onOutputsRetrieved(project.outputsByConstructId);
+    });
+    return;
+  }
+
   await renderInk(
     React.createElement(Deploy, {
       outDir,
@@ -251,6 +279,30 @@ export async function destroy(argv: any) {
   const skipSynth = argv.skipSynth;
   const skipProviderLock = argv.skipProviderLock;
 
+  if (isNonInteractiveStdout()) {
+    if (!autoApprove) {
+      throw Errors.Usage(
+        "destroy requires --auto-approve when stdout is not a TTY (redirected / piped output).",
+      );
+    }
+    await renderPlain({ outDir, synthCommand: command }, (project) =>
+      project.destroy({
+        stackNames: stacks,
+        autoApprove,
+        ignoreMissingStackDependencies,
+        parallelism,
+        terraformParallelism,
+        vars,
+        varFiles,
+        noColor,
+        migrateState,
+        skipSynth,
+        skipProviderLock,
+      }),
+    );
+    return;
+  }
+
   await renderInk(
     React.createElement(Destroy, {
       outDir,
@@ -286,6 +338,23 @@ export async function diff(argv: any) {
   const migrateState = argv.migrateState;
   const skipSynth = argv.skipSynth;
   const skipProviderLock = argv.skipProviderLock;
+
+  if (isNonInteractiveStdout()) {
+    await renderPlain({ outDir, synthCommand: command }, (project) =>
+      project.diff({
+        stackName: stack,
+        refreshOnly,
+        terraformParallelism,
+        vars,
+        varFiles,
+        noColor,
+        migrateState,
+        skipSynth,
+        skipProviderLock,
+      }),
+    );
+    return;
+  }
 
   await renderInk(
     React.createElement(Diff, {
