@@ -4,14 +4,9 @@ import { IResolvable, IResolveContext } from "../src";
 import { TokenString } from "../src/tokens/private/encoding";
 
 class TestResolvable implements IResolvable {
-  creationStack: string[];
   resolve(_context: IResolveContext) {}
   toString(): string {
     return "test";
-  }
-
-  constructor() {
-    this.creationStack = [];
   }
 }
 

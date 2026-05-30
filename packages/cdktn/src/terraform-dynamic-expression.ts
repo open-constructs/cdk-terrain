@@ -3,7 +3,6 @@
 import { ITerraformIterator } from "./terraform-iterator";
 import { forExpression } from ".";
 import { IResolvable, Lazy, Token } from "./tokens";
-import { captureStackTrace } from "./tokens/private/stack-trace";
 
 const DYNAMIC_EXPRESSION_SYMBOL = Symbol.for(
   "cdktf/TerraformDynamicExpression",
@@ -20,7 +19,6 @@ const DYNAMIC_EXPRESSION_SYMBOL = Symbol.for(
  * processDynamicAttributes() utility function.
  */
 export class TerraformDynamicExpression implements IResolvable {
-  public readonly creationStack: string[];
   public readonly iterator: ITerraformIterator;
   public readonly content: { [key: string]: any };
 
@@ -29,7 +27,6 @@ export class TerraformDynamicExpression implements IResolvable {
     content: { [key: string]: any };
   }) {
     Object.defineProperty(this, DYNAMIC_EXPRESSION_SYMBOL, { value: true });
-    this.creationStack = captureStackTrace();
     this.iterator = args.iterator;
     this.content = args.content;
   }
