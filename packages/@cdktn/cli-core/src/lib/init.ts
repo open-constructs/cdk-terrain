@@ -34,7 +34,7 @@ export interface RemoteProject extends LocalProject {
 export type Project = LocalProject | RemoteProject;
 
 export type InitArgs = {
-  cdktfVersion?: string;
+  cdktnVersion?: string;
   destination: string;
   dist?: string;
   providers?: string[];
@@ -57,7 +57,7 @@ for (const template of availableTemplates) {
 }
 
 export async function init({
-  cdktfVersion,
+  cdktnVersion,
   destination,
   dist,
   projectId,
@@ -68,8 +68,8 @@ export async function init({
   providersForceLocal,
   silent,
 }: InitArgs) {
-  const deps: any = await determineDeps(
-    cdktfVersion,
+  const deps = await determineDeps(
+    cdktnVersion,
     dist,
     path.basename(templatePath),
   );
@@ -83,8 +83,8 @@ export async function init({
     ...projectInfo,
     futureFlags,
     projectId,
-    sendCrashReports,
-    silent,
+    sendCrashReports: String(!!sendCrashReports),
+    silent: String(!!silent),
   });
   const cdktfConfig = CdktfConfig.read(destination);
 
@@ -187,7 +187,7 @@ export async function determineDeps(
 
   if (version === "0.0.0") {
     throw Errors.Usage(
-      `cannot use version 0.0.0, use --cdktf-version, --dist or CDKTF_DIST to install from a "dist" directory`,
+      `cannot use version 0.0.0, use --cdktn-version, --dist or CDKTF_DIST to install from a "dist" directory`,
     );
   }
 
