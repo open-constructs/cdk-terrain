@@ -137,7 +137,7 @@ export class DependencyManager {
 
   constructor(
     private readonly targetLanguage: Language,
-    private cdktfVersion: string,
+    private cdktnVersion: string,
     private readonly projectDirectory: string,
   ) {
     this.packageManager = PackageManager.forLanguage(
@@ -225,19 +225,19 @@ export class DependencyManager {
 
   async hasPrebuiltProvider(constraint: ProviderConstraint): Promise<boolean> {
     logger.debug(
-      `determining whether pre-built provider exists for ${constraint.source} with version constraint ${constraint.version} and cdktf version ${this.cdktfVersion}`,
+      `determining whether pre-built provider exists for ${constraint.source} with version constraint ${constraint.version} and cdktn version ${this.cdktnVersion}`,
     );
 
     logger.info(`Checking whether pre-built provider exists for the following constraints:
   provider: ${constraint.simplifiedName}
   version : ${constraint.version || "latest"}
   language: ${this.targetLanguage}
-  cdktf   : ${this.cdktfVersion}
+  cdktn   : ${this.cdktnVersion}
 `);
 
     if (
       this.targetLanguage === Language.GO &&
-      semver.lt(this.cdktfVersion, "0.12.0")
+      semver.lt(this.cdktnVersion, "0.12.0")
     ) {
       logger.info(
         `Before CDKTF 0.12.0 there were no pre-built providers published for Go.`,
@@ -245,7 +245,7 @@ export class DependencyManager {
       return false;
     }
 
-    const v = await getPrebuiltProviderVersions(constraint, this.cdktfVersion);
+    const v = await getPrebuiltProviderVersions(constraint, this.cdktnVersion);
     const exists = v !== null;
 
     if (exists) {
@@ -286,11 +286,11 @@ export class DependencyManager {
   async getMatchingProviderVersion(constraint: ProviderConstraint) {
     const prebuiltProviderNpmVersions = await getPrebuiltProviderVersions(
       constraint,
-      this.cdktfVersion,
+      this.cdktnVersion,
     );
     if (!prebuiltProviderNpmVersions) {
       throw Errors.Usage(
-        `No pre-built provider found for ${constraint.source} with version constraint ${constraint.version} and cdktf version ${this.cdktfVersion}`,
+        `No pre-built provider found for ${constraint.source} with version constraint ${constraint.version} and cdktn version ${this.cdktnVersion}`,
       );
     }
 
@@ -300,7 +300,7 @@ export class DependencyManager {
 
     if (!packageVersion) {
       throw Errors.Usage(
-        `No pre-built provider found for ${constraint.source} with version constraint ${constraint.version} and cdktf version ${this.cdktfVersion} for language ${this.targetLanguage}.`,
+        `No pre-built provider found for ${constraint.source} with version constraint ${constraint.version} and cdktn version ${this.cdktnVersion} for language ${this.targetLanguage}.`,
       );
     }
 
@@ -309,7 +309,7 @@ export class DependencyManager {
 
   async addPrebuiltProvider(constraint: ProviderConstraint, silent = false) {
     logger.debug(
-      `adding pre-built provider ${constraint.source} with version constraint ${constraint.version} for cdktf version ${this.cdktfVersion}`,
+      `adding pre-built provider ${constraint.source} with version constraint ${constraint.version} for cdktn version ${this.cdktnVersion}`,
     );
 
     const { name, version } = await this.getMatchingProviderVersion(constraint);
@@ -320,7 +320,7 @@ export class DependencyManager {
 
   // The version we use for npm might differ from other registries
   // This happens mostly in cases where a provider update failed to publish to one of the registries
-  // In that case we use the latest version that was published successfully and works with the current cdktf release
+  // In that case we use the latest version that was published successfully and works with the current cdktn release
   private async getLanguageSpecificPackageVersion(
     prebuiltProviderNpmVersions: { name: string; version: string }[],
   ): Promise<{ name: string; version: string } | null> {

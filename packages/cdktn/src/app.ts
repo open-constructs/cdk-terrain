@@ -117,7 +117,7 @@ export class App extends Construct {
       node.setContext(DISABLE_STACK_TRACE_IN_METADATA, true);
     }
 
-    node.setContext("cdktfVersion", version);
+    node.setContext("cdktnVersion", version);
 
     if (!fs.existsSync(this.outdir)) {
       fs.mkdirSync(this.outdir);
@@ -125,7 +125,7 @@ export class App extends Construct {
     this.manifest = new Manifest(version, this.outdir, this.hclOutput);
   }
 
-  public static isApp(x: any): x is App {
+  public static isApp(x: unknown): x is App {
     return x !== null && typeof x === "object" && APP_SYMBOL in x;
   }
 

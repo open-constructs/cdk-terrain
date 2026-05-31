@@ -23,24 +23,24 @@ exports.pre = (variables) => {
 };
 
 exports.post = options => {
-  const { mvn_cdktf, cdktf_version } = options;
-  if (!mvn_cdktf) {
-    throw new Error(`missing context "mvn_cdktf"`);
+  const { mvn_cdktn, cdktn_version } = options;
+  if (!mvn_cdktn) {
+    throw new Error(`missing context "mvn_cdktn"`);
   }
 
   // Terraform Cloud configuration settings if the organization name and workspace is set.
-  if (options.OrganizationName != '') {
+  if (options.OrganizationName !== '') {
     console.log(`\nGenerating Terraform Cloud configuration for '${options.OrganizationName}' organization and '${options.WorkspaceName}' workspace.....`)
     terraformCloudConfig(options.$base, options.OrganizationName, options.WorkspaceName, options.TerraformRemoteHostname)
   }
 
   // This is used for installing artifacts that are local (not from Maven)
   // https://maven.apache.org/plugins/maven-install-plugin/usage.html
-  if (mvn_cdktf.endsWith('.jar')) {
+  if (mvn_cdktn.endsWith('.jar')) {
     writeFileSync('./build.gradle',
       readFileSync('./build.gradle', 'utf-8').replace(
-        `implementation "io.cdktn:cdktn:${cdktf_version}"`,
-        `implementation files("${mvn_cdktf.replaceAll('\\', '/')}")`
+        `implementation "io.cdktn:cdktn:${cdktn_version}"`,
+        `implementation files("${mvn_cdktn.replaceAll('\\', '/')}")`
       )
     );
   }

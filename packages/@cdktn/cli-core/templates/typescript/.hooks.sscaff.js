@@ -9,7 +9,7 @@ const { readFileSync, writeFileSync } = require("fs");
 exports.post = (ctx) => {
   const silent = ctx.silent === "true" || ctx.silent === true;
   // Terraform Cloud configuration settings if the organization name and workspace is set.
-  if (ctx.OrganizationName != "") {
+  if (ctx.OrganizationName !== "") {
     if (!silent) {
       console.log(
         `\nGenerating Terraform Cloud configuration for '${ctx.OrganizationName}' organization and '${ctx.WorkspaceName}' workspace.....`
@@ -23,12 +23,12 @@ exports.post = (ctx) => {
     );
   }
 
-  const npm_cdktf = ctx.npm_cdktf;
-  if (!npm_cdktf) {
-    throw new Error(`missing context "npm_cdktf"`);
+  const npm_cdktn = ctx.npm_cdktn;
+  if (!npm_cdktn) {
+    throw new Error(`missing context "npm_cdktn"`);
   }
 
-  installDeps([npm_cdktf, `constructs@10`], false, silent);
+  installDeps([npm_cdktn, `constructs@10`], false, silent);
   installDeps(
     ["@types/node", "typescript@5.x", "jest", "@types/jest", "ts-jest", "ts-node"],
     true,

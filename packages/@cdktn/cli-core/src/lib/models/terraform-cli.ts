@@ -5,7 +5,7 @@ import {
   Errors,
   exec,
   logger,
-  readCDKTFVersion,
+  readCDKTNVersion,
   terraformBinaryName,
 } from "@cdktn/commons";
 import {
@@ -478,10 +478,10 @@ export class TerraformCli implements Terraform {
   }
 
   public async setUserAgent(): Promise<void> {
-    // Read the cdktf version from the 'cdk.tf.json' file
+    // Read the cdktn version from the 'cdk.tf.json' file
     // and set the user agent.
-    const version = await readCDKTFVersion(this.workdir);
-    if (version != "") {
+    const version = await readCDKTNVersion(this.workdir);
+    if (version !== "") {
       process.env.TF_APPEND_USER_AGENT =
         "cdktn/" +
         version +

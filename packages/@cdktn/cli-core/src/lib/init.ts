@@ -34,7 +34,7 @@ export interface RemoteProject extends LocalProject {
 export type Project = LocalProject | RemoteProject;
 
 export type InitArgs = {
-  cdktfVersion?: string;
+  cdktnVersion?: string;
   destination: string;
   dist?: string;
   providers?: string[];
@@ -57,7 +57,7 @@ for (const template of availableTemplates) {
 }
 
 export async function init({
-  cdktfVersion,
+  cdktnVersion,
   destination,
   dist,
   projectId,
@@ -69,7 +69,7 @@ export async function init({
   silent,
 }: InitArgs) {
   const deps: any = await determineDeps(
-    cdktfVersion,
+    cdktnVersion,
     dist,
     path.basename(templatePath),
   );
@@ -102,27 +102,27 @@ export async function init({
 }
 
 export interface Deps {
-  npm_cdktf: string;
-  npm_cdktf_cli: string;
-  pypi_cdktf: string;
-  mvn_cdktf: string;
-  nuget_cdktf: string;
-  go_cdktf: string;
-  cdktf_version: string;
+  npm_cdktn: string;
+  npm_cdktn_cli: string;
+  pypi_cdktn: string;
+  mvn_cdktn: string;
+  nuget_cdktn: string;
+  go_cdktn: string;
+  cdktn_version: string;
   constructs_version: string;
 }
-type DistKey = Exclude<keyof Deps, "cdktf_version" | "constructs_version">;
+type DistKey = Exclude<keyof Deps, "cdktn_version" | "constructs_version">;
 
 // Each built-in template only consumes the dist artifact for its own
 // language. Skipping the others lets `cdktn init --dist` work when only
 // some language dists are present (e.g. CI ran `yarn package:js` only).
 const distKeysByTemplate: Record<string, DistKey[]> = {
-  typescript: ["npm_cdktf"],
-  python: ["pypi_cdktf"],
-  "python-pip": ["pypi_cdktf"],
-  java: ["mvn_cdktf"],
-  csharp: ["nuget_cdktf"],
-  go: ["go_cdktf"],
+  typescript: ["npm_cdktn"],
+  python: ["pypi_cdktn"],
+  "python-pip": ["pypi_cdktn"],
+  java: ["mvn_cdktn"],
+  csharp: ["nuget_cdktn"],
+  go: ["go_cdktn"],
 };
 
 export async function determineDeps(
@@ -130,30 +130,29 @@ export async function determineDeps(
   dist?: string,
   template?: string,
 ): Promise<Deps> {
-  // TS: cdktf-0.10.1-dev.2160938258
-  // Py: cdktf-0.10.1.dev1658821493.whl
+  // TS: cdktn-0.10.1-dev.2160938258
+  // Py: cdktn-0.10.1.dev1658821493.whl
   const pythonVersion = version
     .replace(/-pre\./g, ".dev")
     .replace(/-dev\./g, ".dev");
 
   if (dist) {
-    // TODO: What about existing cdktf TS/PY dependencies?
     const ret = {
-      npm_cdktf: path.resolve(dist, "js", `cdktn@${version}.jsii.tgz`),
-      npm_cdktf_cli: path.resolve(dist, "js", `cdktn-cli-${version}.tgz`),
-      pypi_cdktf: path.resolve(
+      npm_cdktn: path.resolve(dist, "js", `cdktn@${version}.jsii.tgz`),
+      npm_cdktn_cli: path.resolve(dist, "js", `cdktn-cli-${version}.tgz`),
+      pypi_cdktn: path.resolve(
         dist,
         "python",
         `cdktn-${pythonVersion}-py3-none-any.whl`,
       ),
-      mvn_cdktf: path.resolve(
+      mvn_cdktn: path.resolve(
         dist,
         "java",
         `io/cdktn/cdktn/${version}/cdktn-${version}.jar`,
       ),
-      nuget_cdktf: path.resolve(dist, "dotnet", `Io.Cdktn.${version}.nupkg`),
-      go_cdktf: path.resolve(dist, "go", `cdktn`),
-    };
+      nuget_cdktn: path.resolve(dist, "dotnet", `Io.Cdktn.${version}.nupkg`),
+      go_cdktn: path.resolve(dist, "go", `cdktn`),
+    } satisfies Record<DistKey, string>;
 
     // If we know the template, only validate its artifact; otherwise fall
     // back to validating everything (preserves prior behavior for unknown /
@@ -175,7 +174,7 @@ export async function determineDeps(
     }
 
     const versions = {
-      cdktf_version: version,
+      cdktn_version: version,
       constructs_version: constructsVersion,
     };
 
@@ -187,7 +186,7 @@ export async function determineDeps(
 
   if (version === "0.0.0") {
     throw Errors.Usage(
-      `cannot use version 0.0.0, use --cdktf-version, --dist or CDKTF_DIST to install from a "dist" directory`,
+      `cannot use version 0.0.0, use --cdktn-version, --dist or CDKTF_DIST to install from a "dist" directory`,
     );
   }
 
@@ -198,13 +197,13 @@ export async function determineDeps(
   const ver = version.includes("-") ? version : `^${version}`;
 
   return {
-    cdktf_version: version,
+    cdktn_version: version,
     constructs_version: constructsVersion,
-    npm_cdktf: `cdktn@${ver}`,
-    npm_cdktf_cli: `cdktn-cli@${ver}`,
-    pypi_cdktf: `cdktn~=${pythonVersion}`,
-    mvn_cdktf: version,
-    nuget_cdktf: version,
-    go_cdktf: `v${version}`,
+    npm_cdktn: `cdktn@${ver}`,
+    npm_cdktn_cli: `cdktn-cli@${ver}`,
+    pypi_cdktn: `cdktn~=${pythonVersion}`,
+    mvn_cdktn: version,
+    nuget_cdktn: version,
+    go_cdktn: `v${version}`,
   };
 }

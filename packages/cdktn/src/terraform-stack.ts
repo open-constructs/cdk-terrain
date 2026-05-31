@@ -72,7 +72,7 @@ function throwIfIdContainsWhitespace(str: string): void {
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class TerraformStack extends Construct {
   private readonly rawOverrides: any = {};
-  private readonly cdktfVersion: string;
+  private readonly cdktnVersion: string;
   private crossStackOutputs: Record<StackIdentifier, TerraformOutput> = {};
   private crossStackDataSources: Record<StackIdentifier, TerraformRemoteState> =
     {};
@@ -85,7 +85,7 @@ export class TerraformStack extends Construct {
 
     throwIfIdIsGlobCharacter(id);
     throwIfIdContainsWhitespace(id);
-    this.cdktfVersion = this.node.tryGetContext("cdktfVersion");
+    this.cdktnVersion = this.node.tryGetContext("cdktnVersion");
     this.synthesizer = new StackSynthesizer(
       this,
       process.env.CDKTF_CONTINUE_SYNTH_ON_ERROR_ANNOTATIONS !== undefined,
@@ -96,7 +96,7 @@ export class TerraformStack extends Construct {
     this.node.addValidation(new ValidateProviderPresence(this));
   }
 
-  public static isStack(x: any): x is TerraformStack {
+  public static isStack(x: unknown): x is TerraformStack {
     return x !== null && typeof x === "object" && STACK_SYMBOL in x;
   }
 
@@ -217,7 +217,7 @@ export class TerraformStack extends Construct {
 
   public toHclTerraform(): { [key: string]: any } {
     const metadata: TerraformStackMetadata = {
-      version: this.cdktfVersion,
+      version: this.cdktnVersion,
       stackName: this.node.id,
       backend: "local", // overwritten by backend implementations if used
       cloud: undefined, // overwritten by cloud and remote backend implementations
@@ -347,7 +347,7 @@ export class TerraformStack extends Construct {
     const tf = {};
 
     const metadata: TerraformStackMetadata = {
-      version: this.cdktfVersion,
+      version: this.cdktnVersion,
       stackName: this.node.id,
       backend: "local", // overwritten by backend implementations if used
       cloud: undefined, // overwritten by cloud and remote backend implementations

@@ -13,7 +13,7 @@ import {
 function buildNpmResponse(
   version = "0.0.0",
   name = "test",
-  cdktfVersion = "^0.12.2",
+  cdktnVersion = "^0.12.2",
   hasRepository = true,
   useCdktn = false,
 ): any {
@@ -27,7 +27,7 @@ function buildNpmResponse(
           },
         },
         peerDependencies: {
-          [useCdktn ? "cdktn" : "cdktf"]: cdktfVersion, // legacy providers still peerDepend on cdktf
+          [useCdktn ? "cdktn" : "cdktf"]: cdktnVersion, // legacy providers still peerDepend on cdktf
         },
       },
     },

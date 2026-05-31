@@ -14,7 +14,7 @@ export type ProviderAddArgs = {
   providers: string[];
   language: Language;
   projectDirectory: string;
-  cdktfVersion?: string;
+  cdktnVersion?: string;
   forceLocal?: boolean;
   dist?: string;
 };
@@ -23,12 +23,12 @@ export async function providerAdd({
   providers,
   language,
   projectDirectory,
-  cdktfVersion,
+  cdktnVersion,
   dist,
   forceLocal,
 }: ProviderAddArgs): Promise<boolean> {
   const version =
-    cdktfVersion || (await determineDeps(cdktfVersion, dist)).cdktf_version;
+    cdktnVersion || (await determineDeps(cdktnVersion, dist)).cdktn_version;
 
   const manager = new DependencyManager(language, version, projectDirectory);
 
