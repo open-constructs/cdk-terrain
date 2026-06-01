@@ -265,7 +265,7 @@ describe("resources", () => {
   );
 
   testCase.test(
-    "maps dont get camel case keys",
+    "maps don't get camel case keys",
     `
   provider "kubernetes" {
     config_path    = "~/.kube/config"

@@ -354,7 +354,7 @@ class MyConvertedCode extends TerraformStack {
 "
 `;
 
-exports[`resources maps dont get camel case keys snapshot typescript 1`] = `
+exports[`resources maps don't get camel case keys snapshot typescript 1`] = `
 "import { Construct } from "constructs";
 import { TerraformStack } from "cdktn";
 /*

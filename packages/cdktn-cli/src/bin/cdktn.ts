@@ -118,7 +118,7 @@ yargs
     type: "boolean",
     default: false,
     required: false,
-    desc: "Dont set TF_PLUGIN_CACHE_DIR automatically. This is useful when the plugin cache is configured differently. Supported using the env CDKTF_DISABLE_PLUGIN_CACHE_ENV.",
+    desc: "Don't set TF_PLUGIN_CACHE_DIR automatically. This is useful when the plugin cache is configured differently. Supported using the env CDKTF_DISABLE_PLUGIN_CACHE_ENV.",
   })
   .option("log-level", {
     type: "string",
