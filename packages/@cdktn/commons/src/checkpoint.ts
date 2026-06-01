@@ -1,18 +1,12 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import * as https from "https";
-import { format } from "url";
 import { v4 as uuidv4 } from "uuid";
 import * as os from "os";
 import ciInfo from "ci-info";
-import { logger, processLoggerError } from "./logging";
+import { logger } from "./logging";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { DISPLAY_VERSION } from "./version";
-
-const BASE_URL = `https://checkpoint-api.hashicorp.com/v1/`;
-
-const VALID_STATUS_CODES = [200, 201];
 
 const MAX_REQUEST_BODY_SIZE = 8192;
 
@@ -40,41 +34,6 @@ export interface ReportParams {
   projectId?: string;
 }
 
-async function post(url: string, data: string) {
-  return new Promise<void>((ok, ko) => {
-    const req = https.request(
-      format(url),
-      {
-        headers: {
-          Accept: "application/json",
-          "Content-Length": data.length,
-          "User-Agent": "OpenConstructs/cdktn-cli",
-        },
-        method: "POST",
-      },
-      (res) => {
-        if (res.statusCode) {
-          const statusCode = res.statusCode;
-          if (!VALID_STATUS_CODES.includes(statusCode)) {
-            return ko(new Error(res.statusMessage));
-          }
-        }
-        const data = new Array<Buffer>();
-        res.on("data", (chunk) => data.push(chunk));
-        res.on("error", (err) => ko(err));
-        res.on("end", () => {
-          return ok();
-        });
-      },
-    );
-
-    req.setTimeout(1000, () => ko(new Error("request timeout")));
-    req.write(data);
-    req.end();
-    req.on("error", (err) => ko(err));
-  });
-}
-
 export async function sendTelemetry(
   command: string,
   payload: Record<string, any>,
@@ -95,15 +54,15 @@ export async function sendTelemetry(
   }
 }
 
-function getId(
+function getId<K extends string>(
   filePath: string,
-  key: string,
+  key: K,
   forceCreation = false,
   explanatoryComment?: string,
 ): string {
   const _uuid = uuidv4(); // create a new UUID in case we don't find one
 
-  let jsonFile;
+  let jsonFile: { [P in K]: string };
   try {
     jsonFile = JSON.parse(fs.readFileSync(filePath, "utf-8")); // we found the file
   } catch {
@@ -192,10 +151,5 @@ export async function ReportRequest(reportParams: ReportParams): Promise<void> {
     return;
   }
 
-  try {
-    await post(`${BASE_URL}telemetry/${reportParams.product}`, postData);
-  } catch (e: any) {
-    // Log errors writing to checkpoint
-    processLoggerError(e.message);
-  }
+  // In the future, we will actually send telemetry here.
 }
