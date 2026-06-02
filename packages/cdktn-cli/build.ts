@@ -83,7 +83,7 @@ const config: esbuild.BuildOptions = {
     {
       name: "rebuild-log",
       setup({ onStart, onEnd }) {
-        let t;
+        let t: number;
         onStart(() => {
           t = Date.now();
         });
@@ -102,7 +102,6 @@ const config: esbuild.BuildOptions = {
 (async () => {
   console.log("Building…");
   await esbuild.build(config);
-  fs.copySync("src/bin/cdktn", "./bundle/bin/cdktn");
   fs.copySync("../@cdktn/cli-core/templates", "./bundle/templates");
 
   if (enableWatch) {

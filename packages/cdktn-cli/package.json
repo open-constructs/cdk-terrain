@@ -6,14 +6,14 @@
     "tags": ["unit-test"]
   },
   "bin": {
-    "cdktn": "bundle/bin/cdktn"
+    "cdktn": "bin/cdktn"
   },
   "scripts": {
-    "compile-build-config": "tsc build.ts",
+    "compile-build-config": "tsc build.ts --outDir build-config",
     "prebuild": "yarn compile-build-config",
     "build": "tsc --noEmit",
-    "postbuild": "node build.js",
-    "watch": "yarn compile-build-config && node build.js --watch",
+    "postbuild": "node build-config/build.js",
+    "watch": "yarn compile-build-config && node build-config/build.js --watch",
     "watch-preserve-output": "yarn watch",
     "test:update": "jest -u",
     "package": "./package.sh",
