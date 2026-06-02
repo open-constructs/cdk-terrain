@@ -27,6 +27,10 @@ jobs:
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
 
       - name: Derive base/head SHAs for nx affected
         uses: nrwl/nx-set-shas@38457b511e60ee4e1da09255b658e480748a1af4 # v5.0.1
@@ -111,6 +115,10 @@ jobs:
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
 
       - name: Derive base/head SHAs for nx affected
         uses: nrwl/nx-set-shas@38457b511e60ee4e1da09255b658e480748a1af4 # v5.0.1

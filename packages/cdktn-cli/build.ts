@@ -58,7 +58,7 @@ const config: esbuild.BuildOptions = {
   bundle: true,
   outdir: "./bundle",
   format: "cjs",
-  target: "node14",
+  target: "node22",
   minify: enableWatch ? false : true,
   sourcemap: enableWatch ? false : true,
   platform: "node",
@@ -73,6 +73,11 @@ const config: esbuild.BuildOptions = {
     "constructs",
     "yoga-layout-prebuilt",
   ],
+  // Bare `punycode` resolves to node's deprecated builtin (DEP0040). Alias to the
+  // userland package that transitive deps (whatwg-url, tr46, uri-js) actually intend.
+  alias: {
+    punycode: "punycode/",
+  },
   plugins: [
     nativeNodeModulesPlugin,
     {
