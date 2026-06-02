@@ -93,7 +93,7 @@
     "semver": "7.7.4",
     "strip-ansi": "6.0.1",
     "tsc-files": "1.1.4",
-    "typescript": "5.4.5",
+    "typescript": "^5.0.0",
     "uuid": "8.3.2"
   }
 }

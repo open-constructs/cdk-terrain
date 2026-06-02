@@ -28,6 +28,6 @@
     "cdktn-cli": "0.0.0",
     "jest": "^30.3.0",
     "ts-node": "10.9.1",
-    "typescript": "5.4.5"
+    "typescript": "^5.0.0"
   }
 }

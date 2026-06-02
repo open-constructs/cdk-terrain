@@ -106,12 +106,13 @@
         "semver": "^7.7.4",
         "standard-version": "^9.5.0",
         "tsc-files": "^1.1.4",
-        "typescript": "5.4.5",
+        "typescript": "^5.0.0",
         "typescript-eslint": "^8.58.0"
     },
     "resolutions": {
         "**/@types/react": "18.3.28",
-        "**/jsii": "5.9.43"
+        "**/jsii": "5.9.43",
+        "**/typescript": "5.9.3"
     },
     "lint-staged": {
         "!(.claude|.agents|.specledger|specledger)/**/*.{ts,tsx,js,css,md}": "prettier --write",
