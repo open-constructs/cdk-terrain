@@ -19,7 +19,7 @@
       "project": ["src/**/*.ts", "test/**/*.ts"]
     },
     "packages/cdktn-cli": {
-      "entry": ["src/bin/cdktn.ts", "src/bin/cmds/handlers.ts"],
+      "entry": ["src/bin/cdktn.ts", "src/bin/cmds/handlers.ts", "build.ts"],
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": [
         // Read at runtime via pkg.dependencies.constructs lookup in
