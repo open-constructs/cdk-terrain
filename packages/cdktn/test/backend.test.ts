@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack } from "../src";
+import { TerraformStack, Testing } from "../src";
 import * as b from "../src/backends";
 
 test("local backend", () => {
@@ -230,7 +230,7 @@ test("pg backend", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
-test("s3 backend", () => {
+test("s3 backend (useLockfile: false)", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");
 
@@ -244,6 +244,44 @@ test("s3 backend", () => {
     accessKey: "AWS_ACCESS_KEY_ID",
     secretKey: "AWS_SECRET_ACCESS_KEY",
     kmsKeyId: "ARN of a KMS Key",
+    useLockfile: false,
+    dynamodbTable: "DynamoDB table",
+    profile: "AWS_PROFILE",
+    sharedCredentialsFile: "~/.aws/credentials",
+    token: "AWS_SESSION_TOKEN",
+    roleArn: "role to be assumed",
+    assumeRolePolicy: "permissions for assuming role",
+    externalId: "external ID",
+    sessionName: "role session name",
+    workspaceKeyPrefix: "env:",
+    dynamodbEndpoint: "AWS_DYNAMODB_ENDPOINT",
+    iamEndpoint: "AWS_IAM_ENDPOINT",
+    stsEndpoint: "AWS_STS_ENDPOINT",
+    forcePathStyle: false,
+    skipCredentialsValidation: false,
+    skipMetadataApiCheck: true,
+    sseCustomerKey: "AWS_SSE_CUSTOMER_KEY",
+    maxRetries: 5,
+  });
+
+  expect(Testing.synth(stack)).toMatchSnapshot();
+});
+
+test("s3 backend (useLockfile: true)", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new b.S3Backend(stack, {
+    bucket: "mybucket",
+    key: "path/to/my/key",
+    region: "us-east-1",
+    endpoint: "AWS_S3_ENDPOINT",
+    encrypt: true,
+    acl: "Canned ACL",
+    accessKey: "AWS_ACCESS_KEY_ID",
+    secretKey: "AWS_SECRET_ACCESS_KEY",
+    kmsKeyId: "ARN of a KMS Key",
+    useLockfile: true,
     dynamodbTable: "DynamoDB table",
     profile: "AWS_PROFILE",
     sharedCredentialsFile: "~/.aws/credentials",

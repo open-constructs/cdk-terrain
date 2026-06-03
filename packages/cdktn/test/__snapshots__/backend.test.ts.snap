@@ -239,7 +239,7 @@ exports[`remote backend single ws 1`] = `
 }"
 `;
 
-exports[`s3 backend 1`] = `
+exports[`s3 backend (useLockfile: false) 1`] = `
 "{
   "terraform": {
     "backend": {
@@ -269,6 +269,45 @@ exports[`s3 backend 1`] = `
         "sse_customer_key": "AWS_SSE_CUSTOMER_KEY",
         "sts_endpoint": "AWS_STS_ENDPOINT",
         "token": "AWS_SESSION_TOKEN",
+        "use_lockfile": false,
+        "workspace_key_prefix": "env:"
+      }
+    }
+  }
+}"
+`;
+
+exports[`s3 backend (useLockfile: true) 1`] = `
+"{
+  "terraform": {
+    "backend": {
+      "s3": {
+        "access_key": "AWS_ACCESS_KEY_ID",
+        "acl": "Canned ACL",
+        "assume_role_policy": "permissions for assuming role",
+        "bucket": "mybucket",
+        "dynamodb_endpoint": "AWS_DYNAMODB_ENDPOINT",
+        "dynamodb_table": "DynamoDB table",
+        "encrypt": true,
+        "endpoint": "AWS_S3_ENDPOINT",
+        "external_id": "external ID",
+        "force_path_style": false,
+        "iam_endpoint": "AWS_IAM_ENDPOINT",
+        "key": "path/to/my/key",
+        "kms_key_id": "ARN of a KMS Key",
+        "max_retries": 5,
+        "profile": "AWS_PROFILE",
+        "region": "us-east-1",
+        "role_arn": "role to be assumed",
+        "secret_key": "AWS_SECRET_ACCESS_KEY",
+        "session_name": "role session name",
+        "shared_credentials_file": "~/.aws/credentials",
+        "skip_credentials_validation": false,
+        "skip_metadata_api_check": true,
+        "sse_customer_key": "AWS_SSE_CUSTOMER_KEY",
+        "sts_endpoint": "AWS_STS_ENDPOINT",
+        "token": "AWS_SESSION_TOKEN",
+        "use_lockfile": true,
         "workspace_key_prefix": "env:"
       }
     }
