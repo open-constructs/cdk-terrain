@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   prepare-integration-tests:
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: depot-ubuntu-24.04-4
     outputs:
       tests: ${{ steps.build-test-matrix.outputs.tests }}
     container:
@@ -102,7 +102,7 @@ jobs:
 
   linux_integration:
     needs: prepare-integration-tests
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: depot-ubuntu-24.04-4
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.prepare-integration-tests.outputs.tests)}}
