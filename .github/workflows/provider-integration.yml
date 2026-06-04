@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   prepare-provider-tests:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-16
     outputs:
       tests: ${{ steps.build-provider-test-matrix.outputs.tests }}
     container:
@@ -94,7 +94,7 @@ jobs:
 
   linux_provider:
     needs: prepare-provider-tests
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-16
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.prepare-provider-tests.outputs.tests)}}
