@@ -155,7 +155,6 @@ Node version 22.x will become the minimum in an upcoming release as 20.x is now 
 ### chore
 
 - chore: Upgrade dependencies for all [\#69](https://github.com/open-constructs/cdk-terrain/pull/69)
-- chore(gha): Adding base14 Scout CI/CD observability workflow to instrument all the github actions. [\#52](https://github.com/open-constructs/cdk-terrain/pull/52)
 - chore(deps): Upgrade minimatch to 5.1.8 [\#49](https://github.com/open-constructs/cdk-terrain/pull/49)
 - chore: add cdktn keyword to all packages [\#46](https://github.com/open-constructs/cdk-terrain/pull/46)
 - chore: update links to point to cdktn.io [\#45](https://github.com/open-constructs/cdk-terrain/pull/45)
