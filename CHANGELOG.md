@@ -2,6 +2,9 @@
 
 ### chore
 
+- chore(gha): cap missing integration matrix parallelism [\#239](https://github.com/open-constructs/cdk-terrain/pull/239)
+- chore(gha): remove Scout trace export workflow [\#241](https://github.com/open-constructs/cdk-terrain/pull/241)
+- chore: fix releases [\#242](https://github.com/open-constructs/cdk-terrain/pull/242)
 - chore(gha): run integration tests on Depot runners [\#238](https://github.com/open-constructs/cdk-terrain/pull/238)
 - chore(deps): bump typescript to 5.9.3 across the repo [\#231](https://github.com/open-constructs/cdk-terrain/pull/231)
 - chore: Upgrade jsii [\#223](https://github.com/open-constructs/cdk-terrain/pull/223)
