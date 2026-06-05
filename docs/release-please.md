@@ -52,6 +52,13 @@ The workflow mints a short-lived token from the **CDKTN maintainers** GitHub App
 instead of using `GITHUB_TOKEN`, because PRs/branches authored by `GITHUB_TOKEN`
 do **not** trigger downstream workflows (the release PR's CI would never run).
 
+> **This App is net-new — it does not exist yet.** Today `cdktn-maintainers` is
+> only a GitHub _team_ (CODEOWNERS owner, PR reviewer in `yarn-upgrade.yml`), and
+> the existing PR automation authenticates with the `TERRAFORM_CDK_PUSH_GITHUB_TOKEN`
+> PAT — not an App. You must create and install the App before this workflow can
+> run. (Alternatively, that PAT could be reused instead of the App, but we chose
+> the App for short-lived, scoped tokens.)
+
 The App must be **installed on this repository** with these permissions:
 
 - **Contents: Read & write** — create the release branch, commit the version +
