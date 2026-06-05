@@ -25,7 +25,7 @@ convention used by `tools/release-github.sh`.
 | File                                   | Purpose                                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------- |
 | `release-please-config.json`           | Release config — release-type `node`, single `"."` package, changelog sections. |
-| `.release-please-manifest.json`        | Source of truth for the last released version (`0.23.2`).                       |
+| `.release-please-manifest.json`        | Source of truth for the last released version (`0.23.3`).                       |
 | `.github/workflows/release-please.yml` | Runs release-please on every push to `main`.                                    |
 
 ## How it works
@@ -79,7 +79,9 @@ the release PR's checks can pass).
 `bootstrap-sha` in the config pins the commit from which the **first** release PR
 collects changes, so history before the release-please setup is not re-scanned
 into the changelog. It is ignored once the first release PR exists and can then
-be removed. The manifest is seeded with the current released version `0.23.2`.
+be removed. The manifest is seeded with the current released version `0.23.3`
+(release-please takes over from the `v0.23.3` release, PR #240), and
+`bootstrap-sha` points at that release commit on `main`.
 
 ## Migrating fully off `standard-version` (future)
 

@@ -41,7 +41,7 @@ jobs:
       - name: Mint CDKTN maintainers App token
         id: app-token
         # Pin maintained by Dependabot (github-actions). See .github/dependabot.yml
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
         with:
           app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
           private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
@@ -55,7 +55,7 @@ jobs:
       # PyPI, Maven, NuGet and Go. No changes to release.yml are required.
       # -----------------------------------------------------------------------
       - name: Run release-please
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         with:
           token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
