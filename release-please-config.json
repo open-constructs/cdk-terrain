@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "bootstrap-sha": "54dcd480d1c54d09f378fadd648af6b429b5f855",
+  "include-component-in-tag": false,
+  "separate-pull-requests": false,
+  "pull-request-title-pattern": "chore(release): release v${version}",
+  "pull-request-header": ":robot: Release PR — merge to cut a new release. Kept open and rebased as commits land on `main`.",
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "refactor", "section": "Code Refactoring" },
+    { "type": "chore", "section": "Miscellaneous Chores" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "test", "section": "Tests" },
+    { "type": "build", "section": "Build System" },
+    { "type": "ci", "section": "Continuous Integration" },
+    { "type": "revert", "section": "Reverts" }
+  ],
+  "packages": {
+    ".": {
+      "package-name": "cdktn"
+    }
+  }
+}
