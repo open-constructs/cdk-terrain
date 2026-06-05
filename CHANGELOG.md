@@ -1,3 +1,29 @@
+## 0.23.3
+
+### chore
+
+- chore(gha): run integration tests on Depot runners [\#238](https://github.com/open-constructs/cdk-terrain/pull/238)
+- chore(deps): bump typescript to 5.9.3 across the repo [\#231](https://github.com/open-constructs/cdk-terrain/pull/231)
+- chore: Upgrade jsii [\#223](https://github.com/open-constructs/cdk-terrain/pull/223)
+- chore: Revise README links to documentation and language support [\#221](https://github.com/open-constructs/cdk-terrain/pull/221)
+- chore: Pin node version to 22.22.2 via .nvmrc [\#212](https://github.com/open-constructs/cdk-terrain/pull/212)
+- chore: Add gradle cache to the examples and integration CI workflows [\#211](https://github.com/open-constructs/cdk-terrain/pull/211)
+- chore: Add PR workflow concurrency group and CI Label Filter job [\#204](https://github.com/open-constructs/cdk-terrain/pull/204)
+- chore(tests): add verdaccio to package.json [\#202](https://github.com/open-constructs/cdk-terrain/pull/202)
+- chore(tests): don't require other language builds [\#201](https://github.com/open-constructs/cdk-terrain/pull/201)
+- chore(tests): Ensure we terminate Verdaccio [\#199](https://github.com/open-constructs/cdk-terrain/pull/199)
+- chore: rewrite https://cdk.tf links [\#197](https://github.com/open-constructs/cdk-terrain/pull/197)
+- chore: Update examples help files [\#194](https://github.com/open-constructs/cdk-terrain/pull/194)
+
+### feat
+
+- feat: faster JSON stringify [\#224](https://github.com/open-constructs/cdk-terrain/pull/224)
+- feat(lib): allow disabling creation stacks [\#215](https://github.com/open-constructs/cdk-terrain/pull/215)
+
+### fix
+
+- fix(lib): surface stderr/stdout on exec() failures via toString() [\#207](https://github.com/open-constructs/cdk-terrain/pull/207)
+
 ## 0.23.2
 
 ### chore
