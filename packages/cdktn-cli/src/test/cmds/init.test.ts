@@ -4,8 +4,10 @@ import execa from "execa";
 import path from "path";
 import { mkdtemp } from "@cdktn/commons";
 import { describeIfDistExists } from "@cdktn/cli-core/src/test/test-helpers";
+import cdktnCliPkg from "../../../package.json";
 
-const cdktfBin = path.resolve(__dirname, "../../../bundle/bin/cdktn");
+const cdktnCliRoot = path.resolve(__dirname, "../../..");
+const cdktfBin = path.resolve(cdktnCliRoot, cdktnCliPkg.bin.cdktn);
 const cdktfDist = path.join(__dirname, "../../../../../dist");
 
 describeIfDistExists(__dirname)("init command", () => {

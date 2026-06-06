@@ -13,6 +13,8 @@ project {
     "specledger/**",
     ".specledger/**",
     ".agents/**",
-    ".claude/**"
+    ".claude/**",
+    "**/pnpm-lock.yaml",
+    "**/pnpm-workspace.yaml"
   ]
 }

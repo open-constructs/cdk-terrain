@@ -7,8 +7,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
-    "pretest": "yarn build",
-    "pretest:ci": "yarn build",
+    "pretest": "pnpm run build",
+    "pretest:ci": "pnpm run build",
     "test": "jest",
     "test:ci": "jest --ci",
     "jest-watch": "jest --watch",
@@ -31,12 +31,13 @@
   "license": "MPL-2.0",
   "dependencies": {
     "@babel/parser": "7.27.2",
-    "@cdktn/commons": "0.0.0"
+    "@cdktn/commons": "workspace:*"
   },
   "devDependencies": {
     "@babel/generator": "^7.20.4",
     "@babel/template": "^7.18.10",
     "@babel/types": "^7.20.2",
+    "@types/node": "20.17.51",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.0"
   },

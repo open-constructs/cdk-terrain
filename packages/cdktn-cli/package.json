@@ -6,15 +6,15 @@
     "tags": ["unit-test"]
   },
   "bin": {
-    "cdktn": "bundle/bin/cdktn"
+    "cdktn": "bin/cdktn"
   },
   "scripts": {
-    "compile-build-config": "tsc build.ts",
-    "prebuild": "yarn compile-build-config",
+    "compile-build-config": "tsc build.ts --outDir build-config",
+    "prebuild": "pnpm run compile-build-config",
     "build": "tsc --noEmit",
-    "postbuild": "node build.js",
-    "watch": "yarn compile-build-config && node build.js --watch",
-    "watch-preserve-output": "yarn watch",
+    "postbuild": "node build-config/build.js",
+    "watch": "pnpm compile-build-config && node build-config/build.js --watch",
+    "watch-preserve-output": "pnpm watch",
     "test:update": "jest -u",
     "package": "./package.sh",
     "package:js": "./package.sh",
@@ -42,14 +42,15 @@
   "dependencies": {
     "@types/node": "20.19.1",
     "constructs": "10.6.0",
-    "@cdktn/hcl-tools": "0.0.0",
-    "@cdktn/hcl2cdk": "0.0.0",
-    "@cdktn/hcl2json": "0.0.0",
+    "@cdktn/hcl-tools": "workspace:*",
+    "@cdktn/hcl2cdk": "workspace:*",
+    "@cdktn/hcl2json": "workspace:*",
+    "punycode": "2.3.1",
     "yargs": "17.7.2",
     "yoga-layout-prebuilt": "1.10.0"
   },
   "peerDependencies": {
-    "cdktn": "0.0.0",
+    "cdktn": "workspace:*",
     "jsii": "~5.9.0",
     "jsii-pacmak": "1.128.0"
   },
@@ -60,10 +61,10 @@
     ]
   },
   "devDependencies": {
-    "@cdktn/cli-core": "0.0.0",
-    "@cdktn/commons": "0.0.0",
-    "@cdktn/provider-generator": "0.0.0",
-    "@cdktn/provider-schema": "0.0.0",
+    "@cdktn/cli-core": "workspace:*",
+    "@cdktn/commons": "workspace:*",
+    "@cdktn/provider-generator": "workspace:*",
+    "@cdktn/provider-schema": "workspace:*",
     "@inquirer/prompts": "2.3.1",
     "@npmcli/ci-detect": "1.4.0",
     "@sentry/node": "7.120.4",

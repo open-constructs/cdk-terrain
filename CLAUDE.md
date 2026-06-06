@@ -12,14 +12,14 @@ Additional tools **not** managed by mise (install manually):
 # macOS
 brew install maven rsync
 
-# Enable corepack for yarn (pinned to 1.18.0 via package.json)
+# Enable corepack for pnpm (pinned via package.json)
 corepack enable
 ```
 
 Then:
 
 ```bash
-yarn install
+pnpm install
 ```
 
 See `CONTRIBUTING.md` for full details including Docker-based development and language-specific setup.
@@ -27,31 +27,31 @@ See `CONTRIBUTING.md` for full details including Docker-based development and la
 ## Build & Development
 
 ```bash
-yarn build            # Build all packages (tsc + jsii)
-yarn watch            # Watch mode for development
-yarn package          # Build + create distributable packages (requires mvn, rsync)
+pnpm build            # Build all packages (tsc + jsii)
+pnpm watch            # Watch mode for development
+pnpm package          # Build + create distributable packages (requires mvn, rsync)
 ```
 
 ### Testing
 
 ```bash
-yarn test                          # Run all unit tests (via nx run-many)
-yarn test:update                   # Update snapshots
-yarn nx test @cdktn/commons        # Run one package's tests
-yarn nx test @cdktn/commons --watch # Iterative dev loop: reruns on file change
+pnpm test                          # Run all unit tests (via nx run-many)
+pnpm test:update                   # Update snapshots
+pnpm nx test @cdktn/commons        # Run one package's tests
+pnpm nx test @cdktn/commons --watch # Iterative dev loop: reruns on file change
 
 # Some unit tests require dist packages to be built first (they auto-skip if missing):
-yarn package
-yarn test
+pnpm package
+pnpm test
 
-# Integration tests (always require yarn package first)
-yarn package
-yarn integration                              # All integration tests
-yarn integration:single -- typescript/synth-app  # Single test
-yarn integration:update                       # Update integration snapshots
+# Integration tests (always require pnpm package first)
+pnpm package
+pnpm integration                              # All integration tests
+pnpm integration:single typescript/synth-app  # Single test
+pnpm integration:update                       # Update integration snapshots
 ```
 
-On Linux with limited tmpfs: `TMPDIR=/var/tmp yarn test`
+On Linux with limited tmpfs: `TMPDIR=/var/tmp pnpm test`
 
 `yarn nx test <pkg> --watch` is the recommended dev loop — Nx builds the
 `^build` chain once, then jest's watch UI reruns affected tests on each save.
@@ -59,27 +59,27 @@ On Linux with limited tmpfs: `TMPDIR=/var/tmp yarn test`
 ### Running CLI locally
 
 ```bash
-# After yarn watch, use the local CLI directly:
+# After pnpm watch, use the local CLI directly:
 ./packages/cdktn-cli/bundle/bin/cdktn <command>
 
 # Or link globally:
-yarn link-packages
+pnpm run link-packages
 cdktn --version  # Should show 0.0.0
 ```
 
 ### Language-specific testing
 
 ```bash
-yarn integration:typescript
-yarn integration:python
-yarn integration:go
-yarn integration:csharp
-yarn integration:java
+pnpm integration:typescript
+pnpm integration:python
+pnpm integration:go
+pnpm integration:csharp
+pnpm integration:java
 ```
 
 ## Package Architecture
 
-This is a **JSII monorepo** (Lerna + Yarn workspaces) that compiles TypeScript to Python, Go, Java, and C#.
+This is a **JSII monorepo** (Lerna + pnpm workspaces) that compiles TypeScript to Python, Go, Java, and C#.
 
 ### Core Packages
 
@@ -106,7 +106,7 @@ This is a **JSII monorepo** (Lerna + Yarn workspaces) that compiles TypeScript t
 
 - Core `cdktn` library uses JSII for multi-language support
 - Changes to public APIs affect all language bindings
-- Run `yarn package` to generate all language distributions in `dist/`
+- Run `pnpm package` to generate all language distributions in `dist/`
 - JSII metadata lives in `.jsii` files
 
 ## Feature Flags
@@ -138,7 +138,7 @@ PR labels control which CI jobs run:
 
 ```bash
 CDKTF_LOG_LEVEL=debug cdktn synth  # Verbose CDKTN output
-JSII_DEBUG=1 yarn build            # JSII debug output
+JSII_DEBUG=1 pnpm build            # JSII debug output
 ```
 
 ## Notable changes

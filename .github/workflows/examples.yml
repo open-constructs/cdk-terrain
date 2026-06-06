@@ -13,6 +13,9 @@ on:
         required: false
         type: string
 
+env:
+  HUSKY: "0"
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-examples-${{ github.head_ref }}
   cancel-in-progress: true
@@ -47,20 +50,13 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      - name: Cache yarn
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - name: Cache go
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -70,13 +66,13 @@ jobs:
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm ci
       - name: Build packages
-        run: yarn build
+        run: pnpm run build
         env:
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
       - name: Create dist bundle
-        run: yarn package
+        run: pnpm run package
         env:
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
       - name: Upload dist
@@ -112,25 +108,17 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/terraform
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/gradle
           echo "gradle=/usr/local/share/.cache/gradle" >> $GITHUB_OUTPUT
-      - name: Restore yarn cache
-        # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - name: Cache terraform plugins
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -164,9 +152,9 @@ jobs:
           name: dist-examples
           path: dist
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm ci
       - name: Install test dependencies
-        run: cd test && yarn install --frozen-lockfile --prefer-offline
+        run: cd test && pnpm ci
       - name: Recreate packages/cdktn/dist/go layout for Go examples
         # Go examples' go.mod files use `replace ... => ../../../packages/cdktn/dist/go/cdktn`,
         # which points at the per-package build output. The matrix job only has the aggregated
@@ -175,7 +163,7 @@ jobs:
         run: |
           mkdir -p packages/cdktn/dist/go
           ln -sfn "$PWD/dist/go/cdktn" packages/cdktn/dist/go/cdktn
-      - name: Run example integration test
+      - name: examples integration tests
         run: test/run-against-dist node tools/build-example.js ${TEST_TARGET}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

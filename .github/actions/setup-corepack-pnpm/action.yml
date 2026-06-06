@@ -1,0 +1,43 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+name: Setup corepack-managed pnpm (cached)
+description: >-
+  Enables corepack, activates the pnpm version pinned in
+  package.json#packageManager, and caches both the corepack-managed pnpm binary
+  and the pnpm content-addressed store. Node must already be on PATH (run
+  actions/setup-node before this action).
+
+runs:
+  using: composite
+  steps:
+    - name: Pin corepack home to a workspace path
+      shell: bash
+      run: echo "COREPACK_HOME=${{ github.workspace }}/.corepack-cache" >> "$GITHUB_ENV"
+
+    - name: Restore corepack-managed pnpm binary
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ${{ github.workspace }}/.corepack-cache
+        key: corepack-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json') }}
+
+    - name: Activate pnpm via corepack
+      shell: bash
+      run: |
+        corepack enable
+        # Force corepack to fetch and install the packageManager-pinned pnpm
+        # version now, so the cache (above) actually saves it on a miss.
+        corepack install
+
+    - name: Resolve pnpm store path
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore pnpm content-addressed store
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          pnpm-store-${{ runner.os }}-${{ runner.arch }}-

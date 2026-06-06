@@ -1,0 +1,14 @@
+packages:
+  - 'packages/*'
+  - 'packages/@cdktn/*'
+  - 'examples/**'
+  - 'tools/generate-function-bindings'
+
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  nx: true
+  unrs-resolver: true
+
+overrides:
+  '@types/react': 18.3.28

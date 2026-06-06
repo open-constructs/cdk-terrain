@@ -7,7 +7,7 @@ This resembles the example for the Azure Cloud at [Hashicorp Learn](https://lear
 Install project dependencies
 
 ```shell
-yarn install
+npm install
 ```
 
 Generate CDK Terrain constructs for Terraform provides and modules used in the project.

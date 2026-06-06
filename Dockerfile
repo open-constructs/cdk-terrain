@@ -8,9 +8,6 @@ USER root
 ARG DEFAULT_TERRAFORM_VERSION
 ARG AVAILABLE_TERRAFORM_VERSIONS
 
-# Update expired yarn GPG key
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-
 RUN apt-get update -y && apt-get install -y unzip jq build-essential time python3-venv wget
 
 RUN python3 -m pip install --break-system-packages pipx "pip>=23.3.1" pipenv

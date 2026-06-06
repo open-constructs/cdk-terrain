@@ -3,4 +3,5 @@ dist/
 tsconfig.json
 tsconfig.tsbuildinfo
 .jsii
+.pack-staging/
 !scripts/generate-documentation.js

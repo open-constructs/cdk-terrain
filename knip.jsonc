@@ -16,10 +16,10 @@
       ]
     },
     "packages/cdktn": {
-      "project": ["src/**/*.ts", "test/**/*.ts"]
+      "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs"]
     },
     "packages/cdktn-cli": {
-      "entry": ["src/bin/cdktn.ts", "src/bin/cmds/handlers.ts"],
+      "entry": ["src/bin/cdktn.ts", "src/bin/cmds/handlers.ts", "build.ts"],
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": [
         // Read at runtime via pkg.dependencies.constructs lookup in
@@ -32,6 +32,9 @@
         // Not bundled with esbuild
         // Reference is otherwise lost as provider-schema (what actually references it) is bundled.
         "@cdktn/hcl2json",
+        // Only referenced via build.ts's esbuild `alias` string (punycode -> punycode/),
+        // which knip can't trace to a dependency.
+        "punycode",
         // Not bundled with esbuild due to a bug with 1.x versions during bundling.
         // Reference is otherwise lost as ink (what actually references it) is bundled.
         "yoga-layout-prebuilt"
@@ -66,15 +69,17 @@
       "project": ["scripts/**/*.ts"]
     },
     "test": {
-      "project": ["**/*.ts"],
+      "project": ["**/*.{ts,mts,mjs,js}"],
       "ignoreDependencies": [
         // TODO: triage and remove entries — each is a declared dep with no detected usage.
         "@types/express",
         "express",
-        // TODO: triage and add to package.json — each is imported but undeclared.
+        // Invoked via `pnpm exec verdaccio` from test/local-registry.mjs.
+        "verdaccio",
+        // TODO: triage — fixture projects under test/typescript/testing-matchers/ import
+        // these directly; they install at runtime from the local Verdaccio registry.
         "cdktn",
         "constructs",
-        "cross-spawn",
         // Only called via spawn in test/local-registry.mjs.
         "verdaccio"
       ]

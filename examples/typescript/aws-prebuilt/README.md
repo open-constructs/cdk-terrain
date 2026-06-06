@@ -7,7 +7,7 @@ A CDK Terrain application in TypeScript using the prebuilt [AWS provider](https:
 Install project dependencies:
 
 ```shell
-yarn install
+npm install
 ```
 
 You can now edit the [main.ts](./main.ts) file if you want to modify any code.

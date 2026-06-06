@@ -12,7 +12,7 @@ describe("typescript testing assertions", () => {
   }, 600_000);
 
   test("run typescript testing suite", async () => {
-    const res = await driver.exec("yarn test");
+    const res = await driver.exec("npm test");
     console.log(res.stderr);
     console.log(res.stdout);
     expect(res.stderr).toContain("2 passed, 2 total");

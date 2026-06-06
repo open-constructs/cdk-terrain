@@ -12,7 +12,7 @@ cd /D %CDKTF_DIST%
 rem verify this is indeed a "dist" directory
 if not exist "js" if not exist "python" if not exist "java" if not exist "dotnet" if not exist "go" (
   echo "ERROR: unable to find the subdirectories 'js', 'python', 'java', 'dotnet' and 'go' which should be in the 'dist' directory"
-  echo "Did you run 'yarn run package' to create the 'dist' directory?"
+  echo "Did you run 'pnpm run package' to create the 'dist' directory?"
   exit /B 1
 )
 

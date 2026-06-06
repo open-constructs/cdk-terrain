@@ -7,6 +7,7 @@ on:
   workflow_dispatch: {}
 
 env:
+  HUSKY: "0"
   SENTRY_ORG: cdktn
   SENTRY_PROJECT: cdktn
 
@@ -43,6 +44,8 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
       - name: version
         id: get_version
         run: |
@@ -64,10 +67,10 @@ jobs:
       - name: create bundle
         if: steps.get_release_status.outputs.release == 'unreleased'
         run: |
-          yarn install --frozen-lockfile
+          pnpm ci
           tools/align-version.sh
-          yarn build
-          yarn package
+          pnpm run build
+          pnpm run package
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: Add sourcemap and commit info to sentry
@@ -121,14 +124,14 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: installing dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm ci
       - name: Configure git user
         run: |
           git config user.name github-team-tf-cdk
           git config user.email github-team-tf-cdk@hashicorp.com
       - name: Bump prerelease version
         run: |
-          yarn prepare-next-release
+          pnpm prepare-next-release
           tools/align-version.sh
       - name: version
         id: get_version
@@ -150,9 +153,9 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
       - name: create bundle
         run: |
-          yarn install --frozen-lockfile
-          yarn build
-          yarn package
+          pnpm ci
+          pnpm run build
+          pnpm run package
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: Add sourcemap and commit info to sentry
@@ -330,15 +333,16 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
       - name: installing dependencies
-        run: |
-          yarn install --frozen-lockfile
+        run: pnpm ci
       - name: Download build artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: dist-release
       - name: Release to github
-        run: yarn release-github
+        run: pnpm run release-github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

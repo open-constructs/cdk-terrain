@@ -103,7 +103,7 @@ To build and install `cdk-terrain` locally you need to install:
 - dotnet (v6.0 - pinned in mise)
 - pipenv (pinned in mise)
 
-**Required for `yarn package` (building distributions):**
+**Required for `pnpm package` (building distributions):**
 
 - Maven (`mvn`) - Install via your system package manager (not managed by mise):
 
@@ -139,8 +139,8 @@ $ git clone https://github.com/open-constructs/cdk-terrain.git
 To compile the `cdk-terrain` binary for your local machine:
 
 ```shell
-$ yarn install
-$ yarn build
+$ pnpm install
+$ pnpm build
 ```
 
 ## Examples
@@ -167,7 +167,7 @@ If the example shouldn't be run as part of the build pipeline, a `"private": tru
 For development, you'd likely want to run:
 
 ```shell
-$ yarn watch
+$ pnpm watch
 ```
 
 This will watch for changes in all packages.
@@ -176,7 +176,7 @@ This will watch for changes in all packages.
 
 ### CLI changes
 
-If your changes target only CLI and packages used by the CLI, running `yarn watch` will be sufficient. Although it's technically a bit different from what we ship you should be able to use a direct path to our binary entry point to execute commands. You can put this in a shell alias like this:
+If your changes target only CLI and packages used by the CLI, running `pnpm watch` will be sufficient. Although it's technically a bit different from what we ship you should be able to use a direct path to our binary entry point to execute commands. You can put this in a shell alias like this:
 
 ```shell
 alias cdktnl='/path/to/cdk-terrain/packages/cdktn-cli/bundle/bin/cdktn' # For running cdktn locally
@@ -187,7 +187,7 @@ $ cdktnl get
 
 ### Library changes
 
-If you make changes to the library you need to run `yarn build && yarn package` to run tests against the new version. You should be able to use the typescript examples by just running `yarn watch`.
+If you make changes to the library you need to run `pnpm build && pnpm package` to run tests against the new version. You should be able to use the typescript examples by just running `pnpm watch`.
 
 ## Tests
 
@@ -196,16 +196,16 @@ If you make changes to the library you need to run `yarn build && yarn package` 
 Most unit tests can be run without any prerequisites:
 
 ```shell
-$ yarn test # to run all tests at once
-$ yarn test:watch # to run all tests in watch mode
+$ pnpm test # to run all tests at once
+$ pnpm test:watch # to run all tests in watch mode
 ```
 
 > [!TIP]
 > Tests create many temporary directories in `/tmp`. If you have limited tmpfs space (common on Linux where `/tmp` is mounted as tmpfs with ~16GB), use `/var/tmp` instead:
 >
 > ```shell
-> $ TMPDIR=/var/tmp yarn test
-> $ TMPDIR=/var/tmp yarn test:update
+> $ TMPDIR=/var/tmp pnpm test
+> $ TMPDIR=/var/tmp pnpm test:update
 > ```
 >
 > You can also set this in your shell profile (`.bashrc`, `.zshrc`) to make it permanent:
@@ -217,33 +217,33 @@ $ yarn test:watch # to run all tests in watch mode
 **Note:** Some unit tests (particularly in `@cdktn/cli-core`, `cdktn-cli`, and `@cdktn/hcl2cdk`) require distribution packages to be built first. These tests will automatically skip themselves if the dist files are not available:
 
 ```shell
-$ yarn package  # Build distribution packages for all languages (requires mvn)
-$ yarn test     # Now all tests will run
+$ pnpm package  # Build distribution packages for all languages (requires mvn)
+$ pnpm test     # Now all tests will run
 ```
 
 If you need to update the snapshot tests, please run this for the unit tests:
 
 ```shell
-$ yarn test:update
+$ pnpm test:update
 ```
 
-**Important:** The `yarn package` command requires Maven (`mvn`) to be installed, which is not managed by mise. See [Prerequisites](#prerequisites) for installation instructions.
+**Important:** The `pnpm package` command requires Maven (`mvn`) to be installed, which is not managed by mise. See [Prerequisites](#prerequisites) for installation instructions.
 
 ### Integration Tests
 
 Integration tests **require** distribution packages to be built first:
 
 ```shell
-$ yarn package  # Required - builds dist files for all languages
-$ yarn integration # For all integration tests
-$ yarn integration:single -- typescript/synth-app # For a single integration test
+$ pnpm package  # Required - builds dist files for all languages
+$ pnpm integration # For all integration tests
+$ pnpm integration:single typescript/synth-app # For a single integration test
 ```
 
 To update the integration tests, please run this:
 
 ```shell
-$ yarn integration:update # For all integration tests
-$ yarn integration:single -- -u typescript/synth-app # For a single integration test
+$ pnpm integration:update # For all integration tests
+$ pnpm integration:single -u typescript/synth-app # For a single integration test
 ```
 
 ## Local Usage
@@ -254,52 +254,42 @@ The easiest way to use this locally is using one of the [examples](./examples). 
 
 #### Typescript
 
-All Typescript [examples](./examples/typescript) leverage yarn workspaces to directly reference symlinked packages. If you don't have `./node_modules/.bin` in your `$PATH`, you can use `$(yarn bin)/cdktn` to use the symlinked CLI.
+All Typescript [examples](./examples/typescript) leverage pnpm workspaces to directly reference symlinked packages. If you don't have `./node_modules/.bin` in your `$PATH`, you can use `$(pnpm bin)/cdktn` to use the symlinked CLI.
 
 #### Python
 
-For Python [examples](./examples/python), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `yarn package` to create new packages to be referenced in the Pipefile.
+For Python [examples](./examples/python), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `pnpm package` to create new packages to be referenced in the Pipefile.
 
 #### Java
 
-For Java [examples](./examples/java), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `yarn package` to create new packages to be referenced in the pom.
+For Java [examples](./examples/java), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `pnpm package` to create new packages to be referenced in the pom.
 
 #### C#
 
-For C# [examples](./examples/csharp), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `yarn package` to create new packages to be referenced in the project.
+For C# [examples](./examples/csharp), packages are referenced from `./dist`, there's no symlinking possible for live code updates. You'll have to explictly run `pnpm package` to create new packages to be referenced in the project.
 
-Sometimes, after re-packaging the cdktn package for C#, an already initialized example might not update that package even when running yarn reinstall. In that case you can clear your local cache by running `dotnet nuget locals all --clear` and after a `yarn reinstall` it should all be updated.
+Sometimes, after re-packaging the cdktn package for C#, an already initialized example might not update that package even when running `pnpm install --force`. In that case you can clear your local cache by running `dotnet nuget locals all --clear` and after a `pnpm install --force` it should all be updated.
 
 ### Outside of this Monorepo
 
-If you want to use the libraries and cli from the repo for local development, you can make use of `yarn link`.
-
-### Setup
-
-Unfortunately, there's an [issue](https://github.com/yarnpkg/yarn/issues/891) with globally linked binaries. This requires you to run the following:
-
-```
-yarn config set prefix $(npm config get prefix)
-```
-
-If you'd want this permanently, you can add this line to your profile settings (`~/.bashrc`, `~/.zshrc`, or `~/.profile`, etc.)
+If you want to use the libraries and cli from the repo for local development, you can make use of `pnpm link --global`. See the [pnpm link documentation](https://pnpm.io/cli/link) for full details.
 
 ### Create link
 
 Let's link `cdktn` and `cdktn-cli`, run the following the repository root folder:
 
 ```shell
-$ yarn link-packages
+$ pnpm run link-packages
 $ cdktn --version
 0.0.0
 ```
 
-When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktn-cli` with `npm` or `yarn`.
+When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktn-cli` with `npm` or `pnpm`.
 
 ### Build & Package
 
 ```shell
-$ yarn build && yarn package
+$ pnpm build && pnpm package
 $ export CDKTF_DIST=$(pwd)/dist
 ```
 
@@ -311,13 +301,13 @@ $ cd ~/my-local-cdktn-example
 $ cdktn init --template typescript --local
 ```
 
-Please note, that this will reference the built packages in `$CDKTF_DIST`. This means, it will reflect code changes only after repeating `yarn build && yarn package` and running an explicit `yarn install` again.
+Please note, that this will reference the built packages in `$CDKTF_DIST`. This means, it will reflect code changes only after repeating `pnpm build && pnpm package` and running an explicit `pnpm install` again.
 
 Reference the previously [linked](#create-link) `cdktn` package in our newly created project:
 
 ```shell
 $ cd ~/my-local-cdktn-example
-$ yarn link "cdktn"
+$ pnpm link --global cdktn
 ```
 
 From here on both, the `cli` and the `cdktn` packages are linked and changes will be reflected immediatlely.
@@ -333,7 +323,7 @@ If you get this error message when trying to use a local build of `cdktn`:
 Run:
 
 ```
-./tools/align-version.sh -dev.111212112 && yarn build && yarn package
+./tools/align-version.sh -dev.111212112 && pnpm build && pnpm package
 ```
 
 This builds a package with a development version which skips the tamper check in Python. (We once accidentally released `cdktn 0.0.0` which is the reason why Python knows some valid hashes for that `0.0.0` version and will fail as they won't match.)
@@ -420,7 +410,7 @@ Most of our tests are automated but there are some workflows we need to manually
 6. For major releases:
 
 - Write an [upgrade guide](https://github.com/open-constructs/cdk-terrain-docs/tree/main/content/release)
-- Run `yarn generate-docs` to bring our api documentation up to date
+- Run `pnpm generate-docs` to bring our api documentation up to date
 - Make a PR with the changes over in the [`open-constructs/cdk-terrain-docs`](https://github.com/open-constructs/cdk-terrain-docs) repository
 
 #### Retrying a broken deployment

@@ -5,7 +5,7 @@
 ## Usage
 
 ```sh
-yarn add @cdktn/provider-generator
+pnpm add @cdktn/provider-generator
 ```
 
 ### Generate bindings

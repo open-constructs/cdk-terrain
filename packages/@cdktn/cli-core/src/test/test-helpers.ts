@@ -26,7 +26,7 @@ export function createTmpHelper(): (prefix: string) => string {
 
 /**
  * Check if all distribution files required for init() tests exist.
- * These tests require `yarn package` to be run first to generate all language distributions.
+ * These tests require `pnpm package` to be run first to generate all language distributions.
  *
  * @param fromTestFile - Use __dirname from the test file calling this function
  * @returns true if all required dist files exist
@@ -48,7 +48,7 @@ export function checkDistFilesExist(fromTestFile: string): boolean {
 
 /**
  * Returns describe.skip with an informative message if dist files don't exist.
- * Use this for tests that require `yarn package` to have been run.
+ * Use this for tests that require `pnpm package` to have been run.
  *
  * @param fromTestFile - Use __dirname from the test file calling this function
  * @returns describe or describe.skip based on whether dist files exist
@@ -58,8 +58,8 @@ export function describeIfDistExists(fromTestFile: string) {
 
   if (!distFilesExist) {
     console.warn(
-      "\n⚠️  Skipping tests that require dist files. Run 'yarn package' to enable these tests.\n" +
-        "   Note: 'yarn package' requires Maven (mvn) to be installed.\n",
+      "\n⚠️  Skipping tests that require dist files. Run 'pnpm package' to enable these tests.\n" +
+        "   Note: 'pnpm package' requires Maven (mvn) to be installed.\n",
     );
     return describe.skip;
   }

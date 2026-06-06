@@ -36,8 +36,8 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "@cdktn/commons": "0.0.0",
-    "@cdktn/hcl2json": "0.0.0",
+    "@cdktn/commons": "workspace:*",
+    "@cdktn/hcl2json": "workspace:*",
     "deepmerge": "4.3.1",
     "fs-extra": "11.3.4"
   },

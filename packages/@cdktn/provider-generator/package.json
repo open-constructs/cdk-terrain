@@ -37,9 +37,11 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "@cdktn/commons": "0.0.0",
-    "@cdktn/provider-schema": "0.0.0",
+    "@cdktn/commons": "workspace:*",
+    "@cdktn/provider-schema": "workspace:*",
+    "cdktn": "workspace:*",
     "codemaker": "1.128.0",
+    "constructs": "10.6.0",
     "fs-extra": "8.1.0",
     "glob": "10.5.0",
     "jsii": "~5.9.0",

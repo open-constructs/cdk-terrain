@@ -4,8 +4,10 @@ import execa from "execa";
 import path from "path";
 import { promises as fs } from "fs";
 import { mkdtemp } from "@cdktn/commons";
+import cdktnCliPkg from "../../../package.json";
 
-const cdktfBin = path.resolve(__dirname, "../../../bundle/bin/cdktn");
+const cdktnCliRoot = path.resolve(__dirname, "../../..");
+const cdktfBin = path.resolve(cdktnCliRoot, cdktnCliPkg.bin.cdktn);
 const input = `
 resource "null_resource" "dummy" {}
 `;

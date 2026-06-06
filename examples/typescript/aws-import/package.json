@@ -6,7 +6,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "get": "cdktn get",
-    "build": "yarn get && tsc",
+    "build": "pnpm run get && tsc",
     "synth": "cdktn synth",
     "compile": "tsc --pretty",
     "watch": "tsc -w",
@@ -16,13 +16,13 @@
     "upgrade:next": "npm i cdktn@next cdktn-cli@next"
   },
   "dependencies": {
-    "cdktn": "0.0.0",
+    "cdktn": "workspace:*",
     "constructs": "10.6.0"
   },
   "devDependencies": {
     "@types/jest": "30.0.0",
     "@types/node": "20.17.51",
-    "cdktn-cli": "0.0.0",
+    "cdktn-cli": "workspace:*",
     "jest": "^30.3.0",
     "ts-node": "10.9.1",
     "typescript": "^5.0.0"

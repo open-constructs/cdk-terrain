@@ -5,4 +5,4 @@
 set -euo pipefail
 scriptdir=$(cd $(dirname $0) && pwd)
 
-npx jest -u $scriptdir/*/edge
+pnpm exec jest -u $scriptdir/*/edge

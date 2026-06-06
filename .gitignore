@@ -39,8 +39,10 @@ tsconfig.tsbuildinfo
 examples/java/gradle-shared-module/.gradle/
 
 .nx/
-.yarn
-test/.yarn
+
+# pnpm
+.corepack-cache/
+.pnpm-store/
 
 website/*
 !website/README.md

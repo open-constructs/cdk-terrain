@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 set -euo pipefail
-bundle=$(npm pack)
+bundle=$(pnpm pack | tail -n 1)
 rm -fr dist
 mkdir -p dist/js
 mv ${bundle} dist/js

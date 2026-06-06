@@ -22,6 +22,9 @@ on:
         required: false
         type: string
 
+env:
+  HUSKY: "0"
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-integration-${{ github.head_ref }}
   cancel-in-progress: true
@@ -48,21 +51,14 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
-      # Setup caches for yarn, and go
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
+      # Setup cache for go
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      - name: Cache yarn
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - name: Cache go
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -72,12 +68,12 @@ jobs:
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
       - name: install dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm ci
       - name: build and package
         if: ${{ !inputs.skip_setup }}
         run: |
-          yarn build
-          yarn package
+          pnpm run build
+          pnpm run package
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
@@ -94,8 +90,7 @@ jobs:
           name: ${{ inputs.edge_bindings_artifact_name }}
           path: packages/@cdktn/provider-generator/edge-provider-bindings
       - name: installing test dependencies
-        run: |
-          cd test && yarn install --frozen-lockfile --prefer-offline
+        run: cd test && pnpm ci
       - name: Build test matrix
         id: build-test-matrix
         run: node tools/build-test-matrix.mjs
@@ -125,26 +120,18 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
-      # Setup caches for yarn, terraform, go, and gradle
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
+      # Setup caches for terraform, go, and gradle
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/terraform
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/gradle
           echo "gradle=/usr/local/share/.cache/gradle" >> $GITHUB_OUTPUT
-      # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
-      - name: Restore yarn cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - name: Cache terraform
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -180,9 +167,9 @@ jobs:
           name: ${{ inputs.edge_bindings_artifact_name }}
           path: test/edge-provider-bindings
       - name: install test dependencies
-        run: cd test && yarn install --frozen-lockfile --prefer-offline
+        run: cd test && pnpm ci
       - name: integration tests
-        run: cd test && ./run-against-dist npx jest ${TEST_TARGET}
+        run: cd test && ./run-against-dist pnpm exec jest ${TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}
           TERRAFORM_CLOUD_TOKEN: ${{ secrets.TERRAFORM_CLOUD_TOKEN }}
@@ -213,27 +200,17 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
-      # Setup caches for yarn, terraform, and go
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
+      # Setup caches for terraform, and go
       - name: Get cache directory paths
         id: global-cache-dir-path
-        shell: bash
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/terraform
           echo "terraform=/usr/local/share/.cache/terraform" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      # restore-only on the matrix side; only the prepare job saves to avoid parallel writes
-      - name: Restore yarn cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-integration
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
-      - name: Cache terraform
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
           key: terraform-${{ runner.os }}-${{ matrix.terraform }}-integration
@@ -273,9 +250,9 @@ jobs:
       - name: update npm
         run: npm install -g npm@8.12.1
       - name: install test dependencies
-        run: cd test && yarn install --frozen-lockfile --prefer-offline
+        run: cd test && pnpm ci
       - name: integration tests
-        run: cd test && ./run-against-dist.bat "npx jest --ci ${env:TEST_TARGET}"
+        run: cd test && ./run-against-dist.bat "pnpm exec jest --ci ${env:TEST_TARGET}"
         env:
           TEST_TARGET: ${{ matrix.target }}
           TERRAFORM_CLOUD_TOKEN: ${{ secrets.TERRAFORM_CLOUD_TOKEN }}

@@ -72,6 +72,9 @@ const config: esbuild.BuildOptions = {
     "@cdktn/hcl2cdk",
     "constructs",
     "yoga-layout-prebuilt",
+    "@types/node/package.json",
+    "constructs/package.json",
+    "cdktn/package.json",
   ],
   // Bare `punycode` resolves to node's deprecated builtin (DEP0040). Alias to the
   // userland package that transitive deps (whatwg-url, tr46, uri-js) actually intend.
@@ -83,7 +86,7 @@ const config: esbuild.BuildOptions = {
     {
       name: "rebuild-log",
       setup({ onStart, onEnd }) {
-        let t;
+        let t: number;
         onStart(() => {
           t = Date.now();
         });
@@ -102,7 +105,6 @@ const config: esbuild.BuildOptions = {
 (async () => {
   console.log("Building…");
   await esbuild.build(config);
-  fs.copySync("src/bin/cdktn", "./bundle/bin/cdktn");
   fs.copySync("../@cdktn/cli-core/templates", "./bundle/templates");
 
   if (enableWatch) {

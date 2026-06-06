@@ -53,7 +53,7 @@ describe("provider upgrade command", () => {
       );
     });
 
-    it("can update withing the same cdktf version to the latest version in yarn", async () => {
+    it("can update within the same cdktf version to the latest version with a fresh npm install", async () => {
       // Pin random provider version so that the upgrade can do anything
       await driver.exec("npm", [
         "install",

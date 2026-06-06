@@ -7,7 +7,7 @@ A CDK Terrain application in TypeScript.
 Install project dependencies
 
 ```shell
-yarn install
+npm install
 ```
 
 Generate CDK Terrain constructs for Terraform provides and modules used in the project.

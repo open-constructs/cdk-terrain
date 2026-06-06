@@ -16,11 +16,11 @@ version of the `cdktn` module (this is the behavior of `cdktn init`).
 You can also execute a test (or all of them) against the `dist` build artifact:
 
 ```shell
-$ yarn install
-$ yarn build
-$ yarn run package # creates "dist/"
+$ pnpm install
+$ pnpm build
+$ pnpm run package # creates "dist/"
 $ cd test
-$ yarn edge:install
+$ pnpm edge:install
 $ ./run-against-dist npx jest --runInBand
 ```
 
@@ -36,7 +36,7 @@ Test Environment:
 - See existing tests as examples on how to bring in auxiliary files to the test.
 - Test MUST NOT install any dependencies or the `cdktn` CLI. They can expect it
   to be available in the environment.
-- To install dependencies from pacakge managers, use `yarn`, `npm`, `pipenv`,
+- To install dependencies from pacakge managers, use `pnpm`, `npm`, `pipenv`,
   `mvn` and `nuget`. Those programs will be shimmed to allow consuming local
   dependencies.
 

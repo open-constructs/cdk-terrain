@@ -73,7 +73,7 @@ async function start(configPath) {
 
   const originalRegistry = npmGetRegistry();
 
-  const child = spawn("npm", ["exec", "-c", `verdaccio -c ${configPath}`], {
+  const child = spawn("pnpm", ["exec", "verdaccio", "-c", configPath], {
     cwd: SCRIPT_DIR,
     stdio: ["ignore", logFd, logFd],
     detached: true,

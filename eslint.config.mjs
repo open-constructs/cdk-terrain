@@ -16,6 +16,7 @@ export const baseConfig = [
       "**/node_modules",
       "**/dist",
       "**/coverage",
+      "**/.corepack-cache/**",
       "**/*.d.ts",
       "**/*.js",
       "**/*.mjs",

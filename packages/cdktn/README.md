@@ -8,13 +8,13 @@ users to define infrastructure resources using higher-level programming language
 Install dependencies
 
 ```bash
-yarn install
+pnpm install
 ```
 
 Build the package
 
 ```bash
-yarn build
+pnpm build
 ```
 
 [Learn More](https://cdktn.io/docs)

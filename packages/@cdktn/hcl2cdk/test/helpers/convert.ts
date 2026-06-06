@@ -69,7 +69,7 @@ type SchemaFilter = {
   dataSources?: string[];
 };
 
-const cdktnBin = path.join(__dirname, "../../../../cdktn-cli/bundle/bin/cdktn");
+const cdktnBin = path.join(__dirname, "../../../../cdktn-cli/bin/cdktn");
 const cdktnDist = path.join(__dirname, "../../../../../dist");
 const tsxPkgJsonPath = require.resolve("tsx/package.json");
 const tsxBin = path.join(

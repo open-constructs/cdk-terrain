@@ -37,7 +37,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "@sentry/node": "7.120.4",
-    "cdktn": "0.0.0",
+    "cdktn": "workspace:*",
     "ci-info": "3.9.0",
     "codemaker": "1.128.0",
     "cross-spawn": "7.0.6",
@@ -49,6 +49,7 @@
     "validator": "13.15.35"
   },
   "devDependencies": {
+    "@types/cross-spawn": "6.0.6",
     "@types/follow-redirects": "1.14.4",
     "@types/fs-extra": "11.0.4",
     "@types/uuid": "9.0.8",

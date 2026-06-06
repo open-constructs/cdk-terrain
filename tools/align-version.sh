@@ -17,7 +17,7 @@ cd ${scriptdir}/..
 
 suffix="${1:-}"
 version="$(node -p "require('./package.json').version")${suffix}"
-npx lerna version ${version} --yes --exact --force-publish=* --no-git-tag-version --no-push
+pnpm exec lerna version ${version} --yes --exact --force-publish=* --no-git-tag-version --no-push
 
 # `lerna version` does not rewrite peerDependencies, so rewrite any "0.0.0"
 # entries here to the aligned version.

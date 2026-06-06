@@ -7,7 +7,7 @@ This is based on the provided examples for AWS and Google but adapted to Azure
 Install project dependencies
 
 ```shell
-yarn install
+npm install
 ```
 
 Generate CDK Terrain constructs for Terraform provides and modules used in the project.

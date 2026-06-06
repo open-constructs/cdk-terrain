@@ -10,13 +10,13 @@ CDKTN generates its function bindings based on that schema.
 To update the function definitions (stored in `scripts/functions.json`), run the following command:
 
 ```sh
-yarn run fetch-metadata
+pnpm run fetch-metadata
 ```
 
 If your default Terraform version does not (yet) support the `metadata functions` command, you can pass the environment variable `TERRAFORM_BINARY_NAME` to point to a different Terraform binary:
 
 ```sh
-TERRAFORM_BINARY_NAME="~/Downloads/terraform-140-beta2" yarn run fetch-metadata
+TERRAFORM_BINARY_NAME="~/Downloads/terraform-140-beta2" pnpm run fetch-metadata
 ```
 
 ## Generating function bindings
@@ -26,7 +26,7 @@ The second step is to generate function bindings based off of the `functions.jso
 To do so, run:
 
 ```sh
-yarn run generate
+pnpm run generate
 ```
 
 This will update the generated file in `packages/cdktn/src/functions/terraform-functions.generated.ts`
@@ -40,7 +40,7 @@ The `scripts/generate.ts` file contains a constant named `INTERNAL_METHODS` that
 To aid the update process, it is also possible to run the following command in the root of the repository:
 
 ```sh
-yarn run generate-function-bindings
+pnpm run generate-function-bindings
 ```
 
 This will invoke both commands in sequence.

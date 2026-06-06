@@ -7,6 +7,9 @@ on:
         required: false
         type: string
 
+env:
+  HUSKY: "0"
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-unit-affected-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -31,6 +34,8 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
 
       - name: Derive base/head SHAs for nx affected
         uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
@@ -38,17 +43,8 @@ jobs:
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      - name: Restore yarn cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - name: Restore go cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -65,25 +61,25 @@ jobs:
           fi
 
       - name: installing dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm ci
 
       - name: package (only when @cdktn/hcl2cdk is affected)
         # @cdktn/hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which
         # reads jsii tarballs from the workspace-root dist/ directory; that
-        # output isn't produced by an Nx target chain, only by `yarn package`
+        # output isn't produced by an Nx target chain, only by `pnpm run package`
         # + tools/collect-dist.sh. Run it conditionally so unrelated PRs
         # don't pay the multi-language packaging cost.
         run: |
-          if yarn --silent nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/hcl2cdk'; then
-            echo "@cdktn/hcl2cdk affected; running yarn package"
-            yarn package
+          if pnpm exec nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/hcl2cdk'; then
+            echo "@cdktn/hcl2cdk affected; running pnpm run package"
+            pnpm run package
           else
-            echo "@cdktn/hcl2cdk not affected; skipping yarn package"
+            echo "@cdktn/hcl2cdk not affected; skipping pnpm run package"
           fi
 
       - name: nx affected - test (excluding terraform-dependent projects)
         run: |
-          yarn nx affected -t test \
+          pnpm exec nx affected -t test \
             --exclude='*,!tag:unit-test' \
             --parallel=2 \
             --base="$NX_BASE" --head="$NX_HEAD" \
@@ -119,6 +115,8 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
 
       - name: Derive base/head SHAs for nx affected
         uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
@@ -126,19 +124,10 @@ jobs:
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/providerSchema
           echo "providerSchema=/usr/local/share/.cache/providerSchema" >> $GITHUB_OUTPUT
-      - name: Restore yarn cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - name: Restore go cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -160,21 +149,21 @@ jobs:
           fi
 
       - name: installing dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm ci
 
       - name: package (only when @cdktn/cli-core is affected)
         run: |
-          if yarn --silent nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/cli-core'; then
-            echo "@cdktn/cli-core affected; running yarn package"
-            yarn package
+          if pnpm exec nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/cli-core'; then
+            echo "@cdktn/cli-core affected; running pnpm run package"
+            pnpm run package
           else
-            echo "@cdktn/cli-core not affected; skipping yarn package"
+            echo "@cdktn/cli-core not affected; skipping pnpm run package"
           fi
 
       - name: nx affected - test (terraform-dependent projects)
         run: |
           unset TF_PLUGIN_CACHE_DIR
-          yarn nx affected -t test \
+          pnpm exec nx affected -t test \
             --exclude='*,!tag:unit-test:terraform' \
             --parallel=2 \
             --base="$NX_BASE" --head="$NX_HEAD" \

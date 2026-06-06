@@ -28,6 +28,8 @@ test/edge-provider-bindings
 !tools/update-github-project-board/index.ts
 **/go.mod
 **/go.sum
+**/pnpm-lock.yaml
+**/pnpm-workspace.yaml
 *.py
 *.java
 *.go

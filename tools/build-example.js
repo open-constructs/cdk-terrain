@@ -32,7 +32,9 @@ if (!exampleToBuild) {
 
 async function runInExample(command) {
   try {
-    return await run(`npx lerna run --scope='${exampleToBuild}' ${command}`);
+    return await run(
+      `pnpm exec lerna run --scope='${exampleToBuild}' ${command}`,
+    );
   } catch (e) {
     const err = new Error(
       `Failed to run ${command} in ${exampleToBuild} with status ${e.code} and signal ${e.signal}`,
