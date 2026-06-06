@@ -30,8 +30,7 @@ jobs:
       #
       # The "CDKTN maintainers" App must be installed on this repository with:
       #   * Contents:       Read & write  (create the release branch, commit the
-      #                                    version + CHANGELOG bump, create the
-      #                                    tag and the GitHub release)
+      #                                    version + CHANGELOG bump)
       #   * Pull requests:  Read & write  (open / update / rebase the release PR)
       #
       # Provide its credentials as repository (or org) secrets:
@@ -49,10 +48,16 @@ jobs:
       # -----------------------------------------------------------------------
       # release-please keeps a single release PR open for the repo, rebasing it
       # as conventional commits land on main. Merging that PR bumps the root
-      # package.json + CHANGELOG.md, tags `v<version>`, and creates the GitHub
-      # release. The subsequent push to main is picked up by release.yml, whose
-      # stable channel publishes the (now-unreleased-in-Sentry) version to npm,
-      # PyPI, Maven, NuGet and Go. No changes to release.yml are required.
+      # package.json + CHANGELOG.md and updates .release-please-manifest.json.
+      #
+      # `skip-github-release: true` (in release-please-config.json) means
+      # release-please does NOT create the git tag or the GitHub release. That
+      # remains the sole responsibility of release.yml's `release_github` job
+      # (tools/release-github.sh), avoiding a double-create race. On the merge
+      # push, release.yml's stable channel sees the bumped (unreleased-in-Sentry)
+      # version, runs the release tests, then tags `v<version>`, creates the
+      # GitHub release and publishes to npm, PyPI, Maven, NuGet and Go.
+      # No changes to release.yml are required.
       # -----------------------------------------------------------------------
       - name: Run release-please
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4

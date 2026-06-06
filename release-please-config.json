@@ -4,6 +4,7 @@
   "bootstrap-sha": "c27aa7f3f58213669b85f0e71ae4173d8fe625ef",
   "include-component-in-tag": false,
   "separate-pull-requests": false,
+  "skip-github-release": true,
   "pull-request-title-pattern": "chore(release): release v${version}",
   "pull-request-header": ":robot: Release PR — merge to cut a new release. Kept open and rebased as commits land on `main`.",
   "changelog-sections": [

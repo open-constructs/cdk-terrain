@@ -1,8 +1,10 @@
 # Release automation with release-please
 
 This repo uses [release-please](https://github.com/googleapis/release-please) to
-automate version bumps, `CHANGELOG.md` generation, git tags and GitHub releases
-from [Conventional Commits](https://www.conventionalcommits.org/).
+automate version bumps and `CHANGELOG.md` generation from
+[Conventional Commits](https://www.conventionalcommits.org/), via an
+always-open release PR. Git-tag and GitHub-release creation stay with the
+existing `release.yml` pipeline (see [ownership](#who-owns-the-github-release-releaseyml)).
 
 It is configured **additively**: release-please owns _versioning and the release
 PR_, while the existing publishing pipeline (`release.yml` + `release-publish.yml`,
@@ -26,7 +28,7 @@ convention used by `tools/release-github.sh`.
 | -------------------------------------- | ------------------------------------------------------------------------------- |
 | `release-please-config.json`           | Release config — release-type `node`, single `"."` package, changelog sections. |
 | `.release-please-manifest.json`        | Source of truth for the last released version (`0.23.3`).                       |
-| `.github/workflows/release-please.yml` | Runs release-please on every push to `main`.                                    |
+| `.github/workflows/release-please.yml` | Runs release-please on every push to `main` (release PR only, no tag/release).  |
 
 ## How it works
 
@@ -36,15 +38,38 @@ convention used by `tools/release-github.sh`.
    section to `CHANGELOG.md`. `fix:` → patch, `feat:` → minor, `!`/
    `BREAKING CHANGE` → major.
 3. When you're ready to cut a release, **merge the release PR**. release-please
-   then creates the `v<version>` tag and the GitHub release.
+   updates `.release-please-manifest.json` to the new version but, because
+   `skip-github-release: true` is set, does **not** create the git tag or the
+   GitHub release.
 4. The merge is a push to `main`, which triggers `release.yml`. Its stable
-   channel sees a version that Sentry reports as `unreleased`, builds the
-   multi-language dist and publishes to npm, PyPI, Maven, NuGet and Go via
-   `release-publish.yml`. `tools/release-github.sh` no-ops because
-   release-please already created the GitHub release.
+   channel sees a version that Sentry reports as `unreleased`, runs the release
+   tests, then **creates the `v<version>` tag and the GitHub release**
+   (`release_github` → `tools/release-github.sh`) and publishes the
+   multi-language dist to npm, PyPI, Maven, NuGet and Go via
+   `release-publish.yml`.
 
 Normal (non-release) pushes to `main` keep publishing the `@next` prerelease
 channel exactly as before — release-please only touches the release PR.
+
+## Who owns the GitHub release? (`release.yml`)
+
+To avoid a double-create race, there is exactly **one** owner of git-tag and
+GitHub-release creation: **`release.yml`'s `release_github` job**
+(`tools/release-github.sh`), unchanged from before. release-please deliberately
+opts out via `skip-github-release: true`, so it only maintains the release PR,
+the version bump, `CHANGELOG.md` and the manifest.
+
+This keeps the existing, test-gated release sequence intact (tag + release +
+artifacts all happen together after the release tests pass) and requires no
+changes to `release.yml`. release-please still tracks released versions through
+`.release-please-manifest.json` (updated in the merged PR) and the `v<version>`
+tags that `release.yml` creates — which match release-please's expected tag
+pattern (`include-component-in-tag: false`).
+
+> If you would rather make **release-please** the owner instead (it would create
+> the tag + release immediately on merge, with its own generated notes), drop
+> `skip-github-release` and remove the `release_github` job from `release.yml`.
+> That is a deliberate, separate decision — see the migration note below.
 
 ## Required GitHub App: "CDKTN maintainers"
 
@@ -61,8 +86,8 @@ do **not** trigger downstream workflows (the release PR's CI would never run).
 
 The App must be **installed on this repository** with these permissions:
 
-- **Contents: Read & write** — create the release branch, commit the version +
-  `CHANGELOG.md` bump, create the tag and the GitHub release.
+- **Contents: Read & write** — create the release branch and commit the version +
+  `CHANGELOG.md` bump. (Tag/release creation is owned by `release.yml`.)
 - **Pull requests: Read & write** — open / update / rebase the release PR.
 
 Store its credentials as repository (or org) secrets:
@@ -90,6 +115,7 @@ still drives the version in `package.json` for the `@next` channel. Once
 release-please is trusted for stable releases, a follow-up can:
 
 - replace the `@next` bump with a release-please [prerelease/snapshot] setup, and
-- retire `tools/release-github.sh` (release-please creates the GitHub release).
+- flip release ownership to release-please (drop `skip-github-release` and remove
+  the `release_github` job), retiring `tools/release-github.sh`.
 
 These are intentionally **out of scope** for this additive setup.
