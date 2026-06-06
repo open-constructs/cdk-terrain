@@ -7,6 +7,7 @@
   "skip-github-release": true,
   "pull-request-title-pattern": "chore(release): release v${version}",
   "group-pull-request-title-pattern": "chore(release): release v${version}",
+  "extra-label": "ci/skip-unit,ci/skip-examples,ci/skip-integration,ci/skip-provider-integration",
   "pull-request-header": ":robot: Release PR — merge to cut a new release. Kept open and rebased as commits land on `main`.",
   "changelog-sections": [
     { "type": "feat", "section": "Features" },

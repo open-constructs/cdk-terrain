@@ -84,6 +84,24 @@ is inherited from the root `.` package — producing e.g.
 `release`). If you change the linter's allowed types/scopes, keep these patterns
 in sync.
 
+## CI on the release PR
+
+A release PR only changes `package.json`, `CHANGELOG.md` and the manifest, so it
+doesn't need the heavy test suites. release-please applies the repo's CI-skip
+labels to every release PR it opens via `extra-label`:
+
+```json
+"extra-label": "ci/skip-unit,ci/skip-examples,ci/skip-integration,ci/skip-provider-integration"
+```
+
+`extra-label` _adds_ these on top of the default `autorelease: pending` label
+that release-please uses to identify/track its own PRs — unlike `label`, which
+would _replace_ that identifier. With these applied, the gated suites
+(`All Unit Tests`, `Integration`, `Provider Integration`, `Examples`) are
+skipped while the fast always-on gates (build-and-package, lint, knip, prettier,
+CodeQL, PR title lint, copyright) still run. Keep this list in sync with the
+`ci/skip-*` labels honored in `pr.yml` if they change.
+
 ## Required GitHub App: "CDKTN maintainers"
 
 The workflow mints a short-lived token from the **CDKTN maintainers** GitHub App
