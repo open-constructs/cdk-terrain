@@ -6,6 +6,7 @@
   "separate-pull-requests": false,
   "skip-github-release": true,
   "pull-request-title-pattern": "chore(release): release v${version}",
+  "group-pull-request-title-pattern": "chore(release): release v${version}",
   "pull-request-header": ":robot: Release PR — merge to cut a new release. Kept open and rebased as commits land on `main`.",
   "changelog-sections": [
     { "type": "feat", "section": "Features" },

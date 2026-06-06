@@ -71,6 +71,19 @@ pattern (`include-component-in-tag: false`).
 > `skip-github-release` and remove the `release_github` job from `release.yml`.
 > That is a deliberate, separate decision — see the migration note below.
 
+## Release PR title and the PR linter
+
+The release PR is itself linted by `pr-lint.yml`
+(`amannn/action-semantic-pull-request`), so its title must be a valid
+Conventional Commit. In manifest mode the title is driven by
+**`group-pull-request-title-pattern`** (not `pull-request-title-pattern`), whose
+default `chore: release ${branch}` would render as `chore: release main`. Both
+patterns are therefore set to `chore(release): release v${version}` — `${version}`
+is inherited from the root `.` package — producing e.g.
+`chore(release): release v0.23.4`, which passes the linter (type `chore`, scope
+`release`). If you change the linter's allowed types/scopes, keep these patterns
+in sync.
+
 ## Required GitHub App: "CDKTN maintainers"
 
 The workflow mints a short-lived token from the **CDKTN maintainers** GitHub App
