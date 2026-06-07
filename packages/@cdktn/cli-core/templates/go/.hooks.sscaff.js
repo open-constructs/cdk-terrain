@@ -24,9 +24,9 @@ exports.pre = (variables) => {
 };
 
 exports.post = options => {
-  const { go_cdktf, cdktf_version } = options;
-  if (!go_cdktf) {
-    throw new Error(`missing context "go_cdktf"`);
+  const { go_cdktn, cdktn_version } = options;
+  if (!go_cdktn) {
+    throw new Error(`missing context "go_cdktn"`);
   }
 
   // Terraform Cloud configuration settings if the organization name and workspace is set.
@@ -36,13 +36,13 @@ exports.post = options => {
   }
 
   // dist package
-  if (go_cdktf.endsWith('cdktn')) {
+  if (go_cdktn.endsWith('cdktn')) {
     const gomod = readFileSync('./go.mod', 'utf-8');
 
     // set the version of the package to the version of the CDKTN CLI as the package itself
     // will be replaced and have no version on its own
-    let result = gomod.replace(go_cdktf, `v${cdktf_version}`);
-    result += `\n\nreplace github.com/open-constructs/cdk-terrain-go/cdktn => ${go_cdktf}\n`;
+    let result = gomod.replace(go_cdktn, `v${cdktn_version}`);
+    result += `\n\nreplace github.com/open-constructs/cdk-terrain-go/cdktn => ${go_cdktn}\n`;
 
     writeFileSync('./go.mod', result, 'utf-8');
   }

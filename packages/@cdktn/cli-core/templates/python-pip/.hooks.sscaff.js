@@ -29,12 +29,12 @@ exports.post = options => {
     terraformCloudConfig(options.$base, options.OrganizationName, options.WorkspaceName, options.TerraformRemoteHostname);
   }
 
-  const pypi_cdktf = options.pypi_cdktf;
-  if (!pypi_cdktf) {
-    throw new Error(`missing context "pypi_cdktf"`);
+  const pypi_cdktn = options.pypi_cdktn;
+  if (!pypi_cdktn) {
+    throw new Error(`missing context "pypi_cdktn"`);
   }
 
-  writeFileSync('requirements.txt', pypi_cdktf + '\r\npytest\r\n', 'utf-8');
+  writeFileSync('requirements.txt', pypi_cdktn + '\r\npytest\r\n', 'utf-8');
 
   let installArgs = '';
   if (!process.env.VIRTUAL_ENV) {

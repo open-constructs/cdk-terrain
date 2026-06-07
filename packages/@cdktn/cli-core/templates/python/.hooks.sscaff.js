@@ -29,13 +29,13 @@ exports.post = options => {
     terraformCloudConfig(options.$base, options.OrganizationName, options.WorkspaceName, options.TerraformRemoteHostname)
   }
 
-  const pypi_cdktf = options.pypi_cdktf;
-  if (!pypi_cdktf) {
-    throw new Error(`missing context "pypi_cdktf"`);
+  const pypi_cdktn = options.pypi_cdktn;
+  if (!pypi_cdktn) {
+    throw new Error(`missing context "pypi_cdktn"`);
   }
 
   execSync('pipenv install', { stdio: 'inherit' });
-  execSync(`pipenv install ${pypi_cdktf}`, { stdio: 'inherit' });
+  execSync(`pipenv install ${pypi_cdktn}`, { stdio: 'inherit' });
   execSync(`pipenv install pytest`, { stdio: 'inherit' });
   chmodSync('main.py', '700');
 

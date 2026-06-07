@@ -28,7 +28,7 @@ export async function providerAdd({
   forceLocal,
 }: ProviderAddArgs): Promise<boolean> {
   const version =
-    cdktfVersion || (await determineDeps(cdktfVersion, dist)).cdktf_version;
+    cdktfVersion || (await determineDeps(cdktfVersion, dist)).cdktn_version;
 
   const manager = new DependencyManager(language, version, projectDirectory);
 

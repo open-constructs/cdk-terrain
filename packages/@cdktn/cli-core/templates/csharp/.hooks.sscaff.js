@@ -23,9 +23,9 @@ exports.pre = (variables) => {
 };
 
 exports.post = options => {
-  const { nuget_cdktf, cdktf_version } = options;
-  if (!nuget_cdktf) {
-    throw new Error(`missing context "nuget_cdktf"`);
+  const { nuget_cdktn, cdktn_version } = options;
+  if (!nuget_cdktn) {
+    throw new Error(`missing context "nuget_cdktn"`);
   }
 
   // Terraform Cloud configuration settings if the organization name and workspace is set.
@@ -35,8 +35,8 @@ exports.post = options => {
   }
 
   // dist package
-  if (nuget_cdktf.endsWith('.nupkg')) {
-    srcFolder = path.dirname(nuget_cdktf);
+  if (nuget_cdktn.endsWith('.nupkg')) {
+    srcFolder = path.dirname(nuget_cdktn);
 
     writeFileSync('./NuGet.Config', `<?xml version="1.0" encoding="utf-8"?>
     <configuration>
