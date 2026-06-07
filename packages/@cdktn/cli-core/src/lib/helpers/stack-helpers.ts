@@ -3,7 +3,7 @@
 
 import { ensureAllSettledBeforeThrowing, Errors, logger } from "@cdktn/commons";
 import minimatch from "minimatch";
-import { CdktfStack } from "../cdktf-stack";
+import { CdktnStack } from "../cdktn-stack";
 import { SynthesizedStack } from "../synth-stack";
 
 export function getSingleStack(
@@ -75,8 +75,8 @@ export function getMultipleStacks(
 // If there is no unfinished stack, returns undefined
 // If there is no stack ready to be worked on, it returns a promise that will resolve as soon as there is a follow-up stack available
 export async function getStackWithNoUnmetDependencies(
-  stackExecutors: CdktfStack[],
-): Promise<CdktfStack | undefined> {
+  stackExecutors: CdktnStack[],
+): Promise<CdktnStack | undefined> {
   logger.debug("Checking for stacks with unmet dependencies");
   logger.debug("stack executors:", stackExecutors);
   const pendingStacks = stackExecutors.filter((executor) => executor.isPending);
@@ -120,19 +120,19 @@ export async function getStackWithNoUnmetDependencies(
 }
 
 function findAllDependantStacks(
-  stackExecutors: CdktfStack[],
+  stackExecutors: CdktnStack[],
   stackName: string,
-): CdktfStack[] {
+): CdktnStack[] {
   return stackExecutors.filter((innerExecutor) =>
     innerExecutor.stack.dependencies.includes(stackName),
   );
 }
 
 export function findAllNestedDependantStacks(
-  stackExecutors: CdktfStack[],
+  stackExecutors: CdktnStack[],
   stackName: string,
   knownDependantStackNames: Set<string> = new Set(),
-): CdktfStack[] {
+): CdktnStack[] {
   const dependantStacks = findAllDependantStacks(stackExecutors, stackName);
   dependantStacks.forEach((stack) => {
     if (knownDependantStackNames.has(stack.stack.name)) {
@@ -154,8 +154,8 @@ export function findAllNestedDependantStacks(
 
 // Returns the first stack that has no dependents that need to be destroyed first
 export async function getStackWithNoUnmetDependants(
-  stackExecutors: CdktfStack[],
-): Promise<CdktfStack | undefined> {
+  stackExecutors: CdktnStack[],
+): Promise<CdktnStack | undefined> {
   logger.debug("Checking for stacks with unmet dependants");
   logger.debug("stack executors:", stackExecutors);
   const pendingStacks = stackExecutors.filter((executor) => executor.isPending);

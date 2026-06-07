@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { useApp } from "ink";
 import { useEffect, useState } from "react";
-import { CdktfProject, ProjectUpdate, CdktfStack } from "@cdktn/cli-core";
+import { CdktfProject, ProjectUpdate, CdktnStack } from "@cdktn/cli-core";
 
 export type LogEntry = {
   content: string;
@@ -25,9 +25,9 @@ export type Status =
     }
   | {
       type: "running";
-      inProgress: CdktfStack[];
-      finished: CdktfStack[];
-      pending: CdktfStack[];
+      inProgress: CdktnStack[];
+      finished: CdktnStack[];
+      pending: CdktnStack[];
     }
   | {
       type: "waiting for approval of stack";

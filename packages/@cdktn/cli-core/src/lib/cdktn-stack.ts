@@ -117,7 +117,7 @@ async function getTerraformClient(
   return new TerraformCli(abortSignal, stack, createTerraformLogHandler);
 }
 
-type CdktfStackOptions = {
+type CdktnStackOptions = {
   stack: SynthesizedStack;
   onUpdate: (
     update:
@@ -133,7 +133,7 @@ type CdktfStackOptions = {
   abortSignal: AbortSignal;
 };
 
-type CdktfStackStates =
+type CdktnStackStates =
   | StackUpdate["type"]
   | StackApprovalUpdate["type"]
   | StackSentinelOverrideUpdate["type"]
@@ -142,17 +142,17 @@ type CdktfStackStates =
   | "idle"
   | "done";
 
-export class CdktfStack {
+export class CdktnStack {
   public stack: SynthesizedStack;
   public outputs?: Record<string, any>;
   public outputsByConstructId?: NestedTerraformOutputs;
   public stopped = false;
   public currentWorkPromise: Promise<void> | undefined;
-  public readonly currentState: CdktfStackStates = "idle";
+  public readonly currentState: CdktnStackStates = "idle";
   public error?: string;
   private readonly parsedContent: TerraformStack;
 
-  constructor(public options: CdktfStackOptions) {
+  constructor(public options: CdktnStackOptions) {
     this.stack = options.stack;
     this.parsedContent = terraformJsonSchema.parse(
       JSON.parse(this.stack.content),
@@ -184,7 +184,7 @@ export class CdktfStack {
       | { type: "done" },
   ) {
     logger.debug(`[${this.stack.name}]: ${update.type}`);
-    (this.currentState as CdktfStackStates) = update.type;
+    (this.currentState as CdktnStackStates) = update.type;
     switch (update.type) {
       case "idle":
       case "done":

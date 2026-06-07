@@ -10,14 +10,14 @@ import {
 import { SynthesizedStack, SynthOrigin, SynthStack } from "./synth-stack";
 import { printAnnotations } from "./synth";
 import {
-  CdktfStack,
+  CdktnStack,
   ExternalStackApprovalUpdate,
   ExternalStackSentinelOverrideUpdate,
   StackApprovalUpdate,
   StackSentinelOverrideUpdate,
   StackUpdate,
   StackUserInputUpdate,
-} from "./cdktf-stack";
+} from "./cdktn-stack";
 import { NestedTerraformOutputs } from "./output";
 import { createEnhanceLogMessage } from "./execution-logs";
 import {
@@ -158,7 +158,7 @@ export class CdktfProject {
   private hcl?: boolean;
 
   // Set during deploy / destroy
-  public stacksToRun: CdktfStack[] = [];
+  public stacksToRun: CdktnStack[] = [];
   // This means sth different in deploy / destroy
   private stopAllStacksThatCanNotRunWithout: (stackName: string) => void =
     () => {};
@@ -335,7 +335,7 @@ export class CdktfProject {
   ) {
     const enhanceLogMessage = createEnhanceLogMessage(stack);
     const onLog = this.ioHandler.bufferWhileAwaitingUserInput(this.onLog);
-    return new CdktfStack({
+    return new CdktnStack({
       ...opts,
       stack,
       onUpdate: this.handleUserInputProcess(this.onUpdate),
@@ -448,7 +448,7 @@ export class CdktfProject {
 
   private async execute(
     method: "deploy" | "destroy",
-    next: () => Promise<CdktfStack | undefined>,
+    next: () => Promise<CdktnStack | undefined>,
     opts: MutationOptions,
   ) {
     // We only support refresh only on deploy, a bit of a leaky abstraction here

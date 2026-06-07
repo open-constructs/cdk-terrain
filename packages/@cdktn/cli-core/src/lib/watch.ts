@@ -9,7 +9,7 @@ import {
 import * as fs from "fs";
 import * as chokidar from "chokidar";
 import { logger, Errors, sendTelemetry } from "@cdktn/commons";
-import { CdktfStack } from "./cdktf-stack";
+import { CdktnStack } from "./cdktn-stack";
 
 // In this very first iteration we will find out which files to watch by asking the user to provide the files
 // We default to something reasonable per language and write it into the cdkt.json file
@@ -91,9 +91,9 @@ export type State =
       type: "running";
       nextRunQueued: boolean;
       currentRun: Promise<void>;
-      inProgress: CdktfStack[];
-      finished: CdktfStack[];
-      pending: CdktfStack[];
+      inProgress: CdktnStack[];
+      finished: CdktnStack[];
+      pending: CdktnStack[];
     }
   | { type: "stopped" };
 

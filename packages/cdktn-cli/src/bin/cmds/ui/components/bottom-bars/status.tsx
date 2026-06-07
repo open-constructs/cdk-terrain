@@ -7,7 +7,7 @@ import React from "react";
 import { Text, Box } from "ink";
 import Spinner from "ink-spinner";
 import { Status } from "../../hooks/cdktf-project";
-import { WatchState, CdktfStack } from "@cdktn/cli-core";
+import { WatchState, CdktnStack } from "@cdktn/cli-core";
 
 type Props = {
   status: Status;
@@ -89,9 +89,9 @@ function Execution({
   pending,
   actionName,
 }: Pick<Props, "actionName"> & {
-  inProgress: CdktfStack[];
-  finished: CdktfStack[];
-  pending: CdktfStack[];
+  inProgress: CdktnStack[];
+  finished: CdktnStack[];
+  pending: CdktnStack[];
 }) {
   return (
     <Box marginTop={1}>
