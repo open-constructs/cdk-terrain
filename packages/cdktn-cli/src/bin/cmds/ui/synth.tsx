@@ -6,7 +6,7 @@
 import React from "react";
 import { Text } from "ink";
 
-import { useCdktfProject } from "./hooks/cdktf-project";
+import { useCdktnProject } from "./hooks/cdktn-project";
 import { StreamView } from "./components";
 import { SynthesizedStack } from "@cdktn/cli-core";
 import { StatusBottomBar } from "./components/bottom-bars/status";
@@ -36,7 +36,7 @@ export const Synth = ({
   synthCommand,
   hcl,
 }: SynthConfig): React.ReactElement => {
-  const { returnValue, logEntries, status } = useCdktfProject(
+  const { returnValue, logEntries, status } = useCdktnProject(
     { outDir, synthCommand, hcl },
     (project) => project.synth(),
   );

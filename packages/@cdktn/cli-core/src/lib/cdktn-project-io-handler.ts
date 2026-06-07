@@ -8,13 +8,13 @@ import {
   isWaitingForUserInputUpdate,
   MultiStackUpdate,
   LogMessage,
-} from "./cdktf-project";
+} from "./cdktn-project";
 
 /**
- * This class is used to buffer events while the user is being asked for input. It is solely consumed by the CdktfProject class,
- * and is mostly created as a separation of concerns to keep the CdktfProject class as clean as possible.
+ * This class is used to buffer events while the user is being asked for input. It is solely consumed by the CdktnProject class,
+ * and is mostly created as a separation of concerns to keep the CdktnProject class as clean as possible.
  */
-export class CdktfProjectIOHandler {
+export class CdktnProjectIOHandler {
   // Pauses all progress / status events from being forwarded to the user
   // If set from true to false, the events will be sent through the channels they came in
   // (until a waiting for approval event is sent)

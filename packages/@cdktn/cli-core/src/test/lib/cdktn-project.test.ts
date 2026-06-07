@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs-extra";
 import * as path from "path";
-import { CdktfProject, get, init } from "../../lib/index";
+import { CdktnProject, get, init } from "../../lib/index";
 import { Language } from "@cdktn/commons";
 import { SynthesizedStack } from "../../lib/synth-stack";
 import { getMultipleStacks } from "../../lib/helpers/stack-helpers";
-import { LogMessage } from "../../lib/cdktf-project";
+import { LogMessage } from "../../lib/cdktn-project";
 import { createTmpHelper, describeIfDistExists } from "../test-helpers";
 
 const tmp = createTmpHelper();
@@ -26,17 +26,17 @@ function installFixturesInWorkingDirectory(
     workingDirectory: string;
   },
 
-  fixtureName: string
+  fixtureName: string,
 ) {
   fs.copyFileSync(
     path.resolve(__dirname, `fixtures/${fixtureName}/main.ts.fixture`),
-    path.resolve(workingDirectory, "main.ts")
+    path.resolve(workingDirectory, "main.ts"),
   );
   return { outDir, workingDirectory };
 }
 
 jest.setTimeout(300_000);
-describeIfDistExists(__dirname)("CdktfProject", () => {
+describeIfDistExists(__dirname)("CdktnProject", () => {
   let inNewWorkingDirectory: () => {
     workingDirectory: string;
     outDir: string;
@@ -57,11 +57,11 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     fs.copyFileSync(
       path.resolve(__dirname, "fixtures/default/main.ts.fixture"),
-      path.resolve(workingDirectory, "main.ts")
+      path.resolve(workingDirectory, "main.ts"),
     );
     fs.copyFileSync(
       path.resolve(__dirname, "fixtures/default/cdktf.json"),
-      path.resolve(workingDirectory, "cdktf.json")
+      path.resolve(workingDirectory, "cdktf.json"),
     );
 
     await get({
@@ -94,19 +94,19 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
     };
   }, 200_000);
 
-  it("should be able to create a CdktfProject", () => {
-    const cdktfProject = new CdktfProject({
+  it("should be able to create a CdktnProject", () => {
+    const cdktnProject = new CdktnProject({
       synthCommand: "npx ts-node main.ts",
       ...inNewWorkingDirectory(),
       onUpdate: () => {},
     });
-    expect(cdktfProject).toBeTruthy();
+    expect(cdktnProject).toBeTruthy();
   });
 
   describe("synth", () => {
     it("runs synth command in the target dir and is done", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -114,7 +114,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      await cdktfProject.synth();
+      await cdktnProject.synth();
 
       expect(eventNames(events)).toEqual(["synthesizing", "synthesized"]);
     });
@@ -125,7 +125,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect.assertions(2);
       const events: any[] = [];
       const logs: LogMessage[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -134,7 +134,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         onLog: (msg) => logs.push(msg),
       });
 
-      await cdktfProject.diff({ stackName: "first" });
+      await cdktnProject.diff({ stackName: "first" });
 
       expect(eventNames(events)).toEqual([
         "synthesizing",
@@ -146,15 +146,15 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(logs).toContainEqual(
         expect.objectContaining({
           message: expect.stringContaining(
-            "1 to add, 0 to change, 0 to destroy"
+            "1 to add, 0 to change, 0 to destroy",
           ),
-        })
+        }),
       );
     });
 
     it("fails if no stack specified", () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -162,8 +162,8 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      return expect(cdktfProject.diff()).rejects.toMatchInlineSnapshot(
-        `[Error: Usage Error: Found more than one stack, please specify a target stack. Run cdktn diff <stack> with one of these stacks: fifth, first, fourth, second, third ]`
+      return expect(cdktnProject.diff()).rejects.toMatchInlineSnapshot(
+        `[Error: Usage Error: Found more than one stack, please specify a target stack. Run cdktn diff <stack> with one of these stacks: fifth, first, fourth, second, third ]`,
       );
     });
   });
@@ -171,7 +171,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
   describe("deploy", () => {
     it("runs synth once and waits for approval", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -183,7 +183,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      await cdktfProject.deploy({ stackNames: ["first"], parallelism: 1 });
+      await cdktnProject.deploy({ stackNames: ["first"], parallelism: 1 });
 
       return expect(eventNames(events)).toEqual([
         "synthesizing",
@@ -198,7 +198,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("runs synth once and deploys on autoApprove", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -209,7 +209,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["first"],
         autoApprove: true,
         parallelism: 1,
@@ -230,7 +230,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
   describe("destroy", () => {
     it("runs synth once and waits for approval", async () => {
       let events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -244,7 +244,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
       // we need to deploy first to have something to destroy
       // (else TF CLI wouldn't ask us to confirm as there's nothing)
-      await cdktfProject.deploy({ stackNames: ["second"] });
+      await cdktnProject.deploy({ stackNames: ["second"] });
       const lastEvent = events.pop();
       expect(lastEvent).toHaveProperty("type", "deployed");
       expect(lastEvent).toHaveProperty("stackName", "second");
@@ -252,7 +252,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       // clear events before next invocation
       events = [];
 
-      await cdktfProject.destroy({ stackNames: ["second"], parallelism: 1 });
+      await cdktnProject.destroy({ stackNames: ["second"], parallelism: 1 });
 
       return expect(eventNames(events)).toEqual([
         "synthesizing",
@@ -267,7 +267,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("runs synth once and destroys on autoApprove", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -275,7 +275,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      await cdktfProject.destroy({
+      await cdktnProject.destroy({
         stackNames: ["second"],
         autoApprove: true,
         parallelism: 1,
@@ -296,7 +296,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
   describe("multi-stack", () => {
     it("Errors if a stack can not be found", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -305,15 +305,15 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       await expect(
-        cdktfProject.deploy({ stackNames: ["not-found"], parallelism: 1 })
+        cdktnProject.deploy({ stackNames: ["not-found"], parallelism: 1 }),
       ).rejects.toMatchInlineSnapshot(
-        `[Error: Usage Error: Could not find stack for pattern 'not-found']`
+        `[Error: Usage Error: Could not find stack for pattern 'not-found']`,
       );
     });
 
     it("Errors if a dependent stack can not be found", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -322,15 +322,15 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       await expect(
-        cdktfProject.deploy({ stackNames: ["third"], parallelism: 1 })
+        cdktnProject.deploy({ stackNames: ["third"], parallelism: 1 }),
       ).rejects.toMatchInlineSnapshot(
-        `[Error: Usage Error: The following dependencies are not included in the stacks to run: first. Either add them or add the --ignore-missing-stack-dependencies flag.]`
+        `[Error: Usage Error: The following dependencies are not included in the stacks to run: first. Either add them or add the --ignore-missing-stack-dependencies flag.]`,
       );
     });
 
     it("Does not error if a dependent stack can not be found but the ignore option is passed", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -338,7 +338,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["third"],
         autoApprove: true,
         ignoreMissingStackDependencies: true,
@@ -350,7 +350,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("deploys stacks in the right order", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -363,7 +363,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       // Random order to implicitly test out sorting
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["third", "first", "second"],
         parallelism: 1,
       });
@@ -371,7 +371,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`)
+          .map((e) => `${e.stackName || "global"}: ${e.type}`),
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -395,11 +395,11 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("error in an deploying stack does not abort already running stacks", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...installFixturesInWorkingDirectory(
           inNewWorkingDirectory(),
-          "parallel-error"
+          "parallel-error",
         ),
         onUpdate: (event) => {
           events.push(event);
@@ -407,7 +407,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       try {
-        await cdktfProject
+        await cdktnProject
           .deploy({
             stackNames: ["stack1", "stack2", "stack3"],
             parallelism: 100,
@@ -421,7 +421,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         throw new Error("This error should not be thrown");
       } catch (e) {
         expect(e).toMatchInlineSnapshot(
-          `"Invoking Terraform CLI failed with exit code 1"`
+          `"Invoking Terraform CLI failed with exit code 1"`,
         );
       }
 
@@ -448,13 +448,17 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       // the middle events can occur in any order as the duration
       // they take to plan is not guaranteed
       expect(new Set(relevantEvents.slice(5, -3))).toEqual(
-        new Set(["stack1: deploying", "stack2: deploying", "stack3: deploying"])
+        new Set([
+          "stack1: deploying",
+          "stack2: deploying",
+          "stack3: deploying",
+        ]),
       );
     }, 120_000);
 
     it("deploys stacks in the right order with auto approve", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -463,7 +467,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       // Random order to implicitly test out sorting
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["third", "first", "second"],
         autoApprove: true,
         parallelism: 1,
@@ -472,7 +476,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`)
+          .map((e) => `${e.stackName || "global"}: ${e.type}`),
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -490,7 +494,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("only aborts dependant stacks when deploying", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -507,7 +511,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       // Random order to implicitly test out sorting
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["third", "first", "second", "fourth", "fifth"],
         parallelism: 1,
       });
@@ -515,7 +519,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`)
+          .map((e) => `${e.stackName || "global"}: ${e.type}`),
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -543,7 +547,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("destroys stacks in the right order", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -552,7 +556,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       // To destroy sth we need to deploy first, with a different project to not polute the event list
-      new CdktfProject({
+      new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: () => {},
@@ -563,7 +567,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       // Random order to implicitly test out sorting
-      await cdktfProject.destroy({
+      await cdktnProject.destroy({
         stackNames: ["third", "first", "second", "fourth", "fifth"],
         autoApprove: true,
         parallelism: 1,
@@ -572,7 +576,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`)
+          .map((e) => `${e.stackName || "global"}: ${e.type}`),
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -596,7 +600,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
 
     it("only aborts dependant when destroying", async () => {
       let events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -613,7 +617,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       });
 
       // To destroy sth we need to deploy first, using the same project (= same working directory)
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["third", "first", "second", "fourth", "fifth"],
         autoApprove: true,
         parallelism: 1,
@@ -625,7 +629,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       events = []; // clear events
 
       // Random order to implicitly test out sorting
-      await cdktfProject.destroy({
+      await cdktnProject.destroy({
         stackNames: ["third", "first", "second", "fourth", "fifth"],
         parallelism: 1,
       });
@@ -633,7 +637,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
       expect(
         events
           .filter((e) => !e.type.includes("update"))
-          .map((e) => `${e.stackName || "global"}: ${e.type}`)
+          .map((e) => `${e.stackName || "global"}: ${e.type}`),
       ).toEqual([
         "global: synthesizing",
         "global: synthesized",
@@ -664,11 +668,11 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
     it("stalls logs and updates while waiting for approval", async () => {
       let events: any[] = [];
       let eventsDuringWaitForApprove: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...installFixturesInWorkingDirectory(
           inNewWorkingDirectory(),
-          "parallel"
+          "parallel",
         ),
         onUpdate: (event) => {
           events.push(event);
@@ -689,7 +693,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         },
       });
 
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: new Array(5).fill(0).map((_, i) => `stack-${i}`),
         parallelism: 100,
       });
@@ -725,7 +729,7 @@ describe("getMultipleStacks", () => {
       ] as SynthesizedStack[];
 
       expect(
-        getMultipleStacks(synthesizedStacks, ["StackB", "StackC"])
+        getMultipleStacks(synthesizedStacks, ["StackB", "StackC"]),
       ).toEqual([{ name: "StackB" }, { name: "StackC" }]);
     });
 
@@ -737,7 +741,7 @@ describe("getMultipleStacks", () => {
       ] as SynthesizedStack[];
 
       expect(() =>
-        getMultipleStacks(synthesizedStacks, ["StackD", "StackC"])
+        getMultipleStacks(synthesizedStacks, ["StackD", "StackC"]),
       ).toThrow();
     });
   });

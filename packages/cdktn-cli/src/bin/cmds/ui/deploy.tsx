@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 import { Text, Box } from "ink";
 import { DeployingResource, NestedTerraformOutputs } from "@cdktn/cli-core";
-import { useCdktfProject } from "./hooks/cdktf-project";
+import { useCdktnProject } from "./hooks/cdktn-project";
 import {
   StreamView,
   OutputsBottomBar,
@@ -88,7 +88,7 @@ export const Deploy = ({
   skipProviderLock,
 }: DeployConfig): React.ReactElement => {
   const [outputs, setOutputs] = useState<NestedTerraformOutputs>();
-  const { status, logEntries } = useCdktfProject(
+  const { status, logEntries } = useCdktnProject(
     { outDir, synthCommand },
     async (project) => {
       await project.deploy({

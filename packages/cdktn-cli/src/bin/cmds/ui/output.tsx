@@ -5,7 +5,7 @@
 
 import React from "react";
 import { NestedTerraformOutputs } from "@cdktn/cli-core";
-import { useCdktfProject } from "./hooks/cdktf-project";
+import { useCdktnProject } from "./hooks/cdktn-project";
 import { StreamView, OutputsBottomBar, StatusBottomBar } from "./components";
 
 type OutputConfig = {
@@ -27,7 +27,7 @@ export const Output = ({
   skipSynth,
   skipProviderLock,
 }: OutputConfig): React.ReactElement => {
-  const { status, logEntries, returnValue } = useCdktfProject(
+  const { status, logEntries, returnValue } = useCdktnProject(
     { outDir, synthCommand },
     async (project) => {
       const outputs = await project.fetchOutputs({

@@ -6,7 +6,7 @@
 import path from "path";
 import * as fs from "fs-extra";
 import { EventEmitter } from "events";
-import { CdktfProject, init } from "../../lib/index";
+import { CdktnProject, init } from "../../lib/index";
 import { spawn } from "cross-spawn";
 import { exec } from "@cdktn/commons";
 import { createTmpHelper, describeIfDistExists } from "../test-helpers";
@@ -147,7 +147,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
   describe("terraform parallelism flag in deploy", () => {
     it("passes the terraform parallelism flag to terraform", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -158,7 +158,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         },
       });
 
-      cdktfProject.synth = jest.fn().mockImplementation(async () => {
+      cdktnProject.synth = jest.fn().mockImplementation(async () => {
         return [
           stackWithName("first"),
           stackWithName("second"),
@@ -167,7 +167,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         ];
       });
 
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["first"],
         autoApprove: true,
         parallelism: 1,
@@ -181,7 +181,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
 
     it("ignores the terraform parallelism flag if negative", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -192,7 +192,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         },
       });
 
-      cdktfProject.synth = jest.fn().mockImplementation(async () => {
+      cdktnProject.synth = jest.fn().mockImplementation(async () => {
         return [
           stackWithName("first"),
           stackWithName("second"),
@@ -201,7 +201,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         ];
       });
 
-      await cdktfProject.deploy({
+      await cdktnProject.deploy({
         stackNames: ["first"],
         autoApprove: true,
         parallelism: 1,
@@ -217,7 +217,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
   describe("terraform parallelism flag in destroy", () => {
     it("passes the terraform parallelism flag to terraform", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -225,7 +225,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         },
       });
 
-      cdktfProject.synth = jest.fn().mockImplementation(async () => {
+      cdktnProject.synth = jest.fn().mockImplementation(async () => {
         return [
           stackWithName("first"),
           stackWithName("second"),
@@ -234,7 +234,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         ];
       });
 
-      await cdktfProject.destroy({
+      await cdktnProject.destroy({
         stackNames: ["second"],
         autoApprove: true,
         parallelism: 1,
@@ -248,7 +248,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
 
     it("doesn't pass the terraform parallelism flag if negative", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -256,7 +256,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         },
       });
 
-      cdktfProject.synth = jest.fn().mockImplementation(async () => {
+      cdktnProject.synth = jest.fn().mockImplementation(async () => {
         return [
           stackWithName("first"),
           stackWithName("second"),
@@ -265,7 +265,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         ];
       });
 
-      await cdktfProject.destroy({
+      await cdktnProject.destroy({
         stackNames: ["second"],
         autoApprove: true,
         parallelism: 1,
@@ -281,7 +281,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
   describe("terraform parallelism flag in diff", () => {
     it("passes the terraform parallelism flag to terraform", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -292,7 +292,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         },
       });
 
-      cdktfProject.synth = jest.fn().mockImplementation(async () => {
+      cdktnProject.synth = jest.fn().mockImplementation(async () => {
         return [
           stackWithName("first"),
           stackWithName("second"),
@@ -301,7 +301,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         ];
       });
 
-      await cdktfProject.diff({
+      await cdktnProject.diff({
         stackName: "first",
         terraformParallelism: 1,
       });
@@ -313,7 +313,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
 
     it("ignores the terraform parallelism flag if negative", async () => {
       const events: any[] = [];
-      const cdktfProject = new CdktfProject({
+      const cdktnProject = new CdktnProject({
         synthCommand: "npx ts-node ./main.ts",
         ...inNewWorkingDirectory(),
         onUpdate: (event) => {
@@ -324,7 +324,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         },
       });
 
-      cdktfProject.synth = jest.fn().mockImplementation(async () => {
+      cdktnProject.synth = jest.fn().mockImplementation(async () => {
         return [
           stackWithName("first"),
           stackWithName("second"),
@@ -333,7 +333,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         ];
       });
 
-      await cdktfProject.diff({
+      await cdktnProject.diff({
         stackName: "first",
         terraformParallelism: -1,
       });

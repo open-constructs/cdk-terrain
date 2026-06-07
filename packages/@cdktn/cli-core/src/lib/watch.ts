@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 import path from "path";
 import {
-  CdktfProject,
-  CdktfProjectOptions,
+  CdktnProject,
+  CdktnProjectOptions,
   MutationOptions,
-} from "./cdktf-project";
+} from "./cdktn-project";
 import * as fs from "fs";
 import * as chokidar from "chokidar";
 import { logger, Errors, sendTelemetry } from "@cdktn/commons";
@@ -68,7 +68,7 @@ function getOrWriteDefaultWatchConfig(projectPath = process.cwd()) {
   return defaultWatchPattern;
 }
 
-const projectStatus = (project?: CdktfProject) => {
+const projectStatus = (project?: CdktnProject) => {
   if (!project?.stacksToRun.length) {
     return {
       inProgress: [],
@@ -98,7 +98,7 @@ export type State =
   | { type: "stopped" };
 
 export async function watch(
-  projectOptions: CdktfProjectOptions,
+  projectOptions: CdktnProjectOptions,
   mutationOptions: MutationOptions,
   abortSignal: AbortSignal,
   onStateChange: (newState: State) => void,
@@ -115,7 +115,7 @@ export async function watch(
 
   async function run() {
     logger.debug("Running cdktn deploy");
-    const project = new CdktfProject({
+    const project = new CdktnProject({
       synthOrigin: "watch",
       ...projectOptions,
       onLog: (log) => {

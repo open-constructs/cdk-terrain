@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from "react";
 import { watch, WatchState } from "@cdktn/cli-core";
 import { StreamView, WatchStatusBottomBar } from "./components";
-import { LogEntry } from "./hooks/cdktf-project";
+import { LogEntry } from "./hooks/cdktn-project";
 
 interface WatchConfig {
   targetDir: string;

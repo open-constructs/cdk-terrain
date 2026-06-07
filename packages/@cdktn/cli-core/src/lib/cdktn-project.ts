@@ -29,7 +29,7 @@ import {
   getStackWithNoUnmetDependants,
   getStackWithNoUnmetDependencies,
 } from "./helpers/stack-helpers";
-import { CdktfProjectIOHandler } from "./cdktf-project-io-handler";
+import { CdktnProjectIOHandler } from "./cdktn-project-io-handler";
 
 type MultiStackApprovalUpdate = {
   type: "waiting for approval";
@@ -135,7 +135,7 @@ export function isWaitingForUserInputUpdate(
 export type ProjectEvent =
   | Buffered<ProjectUpdate, "projectUpdate">
   | Buffered<LogMessage, "logMessage">;
-export type CdktfProjectOptions = {
+export type CdktnProjectOptions = {
   synthCommand: string;
   outDir: string;
   onUpdate: (update: ProjectUpdate) => void;
@@ -144,7 +144,7 @@ export type CdktfProjectOptions = {
   synthOrigin?: SynthOrigin;
   hcl?: boolean;
 };
-export class CdktfProject {
+export class CdktnProject {
   public stacks?: SynthesizedStack[];
   public hardAbort: () => void;
 
@@ -163,7 +163,7 @@ export class CdktfProject {
   private stopAllStacksThatCanNotRunWithout: (stackName: string) => void =
     () => {};
 
-  private ioHandler: CdktfProjectIOHandler;
+  private ioHandler: CdktnProjectIOHandler;
 
   constructor({
     synthCommand,
@@ -173,7 +173,7 @@ export class CdktfProject {
     workingDirectory = process.cwd(),
     synthOrigin,
     hcl = false,
-  }: CdktfProjectOptions) {
+  }: CdktnProjectOptions) {
     this.synthCommand = synthCommand;
     this.outDir = outDir;
     this.workingDirectory = workingDirectory;
@@ -188,7 +188,7 @@ export class CdktfProject {
       hcl;
 
     this.hardAbort = ac.abort.bind(ac);
-    this.ioHandler = new CdktfProjectIOHandler();
+    this.ioHandler = new CdktnProjectIOHandler();
   }
 
   private stopAllStacks() {

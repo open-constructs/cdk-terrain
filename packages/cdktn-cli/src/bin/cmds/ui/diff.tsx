@@ -5,7 +5,7 @@
 
 import React from "react";
 
-import { useCdktfProject } from "./hooks/cdktf-project";
+import { useCdktnProject } from "./hooks/cdktn-project";
 import { StreamView, StatusBottomBar } from "./components";
 
 interface DiffConfig {
@@ -35,7 +35,7 @@ export const Diff = ({
   skipSynth,
   skipProviderLock,
 }: DiffConfig): React.ReactElement => {
-  const { status, logEntries } = useCdktfProject(
+  const { status, logEntries } = useCdktnProject(
     { outDir, synthCommand },
     (project) =>
       project.diff({

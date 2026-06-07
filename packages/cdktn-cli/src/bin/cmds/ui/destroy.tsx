@@ -5,7 +5,7 @@
 
 import React from "react";
 
-import { useCdktfProject } from "./hooks/cdktf-project";
+import { useCdktnProject } from "./hooks/cdktn-project";
 import {
   StreamView,
   ExecutionStatusBottomBar,
@@ -44,7 +44,7 @@ export const Destroy = ({
   skipSynth,
   skipProviderLock,
 }: DestroyConfig): React.ReactElement => {
-  const { status, logEntries } = useCdktfProject(
+  const { status, logEntries } = useCdktnProject(
     { outDir, synthCommand },
     (project) =>
       project.destroy({

@@ -3,7 +3,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Errors } from "@cdktn/commons";
-export function isCdktfProjectDirectory(directory: string): boolean {
+export function isCdktnProjectDirectory(directory: string): boolean {
   try {
     const cdktfPath = path.join(directory, "cdktf.json");
     const cdktf = JSON.parse(fs.readFileSync(cdktfPath, "utf-8"));
@@ -14,7 +14,7 @@ export function isCdktfProjectDirectory(directory: string): boolean {
 }
 
 export function throwIfNotProjectDirectory(directory = process.cwd()): void {
-  if (!isCdktfProjectDirectory(directory)) {
+  if (!isCdktnProjectDirectory(directory)) {
     throw Errors.Usage(
       `${directory} is not a cdktf/cdktn project directory, no cdktf.json found or cdktf.json is missing language / app keys`,
     );

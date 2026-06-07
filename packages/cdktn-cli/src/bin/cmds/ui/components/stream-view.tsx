@@ -5,7 +5,7 @@
 
 import React from "react";
 import { Box, Static, Text } from "ink";
-import { LogEntry } from "../hooks/cdktf-project";
+import { LogEntry } from "../hooks/cdktn-project";
 
 const possibleColors = [
   "yellow",

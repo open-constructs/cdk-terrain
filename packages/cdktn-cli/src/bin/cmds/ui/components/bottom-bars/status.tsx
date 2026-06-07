@@ -6,7 +6,7 @@
 import React from "react";
 import { Text, Box } from "ink";
 import Spinner from "ink-spinner";
-import { Status } from "../../hooks/cdktf-project";
+import { Status } from "../../hooks/cdktn-project";
 import { WatchState, CdktfStack } from "@cdktn/cli-core";
 
 type Props = {

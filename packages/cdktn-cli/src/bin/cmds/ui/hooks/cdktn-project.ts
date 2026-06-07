@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { useApp } from "ink";
 import { useEffect, useState } from "react";
-import { CdktfProject, ProjectUpdate, CdktfStack } from "@cdktn/cli-core";
+import { CdktnProject, ProjectUpdate, CdktfStack } from "@cdktn/cli-core";
 
 export type LogEntry = {
   content: string;
@@ -10,7 +10,7 @@ export type LogEntry = {
   stackName: string;
 };
 
-type CdktfProjectOpts = {
+type CdktnProjectOps = {
   outDir: string;
   synthCommand: string;
   hcl?: boolean;
@@ -46,9 +46,9 @@ export type Status =
       type: "done";
     };
 
-export function useCdktfProject<T>(
-  opts: CdktfProjectOpts,
-  projectCallback: (project: CdktfProject) => Promise<T>,
+export function useCdktnProject<T>(
+  opts: CdktnProjectOps,
+  projectCallback: (project: CdktnProject) => Promise<T>,
 ) {
   const { exit } = useApp();
   const [id, setID] = useState<number>(0);
@@ -57,7 +57,7 @@ export function useCdktfProject<T>(
   const [returnValue, setReturnValue] = useState<T>();
   const [status, setStatus] = useState<Status>({ type: "starting" });
 
-  const updateRunningStatus = (project: CdktfProject) => {
+  const updateRunningStatus = (project: CdktnProject) => {
     const inProgress = project.stacksToRun.filter((s) => s.isRunning);
     const finished = project.stacksToRun.filter((s) => s.isDone);
     const pending = project.stacksToRun.filter((s) => s.isPending);
@@ -65,7 +65,7 @@ export function useCdktfProject<T>(
   };
 
   useEffect(() => {
-    const project = new CdktfProject({
+    const project = new CdktnProject({
       outDir: opts.outDir,
       hcl: opts.hcl,
       synthCommand: opts.synthCommand,

@@ -5,7 +5,7 @@
 
 import React, { Fragment } from "react";
 import { Text, Box } from "ink";
-import { useCdktfProject } from "./hooks/cdktf-project";
+import { useCdktnProject } from "./hooks/cdktn-project";
 import { StreamView, StatusBottomBar } from "./components";
 
 interface ListConfig {
@@ -17,7 +17,7 @@ export const List = ({
   outDir,
   synthCommand,
 }: ListConfig): React.ReactElement => {
-  const { status, logEntries, returnValue } = useCdktfProject(
+  const { status, logEntries, returnValue } = useCdktnProject(
     { outDir, synthCommand },
     (project) => project.synth(),
   );
