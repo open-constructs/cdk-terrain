@@ -22,6 +22,31 @@ release-please manages a **single root release** (the `"."` package in
 Tags are `v<version>` (`include-component-in-tag: false`), matching the existing
 convention used by `tools/release-github.sh`.
 
+### Pre-1.0 bump policy
+
+The project is intentionally still pre-`1.0.0` (alpha), so two flags keep
+breaking changes from prematurely graduating it to `v1`:
+
+```json
+"bump-minor-pre-major": true,
+"bump-patch-for-minor-pre-major": true
+```
+
+While the version is `0.x`, this yields:
+
+| Commit                                 | Bump  | Example           |
+| -------------------------------------- | ----- | ----------------- |
+| `feat!` / `fix!` / `BREAKING CHANGE`   | minor | `0.23.3 → 0.24.0` |
+| `feat` (non-breaking)                  | patch | `0.23.3 → 0.23.4` |
+| `fix`                                  | patch | `0.23.3 → 0.23.4` |
+| `chore` (e.g. dep bumps), `docs`, etc. | patch | rides along       |
+
+Without these flags a single `feat!` would cut `1.0.0`. Remove them (or set to
+`false`) when the project is ready to adopt standard semver and graduate to
+`v1`. Note: as with standard release-please behavior, a `chore`/`docs`-only set
+of commits won't _open_ a release PR on its own (only `feat`/`fix`/breaking do);
+such changes are included as patch-level content in the next release.
+
 ## Files
 
 | File                                   | Purpose                                                                         |
@@ -35,8 +60,8 @@ convention used by `tools/release-github.sh`.
 1. Conventional commits land on `main`.
 2. `release-please.yml` runs and keeps **one release PR** open, rebasing it as
    more commits land. The PR bumps the root `package.json` and prepends the new
-   section to `CHANGELOG.md`. `fix:` → patch, `feat:` → minor, `!`/
-   `BREAKING CHANGE` → major.
+   section to `CHANGELOG.md`, following the pre-1.0 bump policy above
+   (breaking → minor; `feat`/`fix` → patch).
 3. When you're ready to cut a release, **merge the release PR**. release-please
    updates `.release-please-manifest.json` to the new version but, because
    `skip-github-release: true` is set, does **not** create the git tag or the

@@ -4,6 +4,8 @@
   "bootstrap-sha": "c27aa7f3f58213669b85f0e71ae4173d8fe625ef",
   "include-component-in-tag": false,
   "separate-pull-requests": false,
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
   "skip-github-release": true,
   "pull-request-title-pattern": "chore(release): release v${version}",
   "group-pull-request-title-pattern": "chore(release): release v${version}",
