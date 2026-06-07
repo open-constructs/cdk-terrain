@@ -57,13 +57,13 @@ test("context can be passed through CDKTF_CONTEXT", () => {
   expect(node.tryGetContext("key2")).toEqual("val2");
 });
 
-test("cdktfVersion is accessible in context", () => {
+test("cdktnVersion is accessible in context", () => {
   const prog = Testing.app({ stubVersion: false, enableFutureFlags: false });
   const node = prog.node;
-  expect(node.tryGetContext("cdktfVersion")).toEqual(version);
+  expect(node.tryGetContext("cdktnVersion")).toEqual(version);
 });
 
-test("app synth does not throw error when validatons are disabled", () => {
+test("app synth does not throw error when validations are disabled", () => {
   const outdir = tmp("cdktf.outdir.");
   const app = Testing.stubVersion(
     new App({ stackTraces: false, outdir, skipValidation: true }),

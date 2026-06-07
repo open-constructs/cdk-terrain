@@ -85,7 +85,7 @@ export class TerraformStack extends Construct {
 
     throwIfIdIsGlobCharacter(id);
     throwIfIdContainsWhitespace(id);
-    this.cdktfVersion = this.node.tryGetContext("cdktfVersion");
+    this.cdktfVersion = this.node.tryGetContext("cdktnVersion");
     this.synthesizer = new StackSynthesizer(
       this,
       process.env.CDKTF_CONTINUE_SYNTH_ON_ERROR_ANNOTATIONS !== undefined,

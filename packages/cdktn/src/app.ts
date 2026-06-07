@@ -117,7 +117,7 @@ export class App extends Construct {
       node.setContext(DISABLE_STACK_TRACE_IN_METADATA, true);
     }
 
-    node.setContext("cdktfVersion", version);
+    node.setContext("cdktnVersion", version);
 
     if (!fs.existsSync(this.outdir)) {
       fs.mkdirSync(this.outdir);
