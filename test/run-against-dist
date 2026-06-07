@@ -3,21 +3,41 @@ set -euo pipefail
 
 scriptdir="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
-function cleanup {
-  set +x
-  # Restore the original npm registry URL and stop Verdaccio
-  node "$scriptdir"/local-registry.mjs stop || true
-}
-
-# Fires on any exit path (normal completion, error via `set -e`, or signal).
-trap cleanup EXIT
-
 export CDKTF_DIST="${scriptdir}/../dist"
 cwd=$PWD
 cdktf_root="${scriptdir}/.."
 
-# Start the local NPM registry (Verdaccio)
-node "$scriptdir"/local-registry.mjs start "$scriptdir"/verdaccio.yaml
+registry_pid=""
+stop_registry() {
+  if [ -n "$registry_pid" ] && kill -0 "$registry_pid" 2>/dev/null; then
+    # SIGTERM makes local-registry.mjs restore the npm registry before exiting; wait for it to finish doing so.
+    kill -TERM "$registry_pid" 2>/dev/null || true
+    wait "$registry_pid" 2>/dev/null || true
+  fi
+  registry_pid=""
+}
+trap stop_registry EXIT
+
+# Start the local npm registry (Verdaccio)
+node "$scriptdir"/local-registry.mjs start "$scriptdir"/verdaccio.yaml &
+registry_pid=$!
+
+# Wait for the registry to answer before publishing to it.
+echo "Waiting for local registry to become ready..."
+for attempt in $(seq 1 120); do
+  if ! kill -0 "$registry_pid" 2>/dev/null; then
+    echo "ERROR: local registry exited before becoming ready"
+    exit 1
+  fi
+  if curl -sf -o /dev/null http://localhost:4873/-/ping; then
+    break
+  fi
+  if [ "$attempt" = "120" ]; then
+    echo "ERROR: local registry did not become ready within 60s"
+    exit 1
+  fi
+  sleep 0.5
+done
 
 cd ${CDKTF_DIST}
 
@@ -70,7 +90,7 @@ done
 # stop the local registry now that we installed the CLI
 # Some tests install cdktn in an older version from NPM
 # Which we'd block via the local registry otherwise
-node "$scriptdir"/local-registry.mjs stop
+stop_registry
 
 export TEST_PATH_CDKTF_CLI=${staging}/node_modules/.bin
 export PATH=$TEST_PATH_CDKTF_CLI:$PATH

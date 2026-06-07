@@ -69,6 +69,10 @@
       "project": ["scripts/**/*.ts"]
     },
     "test": {
+      "entry": [
+        "local-registry.mjs",
+        "provider-tests/generate-provider-test.js"
+      ],
       "project": ["**/*.ts"],
       "ignoreDependencies": [
         // TODO: triage and remove entries — each is a declared dep with no detected usage.
@@ -76,9 +80,7 @@
         "express",
         // TODO: triage and add to package.json — each is imported but undeclared.
         "cdktn",
-        "constructs",
-        // Only called via spawn in test/local-registry.mjs.
-        "verdaccio"
+        "constructs"
       ]
     }
   }
