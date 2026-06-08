@@ -53,7 +53,7 @@ pnpm integration:update                       # Update integration snapshots
 
 On Linux with limited tmpfs: `TMPDIR=/var/tmp pnpm test`
 
-`yarn nx test <pkg> --watch` is the recommended dev loop — Nx builds the
+`pnpm nx test <pkg> --watch` is the recommended dev loop — Nx builds the
 `^build` chain once, then jest's watch UI reruns affected tests on each save.
 
 ### Running CLI locally

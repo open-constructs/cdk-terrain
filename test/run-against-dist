@@ -27,13 +27,13 @@ cd ${CDKTF_DIST}
 # as clear test failures rather than blocking the whole run.
 if [ ! -d "js" ]; then
   echo "ERROR: unable to find the 'js' subdirectory in the 'dist' directory"
-  echo "Did you run 'yarn run package' (or 'yarn run package:js') to create the 'dist' directory?"
+  echo "Did you run 'pnpm run package' (or 'pnpm run package:js') to create the 'dist' directory?"
   exit 1
 fi
 
 for lang in python java dotnet go; do
   if [ ! -d "$lang" ]; then
-    echo "WARNING: dist/$lang is missing — tests for that language will fail. Run 'yarn run package:$lang' if you need it."
+    echo "WARNING: dist/$lang is missing — tests for that language will fail. Run 'pnpm run package:$lang' if you need it."
   fi
 done
 

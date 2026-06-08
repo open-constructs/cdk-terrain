@@ -1026,7 +1026,7 @@ importers:
         specifier: 0.24.7
         version: 0.24.7
       jsii-rosetta:
-        specifier: 5.9.39
+        specifier: ~5.9.0
         version: 5.9.39
       prettier:
         specifier: 2.8.8
@@ -1112,7 +1112,7 @@ importers:
         specifier: 10.5.0
         version: 10.5.0
       jsii:
-        specifier: 5.9.43
+        specifier: ~5.9.0
         version: 5.9.43
       jsii-pacmak:
         specifier: 1.128.0
@@ -1178,7 +1178,7 @@ importers:
         specifier: 10.6.0
         version: 10.6.0
       jsii:
-        specifier: 5.9.43
+        specifier: ~5.9.0
         version: 5.9.43
       jsii-pacmak:
         specifier: 1.128.0
@@ -1208,7 +1208,7 @@ importers:
         specifier: 10.6.0
         version: 10.6.0
       jsii:
-        specifier: 5.9.43
+        specifier: ~5.9.0
         version: 5.9.43
       jsii-pacmak:
         specifier: 1.128.0
@@ -15482,8 +15482,8 @@ snapshots:
 
   jsii-rosetta@5.9.39:
     dependencies:
-      '@jsii/check-node': 1.128.0
-      '@jsii/spec': 1.128.0
+      '@jsii/check-node': 1.132.0
+      '@jsii/spec': 1.132.0
       '@xmldom/xmldom': 0.9.9
       chalk: 4.1.2
       commonmark: 0.31.2

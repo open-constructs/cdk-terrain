@@ -69,15 +69,12 @@
       "project": ["scripts/**/*.ts"]
     },
     "test": {
-      "project": ["**/*.{ts,mts,mjs,js}"],
+      "project": ["**/*.ts"],
       "ignoreDependencies": [
         // TODO: triage and remove entries — each is a declared dep with no detected usage.
         "@types/express",
         "express",
-        // Invoked via `pnpm exec verdaccio` from test/local-registry.mjs.
-        "verdaccio",
-        // TODO: triage — fixture projects under test/typescript/testing-matchers/ import
-        // these directly; they install at runtime from the local Verdaccio registry.
+        // TODO: triage and add to package.json — each is imported but undeclared.
         "cdktn",
         "constructs",
         // Only called via spawn in test/local-registry.mjs.

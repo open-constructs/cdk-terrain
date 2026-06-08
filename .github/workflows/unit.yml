@@ -63,10 +63,8 @@ jobs:
       - name: installing dependencies
         run: |
           pnpm ci
-      - name: align versions and build
-        run: |
-          tools/align-version.sh
-          pnpm exec nx run --scope '${{ inputs.package }}' build
+      - name: align versions
+        run: tools/align-version.sh
       - name: package (when testing @cdktn/hcl2cdk)
         # hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which reads
         # jsii tarballs from the workspace-root dist/ directory.
