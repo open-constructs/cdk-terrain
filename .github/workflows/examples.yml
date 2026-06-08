@@ -88,8 +88,10 @@ jobs:
   examples:
     needs: [build-example-matrix, prepare-examples]
     name: "${{ matrix.target }} @ tf${{ matrix.terraform }}${{ matrix.hclOutput && ' (HCL)' || '' }}"
-    # Go documentation example generates bindings for AWS and other providers and hence requires a lot of memory
-    runs-on: ${{ matrix.target == '@examples/go-documentation' && 'depot-ubuntu-24.04-16' || 'ubuntu-latest' }}
+    # JSII-translated documentation examples generate many provider bindings in parallel; the extra cores/memory let
+    # `cdktn get` run unthrottled (peaks ~22 GB). go-documentation stays on the larger -16 runner; the rest fit -8's
+    # 32 GB. typescript-documentation is excluded — TS bindings aren't JSII-translated.
+    runs-on: ${{ matrix.target == '@examples/go-documentation' && 'depot-ubuntu-24.04-16' || (contains(fromJSON('["@examples/csharp-documentation", "@examples/java-documentation", "@examples/java-documentation-gradle", "@examples/python-documentation"]'), matrix.target) && 'depot-ubuntu-24.04-8' || 'ubuntu-latest') }}
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.build-example-matrix.outputs.examples)}}

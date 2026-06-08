@@ -2464,7 +2464,7 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@jsii/check-node@1.128.0", "@jsii/check-node@^1.127.0":
+"@jsii/check-node@1.128.0":
   version "1.128.0"
   resolved "https://registry.yarnpkg.com/@jsii/check-node/-/check-node-1.128.0.tgz#b62184a0a7946051ba5c90baf406dbd3df717777"
   integrity sha512-1XirN1v+gbSHFIGSMmB/jPzTdsKEY8P8JOJOS2Vz5j9+T6ZaPJ2ZcJ4foYsIBblKcDWPzVNVJmGC2+ViEzUIsA==
@@ -2480,7 +2480,15 @@
     chalk "^4.1.2"
     semver "^7.8.0"
 
-"@jsii/spec@1.128.0", "@jsii/spec@^1.127.0":
+"@jsii/check-node@^1.132.0":
+  version "1.134.0"
+  resolved "https://registry.npmjs.org/@jsii/check-node/-/check-node-1.134.0.tgz#68c3695ff388846146cf4a926145cf2edf5d7697"
+  integrity sha512-llnGrxrzX2Q2kQM96C7gnO2upIHwVuyt/srRZlwRmnDjnfIK7TDEwDWXkqTgf//p9Ly25zip4Vm0eAqYWacglQ==
+  dependencies:
+    chalk "^4.1.2"
+    semver "^7.8.1"
+
+"@jsii/spec@1.128.0":
   version "1.128.0"
   resolved "https://registry.yarnpkg.com/@jsii/spec/-/spec-1.128.0.tgz#c7a536a070d455c8e2639517169c9d0ea6d51b25"
   integrity sha512-sv4JP3Ap7Vagh+yoCZ7mkfoKNY3ivV43QQPLzOYaNLgrTW86S+rqfiwTG/ouLn9qSaIC300vDpnT5V9uBGserA==
@@ -2489,6 +2497,11 @@
   version "1.132.0"
   resolved "https://registry.yarnpkg.com/@jsii/spec/-/spec-1.132.0.tgz#b6465fcd6a4ffeab2706fa2daed1fa937baf60e7"
   integrity sha512-70rcZ8tx2ISWf5HqFHNQe56VOKcAtTn0XFlLgZByWKHGZYpitf5T/Qe+ayvmTK8++luufb0h455l1JDpQDp0nQ==
+
+"@jsii/spec@^1.132.0":
+  version "1.134.0"
+  resolved "https://registry.npmjs.org/@jsii/spec/-/spec-1.134.0.tgz#d3c9764c2cea9d03173a28ff8178ebc3bddd28e0"
+  integrity sha512-2K0r9Nvyf+l6OjlnKIOzKFrcMKVKyvhKecO++XCN0BFZbP+EcHEGdkwS+X50CAx8CvgGjbQH+DgdhQzYQryySA==
 
 "@lerna/create@8.2.2":
   version "8.2.2"
@@ -4273,10 +4286,10 @@
   resolved "https://registry.yarnpkg.com/@unrs/resolver-binding-win32-x64-msvc/-/resolver-binding-win32-x64-msvc-1.11.1.tgz#538b1e103bf8d9864e7b85cc96fa8d6fb6c40777"
   integrity sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==
 
-"@xmldom/xmldom@^0.9.9":
-  version "0.9.9"
-  resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.9.9.tgz#665b1cf4e5962d248bb4d032b5e020626f634503"
-  integrity sha512-qycIHAucxy/LXAYIjmLmtQ8q9GPnMbnjG1KXhWm9o5sCr6pOYDATkMPiTNa6/v8eELyqOQ2FsEqeoFYmgv/gJg==
+"@xmldom/xmldom@^0.9.10":
+  version "0.9.10"
+  resolved "https://registry.npmjs.org/@xmldom/xmldom/-/xmldom-0.9.10.tgz#a0ad5a26fe8aa996310870726e1704977f769dee"
+  integrity sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==
 
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
@@ -8738,29 +8751,29 @@ jsii-reflect@^1.128.0:
     oo-ascii-tree "^1.128.0"
     yargs "^17.7.2"
 
-jsii-rosetta@5.9.39:
-  version "5.9.39"
-  resolved "https://registry.yarnpkg.com/jsii-rosetta/-/jsii-rosetta-5.9.39.tgz#606c6034ca6f5f7d8717730ee87eff1b628c41b4"
-  integrity sha512-Wor9W/JTsH/uJLd3rJxzG6i7NKUi3ZV5tYFTkNLnkxfW6Yf5/By5S/ihP8i36P0hJHivj6oVg/5UsiWBYf2S0A==
+jsii-rosetta@~5.9.0:
+  version "5.9.49"
+  resolved "https://registry.npmjs.org/jsii-rosetta/-/jsii-rosetta-5.9.49.tgz#fdbed8fc3f05c1972721592d5756d46b00c72f4c"
+  integrity sha512-h7TVEt0wegY/cQHjEnVVxnKWTK8WUpR22Z81XAtAqMul6aecx8scsumaAYKIkgIOiROgQWH15zyPsNtrl30DRA==
   dependencies:
-    "@jsii/check-node" "^1.127.0"
-    "@jsii/spec" "^1.127.0"
-    "@xmldom/xmldom" "^0.9.9"
+    "@jsii/check-node" "^1.132.0"
+    "@jsii/spec" "^1.132.0"
+    "@xmldom/xmldom" "^0.9.10"
     chalk "^4"
     commonmark "^0.31.2"
     fast-glob "^3.3.3"
     jsii "~5.9.1"
-    semver "^7.7.4"
+    semver "^7.8.1"
     semver-intersect "^1.5.0"
     stream-json "^1.9.1"
     typescript "~5.9"
     workerpool "^6.5.1"
     yargs "^17.7.2"
 
-jsii@5.9.43, jsii@~5.9.1:
-  version "5.9.43"
-  resolved "https://registry.yarnpkg.com/jsii/-/jsii-5.9.43.tgz#178747335690ab40faf885030abe86ef226f440e"
-  integrity sha512-ax34dTB1konLSs7BKlMTJwAAh7pIrgg/b4jLGDGhK7jCD0B1n3keD2YZeAV7gJKss4RXrINAoqXg+TeeLWGQrA==
+jsii@~5.9.0, jsii@~5.9.1:
+  version "5.9.44"
+  resolved "https://registry.npmjs.org/jsii/-/jsii-5.9.44.tgz#6340db4cd7786dad7e304cfea5e86f6c9b21c082"
+  integrity sha512-/2jrL4CzM+kbLMwCHseq8T7u6kiGD8f4AOCHcL2znTOBfhtWtbaNJDgSM/PsMme85goTtS8XDQrhGm3/ivK/rw==
   dependencies:
     "@jsii/check-node" "1.132.0"
     "@jsii/spec" "1.132.0"
