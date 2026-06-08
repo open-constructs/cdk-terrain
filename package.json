@@ -111,7 +111,6 @@
     },
     "resolutions": {
         "**/@types/react": "18.3.28",
-        "**/jsii": "5.9.43",
         "**/typescript": "5.9.3"
     },
     "lint-staged": {

@@ -1,0 +1,67 @@
+name: Release Please
+on:
+  push:
+    branches:
+      - main
+
+# All writes (release branch, release PR, tag, GitHub release) are performed
+# with the "CDKTN maintainers" GitHub App token minted below, NOT the default
+# GITHUB_TOKEN — so the job itself needs no write permissions.
+permissions: {}
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Maintain release PR
+    if: github.repository == 'open-constructs/cdk-terrain'
+    runs-on: ubuntu-latest
+    steps:
+      # -----------------------------------------------------------------------
+      # Mint a short-lived token from the "CDKTN maintainers" GitHub App.
+      #
+      # Why an App token instead of GITHUB_TOKEN:
+      #   * Pushes/PRs authored by GITHUB_TOKEN do NOT trigger other workflows,
+      #     so the release PR's CI (pr.yml, pr-unit.yml, ...) would never run.
+      #     An App-authored PR triggers them normally.
+      #   * The App can be granted explicit access through branch protection.
+      #
+      # The "CDKTN maintainers" App must be installed on this repository with:
+      #   * Contents:       Read & write  (create the release branch, commit the
+      #                                    version + CHANGELOG bump)
+      #   * Pull requests:  Read & write  (open / update / rebase the release PR)
+      #
+      # Provide its credentials as repository (or org) secrets:
+      #   * CDKTN_MAINTAINERS_APP_ID
+      #   * CDKTN_MAINTAINERS_APP_PRIVATE_KEY
+      # -----------------------------------------------------------------------
+      - name: Mint CDKTN maintainers App token
+        id: app-token
+        # Pin maintained by Dependabot (github-actions). See .github/dependabot.yml
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
+          private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+
+      # -----------------------------------------------------------------------
+      # release-please keeps a single release PR open for the repo, rebasing it
+      # as conventional commits land on main. Merging that PR bumps the root
+      # package.json + CHANGELOG.md and updates .release-please-manifest.json.
+      #
+      # `skip-github-release: true` (in release-please-config.json) means
+      # release-please does NOT create the git tag or the GitHub release. That
+      # remains the sole responsibility of release.yml's `release_github` job
+      # (tools/release-github.sh), avoiding a double-create race. On the merge
+      # push, release.yml's stable channel sees the bumped (unreleased-in-Sentry)
+      # version, runs the release tests, then tags `v<version>`, creates the
+      # GitHub release and publishes to npm, PyPI, Maven, NuGet and Go.
+      # No changes to release.yml are required.
+      # -----------------------------------------------------------------------
+      - name: Run release-please
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
