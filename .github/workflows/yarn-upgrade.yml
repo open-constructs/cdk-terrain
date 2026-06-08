@@ -18,6 +18,8 @@ on:
 jobs:
   upgradeRoot:
     name: Yarn Upgrade Root
+    # Only run on the canonical repo
+    if: github.repository == 'open-constructs/cdk-terrain'
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -110,6 +112,8 @@ jobs:
 
   upgradePackage:
     name: Yarn Upgrade Package
+    # Only run on the canonical repo
+    if: github.repository == 'open-constructs/cdk-terrain'
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -216,6 +220,8 @@ jobs:
 
   upgradeJSII:
     name: Yarn Upgrade JSII
+    # Only run on the canonical repo
+    if: github.repository == 'open-constructs/cdk-terrain'
     permissions:
       contents: read
     runs-on: ubuntu-latest
