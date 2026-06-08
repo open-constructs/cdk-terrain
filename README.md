@@ -69,5 +69,3 @@ Build the project and packages.
 ```bash
 yarn build
 ```
-
-touched
