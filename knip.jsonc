@@ -69,10 +69,7 @@
       "project": ["scripts/**/*.ts"]
     },
     "test": {
-      "entry": [
-        "local-registry.mjs",
-        "provider-tests/generate-provider-test.js"
-      ],
+      "entry": ["provider-tests/generate-provider-test.js"],
       "project": ["**/*.ts"],
       "ignoreDependencies": [
         // TODO: triage and remove entries — each is a declared dep with no detected usage.

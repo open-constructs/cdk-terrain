@@ -169,7 +169,7 @@ jobs:
       - name: install test dependencies
         run: cd test && pnpm ci
       - name: integration tests
-        run: cd test && ./run-against-dist pnpm exec jest ${TEST_TARGET}
+        run: cd test && ./run-against-dist.mjs pnpm exec jest ${TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}
           TERRAFORM_CLOUD_TOKEN: ${{ secrets.TERRAFORM_CLOUD_TOKEN }}
@@ -252,7 +252,7 @@ jobs:
       - name: install test dependencies
         run: cd test && pnpm ci
       - name: integration tests
-        run: cd test && ./run-against-dist.bat "pnpm exec jest --ci ${env:TEST_TARGET}"
+        run: cd test && node run-against-dist.mjs pnpm exec jest --ci ${env:TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}
           TERRAFORM_CLOUD_TOKEN: ${{ secrets.TERRAFORM_CLOUD_TOKEN }}

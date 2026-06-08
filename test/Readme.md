@@ -21,7 +21,7 @@ $ pnpm build
 $ pnpm run package # creates "dist/"
 $ cd test
 $ pnpm edge:install
-$ ./run-against-dist npx jest --runInBand
+$ ./run-against-dist.mjs npx jest --runInBand
 ```
 
 ## Writing Tests
