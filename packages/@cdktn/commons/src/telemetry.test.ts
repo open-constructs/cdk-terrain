@@ -8,6 +8,7 @@ import {
   sendTelemetry,
   getUsageTelemetryConsent,
   isUsageTelemetryEnabled,
+  setUsageTelemetryEnabled,
 } from "./telemetry";
 
 // Delivery oracle (contract C5): a real v10 client with a capturing
@@ -70,6 +71,7 @@ describe("telemetry", () => {
   });
 
   afterEach(async () => {
+    setUsageTelemetryEnabled(undefined);
     await Sentry.close(1000);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
@@ -197,6 +199,36 @@ describe("telemetry", () => {
     it("is a silent no-op when Sentry is not initialized", async () => {
       await expect(sendTelemetry("synth", {})).resolves.toBeUndefined();
       expect(envelopeBodies).toHaveLength(0);
+    });
+
+    it("honors the decision captured at command start over the current cwd (convert chdirs into a temp project)", async () => {
+      // the throwaway project convert chdirs into opts out…
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: false,
+      });
+      initSentryWithCapturingTransport();
+      // …but the decision captured in the user's original cwd was "enabled"
+      setUsageTelemetryEnabled(true);
+
+      await sendTelemetry("convert", {});
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
+    });
+
+    it("CHECKPOINT_DISABLE overrides even a captured enabled decision", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+      setUsageTelemetryEnabled(true);
+      process.env.CHECKPOINT_DISABLE = "1";
+
+      await sendTelemetry("convert", {});
+      await Sentry.flush(2000);
+
+      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
     });
   });
 

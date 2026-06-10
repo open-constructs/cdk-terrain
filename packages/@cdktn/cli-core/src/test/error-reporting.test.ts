@@ -31,14 +31,16 @@ jest.mock("@cdktn/commons", () => ({
 }));
 
 import * as Sentry from "@sentry/node";
+import ciInfo from "ci-info";
 import {
   initializErrorReporting,
   shouldReportCrash,
   persistSendUsageTelemetryDecision,
 } from "../lib/error-reporting";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const ciInfo = require("ci-info");
+// the ci-info mock above replaces the module with a plain mutable object,
+// so tests can flip isCI; the published types declare it readonly
+const ciInfoMock = ciInfo as unknown as { isCI: boolean };
 
 describe("consent gating (initializErrorReporting)", () => {
   let workdir: string;
@@ -57,7 +59,7 @@ describe("consent gating (initializErrorReporting)", () => {
     });
     if (interactive) {
       delete process.env.CI;
-      ciInfo.isCI = false;
+      ciInfoMock.isCI = false;
     }
   };
 
@@ -68,7 +70,7 @@ describe("consent gating (initializErrorReporting)", () => {
     delete process.env.CI;
     delete process.env.CHECKPOINT_DISABLE;
     process.env.SENTRY_DSN = "https://public@example.invalid/1";
-    ciInfo.isCI = false;
+    ciInfoMock.isCI = false;
   });
 
   afterEach(() => {
@@ -146,7 +148,7 @@ describe("consent gating (initializErrorReporting)", () => {
   it("usage unset, CI (TTY but ciInfo.isCI) -> no prompt, default-on init", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {});
     setInteractive(true);
-    ciInfo.isCI = true;
+    ciInfoMock.isCI = true;
     const usagePrompt = jest.fn();
 
     await initializErrorReporting(jest.fn(), usagePrompt);
