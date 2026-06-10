@@ -82,9 +82,14 @@ export async function initializErrorReporting(
   logger.debug("Initializing error reporting");
 
   Sentry.init({
-    autoSessionTracking: true,
     dsn: process.env.SENTRY_DSN,
     release: `cdktn-cli-${DISPLAY_VERSION}`,
+    // Usage metrics are delivered independently of trace sampling (confirmed
+    // against @sentry/node 10.57), so no trace quota is spent.
+    tracesSampleRate: 0,
+    // Fixed constant so the machine hostname is never attached to events or
+    // metrics (v10 defaults server_name/server.address to the hostname).
+    serverName: "cdktn-cli",
     async beforeSend(event, hint) {
       if (!hint) {
         return event;
@@ -117,12 +122,11 @@ export async function initializErrorReporting(
     },
   });
 
-  Sentry.configureScope(function (scope) {
-    scope.setUser({
-      id: getUserId(),
-    });
-    scope.setTag("projectId", getProjectId());
+  const scope = Sentry.getCurrentScope();
+  scope.setUser({
+    id: getUserId(),
   });
+  scope.setTag("projectId", getProjectId());
 
   logger.debug("Collecting environment information for error reporting");
   collectDebugInformation().then((debugOutput) => {

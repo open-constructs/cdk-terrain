@@ -67,7 +67,7 @@
     "@cdktn/provider-schema": "workspace:*",
     "@inquirer/prompts": "2.3.1",
     "@npmcli/ci-detect": "1.4.0",
-    "@sentry/node": "7.120.4",
+    "@sentry/node": "^10.56.0",
     "@types/fs-extra": "8.1.5",
     "@types/pidusage": "2.0.5",
     "@types/react": "18.3.28",

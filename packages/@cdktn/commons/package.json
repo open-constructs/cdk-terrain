@@ -36,7 +36,7 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "@sentry/node": "7.120.4",
+    "@sentry/node": "^10.56.0",
     "cdktn": "workspace:*",
     "ci-info": "3.9.0",
     "codemaker": "1.128.0",
