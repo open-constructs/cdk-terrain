@@ -4,21 +4,9 @@
   "private": "true",
   "description": "Tool to generate CDK Terrain function bindings",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "watch-preserve-output": "tsc -w --preserveWatchOutput",
-    "pretest": "pnpm run build",
-    "pretest:ci": "pnpm run build",
-    "test": "jest",
-    "test:ci": "jest --ci",
-    "jest-watch": "jest --watch",
-    "package": "./package.sh",
-    "dist-clean": "rm -rf dist",
     "fetch-metadata": "ts-node scripts/fetch-metadata.ts",
     "generate": "ts-node scripts/generate.ts"
   },
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git://github.com/open-constructs/cdk-terrain.git",
@@ -37,11 +25,13 @@
     "@babel/generator": "^7.20.4",
     "@babel/template": "^7.18.10",
     "@babel/types": "^7.20.2",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__template": "^7.4.4",
     "@types/node": "20.17.51",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.0"
   },
   "lint-staged": {
-    "src/**/*.ts": "tsc-files ambient.d.ts --noEmit"
+    "scripts/**/*.ts": "tsc-files --noEmit"
   }
 }

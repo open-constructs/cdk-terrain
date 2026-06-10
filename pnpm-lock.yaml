@@ -1347,6 +1347,12 @@ importers:
       '@babel/types':
         specifier: ^7.20.2
         version: 7.29.0
+      '@types/babel__generator':
+        specifier: ^7.27.0
+        version: 7.27.0
+      '@types/babel__template':
+        specifier: ^7.4.4
+        version: 7.4.4
       '@types/node':
         specifier: 20.17.51
         version: 20.17.51

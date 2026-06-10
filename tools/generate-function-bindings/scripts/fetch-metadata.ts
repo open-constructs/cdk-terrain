@@ -19,7 +19,7 @@ async function fetchMetadata() {
 
   const fixed = fixProductRelativeLinks(json);
 
-  await fs.writeFile(out, prettier.format(fixed, { parser: "json" }));
+  await fs.writeFile(out, await prettier.format(fixed, { parser: "json" }));
 }
 
 /**

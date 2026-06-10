@@ -22,7 +22,7 @@ const FUNCTION_BINDINGS_OUTPUT_FILE = path.resolve(
   "..",
   "packages",
   "cdktn",
-  "lib",
+  "src",
   "functions",
   "terraform-functions.generated.ts",
 );
@@ -35,7 +35,7 @@ const FUNCTIONS_MAP_OUTPUT_FILE = path.resolve(
   "packages",
   "@cdktn",
   "hcl2cdk",
-  "lib",
+  "src",
   "function-bindings",
   "functions.generated.ts",
 );
@@ -110,13 +110,13 @@ async function generateFunctionBindings() {
 
   const program = t.program([IMPORTS, fnClass]);
 
-  const code = prettier.format(
+  const code = await prettier.format(
     // adding comments unrelated to code doesn't work with an AST
     `// Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
   ${generate(program as any).code}`,
     {
-      parser: "babel",
+      parser: "babel-ts",
     },
   );
 
@@ -165,7 +165,7 @@ async function generateFunctionsMap() {
 
   const program = t.program([fnMap]);
 
-  const code = prettier.format(
+  const code = await prettier.format(
     // adding comments unrelated to code doesn't work with an AST
     `// Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
@@ -174,7 +174,7 @@ async function generateFunctionsMap() {
 // To update this file execute 'pnpm generate-function-bindings' in the root of the repository
   ${generate(program as any).code}`,
     {
-      parser: "babel",
+      parser: "babel-ts",
     },
   );
 
