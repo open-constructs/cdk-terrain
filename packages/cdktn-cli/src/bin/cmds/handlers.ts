@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import chalk from "chalk";
 import * as fs from "fs-extra";
-import React from "react";
 import { convert as hcl2cdkConvert } from "@cdktn/hcl2cdk";
 import {
   GetOptions,
@@ -25,21 +24,20 @@ import {
 } from "@cdktn/commons";
 
 import { checkForEmptyDirectory, runInit } from "./helper/init";
-import { renderInk } from "./helper/render-ink";
 import { terraformCheck } from "./helper/terraform-check";
 import * as terraformCloudClient from "./helper/terraform-cloud-client";
 import { TerraformLogin } from "./helper/terraform-login";
 import { readStreamAsString } from "./helper/utilities";
 import { displayVersionMessage } from "./helper/version-check";
 
-import { Diff } from "./ui/diff";
-import { Deploy } from "./ui/deploy";
-import { Destroy } from "./ui/destroy";
-import { Get } from "./ui/get";
-import { List } from "./ui/list";
-import { Synth } from "./ui/synth";
-import { Watch } from "./ui/watch";
-import { ProviderListTable } from "./ui/provider-list";
+import { runDiff } from "./ui/diff";
+import { runDeploy } from "./ui/deploy";
+import { runDestroy } from "./ui/destroy";
+import { runGet } from "./ui/get";
+import { runList } from "./ui/list";
+import { runSynth } from "./ui/synth";
+import { runWatch } from "./ui/watch";
+import { printProviderList } from "./ui/provider-list";
 
 import {
   NestedTerraformOutputs,
@@ -52,7 +50,7 @@ import {
   get as getLib,
   providerAdd as providerAddLib,
 } from "@cdktn/cli-core";
-import { Output } from "./ui/output";
+import { runOutput } from "./ui/output";
 import { throwIfNotProjectDirectory } from "./helper/check-directory";
 import {
   checkEnvironment,
@@ -209,26 +207,25 @@ export async function deploy(argv: any) {
     onOutputsRetrieved = (outputs: NestedTerraformOutputs) =>
       saveOutputs(outputsPath!, outputs, includeSensitiveOutputs);
   }
-  await renderInk(
-    React.createElement(Deploy, {
-      outDir,
-      targetStacks: stacks,
-      synthCommand: command,
-      autoApprove,
-      onOutputsRetrieved,
-      outputsPath,
-      ignoreMissingStackDependencies,
-      parallelism,
-      refreshOnly,
-      terraformParallelism,
-      vars,
-      varFiles,
-      noColor,
-      migrateState,
-      skipSynth,
-      skipProviderLock,
-    }),
-  );
+  await terraformCheck();
+  await runDeploy({
+    outDir,
+    targetStacks: stacks,
+    synthCommand: command,
+    autoApprove,
+    onOutputsRetrieved,
+    outputsPath,
+    ignoreMissingStackDependencies,
+    parallelism,
+    refreshOnly,
+    terraformParallelism,
+    vars,
+    varFiles,
+    noColor,
+    migrateState,
+    skipSynth,
+    skipProviderLock,
+  });
 }
 
 export async function destroy(argv: any) {
@@ -251,23 +248,22 @@ export async function destroy(argv: any) {
   const skipSynth = argv.skipSynth;
   const skipProviderLock = argv.skipProviderLock;
 
-  await renderInk(
-    React.createElement(Destroy, {
-      outDir,
-      targetStacks: stacks,
-      synthCommand: command,
-      autoApprove,
-      ignoreMissingStackDependencies,
-      parallelism,
-      terraformParallelism,
-      vars,
-      varFiles,
-      noColor,
-      migrateState,
-      skipSynth,
-      skipProviderLock,
-    }),
-  );
+  await terraformCheck();
+  await runDestroy({
+    outDir,
+    targetStacks: stacks,
+    synthCommand: command,
+    autoApprove,
+    ignoreMissingStackDependencies,
+    parallelism,
+    terraformParallelism,
+    vars,
+    varFiles,
+    noColor,
+    migrateState,
+    skipSynth,
+    skipProviderLock,
+  });
 }
 
 export async function diff(argv: any) {
@@ -287,21 +283,20 @@ export async function diff(argv: any) {
   const skipSynth = argv.skipSynth;
   const skipProviderLock = argv.skipProviderLock;
 
-  await renderInk(
-    React.createElement(Diff, {
-      outDir,
-      refreshOnly,
-      targetStack: stack,
-      synthCommand: command,
-      terraformParallelism,
-      vars,
-      varFiles,
-      noColor,
-      migrateState,
-      skipSynth,
-      skipProviderLock,
-    }),
-  );
+  await terraformCheck();
+  await runDiff({
+    outDir,
+    refreshOnly,
+    targetStack: stack,
+    synthCommand: command,
+    terraformParallelism,
+    vars,
+    varFiles,
+    noColor,
+    migrateState,
+    skipSynth,
+    skipProviderLock,
+  });
 }
 
 export async function get(argv: {
@@ -340,18 +335,17 @@ export async function get(argv: {
       return;
     }
 
-    await renderInk(
-      React.createElement(Get, {
-        codeMakerOutput: output,
-        language: language,
-        constraints,
-        parallelism,
-        force,
-        silent: argv.silent,
-        providerSchemaCachePath: argv.experimentalProviderSchemaCachePath,
-        languageOptions: config.languageOptions,
-      }),
-    );
+    await terraformCheck();
+    await runGet({
+      codeMakerOutput: output,
+      language: language,
+      constraints,
+      parallelism,
+      force,
+      silent: argv.silent,
+      providerSchemaCachePath: argv.experimentalProviderSchemaCachePath,
+      languageOptions: config.languageOptions,
+    });
   } finally {
     if (!argv.silent) {
       printPerformanceInfo();
@@ -403,7 +397,8 @@ export async function list(argv: any) {
   const command = argv.app;
   const outDir = argv.output;
 
-  await renderInk(React.createElement(List, { outDir, synthCommand: command }));
+  await terraformCheck();
+  await runList({ outDir, synthCommand: command });
 }
 
 export async function login(argv: { tfeHostname: string }) {
@@ -474,13 +469,12 @@ export async function synth(argv: any) {
       process.exit(1);
     }
 
-    await renderInk(
-      React.createElement(Synth, {
-        outDir,
-        synthCommand: command,
-        hcl,
-      }),
-    );
+    await terraformCheck();
+    await runSynth({
+      outDir,
+      synthCommand: command,
+      hcl,
+    });
   } finally {
     printPerformanceInfo();
   }
@@ -504,16 +498,15 @@ export async function watch(argv: any) {
     process.exit(1);
   }
 
-  await renderInk(
-    React.createElement(Watch, {
-      targetDir: outDir,
-      targetStacks: stacks,
-      synthCommand: command,
-      autoApprove,
-      terraformParallelism,
-      parallelism,
-    }),
-  );
+  await terraformCheck();
+  await runWatch({
+    targetDir: outDir,
+    targetStacks: stacks,
+    synthCommand: command,
+    autoApprove,
+    terraformParallelism,
+    parallelism,
+  });
 }
 
 export async function output(argv: any) {
@@ -537,17 +530,16 @@ export async function output(argv: any) {
       saveOutputs(outputsPath!, outputs, includeSensitiveOutputs);
   }
 
-  await renderInk(
-    React.createElement(Output, {
-      outDir,
-      targetStacks: stacks,
-      synthCommand: command,
-      onOutputsRetrieved,
-      outputsPath,
-      skipSynth,
-      skipProviderLock,
-    }),
-  );
+  await terraformCheck();
+  await runOutput({
+    outDir,
+    targetStacks: stacks,
+    synthCommand: command,
+    onOutputsRetrieved,
+    outputsPath,
+    skipSynth,
+    skipProviderLock,
+  });
 }
 
 export async function debug(argv: any) {
@@ -776,5 +768,5 @@ export async function providerList(argv: any) {
       "Package Version": provider.packageVersion || "",
     });
   }
-  renderInk(React.createElement(ProviderListTable, { data }));
+  printProviderList(data);
 }

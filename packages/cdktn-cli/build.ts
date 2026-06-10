@@ -71,7 +71,6 @@ const config: esbuild.BuildOptions = {
     "cdktn",
     "@cdktn/hcl2cdk",
     "constructs",
-    "yoga-layout-prebuilt",
     "@types/node/package.json",
     "constructs/package.json",
     "cdktn/package.json",
