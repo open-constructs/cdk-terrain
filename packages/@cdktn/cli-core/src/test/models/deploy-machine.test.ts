@@ -303,6 +303,27 @@ describe("handleLineReceived", () => {
     });
   });
 
+  it("should not treat terraform error output referencing var. as a missing variable (#265)", () => {
+    const send = jest.fn();
+    const input = `
+│ Error: Unsupported argument
+│
+│   on .terraform/modules/project/main.tf line 92, in resource "gitlab_project" "project":
+│   92:   mirror                              = var.mirror
+│
+│ An argument named "mirror" is not expected here.
+`;
+    handleLineReceived(send)(input);
+    expect(send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "VARIABLE_MISSING" }),
+    );
+    // the real error output must still be forwarded to the user
+    expect(send).toHaveBeenCalledWith({
+      type: "OUTPUT_RECEIVED",
+      output: input,
+    });
+  });
+
   it("should detect destroy all resources in workspace message on windows", () => {
     const send = jest.fn();
     const input = `\u001b[25
