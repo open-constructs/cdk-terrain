@@ -76,7 +76,6 @@
         "@types/express",
         "express",
         // TODO: triage and add to package.json — each is imported but undeclared.
-        "cdktn",
         "constructs"
       ]
     }

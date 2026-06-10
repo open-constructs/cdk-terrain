@@ -2,5 +2,12 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "@tools/documentation-generation",
   "root": "tools/documentation-generation",
-  "projectType": "library"
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "options": {
+        "no-error-on-unmatched-pattern": true
+      }
+    }
+  }
 }

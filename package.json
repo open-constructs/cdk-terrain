@@ -50,9 +50,9 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.39.4",
-        "@nx/eslint": "^20.8.2",
-        "@nx/eslint-plugin": "^20.8.2",
-        "@nx/jest": "^20.8.2",
+        "@nx/eslint": "^22.7.5",
+        "@nx/eslint-plugin": "^22.7.5",
+        "@nx/jest": "^22.7.5",
         "@swc/core": "~1.15.5",
         "@swc/helpers": "~0.5.18",
         "@swc/jest": "~0.2.38",
@@ -71,10 +71,10 @@
         "husky": ">=6",
         "infer-owner": "^1.0.4",
         "jest": "^30.3.0",
-        "knip": "^6.6.3",
-        "lerna": "^8.2.1",
+        "knip": "^6.16.1",
+        "lerna": "^9.0.7",
         "lint-staged": "^15.5.2",
-        "nx": "20.8.2",
+        "nx": "22.7.5",
         "prettier": "^3.8.1",
         "publib": "^0.2.1047",
         "semver": "^7.7.4",
@@ -87,5 +87,12 @@
         "!(.claude|.agents|.specledger|specledger)/**/*.{ts,tsx,js,css,md}": "prettier --write",
         "examples/**": "pnpm run lint:examples"
     },
-    "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916"
+    "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916",
+    "devEngines": {
+        "packageManager":{
+            "name": "pnpm",
+            "version": "11.5.2",
+            "onFail": "download"
+        }
+    }
 }
