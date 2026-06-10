@@ -5,6 +5,7 @@ import {
   getProjectId,
   getUserId,
   getUsageTelemetryConsent,
+  setUsageTelemetryEnabled,
   collectDebugInformation,
   DISPLAY_VERSION,
 } from "@cdktn/commons";
@@ -113,6 +114,11 @@ export async function initializErrorReporting(
   const crashReportingEnabled = shouldReport === true;
   const usageTelemetryEnabled =
     !process.env.CHECKPOINT_DISABLE && usageConsent !== false;
+
+  // Capture the decision while we are still in the user's working
+  // directory: some commands (convert) chdir into a temporary project
+  // before sendTelemetry runs and must not consult that project's flags.
+  setUsageTelemetryEnabled(usageTelemetryEnabled);
 
   if (!crashReportingEnabled && !usageTelemetryEnabled) {
     logger.debug("Error reporting and usage telemetry disabled");

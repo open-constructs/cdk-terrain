@@ -34,12 +34,24 @@ export function getUsageTelemetryConsent(
   }
 }
 
+// Captured once per invocation by the consent-gating step (cli-core's
+// initializErrorReporting) while the process is still in the user's
+// working directory. Commands like `convert` chdir into a throwaway
+// project before emitting, so re-reading cdktf.json at emission time
+// would consult the wrong consent context.
+let usageTelemetryEnabledState: boolean | undefined;
+
+export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
+  usageTelemetryEnabledState = enabled;
+}
+
 /**
  * Effective usage-telemetry gate. Precedence (highest first):
  * 1. `CHECKPOINT_DISABLE` set -> disabled (backwards-compatible override;
  *    read at runtime, not import time, so tests can modify the env var)
- * 2. `sendUsageTelemetry` explicitly set in `cdktf.json` -> honored
- * 3. unset -> enabled (legacy on-by-default usage telemetry; interactive
+ * 2. the decision captured at command start (`setUsageTelemetryEnabled`)
+ * 3. `sendUsageTelemetry` explicitly set in `cdktf.json` -> honored
+ * 4. unset -> enabled (legacy on-by-default usage telemetry; interactive
  *    runs are prompted-and-persisted before this is consulted)
  *
  * Crash reporting (`sendCrashReports`) is an independent concern and is
@@ -49,7 +61,24 @@ export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
   if (process.env.CHECKPOINT_DISABLE) {
     return false;
   }
+  if (usageTelemetryEnabledState !== undefined) {
+    return usageTelemetryEnabledState;
+  }
   return getUsageTelemetryConsent(projectPath) !== false;
+}
+
+/**
+ * Bounded flush of buffered telemetry. Required before any explicit
+ * `process.exit()` on a path that may have emitted metrics — the legacy
+ * checkpoint transport awaited its POST inline, but Sentry buffers
+ * asynchronously and a hard exit drops the buffer.
+ */
+export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
+  try {
+    await Sentry.flush(timeoutMs);
+  } catch (err) {
+    logger.debug(`Could not flush telemetry: ${err}`);
+  }
 }
 
 /**
