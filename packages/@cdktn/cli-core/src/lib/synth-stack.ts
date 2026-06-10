@@ -281,22 +281,18 @@ Command output on stdout:
 
   public static async synthTelemetry(
     totalTime: number,
-    stacks: SynthesizedStack[],
+    _stacks: SynthesizedStack[],
     synthOrigin?: SynthOrigin,
   ): Promise<void> {
     const config = readConfigSync();
 
+    // Only command/language/ci and the duration are collected (FR-014);
+    // the legacy stackMetadata/requiredProviders payload is no longer
+    // sent anywhere, so it is not computed.
     await sendTelemetry("synth", {
       totalTime: totalTime,
       language: config.language,
       synthOrigin,
-      stackMetadata: stacks.map(
-        (stack) => JSON.parse(stack.content)["//"].metadata,
-      ),
-      requiredProviders: stacks.map(
-        (stack: any) =>
-          JSON.parse(stack.content)["terraform"].required_providers,
-      ),
     });
   }
 

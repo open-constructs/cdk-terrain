@@ -14,6 +14,14 @@ import { logger } from "./logging";
  * invents a default. The effective enabled/disabled state is derived by
  * the consent-gating layer (`isUsageTelemetryEnabled` and the interactive
  * prompt flow in cli-core).
+ *
+ * NOTE: this deliberately does NOT go through the typed
+ * `CdktfConfig.sendUsageTelemetry` getter (cli-core): commons cannot
+ * import cli-core, and consent gating must work before/without a valid
+ * project (no cdktf.json, or one the full config parser would reject).
+ * The typed getter remains the validated surface for project-level
+ * consumers; this reader is forgiving by design (malformed -> not
+ * explicitly false -> legacy default applies).
  */
 export function getUsageTelemetryConsent(
   projectPath = process.cwd(),

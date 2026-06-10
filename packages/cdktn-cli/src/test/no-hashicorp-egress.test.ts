@@ -38,13 +38,14 @@ describe("no HashiCorp checkpoint egress", () => {
         .map((p) => path.join(packagesRoot, "@cdktn", p, "src")),
     ].filter((p) => fs.existsSync(p));
 
-    const offenders = srcDirs
-      .flatMap(collectSourceFiles)
-      .filter(
-        (file) =>
-          file !== __filename &&
-          fs.readFileSync(file, "utf8").includes(HASHICORP_ENDPOINT),
-      );
+    const offenders = srcDirs.flatMap(collectSourceFiles).filter(
+      (file) =>
+        // test files may reference the endpoint to assert its absence
+        // (this file, and cli-core's nock canary); FR-001 is about
+        // active code
+        !/\.test\.(ts|tsx)$/.test(file) &&
+        fs.readFileSync(file, "utf8").includes(HASHICORP_ENDPOINT),
+    );
 
     expect(offenders).toEqual([]);
   });
