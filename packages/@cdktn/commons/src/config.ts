@@ -276,6 +276,8 @@ interface ConfigBase {
   terraformProviders?: TerraformProviderConstraint[];
   terraformModules?: TerraformModuleConstraint[];
   readonly context?: { [key: string]: any };
+  readonly sendCrashReports?: boolean;
+  readonly sendUsageTelemetry?: boolean;
 }
 
 /**

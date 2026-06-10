@@ -59,7 +59,10 @@ import {
   verifySimilarLibraryVersion,
 } from "./helper/check-environment";
 import { sanitizeVarFiles } from "./helper/var-files";
-import { askForCrashReportingConsent } from "./helper/error-reporting";
+import {
+  askForCrashReportingConsent,
+  askForUsageTelemetryConsent,
+} from "./helper/error-reporting";
 import { startPerformanceMonitoring } from "./helper/performance";
 import path from "path";
 import os from "os";
@@ -148,6 +151,7 @@ export async function convert({
       projectDescription: "Temporary project for conversion",
       local: true,
       enableCrashReporting: false,
+      enableUsageTelemetry: false,
       fromTerraformProject: "no",
       dist: pkg.version === "0.0.0" ? dist : undefined,
       cdktfVersion: pkg.version,
@@ -179,7 +183,10 @@ export async function convert({
 }
 
 export async function deploy(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -232,7 +239,10 @@ export async function deploy(argv: any) {
 }
 
 export async function destroy(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -271,7 +281,10 @@ export async function destroy(argv: any) {
 }
 
 export async function diff(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -320,7 +333,10 @@ export async function get(argv: {
   try {
     throwIfNotProjectDirectory();
     await displayVersionMessage();
-    await initializErrorReporting(askForCrashReportingConsent);
+    await initializErrorReporting(
+      askForCrashReportingConsent,
+      askForUsageTelemetryConsent,
+    );
     await checkEnvironment();
     await verifySimilarLibraryVersion();
     const config = readConfigSync(); // read config again to be up-to-date (if called via 'add' command)
@@ -396,7 +412,10 @@ export async function init(argv: any) {
 }
 
 export async function list(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -455,7 +474,10 @@ export async function synth(argv: any) {
     : () => {};
 
   try {
-    await initializErrorReporting(askForCrashReportingConsent);
+    await initializErrorReporting(
+      askForCrashReportingConsent,
+      askForUsageTelemetryConsent,
+    );
     throwIfNotProjectDirectory();
     await displayVersionMessage();
     await checkEnvironment();
@@ -487,7 +509,10 @@ export async function synth(argv: any) {
 }
 
 export async function watch(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   const command = argv.app;
@@ -517,7 +542,10 @@ export async function watch(argv: any) {
 }
 
 export async function output(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();

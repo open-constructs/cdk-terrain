@@ -4,6 +4,7 @@
   "codeMakerOutput": "generated",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
   "terraformProviders": [],
   "terraformModules": [],
   "context": {

@@ -3,6 +3,7 @@
   "app": "python3 ./main.py",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
   "terraformProviders": [],
   "terraformModules": [],
   "codeMakerOutput": "imports",

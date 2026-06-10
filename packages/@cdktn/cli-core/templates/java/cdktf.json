@@ -3,6 +3,7 @@
   "app": "./gradlew run",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
   "codeMakerOutput": "imports",
   "terraformProviders": [],
   "terraformModules": [],
