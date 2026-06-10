@@ -74,7 +74,7 @@
     "@cdktn/provider-generator": "workspace:*",
     "@cdktn/provider-schema": "workspace:*",
     "@npmcli/ci-detect": "1.4.0",
-    "@sentry/node": "7.120.4",
+    "@sentry/node": "^10.56.0",
     "@types/fs-extra": "11.0.4",
     "@types/pidusage": "2.0.5",
     "@types/semver": "7.7.1",

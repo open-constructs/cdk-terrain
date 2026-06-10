@@ -40,7 +40,7 @@
     "@cdktn/hcl-tools": "workspace:*",
     "@cdktn/hcl2cdk": "workspace:*",
     "@cdktn/provider-schema": "workspace:*",
-    "@sentry/node": "7.120.4",
+    "@sentry/node": "^10.56.0",
     "cdktn": "workspace:*",
     "chalk": "4.1.2",
     "chokidar": "3.6.0",
