@@ -12,6 +12,7 @@ import { parseExpression } from "@babel/parser";
 import * as t from "@babel/types";
 import prettier from "prettier";
 import { FUNCTIONS_METADATA_FILE } from "./constants";
+import { FUNCTIONS_MATRIX_FILE, FunctionsMatrix } from "./matrix";
 
 const ts = template({ plugins: [["typescript", {}]] });
 
@@ -82,13 +83,52 @@ t.addComment(
 // these are overwritten in terraform-functions.ts
 const INTERNAL_METHODS = ["join", "bcrypt", "range", "lookup"];
 
-// the resulting file is used in the cdktn core library
-async function generateFunctionBindings() {
+// functions that only exist in OpenTofu, derived from the availability
+// matrix; used to point their docstrings at the OpenTofu docs
+const openTofuOnlyFunctions = new Set<string>();
+
+/**
+ * Loads the function signatures from functions.json (Terraform metadata) and
+ * merges in OpenTofu-only functions from the availability matrix so the
+ * bindings cover both products. `core::` namespaced aliases (terraform >= 1.8)
+ * mirror every builtin 1:1 and are dropped — they are not valid identifiers.
+ * Functions that are not universally available are validated at synth time
+ * against the selected CLI (see ValidateFunctionVersionSupport in cdktn).
+ */
+async function loadFunctionSignatures(): Promise<{
+  [name: string]: FunctionSignature;
+}> {
   const file = path.join(__dirname, FUNCTIONS_METADATA_FILE);
   const json = JSON.parse((await fs.readFile(file)).toString())
     .function_signatures as {
     [name: string]: FunctionSignature;
   };
+
+  const matrix: FunctionsMatrix = JSON.parse(
+    (await fs.readFile(FUNCTIONS_MATRIX_FILE)).toString(),
+  );
+
+  const signatures: { [name: string]: FunctionSignature } = {};
+  for (const [name, signature] of Object.entries(json)) {
+    if (name.includes("::")) continue;
+    signatures[name] = signature;
+  }
+  for (const [name, entry] of Object.entries(matrix.functions)) {
+    if (signatures[name] || name.includes("::")) continue;
+    if (!entry.products.terraform) {
+      openTofuOnlyFunctions.add(name);
+    }
+    signatures[name] = entry.signature as unknown as FunctionSignature;
+  }
+
+  return Object.fromEntries(
+    Object.entries(signatures).sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
+// the resulting file is used in the cdktn core library
+async function generateFunctionBindings() {
+  const json = await loadFunctionSignatures();
 
   const staticMethods = Object.entries(json).map(([name, signature]) =>
     renderStaticMethod(name, signature),
@@ -125,11 +165,7 @@ async function generateFunctionBindings() {
 
 // the resulting file is used in convert
 async function generateFunctionsMap() {
-  const file = path.join(__dirname, FUNCTIONS_METADATA_FILE);
-  const json = JSON.parse((await fs.readFile(file)).toString())
-    .function_signatures as {
-    [name: string]: FunctionSignature;
-  };
+  const json = await loadFunctionSignatures();
 
   const properties: t.ObjectProperty[] = [];
 
@@ -340,9 +376,12 @@ function renderStaticMethod(
   );
 
   // comment with docstring for method
+  const docsUrl = openTofuOnlyFunctions.has(name)
+    ? `https://opentofu.org/docs/language/functions/${name}`
+    : `https://developer.hashicorp.com/terraform/language/functions/${name}`;
   const descriptionWithLink = signature.description.replace(
     `\`${name}\``,
-    `{@link https://developer.hashicorp.com/terraform/language/functions/${name} ${name}}`,
+    `{@link ${docsUrl} ${name}}`,
   );
   t.addComment(
     method,
