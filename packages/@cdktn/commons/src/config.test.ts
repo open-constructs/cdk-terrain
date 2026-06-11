@@ -716,4 +716,85 @@ describe("parseConfig", () => {
       `);
     });
   });
+
+  describe("targetVersions", () => {
+    const ENV_KEY = "CDKTF_CONTEXT_JSON";
+    let envBefore: string | undefined;
+    beforeEach(() => {
+      envBefore = process.env[ENV_KEY];
+      delete process.env[ENV_KEY];
+    });
+    afterEach(() => {
+      if (envBefore === undefined) delete process.env[ENV_KEY];
+      else process.env[ENV_KEY] = envBefore;
+    });
+
+    it("accepts constraint-shaped targets", () => {
+      const config = parseConfig(
+        JSON.stringify({
+          targetVersions: { terraform: ">=1.5.7", opentofu: ">=1.6.0" },
+        }),
+      );
+      expect(config.targetVersions).toEqual({
+        terraform: ">=1.5.7",
+        opentofu: ">=1.6.0",
+      });
+    });
+
+    it("accepts a single product", () => {
+      expect(
+        parseConfig(JSON.stringify({ targetVersions: { opentofu: "~1.9" } }))
+          .targetVersions,
+      ).toEqual({ opentofu: "~1.9" });
+    });
+
+    it("passes targetVersions to the app via the context environment", () => {
+      parseConfig(
+        JSON.stringify({
+          context: { someFlag: "true" },
+          targetVersions: { terraform: ">=1.8.0" },
+        }),
+      );
+      expect(JSON.parse(process.env[ENV_KEY]!)).toEqual({
+        someFlag: "true",
+        targetVersions: { terraform: ">=1.8.0" },
+      });
+    });
+
+    it("rejects unknown product names", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: { tofu: ">=1.6.0" } })),
+      ).toThrow(
+        `targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")`,
+      );
+    });
+
+    it("rejects malformed semver ranges", () => {
+      expect(() =>
+        parseConfig(
+          JSON.stringify({ targetVersions: { terraform: "latest" } }),
+        ),
+      ).toThrow(`"latest" is not a valid semver range`);
+    });
+
+    it("rejects Terraform provider constraint syntax with a hint", () => {
+      expect(() =>
+        parseConfig(
+          JSON.stringify({ targetVersions: { terraform: "~> 1.5" } }),
+        ),
+      ).toThrow(`uses Terraform provider constraint syntax`);
+    });
+
+    it("rejects an empty declaration", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: {} })),
+      ).toThrow(`must declare at least one product`);
+    });
+
+    it("rejects non-string ranges", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: { terraform: 1.5 } })),
+      ).toThrow(`targetVersions.terraform must be a semver range string`);
+    });
+  });
 });
