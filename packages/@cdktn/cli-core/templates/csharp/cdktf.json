@@ -3,6 +3,10 @@
   "app": "dotnet run -p MyTerraformStack.csproj",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
+  "targetVersions": {
+    "terraform": ">=1.5.7",
+    "opentofu": ">=1.6.0"
+  },
   "terraformProviders": [],
   "terraformModules": [],
   "context": {
