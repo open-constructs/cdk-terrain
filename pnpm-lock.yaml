@@ -933,6 +933,9 @@ importers:
       log4js:
         specifier: 6.9.1
         version: 6.9.1
+      semver:
+        specifier: 7.7.4
+        version: 7.7.4
       strip-ansi:
         specifier: 6.0.1
         version: 6.0.1
@@ -952,6 +955,9 @@ importers:
       '@types/fs-extra':
         specifier: 11.0.4
         version: 11.0.4
+      '@types/semver':
+        specifier: 7.7.1
+        version: 7.7.1
       '@types/uuid':
         specifier: 9.0.8
         version: 9.0.8
