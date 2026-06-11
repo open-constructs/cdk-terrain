@@ -1,0 +1,3724 @@
+{
+ "generated_note": "function availability matrix from `metadata functions -json` sweeps",
+ "versions": {
+  "terraform": [
+   "1.5.7",
+   "1.6.0",
+   "1.6.1",
+   "1.6.2",
+   "1.6.3",
+   "1.6.4",
+   "1.6.5",
+   "1.6.6",
+   "1.7.0",
+   "1.7.1",
+   "1.7.2",
+   "1.7.3",
+   "1.7.4",
+   "1.7.5",
+   "1.8.0",
+   "1.8.1",
+   "1.8.2",
+   "1.8.3",
+   "1.8.4",
+   "1.8.5",
+   "1.9.0",
+   "1.9.1",
+   "1.9.2",
+   "1.9.3",
+   "1.9.4",
+   "1.9.5",
+   "1.9.6",
+   "1.9.7",
+   "1.9.8",
+   "1.10.0",
+   "1.10.1",
+   "1.10.2",
+   "1.10.3",
+   "1.10.4",
+   "1.10.5",
+   "1.11.0",
+   "1.11.1",
+   "1.11.2",
+   "1.11.3",
+   "1.11.4",
+   "1.12.0",
+   "1.12.1",
+   "1.12.2",
+   "1.13.0",
+   "1.13.1",
+   "1.13.2",
+   "1.13.3",
+   "1.13.4",
+   "1.13.5",
+   "1.14.0",
+   "1.14.1",
+   "1.14.2",
+   "1.14.3",
+   "1.14.4",
+   "1.14.5",
+   "1.14.6",
+   "1.14.7",
+   "1.14.8",
+   "1.14.9",
+   "1.15.0",
+   "1.15.1",
+   "1.15.2",
+   "1.15.3",
+   "1.15.4",
+   "1.15.5",
+   "1.15.6"
+  ],
+  "opentofu": [
+   "1.6.0",
+   "1.6.1",
+   "1.6.2",
+   "1.6.3",
+   "1.7.0",
+   "1.7.1",
+   "1.7.2",
+   "1.7.3",
+   "1.7.4",
+   "1.7.5",
+   "1.7.6",
+   "1.7.7",
+   "1.7.8",
+   "1.7.9",
+   "1.7.10",
+   "1.8.0",
+   "1.8.1",
+   "1.8.2",
+   "1.8.3",
+   "1.8.4",
+   "1.8.5",
+   "1.8.6",
+   "1.8.7",
+   "1.8.8",
+   "1.8.9",
+   "1.8.10",
+   "1.8.11",
+   "1.9.0",
+   "1.9.1",
+   "1.9.2",
+   "1.9.3",
+   "1.9.4",
+   "1.10.0",
+   "1.10.1",
+   "1.10.2",
+   "1.10.3",
+   "1.10.4",
+   "1.10.5",
+   "1.10.6",
+   "1.10.7",
+   "1.10.8",
+   "1.10.9",
+   "1.10.10",
+   "1.11.0",
+   "1.11.1",
+   "1.11.2",
+   "1.11.3",
+   "1.11.4",
+   "1.11.5",
+   "1.11.6",
+   "1.11.7",
+   "1.11.8",
+   "1.12.0",
+   "1.12.1"
+  ]
+ },
+ "functions": {
+  "abs": {
+   "signature": {
+    "description": "`abs` returns the absolute value of the given number. In other words, if the number is zero or positive then it is returned as-is, but if it is negative then it is multiplied by -1 to make it positive before returning it.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "num",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "abspath": {
+   "signature": {
+    "description": "`abspath` takes a string containing a filesystem path and converts it to an absolute path. That is, if the path is not absolute, it will be joined with the current working directory.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "alltrue": {
+   "signature": {
+    "description": "`alltrue` returns `true` if all elements in a given collection are `true` or `\"true\"`. It also returns `true` if the collection is empty.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "list",
+      "type": [
+       "list",
+       "bool"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "anytrue": {
+   "signature": {
+    "description": "`anytrue` returns `true` if any element in a given collection is `true` or `\"true\"`. It also returns `false` if the collection is empty.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "list",
+      "type": [
+       "list",
+       "bool"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "base64decode": {
+   "signature": {
+    "description": "`base64decode` takes a string containing a Base64 character sequence and returns the original string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "base64encode": {
+   "signature": {
+    "description": "`base64encode` applies Base64 encoding to a string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "base64gunzip": {
+   "signature": {
+    "description": "`base64gunzip` decodes a Base64-encoded string and uncompresses the result with gzip.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.7.0",
+     "removed": null,
+     "gaps": [],
+     "count": 50
+    }
+   }
+  },
+  "base64gzip": {
+   "signature": {
+    "description": "`base64gzip` compresses a string with gzip and then encodes the result in Base64 encoding.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "base64sha256": {
+   "signature": {
+    "description": "`base64sha256` computes the SHA256 hash of a given string and encodes it with Base64. This is not equivalent to `base64encode(sha256(\"test\"))` since `sha256()` returns hexadecimal representation.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "base64sha512": {
+   "signature": {
+    "description": "`base64sha512` computes the SHA512 hash of a given string and encodes it with Base64. This is not equivalent to `base64encode(sha512(\"test\"))` since `sha512()` returns hexadecimal representation.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "basename": {
+   "signature": {
+    "description": "`basename` takes a string containing a filesystem path and removes all except the last portion from it.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "bcrypt": {
+   "signature": {
+    "description": "`bcrypt` computes a hash of the given string using the Blowfish cipher, returning a string in [the _Modular Crypt Format_](https://passlib.readthedocs.io/en/stable/modular_crypt_format.html) usually expected in the shadow password file on many Unix systems.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": {
+     "name": "cost",
+     "description": "The `cost` argument is optional and will default to 10 if unspecified.",
+     "type": "number"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "can": {
+   "signature": {
+    "description": "`can` evaluates the given expression and returns a boolean value indicating whether the expression produced a result without any errors.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "expression",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "ceil": {
+   "signature": {
+    "description": "`ceil` returns the closest whole number that is greater than or equal to the given value, which may be a fraction.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "num",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "chomp": {
+   "signature": {
+    "description": "`chomp` removes newline characters at the end of a string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "chunklist": {
+   "signature": {
+    "description": "`chunklist` splits a single list into fixed-size chunks, returning a list of lists.",
+    "return_type": [
+     "list",
+     [
+      "list",
+      "dynamic"
+     ]
+    ],
+    "parameters": [
+     {
+      "name": "list",
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "size",
+      "description": "The maximum length of each chunk. All but the last element of the result is guaranteed to be of exactly this size.",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "cidrcontains": {
+   "signature": {
+    "description": "`cidrcontains` determines whether a given IP address or an address prefix given in CIDR notation is within a given IP network address prefix.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "containing_prefix",
+      "description": "`containing_prefix` must be given in CIDR notation, as defined in [RFC 4632 section 3.1](https://tools.ietf.org/html/rfc4632#section-3.1).",
+      "type": "string"
+     },
+     {
+      "name": "contained_ip_or_prefix",
+      "description": "`contained_ip_or_prefix` is either an IP address or an address prefix given in CIDR notation.",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.7.0",
+     "removed": null,
+     "gaps": [],
+     "count": 50
+    }
+   }
+  },
+  "cidrhost": {
+   "signature": {
+    "description": "`cidrhost` calculates a full host IP address for a given host number within a given IP network address prefix.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "prefix",
+      "description": "`prefix` must be given in CIDR notation, as defined in [RFC 4632 section 3.1](https://tools.ietf.org/html/rfc4632#section-3.1).",
+      "type": "string"
+     },
+     {
+      "name": "hostnum",
+      "description": "`hostnum` is a whole number that can be represented as a binary integer with no more than the number of digits remaining in the address after the given prefix.",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "cidrnetmask": {
+   "signature": {
+    "description": "`cidrnetmask` converts an IPv4 address prefix given in CIDR notation into a subnet mask address.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "prefix",
+      "description": "`prefix` must be given in CIDR notation, as defined in [RFC 4632 section 3.1](https://tools.ietf.org/html/rfc4632#section-3.1).",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "cidrsubnet": {
+   "signature": {
+    "description": "`cidrsubnet` calculates a subnet address within given IP network address prefix.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "prefix",
+      "description": "`prefix` must be given in CIDR notation, as defined in [RFC 4632 section 3.1](https://tools.ietf.org/html/rfc4632#section-3.1).",
+      "type": "string"
+     },
+     {
+      "name": "newbits",
+      "description": "`newbits` is the number of additional bits with which to extend the prefix.",
+      "type": "number"
+     },
+     {
+      "name": "netnum",
+      "description": "`netnum` is a whole number that can be represented as a binary integer with no more than `newbits` binary digits, which will be used to populate the additional bits added to the prefix.",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "cidrsubnets": {
+   "signature": {
+    "description": "`cidrsubnets` calculates a sequence of consecutive IP address ranges within a particular CIDR prefix.",
+    "return_type": [
+     "list",
+     "string"
+    ],
+    "parameters": [
+     {
+      "name": "prefix",
+      "description": "`prefix` must be given in CIDR notation, as defined in [RFC 4632 section 3.1](https://tools.ietf.org/html/rfc4632#section-3.1).",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": {
+     "name": "newbits",
+     "type": "number"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "coalesce": {
+   "signature": {
+    "description": "`coalesce` takes any number of arguments and returns the first one that isn't null or an empty string.",
+    "return_type": "dynamic",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "vals",
+     "is_nullable": true,
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "coalescelist": {
+   "signature": {
+    "description": "`coalescelist` takes any number of list arguments and returns the first one that isn't empty.",
+    "return_type": "dynamic",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "vals",
+     "description": "List or tuple values to test in the given order.",
+     "is_nullable": true,
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "compact": {
+   "signature": {
+    "description": "`compact` takes a list of strings and returns a new list with any empty string elements removed.",
+    "return_type": [
+     "list",
+     "string"
+    ],
+    "parameters": [
+     {
+      "name": "list",
+      "type": [
+       "list",
+       "string"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "concat": {
+   "signature": {
+    "description": "`concat` takes two or more lists and combines them into a single list.",
+    "return_type": "dynamic",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "seqs",
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "contains": {
+   "signature": {
+    "description": "`contains` determines whether a given list or set contains a given single value as one of its elements.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     },
+     {
+      "name": "value",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "convert": {
+   "signature": {
+    "description": "`convert` converts a value to the given type constraint.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     },
+     {
+      "name": "type",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.15.0",
+     "removed": null,
+     "gaps": [],
+     "count": 7
+    },
+    "opentofu": null
+   }
+  },
+  "csvdecode": {
+   "signature": {
+    "description": "`csvdecode` decodes a string containing CSV-formatted data and produces a list of maps representing that data.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "dirname": {
+   "signature": {
+    "description": "`dirname` takes a string containing a filesystem path and removes the last portion from it.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "distinct": {
+   "signature": {
+    "description": "`distinct` takes a list and returns a new list with any duplicate elements removed.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "list",
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "element": {
+   "signature": {
+    "description": "`element` retrieves a single element from a list.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     },
+     {
+      "name": "index",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "endswith": {
+   "signature": {
+    "description": "`endswith` takes two values: a string to check and a suffix string. The function returns true if the first string ends with that exact suffix.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "suffix",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "ephemeralasnull": {
+   "signature": {
+    "description": "`ephemeralasnull` takes a value of any type and returns a similar value of the same type with any ephemeral values replaced with non-ephemeral null values and all non-ephemeral values preserved.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.10.0",
+     "removed": null,
+     "gaps": [],
+     "count": 37
+    },
+    "opentofu": {
+     "introduced": "1.11.0",
+     "removed": null,
+     "gaps": [],
+     "count": 11
+    }
+   }
+  },
+  "file": {
+   "signature": {
+    "description": "`file` reads the contents of a file at the given path and returns them as a string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filebase64": {
+   "signature": {
+    "description": "`filebase64` reads the contents of a file at the given path and returns them as a base64-encoded string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filebase64sha256": {
+   "signature": {
+    "description": "`filebase64sha256` is a variant of `base64sha256` that hashes the contents of a given file rather than a literal string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filebase64sha512": {
+   "signature": {
+    "description": "`filebase64sha512` is a variant of `base64sha512` that hashes the contents of a given file rather than a literal string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "fileexists": {
+   "signature": {
+    "description": "`fileexists` determines whether a file exists at a given path.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filemd5": {
+   "signature": {
+    "description": "`filemd5` is a variant of `md5` that hashes the contents of a given file rather than a literal string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "fileset": {
+   "signature": {
+    "description": "`fileset` enumerates a set of regular file names given a path and pattern. The path is automatically removed from the resulting set of file names and any result still containing path separators always returns forward slash (`/`) as the path separator for cross-system compatibility.",
+    "return_type": [
+     "set",
+     "string"
+    ],
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     },
+     {
+      "name": "pattern",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filesha1": {
+   "signature": {
+    "description": "`filesha1` is a variant of `sha1` that hashes the contents of a given file rather than a literal string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filesha256": {
+   "signature": {
+    "description": "`filesha256` is a variant of `sha256` that hashes the contents of a given file rather than a literal string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "filesha512": {
+   "signature": {
+    "description": "`filesha512` is a variant of `sha512` that hashes the contents of a given file rather than a literal string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "flatten": {
+   "signature": {
+    "description": "`flatten` takes a list and replaces any elements that are lists with a flattened sequence of the list contents.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "floor": {
+   "signature": {
+    "description": "`floor` returns the closest whole number that is less than or equal to the given value, which may be a fraction.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "num",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "format": {
+   "signature": {
+    "description": "The `format` function produces a string by formatting a number of other values according to a specification string. It is similar to the `printf` function in C, and other similar functions in other programming languages.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "format",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": {
+     "name": "args",
+     "is_nullable": true,
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "formatdate": {
+   "signature": {
+    "description": "`formatdate` converts a timestamp into a different time format.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "format",
+      "type": "string"
+     },
+     {
+      "name": "time",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "formatlist": {
+   "signature": {
+    "description": "`formatlist` produces a list of strings by formatting a number of other values according to a specification string.",
+    "return_type": [
+     "list",
+     "string"
+    ],
+    "parameters": [
+     {
+      "name": "format",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": {
+     "name": "args",
+     "is_nullable": true,
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "indent": {
+   "signature": {
+    "description": "`indent` adds a given number of spaces to the beginnings of all but the first line in a given multi-line string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "spaces",
+      "description": "Number of spaces to add after each newline character.",
+      "type": "number"
+     },
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "index": {
+   "signature": {
+    "description": "`index` finds the element index for a given value in a list.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     },
+     {
+      "name": "value",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "issensitive": {
+   "signature": {
+    "description": "`issensitive` takes a value and returns a boolean indicating if the value is sensitive.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.8.0",
+     "removed": null,
+     "gaps": [],
+     "count": 52
+    },
+    "opentofu": {
+     "introduced": "1.7.0",
+     "removed": null,
+     "gaps": [],
+     "count": 50
+    }
+   }
+  },
+  "join": {
+   "signature": {
+    "description": "`join` produces a string by concatenating together all elements of a given list of strings with the given delimiter.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "separator",
+      "description": "Delimiter to insert between the given strings.",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": {
+     "name": "lists",
+     "description": "One or more lists of strings to join.",
+     "type": [
+      "list",
+      "string"
+     ]
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "jsondecode": {
+   "signature": {
+    "description": "`jsondecode` interprets a given string as JSON, returning a representation of the result of decoding that string.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "jsonencode": {
+   "signature": {
+    "description": "`jsonencode` encodes a given value to a string using JSON syntax.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "val",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "keys": {
+   "signature": {
+    "description": "`keys` takes a map and returns a list containing the keys from that map.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "inputMap",
+      "description": "The map to extract keys from. May instead be an object-typed value, in which case the result is a tuple of the object attributes.",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "length": {
+   "signature": {
+    "description": "`length` determines the length of a given list, map, or string.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "value",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "log": {
+   "signature": {
+    "description": "`log` returns the logarithm of a given number in a given base.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "num",
+      "type": "number"
+     },
+     {
+      "name": "base",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "lookup": {
+   "signature": {
+    "description": "`lookup` retrieves the value of a single element from a map, given its key. If the given key does not exist, the given default value is returned instead.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "inputMap",
+      "type": "dynamic"
+     },
+     {
+      "name": "key",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": {
+     "name": "default",
+     "is_nullable": true,
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "lower": {
+   "signature": {
+    "description": "`lower` converts all cased letters in the given string to lowercase.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "matchkeys": {
+   "signature": {
+    "description": "`matchkeys` constructs a new list by taking a subset of elements from one list whose indexes match the corresponding indexes of values in another list.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "values",
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "keys",
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "searchset",
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "max": {
+   "signature": {
+    "description": "`max` takes one or more numbers and returns the greatest number from the set.",
+    "return_type": "number",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "numbers",
+     "type": "number"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "md5": {
+   "signature": {
+    "description": "`md5` computes the MD5 hash of a given string and encodes it with hexadecimal digits.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "merge": {
+   "signature": {
+    "description": "`merge` takes an arbitrary number of maps or objects, and returns a single map or object that contains a merged set of elements from all arguments.",
+    "return_type": "dynamic",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "maps",
+     "is_nullable": true,
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "min": {
+   "signature": {
+    "description": "`min` takes one or more numbers and returns the smallest number from the set.",
+    "return_type": "number",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "numbers",
+     "type": "number"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "nonsensitive": {
+   "signature": {
+    "description": "`nonsensitive` takes a sensitive value and returns a copy of that value with the sensitive marking removed, thereby exposing the sensitive value.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "one": {
+   "signature": {
+    "description": "`one` takes a list, set, or tuple value with either zero or one elements. If the collection is empty, `one` returns `null`. Otherwise, `one` returns the first element. If there are two or more elements then `one` will return an error.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "parseint": {
+   "signature": {
+    "description": "`parseint` parses the given string as a representation of an integer in the specified base and returns the resulting number. The base must be between 2 and 62 inclusive.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "number",
+      "type": "dynamic"
+     },
+     {
+      "name": "base",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "pathexpand": {
+   "signature": {
+    "description": "`pathexpand` takes a filesystem path that might begin with a `~` segment, and if so it replaces that segment with the current user's home directory path.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "plantimestamp": {
+   "signature": {
+    "description": "`plantimestamp` returns a UTC timestamp string in [RFC 3339](https://tools.ietf.org/html/rfc3339) format, fixed to a constant time representing the time of the plan.",
+    "return_type": "string",
+    "parameters": [],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "pow": {
+   "signature": {
+    "description": "`pow` calculates an exponent, by raising its first argument to the power of the second argument.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "num",
+      "type": "number"
+     },
+     {
+      "name": "power",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "range": {
+   "signature": {
+    "description": "`range` generates a list of numbers using a start value, a limit value, and a step value.",
+    "return_type": [
+     "list",
+     "number"
+    ],
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "params",
+     "type": "number"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "regex": {
+   "signature": {
+    "description": "`regex` applies a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) to a string and returns the matching substrings.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "pattern",
+      "type": "string"
+     },
+     {
+      "name": "string",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "regexall": {
+   "signature": {
+    "description": "`regexall` applies a [regular expression](https://en.wikipedia.org/wiki/Regular_expression) to a string and returns a list of all matches.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "pattern",
+      "type": "string"
+     },
+     {
+      "name": "string",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "replace": {
+   "signature": {
+    "description": "`replace` searches a given string for another given substring, and replaces each occurrence with a given replacement string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "substr",
+      "type": "string"
+     },
+     {
+      "name": "replace",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "reverse": {
+   "signature": {
+    "description": "`reverse` takes a sequence and produces a new sequence of the same length with all of the same elements as the given sequence but in reverse order.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "rsadecrypt": {
+   "signature": {
+    "description": "`rsadecrypt` decrypts an RSA-encrypted ciphertext, returning the corresponding cleartext.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "ciphertext",
+      "type": "string"
+     },
+     {
+      "name": "privatekey",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "sensitive": {
+   "signature": {
+    "description": "`sensitive` takes any value and returns a copy of it marked so that Terraform will treat it as sensitive, with the same meaning and behavior as for [sensitive input variables](/terraform/language/values/variables#suppressing-values-in-cli-output).",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "setintersection": {
+   "signature": {
+    "description": "The `setintersection` function takes multiple sets and produces a single set containing only the elements that all of the given sets have in common. In other words, it computes the [intersection](https://en.wikipedia.org/wiki/Intersection_\\(set_theory\\)) of the sets.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "first_set",
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     }
+    ],
+    "variadic_parameter": {
+     "name": "other_sets",
+     "type": [
+      "set",
+      "dynamic"
+     ]
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "setproduct": {
+   "signature": {
+    "description": "The `setproduct` function finds all of the possible combinations of elements from all of the given sets by computing the [Cartesian product](https://en.wikipedia.org/wiki/Cartesian_product).",
+    "return_type": "dynamic",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "sets",
+     "description": "The sets to consider. Also accepts lists and tuples, and if all arguments are of list or tuple type then the result will preserve the input ordering",
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "setsubtract": {
+   "signature": {
+    "description": "The `setsubtract` function returns a new set containing the elements from the first set that are not present in the second set. In other words, it computes the [relative complement](https://en.wikipedia.org/wiki/Complement_\\(set_theory\\)#Relative_complement) of the second set.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "a",
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "b",
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "setunion": {
+   "signature": {
+    "description": "The `setunion` function takes multiple sets and produces a single set containing the elements from all of the given sets. In other words, it computes the [union](https://en.wikipedia.org/wiki/Union_\\(set_theory\\)) of the sets.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "first_set",
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     }
+    ],
+    "variadic_parameter": {
+     "name": "other_sets",
+     "type": [
+      "set",
+      "dynamic"
+     ]
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "sha1": {
+   "signature": {
+    "description": "`sha1` computes the SHA1 hash of a given string and encodes it with hexadecimal digits.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "sha256": {
+   "signature": {
+    "description": "`sha256` computes the SHA256 hash of a given string and encodes it with hexadecimal digits.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "sha512": {
+   "signature": {
+    "description": "`sha512` computes the SHA512 hash of a given string and encodes it with hexadecimal digits.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "signum": {
+   "signature": {
+    "description": "`signum` determines the sign of a number, returning a number between -1 and 1 to represent the sign.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "num",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "slice": {
+   "signature": {
+    "description": "`slice` extracts some consecutive elements from within a list.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     },
+     {
+      "name": "start_index",
+      "type": "number"
+     },
+     {
+      "name": "end_index",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "sort": {
+   "signature": {
+    "description": "`sort` takes a list of strings and returns a new list with those strings sorted lexicographically.",
+    "return_type": [
+     "list",
+     "string"
+    ],
+    "parameters": [
+     {
+      "name": "list",
+      "type": [
+       "list",
+       "string"
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "split": {
+   "signature": {
+    "description": "`split` produces a list by dividing a given string at all occurrences of a given separator.",
+    "return_type": [
+     "list",
+     "string"
+    ],
+    "parameters": [
+     {
+      "name": "separator",
+      "type": "string"
+     },
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "startswith": {
+   "signature": {
+    "description": "`startswith` takes two values: a string to check and a prefix string. The function returns true if the string begins with that exact prefix.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "prefix",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "strcontains": {
+   "signature": {
+    "description": "`strcontains` takes two values: a string to check and an expected substring. The function returns true if the string has the substring contained within it.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "substr",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "strrev": {
+   "signature": {
+    "description": "`strrev` reverses the characters in a string. Note that the characters are treated as _Unicode characters_ (in technical terms, Unicode [grapheme cluster boundaries](https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries) are respected).",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "substr": {
+   "signature": {
+    "description": "`substr` extracts a substring from a given string by offset and (maximum) length.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "offset",
+      "type": "number"
+     },
+     {
+      "name": "length",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "sum": {
+   "signature": {
+    "description": "`sum` takes a list or set of numbers and returns the sum of those numbers.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "list",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "templatefile": {
+   "signature": {
+    "description": "`templatefile` reads the file at the given path and renders its content as a template using a supplied set of template variables.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "path",
+      "type": "string"
+     },
+     {
+      "name": "vars",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "templatestring": {
+   "signature": {
+    "description": "`templatestring` takes a string from elsewhere in the module and renders its content as a template using a supplied set of template variables.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "template",
+      "description": "A simple reference to a string value containing the template source code.",
+      "type": "string"
+     },
+     {
+      "name": "vars",
+      "description": "Object of variables to expose in the template scope.",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.9.0",
+     "removed": null,
+     "gaps": [],
+     "count": 46
+    },
+    "opentofu": {
+     "introduced": "1.7.0",
+     "removed": null,
+     "gaps": [],
+     "count": 50
+    }
+   }
+  },
+  "textdecodebase64": {
+   "signature": {
+    "description": "`textdecodebase64` function decodes a string that was previously Base64-encoded, and then interprets the result as characters in a specified character encoding.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "source",
+      "type": "string"
+     },
+     {
+      "name": "encoding",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "textencodebase64": {
+   "signature": {
+    "description": "`textencodebase64` encodes the unicode characters in a given string using a specified character encoding, returning the result base64 encoded because Terraform language strings are always sequences of unicode characters.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "string",
+      "type": "string"
+     },
+     {
+      "name": "encoding",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "timeadd": {
+   "signature": {
+    "description": "`timeadd` adds a duration to a timestamp, returning a new timestamp.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "timestamp",
+      "type": "string"
+     },
+     {
+      "name": "duration",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "timecmp": {
+   "signature": {
+    "description": "`timecmp` compares two timestamps and returns a number that represents the ordering of the instants those timestamps represent.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "timestamp_a",
+      "type": "string"
+     },
+     {
+      "name": "timestamp_b",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "timestamp": {
+   "signature": {
+    "description": "`timestamp` returns a UTC timestamp string in [RFC 3339](https://tools.ietf.org/html/rfc3339) format.",
+    "return_type": "string",
+    "parameters": [],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "title": {
+   "signature": {
+    "description": "`title` converts the first letter of each word in the given string to uppercase.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "tobool": {
+   "signature": {
+    "description": "`tobool` converts its argument to a boolean value.",
+    "return_type": "bool",
+    "parameters": [
+     {
+      "name": "v",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "tolist": {
+   "signature": {
+    "description": "`tolist` converts its argument to a list value.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "v",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "tomap": {
+   "signature": {
+    "description": "`tomap` converts its argument to a map value.",
+    "return_type": [
+     "map",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "v",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "tonumber": {
+   "signature": {
+    "description": "`tonumber` converts its argument to a number value.",
+    "return_type": "number",
+    "parameters": [
+     {
+      "name": "v",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "toset": {
+   "signature": {
+    "description": "`toset` converts its argument to a set value.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "v",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "tostring": {
+   "signature": {
+    "description": "`tostring` converts its argument to a string value.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "v",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "transpose": {
+   "signature": {
+    "description": "`transpose` takes a map of lists of strings and swaps the keys and values to produce a new map of lists of strings.",
+    "return_type": [
+     "map",
+     [
+      "list",
+      "string"
+     ]
+    ],
+    "parameters": [
+     {
+      "name": "values",
+      "type": [
+       "map",
+       [
+        "list",
+        "string"
+       ]
+      ]
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "trim": {
+   "signature": {
+    "description": "`trim` removes the specified set of characters from the start and end of the given string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "cutset",
+      "description": "A string containing all of the characters to trim. Each character is taken separately, so the order of characters is insignificant.",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "trimprefix": {
+   "signature": {
+    "description": "`trimprefix` removes the specified prefix from the start of the given string. If the string does not start with the prefix, the string is returned unchanged.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "prefix",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "trimspace": {
+   "signature": {
+    "description": "`trimspace` removes any space characters from the start and end of the given string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "trimsuffix": {
+   "signature": {
+    "description": "`trimsuffix` removes the specified suffix from the end of the given string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     },
+     {
+      "name": "suffix",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "try": {
+   "signature": {
+    "description": "`try` evaluates all of its argument expressions in turn and returns the result of the first one that does not produce any errors.",
+    "return_type": "dynamic",
+    "parameters": [],
+    "variadic_parameter": {
+     "name": "expressions",
+     "type": "dynamic"
+    }
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "upper": {
+   "signature": {
+    "description": "`upper` converts all cased letters in the given string to uppercase.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "urldecode": {
+   "signature": {
+    "description": "`urldecode` applies URL decoding to a given encoded string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.7.0",
+     "removed": null,
+     "gaps": [],
+     "count": 50
+    }
+   }
+  },
+  "urlencode": {
+   "signature": {
+    "description": "`urlencode` applies URL encoding to a given string.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "str",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "uuid": {
+   "signature": {
+    "description": "`uuid` generates a unique identifier string.",
+    "return_type": "string",
+    "parameters": [],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "uuidv5": {
+   "signature": {
+    "description": "`uuidv5` generates a _name-based_ UUID, as described in [RFC 4122 section 4.3](https://tools.ietf.org/html/rfc4122#section-4.3), also known as a \"version 5\" UUID.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "namespace",
+      "type": "string"
+     },
+     {
+      "name": "name",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "values": {
+   "signature": {
+    "description": "`values` takes a map and returns a list containing the values of the elements in that map.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "mapping",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "yamldecode": {
+   "signature": {
+    "description": "`yamldecode` parses a string as a subset of YAML, and produces a representation of its value.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "src",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "yamlencode": {
+   "signature": {
+    "description": "`yamlencode` encodes a given value to a string using [YAML 1.2](https://yaml.org/spec/1.2/spec.html) block syntax.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  },
+  "zipmap": {
+   "signature": {
+    "description": "`zipmap` constructs a map from a list of keys and a corresponding list of values.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "keys",
+      "type": [
+       "list",
+       "string"
+      ]
+     },
+     {
+      "name": "values",
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": {
+     "introduced": "1.5.7",
+     "removed": null,
+     "gaps": [],
+     "count": 66
+    },
+    "opentofu": {
+     "introduced": "1.6.0",
+     "removed": null,
+     "gaps": [],
+     "count": 54
+    }
+   }
+  }
+ }
+}

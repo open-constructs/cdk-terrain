@@ -5,7 +5,9 @@
   "description": "Tool to generate CDK Terrain function bindings",
   "scripts": {
     "fetch-metadata": "ts-node scripts/fetch-metadata.ts",
-    "generate": "ts-node scripts/generate.ts"
+    "generate": "ts-node scripts/generate.ts",
+    "update-function-matrix": "ts-node scripts/update-function-matrix.ts",
+    "generate-function-availability": "ts-node scripts/generate-function-availability.ts"
   },
   "repository": {
     "type": "git",

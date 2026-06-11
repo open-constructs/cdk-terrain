@@ -1,6 +1,11 @@
 docs/** linguist-documentation
 website/** linguist-documentation
 
+# Generated Terraform/OpenTofu function availability dataset. The baseline
+# sweep tooling that produces it lives in the open-constructs/cdktn-planning
+# repo (RFCS/function-availability); only the resulting matrix is vendored here.
+tools/generate-function-bindings/function-availability/functions-matrix.json linguist-generated=true
+
 # >>> specledger-generated
 # Auto-managed by specledger - do not edit this section
 specledger/*/issues.jsonl linguist-generated=true
