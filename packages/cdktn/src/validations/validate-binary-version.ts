@@ -7,6 +7,13 @@ import * as semver from "semver";
 /**
  * A validation that can be applied to a construct that will error if the
  * construct is being used in an environment with a version of a binary lower than the specified version.
+ *
+ * TODO(target-versions): legacy synth-time binary probe that predates
+ * OpenTofu support and the declared `targetVersions` model. Existing
+ * consumers (e.g. ValidateTerraformVersion for resource moves) should
+ * migrate to ValidateFeatureTargetSupport, leaving installed-binary
+ * verification to the opt-in validateInstalledBinary CLI behavior. Kept
+ * unchanged because it is long-released public API.
  */
 export class ValidateBinaryVersion implements IValidation {
   constructor(
