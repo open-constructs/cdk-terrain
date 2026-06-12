@@ -52,7 +52,11 @@ describe("checkInstalledBinaryAgainstTargets", () => {
 
   it("falls back to the dual product baseline when nothing is declared", () => {
     expect(
-      checkInstalledBinaryAgainstTargets(terraformOutput, undefined, "terraform"),
+      checkInstalledBinaryAgainstTargets(
+        terraformOutput,
+        undefined,
+        "terraform",
+      ),
     ).toEqual([]);
     expect(
       checkInstalledBinaryAgainstTargets(openTofuOutput, undefined, "tofu"),
