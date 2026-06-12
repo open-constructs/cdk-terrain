@@ -12,6 +12,7 @@ import {
   valueIsInvalidNumberOrToken,
   valueIsInvalidStringOrToken,
 } from "../errors";
+import { recordFunctionUsage } from "./usage-registry";
 
 type TFValue<T> = { variadic?: boolean; value: T };
 type TFValueValidator<T> = (value: T) => TFValue<T>;
@@ -161,6 +162,7 @@ export function terraformFunction(
   argValidators: TFValueValidator<any>[],
 ): ExecutableTfFunction {
   return function (...args: any[]) {
+    recordFunctionUsage(name);
     if (args.length !== argValidators.length) {
       throw functionReceivedWrongNumberOfArgs(
         name,

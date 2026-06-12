@@ -29,6 +29,14 @@
 export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
   "failOnConstructsOutsideOfStacks";
 
+/**
+ * When enabled, each TerraformStack validates that the Terraform functions
+ * used through `Fn` are supported by the version of the Terraform-compatible
+ * CLI (Terraform or OpenTofu) found on the system.
+ */
+export const VALIDATE_FUNCTION_VERSIONS = "validateFunctionVersions";
+
 export const FUTURE_FLAGS = {
   [FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS]: "true",
+  [VALIDATE_FUNCTION_VERSIONS]: "true",
 };

@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as child_process from "child_process";
-import { App, TerraformStack, Testing } from "../src";
+import { App, Fn, TerraformStack, Testing } from "../src";
 
 import { Construct, IValidation } from "constructs";
 import { TestResource } from "./helper/resource";
@@ -11,10 +11,13 @@ import {
   resolveTargetVersions,
   ValidateBinaryVersion,
   ValidateFeatureTargetSupport,
+  ValidateFunctionVersionSupport,
 } from "../src/validations";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
 import { terraformBinaryName } from "../src/util";
+import { resetFunctionUsageRegistry } from "../src/functions/usage-registry";
+import { VALIDATE_FUNCTION_VERSIONS } from "../src/features";
 
 const tmp = createTmpHelper();
 
@@ -390,5 +393,164 @@ describe("ValidateFeatureTargetSupport", () => {
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
     `);
+  });
+});
+
+describe("ValidateFunctionVersionSupport", () => {
+  beforeEach(() => {
+    resetFunctionUsageRegistry();
+  });
+
+  function appWithStack(context?: Record<string, any>) {
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir, context }),
+    );
+    const stack = new TerraformStack(app, "MyStack");
+    new TestProvider(stack, "foo", {});
+    const testResource = new TestResource(stack, "testResource", {
+      name: "foo",
+    });
+    return { app, stack, testResource };
+  }
+
+  test("ignores universally available functions without resolving targets", () => {
+    const { app, stack, testResource } = appWithStack();
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(stack, "usesBaselineFunction", {
+      name: Fn.abs(-42).toString(),
+    });
+
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
+  });
+
+  test("fails against the default baseline targets when a function needs a newer floor", () => {
+    const { app, testResource } = appWithStack();
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] Terraform function "templatestring" requires terraform >=1.9.0, but the project targets terraform >=1.5.7. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+        [MyStack/testResource] Terraform function "templatestring" requires opentofu >=1.7.0, but the project targets opentofu >=1.6.0. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("passes when the declared targets are within the function's availability", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
+  });
+
+  test("fails with an availability hint when a targeted product does not support the function", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.15.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesCidrcontains", {
+      name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] Terraform function "cidrcontains" is not supported by terraform, but the project targets terraform >=1.15.0. It is available in opentofu >=1.7.0.
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("passes for an OpenTofu-only function when only OpenTofu is targeted", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { opentofu: ">=1.7.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesCidrcontains", {
+      name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
+    });
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("surfaces malformed declared targets as validation errors", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { tofu: ">=1.7.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("is added to stacks via the validateFunctionVersions feature flag", () => {
+    const { app, stack } = appWithStack({
+      [VALIDATE_FUNCTION_VERSIONS]: "true",
+      targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
+    });
+    new TestResource(stack, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
+  });
+
+  test("is not added to stacks without the feature flag", () => {
+    const { app, testResource } = appWithStack();
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    // no validation registered: even a function outside the default baseline
+    // does not fail synth
+    expect(() => app.synth()).not.toThrow();
   });
 });
