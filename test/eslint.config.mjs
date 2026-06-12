@@ -9,6 +9,7 @@ export default [
   {
     ignores: [
       "**/.gen/**",
+      "edge-provider-bindings/**",
       "**/cdktf.out/**",
       "storage/**",
       "**/dist/**",
