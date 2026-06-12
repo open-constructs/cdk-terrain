@@ -786,9 +786,9 @@ describe("parseConfig", () => {
     });
 
     it("rejects an empty declaration", () => {
-      expect(() =>
-        parseConfig(JSON.stringify({ targetVersions: {} })),
-      ).toThrow(`must declare at least one product`);
+      expect(() => parseConfig(JSON.stringify({ targetVersions: {} }))).toThrow(
+        `must declare at least one product`,
+      );
     });
 
     it("rejects non-string ranges", () => {
