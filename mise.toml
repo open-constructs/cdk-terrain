@@ -1,6 +1,3 @@
-# SpecLedger mise configuration
-# Issue tracking is now built into sl CLI (sl issue commands)
-
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
 
@@ -9,6 +6,7 @@ python = '3.11'
 go = '1.25'
 java = "prefix:corretto-20"
 dotnet = "6.0"  # Match jsii-superchain DOTNET_CHANNEL
+uv = "0.11.19" # Used by the pipx backend
 "pipx:pipenv" = "latest"
 
 terraform = "1.7.5"

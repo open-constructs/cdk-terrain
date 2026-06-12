@@ -15,22 +15,26 @@ jobs:
   build-docker-image:
     if: github.repository == 'open-constructs/cdk-terrain'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
-      - name: Cache Docker layers
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ hashFiles('/Dockerfile', '.terraform.versions.json') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
       - name: Login to DockerHub
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - id: tf-versions
         run: |
           DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default')
@@ -50,9 +54,19 @@ jobs:
         with:
           pull: true
           push: true
-          tags: terraconstructs/jsii-terraform:latest,terraconstructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }},terraconstructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }}-${{ steps.git-sha.outputs.git-sha }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          tags: |
+            terraconstructs/jsii-terraform:latest
+            terraconstructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }}
+            terraconstructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }}-${{ steps.git-sha.outputs.git-sha }}
+            ghcr.io/open-constructs/jsii-terraform:latest
+            ghcr.io/open-constructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }}
+            ghcr.io/open-constructs/jsii-terraform:${{ steps.cdktn-version.outputs.cdktn }}-${{ steps.git-sha.outputs.git-sha }}
+          # Registry-backed layer cache instead of the GitHub Actions cache:
+          # writing to it requires packages:write, which only this workflow's
+          # token has, so it cannot be poisoned from less-privileged contexts
+          # (zizmor cache-poisoning).
+          cache-from: type=registry,ref=ghcr.io/open-constructs/jsii-terraform:buildcache
+          cache-to: type=registry,ref=ghcr.io/open-constructs/jsii-terraform:buildcache,mode=max
           build-args: |
             DEFAULT_TERRAFORM_VERSION=${{ steps.tf-versions.outputs.default }}
             AVAILABLE_TERRAFORM_VERSIONS=${{ steps.tf-versions.outputs.available }}
