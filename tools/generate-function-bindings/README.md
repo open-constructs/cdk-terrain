@@ -40,6 +40,7 @@ The `scripts/generate.ts` file contains a constant named `INTERNAL_METHODS` that
 To aid the update process, it is also possible to run the following command in the root of the repository:
 
 ```sh
+pnpm install
 pnpm run generate-function-bindings
 ```
 

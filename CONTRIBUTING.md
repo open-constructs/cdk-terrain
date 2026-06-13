@@ -88,6 +88,7 @@ Ensuring your PR titles follow this format helps us quickly identify the purpose
 - **provider-generator** — Provider binding generator
 - **examples** — Example projects
 - **tests** — Test infrastructure
+- **tools** — Repository tooling and maintenance scripts under `tools/`
 - **docs** — Documentation
 - **readme** — README updates
 - **release** — Release process and configuration

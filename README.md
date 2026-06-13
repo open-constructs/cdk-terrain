@@ -69,3 +69,16 @@ Build the project and packages.
 ```bash
 pnpm build
 ```
+
+### Regenerating Terraform function bindings
+
+The repository-level function binding generator expects workspace dependencies to
+be installed from the repository root before it runs:
+
+```bash
+pnpm install
+pnpm run generate-function-bindings
+```
+
+The generator runs the `tools/generate-function-bindings` workspace package via
+`pnpm --filter` and updates the generated Terraform function binding sources.
