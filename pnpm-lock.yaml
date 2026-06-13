@@ -1334,9 +1334,6 @@ importers:
       '@babel/parser':
         specifier: 7.27.2
         version: 7.27.2
-      '@cdktn/commons':
-        specifier: workspace:*
-        version: link:../../packages/@cdktn/commons
     devDependencies:
       '@babel/generator':
         specifier: ^7.20.4

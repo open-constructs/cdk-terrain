@@ -46,7 +46,7 @@
         "release": "standard-version",
         "generate-docs:api": "pnpm install && pnpm run build && mkdir -p website/docs/cdktn/api-reference && cd tools/documentation-generation && pnpm install --ignore-workspace && pnpm run docs && pnpm exec prettier --write ../../website/docs/cdktn/api-reference/**",
         "generate-docs": "pnpm run generate-docs:api",
-        "generate-function-bindings": "cd tools/generate-function-bindings && pnpm install && pnpm run fetch-metadata && pnpm run generate"
+        "generate-function-bindings": "pnpm --filter generate-function-bindings run fetch-metadata && pnpm --filter generate-function-bindings run generate"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.4",

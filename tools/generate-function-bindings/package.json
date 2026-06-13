@@ -18,8 +18,7 @@
   },
   "license": "MPL-2.0",
   "dependencies": {
-    "@babel/parser": "7.27.2",
-    "@cdktn/commons": "workspace:*"
+    "@babel/parser": "7.27.2"
   },
   "devDependencies": {
     "@babel/generator": "^7.20.4",
