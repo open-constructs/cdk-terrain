@@ -50,9 +50,9 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.39.4",
-        "@nx/eslint": "^22.7.5",
-        "@nx/eslint-plugin": "^22.7.5",
-        "@nx/jest": "^22.7.5",
+        "@nx/eslint": "22.7.5",
+        "@nx/eslint-plugin": "22.7.5",
+        "@nx/jest": "22.7.5",
         "@swc/core": "~1.15.5",
         "@swc/helpers": "~0.5.18",
         "@swc/jest": "~0.2.38",
