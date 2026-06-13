@@ -24,7 +24,13 @@
     "stripInternal": true,
     "target": "ES2018",
     "incremental": false,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@cdktn/commons": [
+        "../../packages/@cdktn/commons/src/provider-schema"
+      ]
+    }
   },
   "include": [
     "scripts/**/*.ts"
@@ -33,5 +39,5 @@
     "node_modules",
     "../../node_modules/**",
     "**/*.d.ts"
-  ],
+  ]
 }

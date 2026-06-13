@@ -5,7 +5,7 @@
 
 import fs from "fs/promises";
 import * as path from "path";
-import type { AttributeType } from "../../../packages/@cdktn/commons/src/provider-schema";
+import type { AttributeType } from "@cdktn/commons";
 import generate from "@babel/generator";
 import template from "@babel/template";
 import { parseExpression } from "@babel/parser";
