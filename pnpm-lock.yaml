@@ -214,13 +214,13 @@ importers:
         specifier: ^9.39.4
         version: 9.39.4
       '@nx/eslint':
-        specifier: ^22.7.5
+        specifier: 22.7.5
         version: 22.7.5(@babel/traverse@7.29.0)(@nx/jest@22.7.5(@babel/traverse@7.29.0)(@swc/core@1.15.40(@swc/helpers@0.5.21))(@types/node@20.19.37)(babel-plugin-macros@3.1.0)(nx@22.7.5(@swc/core@1.15.40(@swc/helpers@0.5.21)))(ts-node@10.9.2(@swc/core@1.15.40(@swc/helpers@0.5.21))(@types/node@20.19.37)(typescript@5.4.5))(typescript@5.4.5)(verdaccio@6.6.0(encoding@0.1.13)(typanion@3.14.0)))(@swc/core@1.15.40(@swc/helpers@0.5.21))(@zkochan/js-yaml@0.0.7)(eslint@9.39.4(jiti@2.7.0))(nx@22.7.5(@swc/core@1.15.40(@swc/helpers@0.5.21)))(verdaccio@6.6.0(encoding@0.1.13)(typanion@3.14.0))
       '@nx/eslint-plugin':
-        specifier: ^22.7.5
+        specifier: 22.7.5
         version: 22.7.5(@babel/traverse@7.29.0)(@swc/core@1.15.40(@swc/helpers@0.5.21))(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.4.5))(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(nx@22.7.5(@swc/core@1.15.40(@swc/helpers@0.5.21)))(typescript@5.4.5)(verdaccio@6.6.0(encoding@0.1.13)(typanion@3.14.0))
       '@nx/jest':
-        specifier: ^22.7.5
+        specifier: 22.7.5
         version: 22.7.5(@babel/traverse@7.29.0)(@swc/core@1.15.40(@swc/helpers@0.5.21))(@types/node@20.19.37)(babel-plugin-macros@3.1.0)(nx@22.7.5(@swc/core@1.15.40(@swc/helpers@0.5.21)))(ts-node@10.9.2(@swc/core@1.15.40(@swc/helpers@0.5.21))(@types/node@20.19.37)(typescript@5.4.5))(typescript@5.4.5)(verdaccio@6.6.0(encoding@0.1.13)(typanion@3.14.0))
       '@swc/core':
         specifier: ~1.15.5
@@ -4530,10 +4530,6 @@ packages:
 
   brace-expansion@2.0.3:
     resolution: {integrity: sha512-MCV/fYJEbqx68aE58kv2cA/kiky1G8vux3OR6/jbS+jIMe/6fJWa0DTzJU7dqijOWYwHi1t29FlfYI9uytqlpA==}
-
-  brace-expansion@5.0.5:
-    resolution: {integrity: sha512-VZznLgtwhn+Mact9tfiwx64fA9erHH/MCXEUfB/0bX/6Fz6ny5EGTXYltMocqg4xFAQZtnO3DHWWXi8RiuN7cQ==}
-    engines: {node: 18 || 20 || >=22}
 
   brace-expansion@5.0.6:
     resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
@@ -10694,8 +10690,8 @@ snapshots:
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
-      '@emnapi/core': 1.9.2
-      '@emnapi/runtime': 1.9.2
+      '@emnapi/core': 1.10.0
+      '@emnapi/runtime': 1.10.0
       '@tybys/wasm-util': 0.10.1
     optional: true
 
@@ -12387,10 +12383,6 @@ snapshots:
   brace-expansion@2.0.3:
     dependencies:
       balanced-match: 1.0.2
-
-  brace-expansion@5.0.5:
-    dependencies:
-      balanced-match: 4.0.4
 
   brace-expansion@5.0.6:
     dependencies:
@@ -15627,7 +15619,7 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.5
+      brace-expansion: 5.0.6
 
   minimatch@3.1.4:
     dependencies:
