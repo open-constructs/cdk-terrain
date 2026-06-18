@@ -13,21 +13,21 @@ describe("provider add command", () => {
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
         DISABLE_VERSION_CHECK: "true",
-      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
       await driver.setupCsharpProject();
 
       await driver.exec("dotnet", [
         "add",
         "package",
-        "HashiCorp.Cdktf",
+        "Io.Cdktn",
         "--version",
-        "0.12.2",
+        "0.23.1",
       ]);
     }, 500_000);
 
     it("detects correct cdktn version", async () => {
       const res = await driver.exec("cdktn", ["debug"]);
-      expect(res.stdout).toContain("cdktf: 0.12.2");
+      expect(res.stdout).toContain("cdktn: 0.23.1");
     });
 
     onPosix(
@@ -36,19 +36,19 @@ describe("provider add command", () => {
         const res = await driver.exec("cdktn", [
           "provider",
           "add",
-          "random@=3.4.2", // this is not the latest version, but theres v3.0.52 of the pre-built provider resulting in exactly this package
+          "random@=3.9.0",
         ]);
         expect(sanitizeTimestamps(res.stdout)).toMatchInlineSnapshot(`
           "[<TIMESTAMP>] [INFO] default - Checking whether pre-built provider exists for the following constraints:
             provider: random
-            version : =3.4.2
+            version : =3.9.0
             language: csharp
-            cdktf   : 0.12.2
+            cdktn   : 0.23.1
 
 
           [<TIMESTAMP>] [INFO] default - Found pre-built provider.
 
-          Installing package HashiCorp.Cdktf.Providers.Random @ 2.0.52 using "dotnet add package HashiCorp.Cdktf.Providers.Random --version 2.0.52".
+          Installing package Io.Cdktn.Providers.Random @ 14.1.0 using "dotnet add package Io.Cdktn.Providers.Random --version 14.1.0".
 
           Package installed.
           "
@@ -58,7 +58,7 @@ describe("provider add command", () => {
         const proj = driver.readLocalFile("MyTerraformStack.csproj");
 
         expect(proj).toContain(
-          '<PackageReference Include="HashiCorp.Cdktf.Providers.Random" Version="2.0.52" />',
+          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="14.1.0" />',
         );
       },
       500_000,
@@ -70,19 +70,19 @@ describe("provider add command", () => {
         const res = await driver.exec("cdktn", [
           "provider",
           "add",
-          "random@=3.4.2", // this is not the latest version, but theres v2.0.52 of the pre-built provider resulting in exactly this package
+          "random@=3.9.0",
         ]);
         expect(sanitizeTimestamps(res.stdout)).toMatchInlineSnapshot(`
                   "[<TIMESTAMP>] [INFO] default - Checking whether pre-built provider exists for the following constraints:
                     provider: random
-                    version : =3.4.2
+                    version : =3.9.0
                     language: csharp
-                    cdktf   : 0.12.2
+                    cdktn   : 0.23.1
 
 
                   [<TIMESTAMP>] [INFO] default - Found pre-built provider.
 
-                  Installing package HashiCorp.Cdktf.Providers.Random @ 2.0.52 using "dotnet add package HashiCorp.Cdktf.Providers.Random --version 2.0.52".
+                  Installing package Io.Cdktn.Providers.Random @ 14.1.0 using "dotnet add package Io.Cdktn.Providers.Random --version 14.1.0".
 
                   Package installed.
                   "
@@ -92,7 +92,7 @@ describe("provider add command", () => {
         const proj = driver.readLocalFile("MyTerraformStack.csproj");
 
         expect(proj).toContain(
-          '<PackageReference Include="HashiCorp.Cdktf.Providers.Random" Version="2.0.52" />',
+          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="14.1.0" />',
         );
       },
       500_000,

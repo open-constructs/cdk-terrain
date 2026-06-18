@@ -8,7 +8,7 @@ describe("provider list command", () => {
     driver = new TestDriver(__dirname, {
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
     await driver.setupGoProject();
 
     await driver.exec("go", [

@@ -8,15 +8,15 @@ describe("provider list command", () => {
     driver = new TestDriver(__dirname, {
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
     await driver.setupCsharpProject();
 
     await driver.exec("dotnet", [
       "add",
       "package",
-      "HashiCorp.Cdktf",
+      "Io.Cdktn",
       "--version",
-      "0.13.0",
+      "0.23.1",
     ]);
   }, 500_000);
 
@@ -25,7 +25,7 @@ describe("provider list command", () => {
       await driver.exec("cdktn", [
         "provider",
         "add",
-        "random@=3.4.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
+        "random@=3.8.1",
       ]);
 
       await driver.exec("cdktn", [
@@ -58,11 +58,11 @@ describe("provider list command", () => {
 
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "HashiCorp.Cdktf.Providers.Random",
-          packageVersion: "3.0.11",
+          packageName: "Io.Cdktn.Providers.Random",
+          packageVersion: "14.0.0",
           providerName: "random",
-          providerVersion: "3.4.3",
-          cdktfVersion: "^0.13.0",
+          providerVersion: "3.8.1",
+          cdktnVersion: "^0.23.1",
         }),
       );
     }, 120_000);
