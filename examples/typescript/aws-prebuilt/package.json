@@ -11,15 +11,14 @@
   "devDependencies": {
     "@types/jest": "30.0.0",
     "@types/node": "20.17.51",
-    "cdktn-cli": "0.0.0",
+    "cdktn-cli": "workspace:*",
     "jest": "^30.3.0",
     "ts-node": "10.9.1",
-    "typescript": "5.4.5"
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@cdktf/provider-aws": "21.22.1",
-    "cdktf": "0.21.0",
-    "cdktn": "0.0.0",
+    "@cdktn/provider-aws": "24.1.0",
+    "cdktn": "workspace:*",
     "constructs": "10.6.0"
   }
 }

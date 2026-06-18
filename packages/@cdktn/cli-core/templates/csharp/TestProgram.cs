@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace MyCompany.MyApp{
     // The tests below are example tests, you can find more information at
-    // https://cdk.tf/testing
+    // https://cdktn.io/docs/test/unit-tests
     public class TestProgram{
         
         [Fact]

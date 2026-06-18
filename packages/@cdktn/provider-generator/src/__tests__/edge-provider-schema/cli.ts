@@ -18,14 +18,17 @@ if (!targetPath) {
 fs.mkdirpSync(targetPath);
 fs.emptyDirSync(targetPath);
 
-const deps = ["@types/node", "constructs", "cdktn"];
+// Static require.resolve calls so knip / pnpm strict isolation can see the deps.
+const deps = [
+  path.dirname(require.resolve("@types/node/package.json")),
+  path.dirname(require.resolve("constructs/package.json")),
+  path.dirname(require.resolve("cdktn/package.json")),
+];
 
 (async () => {
   await generateProviderBindingsFromSchema(targetPath, edgeSchema, {
     entrypoint: path.join("providers", "edge", "index.ts"),
-    deps: deps.map((dep) =>
-      path.dirname(require.resolve(`${dep}/package.json`)),
-    ),
+    deps,
     moduleKey: "edge",
     python: {
       outdir: path.resolve(targetPath, "python"),

@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformHclModule, TerraformStack, Testing } from "../lib";
+import { TerraformHclModule, TerraformStack, Testing } from "../src";
 import * as path from "path";
-import { TerraformModuleAsset } from "../lib/terraform-module-asset";
+import { TerraformModuleAsset } from "../src/terraform-module-asset";
 
 describe("createAssetsFromLocalModules", () => {
   test("remote source without skipAssetCreationFromLocalModules", () => {
@@ -68,7 +68,7 @@ describe("createAssetsFromLocalModules", () => {
   });
 
   test("local source without skipAssetCreationFromLocalModules", () => {
-    const localSource = "../";
+    const localSource = "./test/fixtures/hcl-module/";
 
     const app = Testing.app({
       enableFutureFlags: false,
@@ -94,7 +94,7 @@ describe("createAssetsFromLocalModules", () => {
   });
 
   test("local source with skipAssetCreationFromLocalModules set to false", () => {
-    const localSource = "../";
+    const localSource = "./test/fixtures/hcl-module/";
     const cdktfJsonPath = path.resolve(__dirname, "fixtures/app");
 
     const app = Testing.app({
@@ -122,7 +122,7 @@ describe("createAssetsFromLocalModules", () => {
   });
 
   test("local source with skipAssetCreationFromLocalModules set to true", () => {
-    const localSource = "../";
+    const localSource = "./test/fixtures/hcl-module/";
 
     const app = Testing.app({
       enableFutureFlags: false,

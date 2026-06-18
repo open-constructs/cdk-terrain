@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, TerraformIterator, ref } from "../lib";
+import { Testing, TerraformStack, TerraformIterator, ref } from "../src";
 import { TestProvider, TestResource } from "./helper";
 
 test("dynamic expressions are properly rendered for resources", () => {

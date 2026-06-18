@@ -5,7 +5,7 @@
   "types": "main.ts",
   "license": "MPL-2.0",
   "scripts": {
-    "build": "cdktn get",
+    "build": "tsc",
     "synth": "cdktn synth",
     "compile": "tsc --pretty",
     "watch": "tsc -w",
@@ -18,9 +18,8 @@
     "node": ">=20.9"
   },
   "dependencies": {
-    "@cdktf/provider-azurerm": "14.23.1",
-    "cdktf": "^0.21.0",
-    "cdktn": "^0.0.0",
+    "@cdktn/provider-azurerm": "16.1.0",
+    "cdktn": "workspace:*",
     "constructs": "10.6.0"
   },
   "devDependencies": {
@@ -29,6 +28,6 @@
     "jest": "^30.3.0",
     "ts-jest": "29.4.9",
     "ts-node": "10.9.1",
-    "typescript": "5.4.5"
+    "typescript": "^5.0.0"
   }
 }

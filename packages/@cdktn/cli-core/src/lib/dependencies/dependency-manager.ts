@@ -368,7 +368,7 @@ export class DependencyManager {
         );
       } else {
         throw Errors.Usage(
-          `Could not find a version for the provider '${constraint}' in the public registry. This could be due to a typo, please take a look at https://cdk.tf/registry-providers to find all supported providers.`,
+          `Could not find a version for the provider '${constraint}' in the public registry. This could be due to a typo, please take a look at https://registry.terraform.io/browse/providers to find all supported providers.`,
         );
       }
     }

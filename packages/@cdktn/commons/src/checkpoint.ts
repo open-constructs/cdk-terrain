@@ -144,7 +144,7 @@ export function getUserId(): string {
     `This signature is a randomly generated UUID used to anonymously differentiate users in telemetry data order to inform product direction.
 This signature is random, it is not based on any personally identifiable information.
 To create a new signature, you can simply delete this file at any time.
-See https://cdk.tf/telemetry for more
+See https://cdktn.io/docs/telemetry for more
 information on how to disable it.`,
   );
 }

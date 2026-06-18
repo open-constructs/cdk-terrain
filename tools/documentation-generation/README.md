@@ -6,10 +6,10 @@ Generates API reference docs from the `cdktn` JSII assembly using [`jsii-docgen`
 
 ```bash
 # From repo root (builds all packages first):
-yarn generate-docs:api
+pnpm generate-docs:api
 
 # Or from this directory (assumes packages are already built):
-yarn && yarn docs
+pnpm install && pnpm docs
 ```
 
 Output: `website/docs/cdktn/api-reference/<language>/<topic>.mdx` (25 files total).

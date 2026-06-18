@@ -70,7 +70,7 @@ function throwIfTargetsConflict(
     modules.forEach((moduleB) => {
       if (moduleA !== moduleB && moduleA.name === moduleB.name) {
         throw Errors.Usage(
-          `Found two modules with the same name "${moduleA.name}" which is not supported. Please rename one of the modules in your cdktf.json config. For more information on how to set the name refer to https://cdk.tf/adding-modules`,
+          `Found two modules with the same name "${moduleA.name}" which is not supported. Please rename one of the modules in your cdktf.json config. For more information on how to set the name refer to https://cdktn.io/docs/concepts/modules#add-module-to-cdktf-json`,
         );
       }
     });

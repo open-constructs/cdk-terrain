@@ -24,18 +24,20 @@
     "stripInternal": true,
     "target": "ES2018",
     "incremental": false,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@cdktn/commons": [
+        "../../packages/@cdktn/commons/src/provider-schema"
+      ]
+    }
   },
-  "files": [
-    "ambient.d.ts"
-  ],
   "include": [
-    "src/**/*.ts"
+    "scripts/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "../../node_modules/**",
-    "**/*.d.ts",
-    "**/*.test.tsx"
-  ],
+    "**/*.d.ts"
+  ]
 }

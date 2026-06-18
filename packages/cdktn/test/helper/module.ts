@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformModuleUserConfig, TerraformModule } from "../../lib";
+import { TerraformModuleUserConfig, TerraformModule } from "../../src";
 import { Construct } from "constructs";
 
 export interface TestModuleConfig extends TerraformModuleUserConfig {

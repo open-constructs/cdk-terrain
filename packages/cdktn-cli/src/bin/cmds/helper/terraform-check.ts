@@ -50,7 +50,7 @@ export const terraformCheck = async (): Promise<void> => {
     if (existsSync(path.join(process.cwd(), "terraform.tfstate"))) {
       throw new Error(`
         CDK Terrain now supports multiple stacks!
-        Found 'terraform.tfstate' Terraform state file. Please rename it to match the stack name. Learn more https://cdk.tf/multiple-stacks
+        Found 'terraform.tfstate' Terraform state file. Please rename it to match the stack name. Learn more https://cdktn.io/docs/concepts/stacks#multiple-stacks
       `);
     }
     const cleanTerraformVersion = await getTerraformVersion();

@@ -4,12 +4,12 @@ import {
   TerraformResource,
   TerraformMetaArguments,
   IResolvable,
-} from "../../lib";
+} from "../../src";
 import { Construct } from "constructs";
 import { TestProviderMetadata } from "./provider";
-import { listMapper, stringToTerraform } from "../../lib/runtime";
-import { ComplexList, ComplexObject } from "../../lib/complex-computed-list";
-import { ITerraformResource } from "../../lib/terraform-resource";
+import { listMapper, stringToTerraform } from "../../src/runtime";
+import { ComplexList, ComplexObject } from "../../src/complex-computed-list";
+import { ITerraformResource } from "../../src/terraform-resource";
 
 export interface TestResourceConfig extends TerraformMetaArguments {
   name: string;

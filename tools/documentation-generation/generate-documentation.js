@@ -272,7 +272,7 @@ sidebarTitle: ${sidebarTitle}
 description: ${description}
 ---
 
-{/* This file is generated through yarn generate-docs */}
+{/* This file is generated through pnpm generate-docs */}
 
 ${content}
 `;

@@ -3,7 +3,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // The tests below are example tests, you can find more information at
-// https://cdk.tf/testing
+// https://cdktn.io/docs/test/unit-tests
 public class MainTest {
 
     @Test

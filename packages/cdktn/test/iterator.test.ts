@@ -10,7 +10,7 @@ import {
   TerraformVariable,
   Token,
   forExpression,
-} from "../lib";
+} from "../src";
 import { OtherTestResource, TestResource } from "./helper";
 import { TestDataSource } from "./helper/data-source";
 

@@ -8,11 +8,11 @@
 git tag -l | grep -vE '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$' | xargs git tag -d
 
 # provide option to override release type
-# i.e. yarn prepare-release --release-as minor
+# i.e. pnpm prepare-release --release-as minor
 flags="${@:-}"
 
 # skip tag since that is created with the release
-yarn release --skip.tag=true --bumpFiles ${flags}
+pnpm run release --skip.tag=true --bumpFiles ${flags}
 
 # resotre tags
 git fetch origin --tags

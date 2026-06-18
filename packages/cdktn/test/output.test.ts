@@ -7,9 +7,9 @@ import {
   TerraformElement,
   App,
   Fn,
-} from "../lib";
+} from "../src";
 import { TestResource, TestProvider } from "./helper";
-import { TerraformVariable } from "../lib/terraform-variable";
+import { TerraformVariable } from "../src/terraform-variable";
 import { IConstruct } from "constructs";
 import { createTmpHelper } from "./helper/tmp";
 

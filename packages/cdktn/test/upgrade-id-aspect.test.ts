@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { Aspects, MigrateIds, TerraformStack, Testing } from "../lib";
+import { Aspects, MigrateIds, TerraformStack, Testing } from "../src";
 import { TestModule } from "./helper";
 
 describe("MigrateIds", () => {

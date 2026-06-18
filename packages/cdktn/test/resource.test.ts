@@ -6,10 +6,10 @@ import {
   TerraformElement,
   Fn,
   TerraformIterator,
-} from "../lib";
+} from "../src";
 import { TestProvider, TestResource, OtherTestResource } from "./helper";
 import { TestDataSource } from "./helper/data-source";
-import { TerraformOutput } from "../lib/terraform-output";
+import { TerraformOutput } from "../src/terraform-output";
 import { Construct } from "constructs";
 
 test("minimal configuration", () => {

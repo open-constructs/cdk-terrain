@@ -11,8 +11,7 @@ exports[`dependent resource 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -39,8 +38,7 @@ exports[`do not change capitalization of arbritary nested types 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -67,8 +65,7 @@ exports[`do not change capitalization of tags 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -101,8 +98,7 @@ exports[`includes import block when import is present 1`] = `
   ],
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -159,8 +155,7 @@ exports[`maintains the same order of provisioner 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -201,8 +196,7 @@ exports[`minimal configuration 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -231,8 +225,7 @@ exports[`number[] attributes 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -261,8 +254,7 @@ exports[`numeric attributes 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -313,18 +305,15 @@ exports[`serialize list interpolation 1`] = `
 "{
   "provider": {
     "other": [
-      {
-      }
+      {}
     ],
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
     "other_test_resource": {
-      "othertest": {
-      }
+      "othertest": {}
     },
     "test_resource": {
       "test": {
@@ -350,8 +339,7 @@ exports[`supports file provisioner 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -394,8 +382,7 @@ exports[`supports local-exec provisioner 1`] = `
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -444,8 +431,7 @@ exports[`supports resource and attribute references in lifecycle.replaceTriggere
 "{
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -478,18 +464,15 @@ exports[`with complex computed list 1`] = `
 "{
   "provider": {
     "other": [
-      {
-      }
+      {}
     ],
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
     "other_test_resource": {
-      "othertest": {
-      }
+      "othertest": {}
     },
     "test_resource": {
       "test": {

@@ -11,18 +11,18 @@ import {
   RemoteBackend,
   DataTerraformRemoteState,
   Fn,
-} from "../lib";
-import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "../lib/features";
+} from "../src";
+import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "../src/features";
 
 import { version } from "../package.json";
 import fs = require("fs");
 import path = require("path");
-import { Aspects } from "../lib/aspect";
+import { Aspects } from "../src/aspect";
 import { IConstruct } from "constructs";
-import { setupJest } from "../lib/testing/adapters/jest";
+import { setupJest } from "../src/testing/adapters/jest";
 import { TestProvider, TestResource } from "./helper";
 import { OtherTestResource } from "./helper/resource";
-import { TerraformOutput } from "../lib/terraform-output";
+import { TerraformOutput } from "../src/terraform-output";
 import { createTmpHelper } from "./helper/tmp";
 setupJest();
 

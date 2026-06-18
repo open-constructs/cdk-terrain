@@ -87,7 +87,7 @@ export function getDependencyInformationFromLine(
   const matches = line.match(packageNameRegex);
   if (!matches) {
     logger.debug(
-      "Unexpected format for gradle build. Please file an issue at https://cdk.tf/bug",
+      "Unexpected format for gradle build. Please file an issue at https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2Cnew&template=bug-report.yml&title=",
     );
     return undefined;
   }

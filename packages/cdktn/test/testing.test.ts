@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformStack, TerraformResource, Testing } from "../lib";
+import { TerraformStack, TerraformResource, Testing } from "../src";
 
-import { Aspects } from "../lib/aspect";
+import { Aspects } from "../src/aspect";
 import { IConstruct } from "constructs";
 
 class MyResource extends TerraformResource {}

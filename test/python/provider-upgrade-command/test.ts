@@ -71,13 +71,23 @@ describe("provider upgrade command", () => {
 
         driver.copyFile("cdktf-pip.json", "cdktf.json");
         driver.copyFiles("requirements.txt");
-        driver.exec("pip", ["install", "-r", "requirements.txt"]);
+        driver.exec("pip", [
+          "install",
+          "--no-compile",
+          "-r",
+          "requirements.txt",
+        ]);
       });
 
       test("updates pre-built provider using pip", async () => {
         await driver.exec("echo", [INITIAL_PKG, ">", "requirements.txt"]);
         expect(driver.readLocalFile("requirements.txt")).toContain(INITIAL_PKG);
-        await driver.exec("pip", ["install", "-r", "requirements.txt"]);
+        await driver.exec("pip", [
+          "install",
+          "--no-compile",
+          "-r",
+          "requirements.txt",
+        ]);
 
         await driver.exec("cdktn", ["provider", "upgrade", UPGRADE_TARGET]);
         expect(driver.readLocalFile("requirements.txt")).toContain(

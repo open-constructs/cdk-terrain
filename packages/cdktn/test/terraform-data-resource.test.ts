@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack } from "../lib";
-import { ref } from "../lib/tfExpression";
-import { DataResource } from "../lib/terraform-data-resource";
+import { Testing, TerraformStack } from "../src";
+import { ref } from "../src/tfExpression";
+import { DataResource } from "../src/terraform-data-resource";
 
 test("built-in Terraform data resource", () => {
   const app = Testing.app();

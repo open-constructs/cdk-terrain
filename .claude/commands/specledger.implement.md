@@ -1,1 +1,0 @@
-../../.agents/commands/specledger.implement.md

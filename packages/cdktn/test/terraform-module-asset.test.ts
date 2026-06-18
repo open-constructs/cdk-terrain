@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { findLowestCommonPath } from "../lib/terraform-module-asset";
+import { findLowestCommonPath } from "../src/terraform-module-asset";
 
 describe("TerraformModuleAsset", () => {
   describe("findLowestCommonPath", () => {

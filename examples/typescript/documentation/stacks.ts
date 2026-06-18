@@ -4,8 +4,8 @@
 // DOCS_BLOCK_START:single-stack,multiple-stacks,cross-stack-reference
 import { Construct } from "constructs";
 import { App, TerraformStack } from "cdktn";
-import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
-import { Instance } from "@cdktf/provider-aws/lib/instance";
+import { AwsProvider } from "@cdktn/provider-aws/lib/provider";
+import { Instance } from "@cdktn/provider-aws/lib/instance";
 // DOCS_BLOCK_END:single-stack,multiple-stacks,cross-stack-reference
 
 // DOCS_BLOCK_START:cross-stack-reference

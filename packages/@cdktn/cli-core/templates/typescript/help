@@ -36,7 +36,7 @@
   
   cdktn provider add "aws@~>3.0" null kreuzwerker/docker
 
-  You can find all prebuilt providers on npm: https://www.npmjs.com/search?q=keywords:cdktf
+  You can find all prebuilt providers on npm: https://www.npmjs.com/search?q=keywords:cdktn
   You can also install these providers directly through npm:
 
   npm install @cdktn/provider-aws
@@ -46,6 +46,6 @@
   npm install @cdktn/provider-github
   npm install @cdktn/provider-null
 
-  You can also build any module or provider locally. Learn more https://cdk.tf/modules-and-providers
+  You can also build any module or provider locally. Learn more https://cdktn.io/docs/concepts/providers
 
 ========================================================================================================

@@ -6,8 +6,8 @@ import {
   Testing,
   TerraformOutput,
   LocalBackend,
-} from "../lib";
-import { TerraformModule } from "../lib/terraform-module";
+} from "../src";
+import { TerraformModule } from "../src/terraform-module";
 import { TestProvider } from "./helper";
 import { Construct } from "constructs";
 

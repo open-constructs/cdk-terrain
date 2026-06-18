@@ -12,9 +12,9 @@ import {
   ComplexObject,
   ComplexList,
   IResolvable,
-} from "../../lib";
+} from "../../src";
 import { TestProviderMetadata } from "./provider";
-import { listMapper, stringToTerraform } from "../../lib/runtime";
+import { listMapper, stringToTerraform } from "../../src/runtime";
 
 export interface TestDataSourceConfig extends TerraformMetaArguments {
   name: string;

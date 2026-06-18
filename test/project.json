@@ -2,5 +2,6 @@
   "$schema": "../node_modules/nx/schemas/project-schema.json",
   "name": "end2end-tests",
   "root": "test",
-  "projectType": "library"
+  "projectType": "library",
+  "tags": ["scope:integration"]
 }

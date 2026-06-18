@@ -11,8 +11,10 @@ on:
 jobs:
   stale:
     runs-on: ubuntu-latest
+    # Only run on the canonical repo
+    if: github.repository == 'open-constructs/cdk-terrain'
     steps:
-      - uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f # v10.2.0
+      - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899 # v10.3.0
         with:
           # For issues: post a "warning" message after 15 days, then close if another 30 days pass without a response. In another workflow, issues closed for 30 days will be locked.
           stale-issue-message: "Hi there! 👋 We haven't heard from you in 15 days and would like to know if the problem has been resolved or if you still need help. If we don't hear from you before then, I'll auto-close this issue in 30 days."

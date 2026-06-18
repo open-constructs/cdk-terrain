@@ -1,16 +1,16 @@
-# SpecLedger mise configuration
-# Issue tracking is now built into sl CLI (sl issue commands)
+[settings]
+idiomatic_version_file_enable_tools = ["node", "pnpm"]
 
 [tools]
-node = "20.20"
 python = '3.11'
 go = '1.25'
 java = "prefix:corretto-20"
+gradle = "8.2.1"   # Match Dockerfile GRADLE_VERSION
 dotnet = "6.0"  # Match jsii-superchain DOTNET_CHANNEL
+uv = "0.11.19" # Used by the pipx backend
 "pipx:pipenv" = "latest"
 
 terraform = "1.7.5"
-"github:specledger/specledger" = "1.0.56"
 
 # # Works on Linux (not MacOS)
 # "ubi:getsentry/sentry-cli" = "3.1.0"

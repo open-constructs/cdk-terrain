@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { deepMerge } from "../lib/util";
+import { deepMerge } from "../src/util";
 
 test("merge arrays", () => {
   const target = {

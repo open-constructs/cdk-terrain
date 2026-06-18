@@ -5,7 +5,7 @@ import * as os from "os";
 import * as path from "path";
 import { execSync } from "child_process";
 import { unzipSync } from "fflate";
-import { archiveSync } from "../lib/private/fs";
+import { archiveSync } from "../src/private/fs";
 
 function createTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-archive-test-"));

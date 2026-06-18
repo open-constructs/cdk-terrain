@@ -84,16 +84,43 @@ export type DeployState =
       context: DeployContext;
     };
 
+/**
+ * Terraform's interactive prompt for a missing variable looks like:
+ *
+ *   var.<name>
+ *     Enter a value:
+ *
+ * The variable name appears on its own line, prefixed with "var." (optionally
+ * indented). We match this precisely so we don't mistake terraform error output
+ * that merely references a variable (e.g. "92:   mirror = var.mirror" from an
+ * "Unsupported argument" error) for an actual prompt. Terraform variable names
+ * start with a letter or underscore and may contain letters, digits,
+ * underscores and dashes. (#265)
+ */
+const VARIABLE_PROMPT_REGEX = /^\s*var\.([A-Za-z_][A-Za-z0-9_-]*)\s*$/;
+
+/**
+ * Returns true if any line in the given (ANSI-stripped) output is terraform's
+ * interactive prompt for a missing variable.
+ */
+export function isMissingVariablePrompt(noColorLine: string): boolean {
+  return noColorLine
+    .split("\n")
+    .some((line) => VARIABLE_PROMPT_REGEX.test(line));
+}
+
 export function extractVariableNameFromPrompt(line: string) {
   const noColorLine = stripAnsi(line);
   const lines = noColorLine.split("\n");
-  const lineWithVar = lines.find((line) => line.includes("var."));
-  if (!lineWithVar) {
+  const match = lines
+    .map((l) => l.match(VARIABLE_PROMPT_REGEX))
+    .find((m): m is RegExpMatchArray => m !== null);
+  if (!match) {
     throw Errors.Internal(
       `Could not find variable name in prompt: ${line}. This is most likely a bug in cdktn. Please report it at http://cdktn.io/issues`,
     );
   }
-  return lineWithVar.split("var.")[1].trim();
+  return match[1];
 }
 
 interface BufferedReceiverFunction {
@@ -146,7 +173,7 @@ export function handleLineReceived(send: (event: DeployEvent) => void) {
       hideOutput = true;
       send({ type: "OUTPUT_RECEIVED", output });
       send({ type: "REQUEST_APPROVAL" });
-    } else if (noColorLine.includes("var.")) {
+    } else if (isMissingVariablePrompt(noColorLine)) {
       hideOutput = true;
 
       const variableName = extractVariableNameFromPrompt(output);

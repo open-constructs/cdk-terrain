@@ -10,7 +10,7 @@ import {
   TerraformModuleConstraint,
 } from "@cdktn/commons";
 
-const cdktnBin = path.join(__dirname, "../../../cdktn-cli/bundle/bin/cdktn");
+const cdktnBin = path.join(__dirname, "../../../cdktn-cli/bin/cdktn");
 const cdktnDist = path.join(__dirname, "../../../../dist");
 
 const includeSynthTests = Boolean(process.env.CI);

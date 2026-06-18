@@ -40,7 +40,7 @@ cat << EOF > package.json
 EOF
 
 # Install lerna
-yarn
+pnpm install
 
 REPO_NAMES=$(gh repo list hashicorp --json "name" --topic pre-built-provider --limit=10000 | jq -r ".[] | .name")
 

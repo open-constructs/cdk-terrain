@@ -9,5 +9,5 @@ use (
 	./examples/go/google-cloudrun
 	./examples/go/scaleway
 	./examples/go/ucloud
-	./packages/cdktn/dist/go/cdktn // generated, run "yarn build" to generate
+	./packages/cdktn/dist/go/cdktn // generated, run "pnpm build" to generate
 )

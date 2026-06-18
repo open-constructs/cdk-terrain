@@ -5,7 +5,7 @@ This is a WebAssembly wrapper for https://github.com/tmccombs/hcl2json
 ## Usage
 
 ```
-yarn add @cdktn/hcl2json
+pnpm add @cdktn/hcl2json
 ```
 
 ### Parse HCL strings
@@ -73,4 +73,4 @@ import { getReferencesInExpression } from "@cdktn/hcl2json";
 
 ## Development
 
-With `yarn build` a Typescript compile is triggered and a Go build with a WASM target is performed.
+With `pnpm build` a Typescript compile is triggered and a Go build with a WASM target is performed.

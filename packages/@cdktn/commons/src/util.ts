@@ -11,47 +11,70 @@ import { IManifest, Manifest } from "cdktn";
 import * as config from "./config";
 import stripAnsi from "strip-ansi";
 
+type ExecError = Error & { stderr: string; stdout: string };
+
+/**
+ * Attach captured stderr/stdout to a process-failure Error.
+ *
+ * The body text is exposed two ways:
+ * - `.stderr` and `.stdout` properties, for callers that render the streams separately (e.g. synth-stack's chalk
+ *   formatting).
+ * - A `toString()` override that appends the body after the headline, so callers using `${e}` interpolation surface the
+ *   underlying tool output without double-printing for the property-reading callers.
+ *
+ * The Error's `.message` is left untouched as the headline only.
+ *
+ * @param error the Error to decorate (its `.message` becomes the toString headline)
+ * @param stderrText captured stderr, may be empty
+ * @param stdoutText captured stdout, may be empty
+ */
+function attachProcessOutput(
+  error: Error,
+  stderrText: string,
+  stdoutText: string,
+): asserts error is ExecError {
+  (error as ExecError).stderr = stderrText;
+  (error as ExecError).stdout = stdoutText;
+  const body = [stderrText, stdoutText].filter(Boolean).join("\n");
+  if (body) {
+    const headline = error.message;
+    error.toString = () => `Error: ${headline}\n${body}`;
+  }
+}
+
+/**
+ * Spawn a child process and mirror its stdout to the parent's console.
+ *
+ * Thin wrapper over {@link exec} for callers that want stdout chunks echoed via `console.log` as they arrive. Stderr is
+ * captured silently and surfaced on the thrown Error's `.stderr` / `toString()` if the process exits non-zero.
+ *
+ * @param program the executable to spawn
+ * @param args arguments passed to the executable
+ * @param options spawn options; `noColor: true` strips ANSI escapes from captured output
+ * @returns the full concatenated stdout as a string on success
+ * @throws an Error with `.stderr` and `.stdout` properties (see {@link attachProcessOutput}) on non-zero exit
+ */
 export async function shell(
   program: string,
   args: string[] = [],
   options: SpawnOptions & { noColor?: boolean } = {},
 ) {
-  const stderr = new Array<string | Uint8Array>();
-  const stdout = new Array<string>();
-  try {
-    return await exec(
-      program,
-      args,
-      options,
-      (chunk: string) => {
-        const sanitizedChunk = options.noColor
-          ? stripAnsi(chunk.toLocaleString())
-          : chunk.toLocaleString();
-        stdout.push(sanitizedChunk);
-        console.log(sanitizedChunk);
-      },
-      (chunk: string | Uint8Array) => {
-        const sanitizedChunk = options.noColor
-          ? stripAnsi(chunk.toLocaleString())
-          : chunk.toLocaleString();
-        stderr.push(sanitizedChunk);
-      },
-    );
-  } catch (e: any) {
-    if (stderr.length > 0) {
-      e.stderr = stderr.map((chunk) => chunk.toString()).join("");
-      if (options.noColor) {
-        e.stderr = stripAnsi(e.stderr);
-      }
-    }
-    if (stdout.length > 0) {
-      e.stdout = stdout.join("");
-      if (options.noColor) {
-        e.stdout = stripAnsi(e.stdout);
-      }
-    }
-    throw e;
-  }
+  return exec(
+    program,
+    args,
+    options,
+    (chunk: string) => {
+      const sanitizedChunk = options.noColor
+        ? stripAnsi(chunk.toLocaleString())
+        : chunk.toLocaleString();
+      console.log(sanitizedChunk);
+    },
+    () => {
+      // No-op: passing a callback (vs. undefined) suppresses exec()'s default
+      // pass-through to process.stderr; inner exec() still collects it for
+      // the thrown error's .stderr field.
+    },
+  );
 }
 
 export async function withTempDir(
@@ -80,6 +103,25 @@ export async function mkdtemp(closure: (dir: string) => Promise<void>) {
   }
 }
 
+/**
+ * Spawn a child process and resolve with its stdout, or reject with a decorated Error on non-zero exit.
+ *
+ * Captured stdout and stderr are always tee'd to `processLoggerDebug` / `processLoggerError`. The optional `stdout` and
+ * `stderr` callbacks receive each sanitized chunk as it arrives — useful for streaming output to the terminal.
+ * Passing a `stderr` callback (even a no-op) suppresses the default pass-through to `process.stderr` for that stream.
+ *
+ * On non-zero exit, rejects with an {@link ExecError} carrying `.stderr` / `.stdout` and a `toString()` that includes
+ * the captured body (see {@link attachProcessOutput}); `.message` itself stays as the headline.
+ *
+ * @param command the executable to spawn
+ * @param args arguments passed to the executable
+ * @param options spawn options; `noColor: true` strips ANSI escapes from captured output (auto-detected from CLI flags
+ *  / `FORCE_COLOR=0` when omitted)
+ * @param stdout optional per-chunk callback for sanitized stdout
+ * @param stderr optional per-chunk callback for sanitized stderr; passing a callback suppresses default terminal echo
+ * @param sendToStderr when false, suppresses both the stderr callback invocation and the default terminal echo
+ * @returns the full concatenated stdout as a string on success
+ */
 export const exec = async (
   command: string,
   args: string[],
@@ -142,8 +184,10 @@ export const exec = async (
     child.once("error", (err: any) => ko(err));
     child.once("close", (code: number) => {
       if (code !== 0) {
-        const error = new Error(`non-zero exit code ${code}`);
-        (error as any).stderr = err.map((chunk) => chunk.toString()).join("");
+        const error = new Error(
+          `${command} ${args.join(" ")} exited with code ${code}`,
+        );
+        attachProcessOutput(error, err.join(""), out.join(""));
         return ko(error);
       }
       return ok(out.join(""));

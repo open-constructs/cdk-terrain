@@ -2,15 +2,23 @@
  * Copyright (c) HashiCorp, Inc.
  * SPDX-License-Identifier: MPL-2.0
  */
+/* eslint-disable */
+const { readFileSync } = require('fs');
+
+const swcJestConfig = JSON.parse(
+  readFileSync(`${__dirname}/.spec.swcrc`, 'utf-8'),
+);
+
+swcJestConfig.swcrc = false;
 
 module.exports = {
-  testMatch: ['**/*.test.ts', '**/*.test.tsx'],
-  "transform": {
-    "^.+\\.tsx?$": "ts-jest"
+  displayName: '@cdktn/hcl-tools',
+  preset: '../../../jest.preset.js',
+  rootDir: '.',
+  roots: ['<rootDir>'],
+  transform: {
+    '^.+\\.[tj]sx?$': ['@swc/jest', swcJestConfig],
   },
-  moduleFileExtensions: [
-    "js",
-    "ts",
-    "tsx"
-  ],
-}
+  coverageDirectory: 'test-output/jest/coverage',
+  passWithNoTests: true,
+};

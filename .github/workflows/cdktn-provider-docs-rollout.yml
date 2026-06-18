@@ -8,6 +8,8 @@ on:
 
 jobs:
   cdktfDocs:
+    # Only run on the canonical repo
+    if: github.repository == 'open-constructs/cdk-terrain'
     strategy:
       fail-fast: false
       matrix:

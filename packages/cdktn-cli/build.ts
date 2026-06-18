@@ -58,7 +58,7 @@ const config: esbuild.BuildOptions = {
   bundle: true,
   outdir: "./bundle",
   format: "cjs",
-  target: "node14",
+  target: "node22",
   minify: enableWatch ? false : true,
   sourcemap: enableWatch ? false : true,
   platform: "node",
@@ -72,13 +72,21 @@ const config: esbuild.BuildOptions = {
     "@cdktn/hcl2cdk",
     "constructs",
     "yoga-layout-prebuilt",
+    "@types/node/package.json",
+    "constructs/package.json",
+    "cdktn/package.json",
   ],
+  // Bare `punycode` resolves to node's deprecated builtin (DEP0040). Alias to the
+  // userland package that transitive deps (whatwg-url, tr46, uri-js) actually intend.
+  alias: {
+    punycode: "punycode/",
+  },
   plugins: [
     nativeNodeModulesPlugin,
     {
       name: "rebuild-log",
       setup({ onStart, onEnd }) {
-        let t;
+        let t: number;
         onStart(() => {
           t = Date.now();
         });
@@ -97,7 +105,6 @@ const config: esbuild.BuildOptions = {
 (async () => {
   console.log("Building…");
   await esbuild.build(config);
-  fs.copySync("src/bin/cdktn", "./bundle/bin/cdktn");
   fs.copySync("../@cdktn/cli-core/templates", "./bundle/templates");
 
   if (enableWatch) {

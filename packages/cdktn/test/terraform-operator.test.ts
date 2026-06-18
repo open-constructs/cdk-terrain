@@ -1,10 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { TerraformStack } from "../lib";
-import { Op } from "../lib/terraform-operators";
-import { Expression } from "../lib/tfExpression";
-import { resolve } from "../lib/_tokens";
+import { TerraformStack } from "../src";
+import { Op } from "../src/terraform-operators";
+import { Expression } from "../src/tfExpression";
+import { resolve } from "../src/_tokens";
 
 const appScope = new Construct(undefined as any, "randomScope");
 

@@ -90,7 +90,7 @@ describe("dependency manager", () => {
       await expect(() =>
         mgr.addLocalProvider(new ProviderConstraint("aaawwwwwssss", undefined)),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"Usage Error: Could not find a version for the provider 'registry.terraform.io/hashicorp/aaawwwwwssss' in the public registry. This could be due to a typo, please take a look at https://cdk.tf/registry-providers to find all supported providers."`,
+        `"Usage Error: Could not find a version for the provider 'registry.terraform.io/hashicorp/aaawwwwwssss' in the public registry. This could be due to a typo, please take a look at https://registry.terraform.io/browse/providers to find all supported providers."`,
       );
     });
   });

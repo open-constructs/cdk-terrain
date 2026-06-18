@@ -7,7 +7,7 @@ import (
 )
 
 // The tests below are example tests, you can find more information at
-// https://cdk.tf/testing
+// https://cdktn.io/docs/test/unit-tests
 
 /*
 var stack = NewMyApplicationsAbstraction(cdktn.Testing_App(nil), "stack")

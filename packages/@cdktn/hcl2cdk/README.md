@@ -5,7 +5,7 @@ Uses `@cdktn/hcl2cdk` to transform HCL configuration to CDK constructs.
 ## Usage
 
 ```sh
-yarn add @cdktn/hcl2cdk
+pnpm add @cdktn/hcl2cdk
 ```
 
 ### Convert HCL strings to Constructs

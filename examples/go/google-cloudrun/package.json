@@ -1,5 +1,5 @@
 {
-  "//": "This example test is disabled via the 'private' attribute since it takes more than 20 minutes to build",
+  "//": "Disabled via the 'private' attribute: main.go reads cdktf-example.json at synth time for GCP credentials, which CI does not have.",
   "name": "@examples/go-google-cloudrun",
   "private": true,
   "version": "0.0.0",

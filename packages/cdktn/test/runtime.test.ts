@@ -1,10 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { resolve } from "../lib/_tokens";
-import { listMapper, hashMapper, anyToTerraform } from "../lib/runtime";
-import { Token } from "../lib/tokens/token";
-import { Intrinsic } from "../lib/tokens/private/intrinsic";
-import { deepMerge } from "../lib/util";
+import { resolve } from "../src/_tokens";
+import { listMapper, hashMapper, anyToTerraform } from "../src/runtime";
+import { Token } from "../src/tokens/token";
+import { Intrinsic } from "../src/tokens/private/intrinsic";
+import { deepMerge } from "../src/util";
 
 const resolveExpression = (expr: any) => resolve(null as any, expr);
 describe("Runtime", () => {

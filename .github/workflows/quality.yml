@@ -9,6 +9,9 @@ on:
         required: false
         type: string
 
+env:
+  HUSKY: "0"
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-quality-${{ github.head_ref }}
   cancel-in-progress: true
@@ -17,39 +20,48 @@ jobs:
   prettier:
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+      image: ghcr.io/open-constructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: installing dependencies
-        run: |
-          yarn install --frozen-lockfile
-      - name: run prettier
-        run: |
-          yarn lint:prettier
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
+      - name: Install dependencies
+        run: pnpm ci
+      - name: Run prettier
+        run: pnpm run lint:prettier
 
   lint:
     runs-on: ubuntu-latest
     container:
-      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
+      image: ghcr.io/open-constructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
       - name: "Add Git safe.directory"
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
       - name: Derive SHAs for nx affected
-        uses: nrwl/nx-set-shas@38457b511e60ee4e1da09255b658e480748a1af4 # v5.0.1
-      - name: installing dependencies
-        run: |
-          yarn install --frozen-lockfile
-      - name: run lint (affected)
+        uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
+      - name: Install dependencies
+        run: pnpm ci
+      - name: Run lint (affected)
         if: github.event_name == 'pull_request'
-        run: |
-          yarn nx affected -t lint --parallel=3 --format=gha --base="$NX_BASE" --head="$NX_HEAD"
-      - name: run lint (all)
+        run: pnpm exec nx affected -t lint --parallel=3 --format=gha --base="$NX_BASE" --head="$NX_HEAD"
+      - name: Run lint (all)
         if: github.event_name != 'pull_request'
-        run: |
-          yarn nx run-many -t lint --parallel=3 --format=gha
+        run: pnpm exec nx run-many -t lint --parallel=3 --format=gha
 
   knip:
     runs-on: ubuntu-latest
@@ -58,13 +70,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "20.x"
-          cache: yarn
-      - name: install dependencies
-        run: yarn install --frozen-lockfile
-      - name: run knip
-        run: yarn knip --reporter github-actions --reporter symbols
+          node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
+      - name: Install dependencies
+        run: pnpm ci
+      - name: Install test dependencies
+        run: cd test && pnpm ci
+      - name: Run knip
+        run: pnpm exec knip --reporter github-actions --reporter symbols

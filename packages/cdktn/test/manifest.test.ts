@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformStack, Manifest, App, Annotations, Testing } from "../lib";
+import { TerraformStack, Manifest, App, Annotations, Testing } from "../src";
 import * as fs from "fs";
 import * as path from "path";
 import { createTmpHelper } from "./helper/tmp";
@@ -54,22 +54,20 @@ test("write manifest", () => {
 
   expect(fs.readFileSync(path.join(outdir, Manifest.fileName)).toString())
     .toMatchInlineSnapshot(`
-    "{
-      "stacks": {
-        "this-is-a-stack": {
-          "annotations": [
-          ],
-          "constructPath": "this-is-a-stack",
-          "dependencies": [
-          ],
-          "name": "this-is-a-stack",
-          "stackMetadataPath": "stacks/this-is-a-stack/metadata.json",
-          "synthesizedStackPath": "stacks/this-is-a-stack/cdk.tf.json",
-          "workingDirectory": "stacks/this-is-a-stack"
-        }
-      },
-      "version": "0.0.0"
-    }"
+   "{
+     "stacks": {
+       "this-is-a-stack": {
+         "annotations": [],
+         "constructPath": "this-is-a-stack",
+         "dependencies": [],
+         "name": "this-is-a-stack",
+         "stackMetadataPath": "stacks/this-is-a-stack/metadata.json",
+         "synthesizedStackPath": "stacks/this-is-a-stack/cdk.tf.json",
+         "workingDirectory": "stacks/this-is-a-stack"
+       }
+     },
+     "version": "0.0.0"
+   }"
   `);
 });
 
@@ -91,37 +89,36 @@ describe("manifest annotations", () => {
 
     expect(fs.readFileSync(path.join(outdir, Manifest.fileName)).toString())
       .toMatchInlineSnapshot(`
-      "{
-        "stacks": {
-          "this-is-a-stack": {
-            "annotations": [
-              {
-                "constructPath": "this-is-a-stack",
-                "level": "@cdktf/info",
-                "message": "an info"
-              },
-              {
-                "constructPath": "this-is-a-stack",
-                "level": "@cdktf/warn",
-                "message": "a warning"
-              },
-              {
-                "constructPath": "this-is-a-stack",
-                "level": "@cdktf/error",
-                "message": "an error"
-              }
-            ],
-            "constructPath": "this-is-a-stack",
-            "dependencies": [
-            ],
-            "name": "this-is-a-stack",
-            "stackMetadataPath": "stacks/this-is-a-stack/metadata.json",
-            "synthesizedStackPath": "stacks/this-is-a-stack/cdk.tf.json",
-            "workingDirectory": "stacks/this-is-a-stack"
-          }
-        },
-        "version": "stubbed"
-      }"
+     "{
+       "stacks": {
+         "this-is-a-stack": {
+           "annotations": [
+             {
+               "constructPath": "this-is-a-stack",
+               "level": "@cdktf/info",
+               "message": "an info"
+             },
+             {
+               "constructPath": "this-is-a-stack",
+               "level": "@cdktf/warn",
+               "message": "a warning"
+             },
+             {
+               "constructPath": "this-is-a-stack",
+               "level": "@cdktf/error",
+               "message": "an error"
+             }
+           ],
+           "constructPath": "this-is-a-stack",
+           "dependencies": [],
+           "name": "this-is-a-stack",
+           "stackMetadataPath": "stacks/this-is-a-stack/metadata.json",
+           "synthesizedStackPath": "stacks/this-is-a-stack/cdk.tf.json",
+           "workingDirectory": "stacks/this-is-a-stack"
+         }
+       },
+       "version": "stubbed"
+     }"
     `);
   });
 });

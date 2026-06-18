@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TokenizedStringFragments } from "../../lib/tokens/string-fragments";
-import { IFragmentConcatenator } from "../../lib/tokens/resolvable";
+import { TokenizedStringFragments } from "../../src/tokens/string-fragments";
+import { IFragmentConcatenator } from "../../src/tokens/resolvable";
 
 describe("TokenizedStringFragments", () => {
   test("concat method should merge fragments correctly", () => {

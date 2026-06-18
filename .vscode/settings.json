@@ -1,7 +1,7 @@
 {
     "js/ts.tsdk.path": "node_modules/typescript/lib",
     "js/ts.tsdk.promptToUseWorkspaceVersion": true,
-    "jest.jestCommandLine": "yarn jest",
+    "jest.jestCommandLine": "pnpm jest",
     "jest.virtualFolders": [
         { "name": "cdktn", "rootPath": "packages/cdktn" },
         { "name": "cdktn-cli", "rootPath": "packages/cdktn-cli" },

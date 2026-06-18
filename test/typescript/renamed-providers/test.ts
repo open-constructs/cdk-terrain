@@ -21,8 +21,7 @@ describe("renamed providers", () => {
             "stackName": "renamed-providers",
             "version": "stubbed"
           },
-          "outputs": {
-          }
+          "outputs": {}
         },
         "provider": {
           "abitbucket": [

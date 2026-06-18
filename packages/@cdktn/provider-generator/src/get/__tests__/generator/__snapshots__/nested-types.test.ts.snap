@@ -29,7 +29,7 @@ export interface NestedTypeWithoutAttributesResourcePredictorBotDetection {
 export function nestedTypeWithoutAttributesResourcePredictorBotDetectionToTerraform(struct?: NestedTypeWithoutAttributesResourcePredictorBotDetection | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
   }
@@ -39,7 +39,7 @@ export function nestedTypeWithoutAttributesResourcePredictorBotDetectionToTerraf
 export function nestedTypeWithoutAttributesResourcePredictorBotDetectionToHclTerraform(struct?: NestedTypeWithoutAttributesResourcePredictorBotDetection | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
   };
@@ -250,7 +250,7 @@ export interface NestedTypesResourceArchiveRulesFilter {
 export function nestedTypesResourceArchiveRulesFilterToTerraform(struct?: NestedTypesResourceArchiveRulesFilter | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
     eq: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.eq),
@@ -263,7 +263,7 @@ export function nestedTypesResourceArchiveRulesFilterToTerraform(struct?: Nested
 export function nestedTypesResourceArchiveRulesFilterToHclTerraform(struct?: NestedTypesResourceArchiveRulesFilter | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
     eq: {
@@ -401,7 +401,7 @@ export class NestedTypesResourceArchiveRulesFilterList extends cdktn.ComplexList
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**
@@ -427,7 +427,7 @@ export interface NestedTypesResourceArchiveRules {
 export function nestedTypesResourceArchiveRulesToTerraform(struct?: NestedTypesResourceArchiveRules | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
     filter: cdktn.listMapper(nestedTypesResourceArchiveRulesFilterToTerraform, false)(struct!.filter),
@@ -439,7 +439,7 @@ export function nestedTypesResourceArchiveRulesToTerraform(struct?: NestedTypesR
 export function nestedTypesResourceArchiveRulesToHclTerraform(struct?: NestedTypesResourceArchiveRules | cdktn.IResolvable): any {
   if (!cdktn.canInspect(struct) || cdktn.Tokenization.isResolvable(struct)) { return struct; }
   if (cdktn.isComplexElement(struct)) {
-    throw new Error("A complex element was used as configuration, this is not supported: https://cdk.tf/complex-object-as-configuration");
+    throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   const attrs = {
     filter: {
@@ -546,7 +546,7 @@ export class NestedTypesResourceArchiveRulesList extends cdktn.ComplexList {
   * @param wrapsSet whether the list is wrapping a set (will add tolist() to be able to access an item via an index)
   */
   constructor(terraformResource: cdktn.IInterpolatingParent, terraformAttribute: string, wrapsSet: boolean) {
-    super(terraformResource, terraformAttribute, wrapsSet)
+    super(terraformResource, terraformAttribute, wrapsSet);
   }
 
   /**

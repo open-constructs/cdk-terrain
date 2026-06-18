@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, Fn } from "../lib";
+import { Testing, TerraformStack, Fn } from "../src";
 import { TestProvider, TestResource } from "./helper";
 
 test("able to use fqn on an element", () => {

@@ -42,8 +42,7 @@ exports[`readSchema generates a local module 1`] = `
         "type": "string"
       },
       {
-        "default": {
-        },
+        "default": {},
         "description": "Tags to set on the bucket.",
         "name": "tags",
         "required": false,
@@ -139,8 +138,7 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "string"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "A list of the desired control plane logging to enable. For more information, see Amazon EKS Control Plane Logging documentation (https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html)",
         "name": "cluster_enabled_log_types",
         "required": false,
@@ -216,8 +214,7 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "string"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "Any additional arguments to pass to the authenticator such as the role to assume. e.g. [\\"-r\\", \\"MyEksRole\\"].",
         "name": "kubeconfig_aws_authenticator_additional_args",
         "required": false,
@@ -231,16 +228,14 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "string"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "Default arguments passed to the authenticator command. Defaults to [token -i $cluster_name].",
         "name": "kubeconfig_aws_authenticator_command_args",
         "required": false,
         "type": "list(string)"
       },
       {
-        "default": {
-        },
+        "default": {},
         "description": "Environment variables that should be used when executing the authenticator. e.g. { AWS_PROFILE = \\"eks\\"}.",
         "name": "kubeconfig_aws_authenticator_env_variables",
         "required": false,
@@ -292,24 +287,21 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "bool"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "Additional AWS account numbers to add to the aws-auth configmap. See examples/basic/variables.tf for example format.",
         "name": "map_accounts",
         "required": false,
         "type": "list(string)"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "Additional IAM roles to add to the aws-auth configmap. See examples/basic/variables.tf for example format.",
         "name": "map_roles",
         "required": false,
         "type": "any"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "Additional IAM users to add to the aws-auth configmap. See examples/basic/variables.tf for example format.",
         "name": "map_users",
         "required": false,
@@ -329,8 +321,7 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "list(string)"
       },
       {
-        "default": {
-        },
+        "default": {},
         "description": "A map of tags to add to all resources.",
         "name": "tags",
         "required": false,
@@ -343,8 +334,7 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "string"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "A list of additional security group ids to attach to worker instances",
         "name": "worker_additional_security_group_ids",
         "required": false,
@@ -393,16 +383,14 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "bool"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "A list of maps defining worker group configurations to be defined using AWS Launch Configurations. See workers_group_defaults for valid keys.",
         "name": "worker_groups",
         "required": false,
         "type": "any"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "A list of maps defining worker group configurations to be defined using AWS Launch Templates. See workers_group_defaults for valid keys.",
         "name": "worker_groups_launch_template",
         "required": false,
@@ -423,16 +411,14 @@ exports[`readSchema generates a more complex schema 1`] = `
         "type": "number"
       },
       {
-        "default": [
-        ],
+        "default": [],
         "description": "Additional policies to be added to workers",
         "name": "workers_additional_policies",
         "required": false,
         "type": "list(string)"
       },
       {
-        "default": {
-        },
+        "default": {},
         "description": "Override default values for target groups. See workers_group_defaults_defaults in local.tf for valid keys.",
         "name": "workers_group_defaults",
         "required": false,

@@ -1,6 +1,10 @@
 {
   "namedInputs": {
-    "default": ["{projectRoot}/**/*"],
+    "sharedGlobals": [
+      "{workspaceRoot}/.nvmrc",
+      "{workspaceRoot}/mise.toml"
+    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
       "default",
       "!{projectRoot}/**/*.test.ts",
@@ -13,6 +17,12 @@
       "plugin": "@nx/eslint/plugin",
       "options": {
         "targetName": "lint"
+      }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
       }
     }
   ],
@@ -36,6 +46,18 @@
       "inputs": ["production", "^production"],
       "outputs": ["{projectRoot}/dist"],
       "cache": true
+    },
+    "test": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ]
+    },
+    "test:update": {
+      "dependsOn": [
+        "build",
+        "^build"
+      ]
     }
   }
 }

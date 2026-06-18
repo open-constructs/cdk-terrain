@@ -13,6 +13,9 @@ on:
         required: true
         type: string
 
+env:
+  HUSKY: "0"
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-unit-${{ inputs.package }}-${{ inputs.terraform_version }}-${{ github.head_ref }}
   cancel-in-progress: true
@@ -21,34 +24,30 @@ jobs:
   unit-test:
     runs-on: depot-ubuntu-24.04-16
     container:
-      image: terraconstructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
-    env:
-      CHECKPOINT_DISABLE: "1"
+      image: ghcr.io/open-constructs/jsii-terraform@sha256:c46ac91c8be20947a2b0e27a517eb4a5bfc015c16a27341876ed0b04d734ddf5
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+      - name: Setup corepack-managed pnpm
+        uses: ./.github/actions/setup-corepack-pnpm
 
-      # Setup caches for yarn, terraform, go, and provider schema
+      # Setup caches for go and provider schema
       - name: Get cache directory paths
         id: global-cache-dir-path
         run: |
-          echo "yarn=$(yarn cache dir)" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/providerSchema
           echo "providerSchema=/usr/local/share/.cache/providerSchema" >> $GITHUB_OUTPUT
-      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ steps.global-cache-dir-path.outputs.yarn }}
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-unit
-          restore-keys: |
-            yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-
-            yarn-${{ runner.os }}-
       - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
@@ -63,27 +62,25 @@ jobs:
 
       - name: installing dependencies
         run: |
-          yarn install --frozen-lockfile --prefer-offline
-      - name: compile
-        run: |
-          tools/align-version.sh
-          npx lerna run --scope '${{ inputs.package }}' build
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
-      - name: compile cdktn-cli and package
+          pnpm ci
+      - name: align versions
+        run: tools/align-version.sh
+      - name: package (when testing @cdktn/hcl2cdk)
+        # hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which reads
+        # jsii tarballs from the workspace-root dist/ directory.
         if: inputs.package == '@cdktn/hcl2cdk'
-        run: |
-          npx lerna run --scope 'cdktn-cli' build
-          yarn package
-        env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
-          GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+        run: pnpm run package
       - name: test
+        # nx test runs the @nx/jest plugin target, with `^build` honored via
+        # nx.json targetDefaults — upstream packages are built automatically.
         run: |
           unset TF_PLUGIN_CACHE_DIR
-          npx lerna run --scope '${{ inputs.package }}' test:ci
+          pnpm exec nx test '${{ inputs.package }}' --ci --coverage --reporters=default --reporters=github-actions
         env:
           TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
           CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
+
+      - name: Coverage summary
+        if: always()
+        run: node tools/test-coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"

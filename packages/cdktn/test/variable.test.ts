@@ -7,7 +7,7 @@ import {
   VariableType,
   Fn,
   TerraformOutput,
-} from "../lib";
+} from "../src";
 import { TestResource } from "./helper";
 import { TestProvider } from "./helper/provider";
 

@@ -14,8 +14,7 @@ exports[`dependent data source 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -46,8 +45,7 @@ exports[`minimal configuration 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "terraform": {
@@ -71,8 +69,7 @@ exports[`with any map 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -103,8 +100,7 @@ exports[`with boolean map 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -135,8 +131,7 @@ exports[`with complex computed list 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -167,8 +162,7 @@ exports[`with number map 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -199,8 +193,7 @@ exports[`with string map 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -231,8 +224,7 @@ exports[`with string map map - lookup returns StringMap reference 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {
@@ -263,8 +255,7 @@ exports[`with string map map - nested lookup produces correct reference 1`] = `
   },
   "provider": {
     "test": [
-      {
-      }
+      {}
     ]
   },
   "resource": {

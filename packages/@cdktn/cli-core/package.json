@@ -6,18 +6,16 @@
     "build": "tsc",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
-    "pretest": "yarn build",
-    "pretest:ci": "yarn build",
-    "test": "jest",
-    "test:ci": "jest --ci",
     "test:update": "jest -u --maxWorkers=50%",
-    "jest-watch": "jest --watch",
     "package": "./package.sh",
     "dist-clean": "rm -rf dist",
     "package:js": "./package.sh"
   },
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",
+  "nx": {
+    "tags": ["unit-test:terraform"]
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -38,12 +36,12 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "@cdktn/commons": "0.0.0",
-    "@cdktn/hcl-tools": "0.0.0",
-    "@cdktn/hcl2cdk": "0.0.0",
-    "@cdktn/provider-schema": "0.0.0",
+    "@cdktn/commons": "workspace:*",
+    "@cdktn/hcl-tools": "workspace:*",
+    "@cdktn/hcl2cdk": "workspace:*",
+    "@cdktn/provider-schema": "workspace:*",
     "@sentry/node": "7.120.4",
-    "cdktn": "0.0.0",
+    "cdktn": "workspace:*",
     "chalk": "4.1.2",
     "chokidar": "3.6.0",
     "ci-info": "3.9.0",
@@ -67,18 +65,16 @@
     "src/**/*.{ts,tsx}": "tsc-files ambient.d.ts --noEmit"
   },
   "devDependencies": {
-    "@cdktn/provider-generator": "0.0.0",
+    "@cdktn/provider-generator": "workspace:*",
     "@types/cross-spawn": "6.0.6",
     "@types/fs-extra": "8.1.5",
-    "@types/jest": "30.0.0",
+    "@types/minimatch": "5.1.2",
     "@types/node": "20.19.1",
     "@types/node-fetch": "2.6.13",
     "@types/semver": "7.7.1",
-    "jest": "^30.3.0",
     "nock": "13.5.6",
     "prettier": "2.8.8",
-    "ts-jest": "29.4.9",
     "tsc-files": "1.1.4",
-    "typescript": "5.4.5"
+    "typescript": "^5.0.0"
   }
 }

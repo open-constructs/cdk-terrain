@@ -311,11 +311,11 @@ export class TerraformProviderGenerator {
         this.code.line(
           `import { ${resource.referencedTypes.join(
             ", \n",
-          )}} from '${structsSpecifier}'`,
+          )}} from '${structsSpecifier}';`,
         );
       }
 
-      this.code.line(`export * from '${structsSpecifier}'`);
+      this.code.line(`export * from '${structsSpecifier}';`);
 
       resource.importStatements.forEach((statement) =>
         this.code.line(statement),

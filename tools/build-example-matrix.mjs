@@ -6,8 +6,10 @@
 // Builds the GitHub Actions matrix for the examples workflow.
 // Walks examples/ for package.json files named @examples/*, skips ones with
 // a truthy "private" field (boolean true or the string "true"), and prints
-// a JSON matrix combining the example list with the default terraform
-// version and both HCL output modes.
+// a JSON matrix. The base matrix runs every example against the default
+// terraform version with `hclOutput=false`; `include:` entries add a single
+// `hclOutput=true` smoke run per language binding so the HCL synth path is
+// still covered without doubling the matrix.
 //
 // Runs without dependencies installed so the matrix step can be cheap.
 
@@ -82,16 +84,51 @@ const targets = findPackageJsonFiles(join(repoRoot, "examples"))
   .sort();
 
 /**
- * GitHub Actions matrix object combining the example list with the default
- * Terraform version and both HCL output modes. Serialised to stdout so the
- * workflow can append it to `$GITHUB_OUTPUT`.
+ * Representative examples (one per language binding) that exercise the
+ * `SYNTH_HCL_OUTPUT=true` synth code path. The HCL output mode lives in
+ * `packages/cdktn/lib/{app,terraform-stack}.ts` and is orthogonal to the
+ * example itself, so testing it on every example is redundant — one
+ * smoke target per language is sufficient to catch a regression.
  *
- * @type {{ target: string[], terraform: string[], hclOutput: boolean[] }}
+ * @type {string[]}
+ */
+const hclSmokeTargets = [
+  "@examples/csharp-aws",
+  "@examples/go-docker",
+  "@examples/java-aws",
+  "@examples/python-aws",
+  "@examples/typescript-aws-multiple-stacks",
+];
+
+const missingHclSmoke = hclSmokeTargets.filter((t) => !targets.includes(t));
+if (missingHclSmoke.length > 0) {
+  throw new Error(
+    `HCL smoke targets missing from the example matrix: ${missingHclSmoke.join(", ")}. ` +
+      `Update hclSmokeTargets in tools/build-example-matrix.mjs.`,
+  );
+}
+
+/**
+ * GitHub Actions matrix object. The base matrix runs every example with
+ * `hclOutput=false`; the `include` entries add a single `hclOutput=true`
+ * smoke run per language.
+ *
+ * @type {{
+ *   target: string[],
+ *   terraform: string[],
+ *   hclOutput: boolean[],
+ *   include: Array<{ target: string, terraform: string, hclOutput: boolean }>,
+ * }}
  */
 const matrix = {
   target: targets,
   terraform: [tfDefault],
-  hclOutput: [false, true],
+  hclOutput: [false],
+  include: hclSmokeTargets.map((target) => ({
+    target,
+    terraform: tfDefault,
+    hclOutput: true,
+  })),
 };
 
 process.stdout.write(JSON.stringify(matrix));

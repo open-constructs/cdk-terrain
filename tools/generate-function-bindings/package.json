@@ -1,24 +1,12 @@
 {
   "name": "generate-function-bindings",
   "version": "0.0.0",
-  "private": "true",
+  "private": true,
   "description": "Tool to generate CDK Terrain function bindings",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "watch-preserve-output": "tsc -w --preserveWatchOutput",
-    "pretest": "yarn build",
-    "pretest:ci": "yarn build",
-    "test": "jest",
-    "test:ci": "jest --ci",
-    "jest-watch": "jest --watch",
-    "package": "./package.sh",
-    "dist-clean": "rm -rf dist",
     "fetch-metadata": "ts-node scripts/fetch-metadata.ts",
     "generate": "ts-node scripts/generate.ts"
   },
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git://github.com/open-constructs/cdk-terrain.git",
@@ -31,16 +19,19 @@
   "license": "MPL-2.0",
   "dependencies": {
     "@babel/parser": "7.27.2",
-    "@cdktn/commons": "0.0.0"
+    "@cdktn/commons": "workspace:*"
   },
   "devDependencies": {
     "@babel/generator": "^7.20.4",
     "@babel/template": "^7.18.10",
     "@babel/types": "^7.20.2",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__template": "^7.4.4",
+    "@types/node": "20.17.51",
     "ts-node": "^10.9.1",
-    "typescript": "5.4.5"
+    "typescript": "^5.0.0"
   },
   "lint-staged": {
-    "src/**/*.ts": "tsc-files ambient.d.ts --noEmit"
+    "scripts/**/*.ts": "tsc-files --noEmit"
   }
 }

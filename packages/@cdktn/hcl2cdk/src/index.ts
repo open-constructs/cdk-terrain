@@ -65,7 +65,7 @@ export async function getParsedHcl(hcl: string) {
   } catch (err) {
     logger.error(`Failed to parse HCL: ${err}`);
     throw new Error(
-      `Error: Could not parse HCL, this means either that the HCL passed is invalid or that you found a bug. If the HCL seems valid, please file a bug under https://cdk.tf/bugs/new/convert`,
+      `Error: Could not parse HCL, this means either that the HCL passed is invalid or that you found a bug. If the HCL seems valid, please file a bug under https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2C+new%2C+feature%2Fconvert&template=bug-report.yml&title=`,
     );
   }
 
@@ -74,7 +74,7 @@ export async function getParsedHcl(hcl: string) {
   try {
     plan = schema.parse(json);
   } catch (err) {
-    throw new Error(`Error: HCL-JSON does not conform to schema. This is not expected, please file a bug under https://cdk.tf/bugs/new/convert
+    throw new Error(`Error: HCL-JSON does not conform to schema. This is not expected, please file a bug under https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2C+new%2C+feature%2Fconvert&template=bug-report.yml&title=
 Please include this information:
 ${JSON.stringify((err as z.ZodError).errors)}`);
   }
@@ -341,7 +341,7 @@ export async function convertToTypescript(
       expressions[0],
       "leading",
       `Terraform Variables are not always the best fit for getting inputs in the context of Terraform CDK.
-You can read more about this at https://cdk.tf/variables`,
+You can read more about this at https://cdktn.io/docs/concepts/variables-and-outputs#input-variables`,
     );
   }
 

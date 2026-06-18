@@ -210,7 +210,7 @@ class NodePackageManager extends PackageManager {
         }));
     } catch (e: any) {
       throw new Error(
-        `Could not determine installed packages using 'yarn list --json': ${e.message}`,
+        `Could not determine installed packages using 'yarn list --json': ${e}`,
       );
     }
   }
@@ -235,7 +235,7 @@ class NodePackageManager extends PackageManager {
         .map(([name, dep]) => ({ name, version: dep.version }));
     } catch (e: any) {
       throw new Error(
-        `Could not determine installed packages using 'npm list --json': ${e.message}`,
+        `Could not determine installed packages using 'npm list --json': ${e}`,
       );
     }
   }
@@ -393,7 +393,7 @@ class PythonPackageManager extends PackageManager {
       );
     } catch (e: any) {
       throw new Error(
-        `Could not determine installed packages using 'pipenv run pip list --format=json': ${e.message}`,
+        `Could not determine installed packages using 'pipenv run pip list --format=json': ${e}`,
       );
     }
   }
@@ -415,7 +415,7 @@ class PythonPackageManager extends PackageManager {
       );
     } catch (e: any) {
       throw new Error(
-        `Could not determine installed packages using 'pip list --format=json': ${e.message}`,
+        `Could not determine installed packages using 'pip list --format=json': ${e}`,
       );
     }
   }
@@ -515,7 +515,7 @@ class NugetPackageManager extends PackageManager {
         .map((match) => ({ name: match![1], version: match![3] }));
     } catch (e: any) {
       throw new Error(
-        `Could not determine installed packages using 'dotnet list package': ${e.message}`,
+        `Could not determine installed packages using 'dotnet list package': ${e}`,
       );
     }
   }

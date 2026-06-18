@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack } from "../lib";
-import * as b from "../lib/backends";
+import { Testing, TerraformStack } from "../src";
+import * as b from "../src/backends";
 
 test("local backend", () => {
   const app = Testing.app();
