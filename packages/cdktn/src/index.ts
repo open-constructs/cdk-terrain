@@ -43,3 +43,14 @@ export * from "./upgrade-id-aspect";
 export * from "./terraform-data-resource";
 // required for JSII because Fn extends from it
 export * from "./functions/terraform-functions.generated";
+// Curated public API for construct-library authors validating their features
+// against a project's declared Terraform/OpenTofu targets. Named (not `export
+// *`) on purpose: it keeps internal wiring (TARGET_VERSIONS_CONTEXT_KEY,
+// resolveTargetVersions) and the union-typed parseTerraformCliVersion — which
+// jsii cannot represent — out of the public multi-language assembly.
+export {
+  ValidateFeatureTargetSupport,
+  TerraformTargetVersions,
+  DEFAULT_TARGET_VERSIONS,
+} from "./validations/target-versions";
+export { TerraformFeatureVersionConstraints } from "./validations/validate-terraform-feature-version";
