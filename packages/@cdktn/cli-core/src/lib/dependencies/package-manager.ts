@@ -561,8 +561,9 @@ class NugetPackageManager extends PackageManager {
     logger.debug(`Checking if ${packageName}@${packageVersion} is available`);
 
     const [owner, ...rest] = packageName.split(".");
+    const fixedOwner = packageName.startsWith("Io.Cdktn") ? "cdktn" : owner;
     const id = rest[rest.length - 1];
-    const url = `https://azuresearch-usnc.nuget.org/query?q=owner:${owner}%20id:${id}&prerelease=false&semVerLevel=2.0.0`;
+    const url = `https://azuresearch-usnc.nuget.org/query?q=owner:${fixedOwner}%20id:${id}&prerelease=false&semVerLevel=2.0.0`;
     logger.debug(`Fetching package metadata from Nuget: '${url}'`);
 
     const response = await fetchWithRetry(url);
