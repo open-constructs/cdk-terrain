@@ -6,27 +6,15 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      DISABLE_VERSION_CHECK: "true",
+      CDKTN_OVERRIDE_VERSION: "0.23.1",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
+    }); // fake cdktn version for consistent provider version checks
     await driver.setupCsharpProject();
-
-    await driver.exec("dotnet", [
-      "add",
-      "package",
-      "Io.Cdktn",
-      "--version",
-      "0.23.1",
-    ]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", [
-        "provider",
-        "add",
-        "random@=3.8.1",
-      ]);
+      await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
 
       await driver.exec("cdktn", [
         "provider",
@@ -62,7 +50,7 @@ describe("provider list command", () => {
           packageVersion: "14.0.0",
           providerName: "random",
           providerVersion: "3.8.1",
-          cdktnVersion: "^0.23.1",
+          cdktnVersion: "^0.23.0",
         }),
       );
     }, 120_000);

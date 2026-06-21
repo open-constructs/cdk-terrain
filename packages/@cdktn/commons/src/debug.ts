@@ -394,12 +394,14 @@ export async function collectDebugInformation() {
 
   debugOutput["node"] = (await node) ?? null;
   if (language) {
-    const cdktn = getPackageVersion(language, "cdktn");
+    const cdktn = process.env.CDKTN_OVERRIDE_VERSION
+      ? process.env.CDKTN_OVERRIDE_VERSION
+      : await getPackageVersion(language, "cdktn");
     const cdktf = getPackageVersion(language, "cdktf");
     const constructs = getPackageVersion(language, "constructs");
     const jsii = getPackageVersion(language, "jsii");
 
-    debugOutput["cdktn"] = (await cdktn) ?? null;
+    debugOutput["cdktn"] = cdktn ?? null;
     debugOutput["cdktf"] = (await cdktf) ?? null;
     debugOutput["constructs"] = (await constructs) ?? null;
     debugOutput["jsii"] = (await jsii) ?? null;
