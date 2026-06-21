@@ -16,18 +16,18 @@ describe("provider upgrade command", () => {
     test("installs pre-built provider using go get", async () => {
       await driver.exec("go", [
         "get",
-        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.0.0@v14.0.0",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14@v14.0.1",
       ]);
 
       expect(driver.readLocalFile("go.mod")).toContain(
-        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.0.0 v14.0.0",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14 v14.0.1",
       );
       await driver.exec("cdktn", ["provider", "upgrade", "random@=3.9.0"]);
       expect(driver.readLocalFile("go.mod")).not.toContain(
-        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.0.0 v14.0.0",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14 v14.0.1",
       );
       expect(driver.readLocalFile("go.mod")).toContain(
-        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14 v14.1.0",
       );
     }, 180_000);
   });

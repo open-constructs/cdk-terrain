@@ -123,19 +123,19 @@ describe("provider add command", () => {
       );
 
       expect(sanitizeTimestamps(res.stdout)).toContain(
-        "added github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
+        "added github.com/cdktn-io/cdktn-provider-random-go/random/v14 v14.1.0",
       );
       expect(sanitizeTimestamps(res.stdout)).toContain("Package installed.");
 
       // go also prints to stderr, weird but 🤷
       expect(res.stderr).toContain(
-        "added github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
+        "added github.com/cdktn-io/cdktn-provider-random-go/random/v14 v14.1.0",
       );
 
       const goMod = driver.readLocalFile("go.mod");
 
       expect(goMod).toContain(
-        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14 v14.1.0",
       );
     }, 180_000);
   });
