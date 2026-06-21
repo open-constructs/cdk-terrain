@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 import { TestDriver } from "../../test-helper";
 
-/** PyPI version pin for the cdktn library installed into the test project. */
-const CDKTN_PIN = "cdktn~=0.22.1";
+/**
+ * Specific cdktn library version installed into the test project. Asserted in
+ * `cdktn debug` output, so it is kept separate from the PyPI pin string.
+ */
+const CDKTN_VERSION = "0.22.1";
 
 /**
  * Provider added without `--force-local`, so it resolves to a pre-built
@@ -34,14 +37,10 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      // disable version check: locally-installed cdktn-cli is 0.0.0 (from dist),
-      // project pins a published cdktn version
-      DISABLE_VERSION_CHECK: "true",
+      CDKTN_OVERRIDE_VERSION: CDKTN_VERSION,
       CI: "1",
     });
     await driver.setupPythonProject();
-
-    await driver.exec("pipenv", ["install", CDKTN_PIN]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
