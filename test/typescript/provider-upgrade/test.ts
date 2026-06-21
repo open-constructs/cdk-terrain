@@ -13,7 +13,7 @@ describe("upgrade pre-built provider", () => {
   test("initial add", async () => {
     await driver.exec("npm", [
       "install",
-      "@cdktf/provider-azuread@0.4.7",
+      "@cdktn/provider-azuread@15.0.0",
       "--force",
     ]);
     await driver.diff();
@@ -22,7 +22,7 @@ describe("upgrade pre-built provider", () => {
   test("update version", async () => {
     await driver.exec("npm", [
       "install",
-      "@cdktf/provider-azuread@0.5.17",
+      "@cdktn/provider-azuread@16.0.0",
       "--force",
     ]);
     await driver.diff();

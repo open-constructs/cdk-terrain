@@ -6,20 +6,15 @@ describe("provider list command", () => {
   let driver: TestDriver;
   beforeEach(async () => {
     driver = new TestDriver(__dirname, {
-      DISABLE_VERSION_CHECK: "true",
+      CDKTN_OVERRIDE_VERSION: "0.23.1",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
+    }); // fake cdktn version for consistent provider version checks
     await driver.setupJavaProject();
-    await driver.addGradleDependency("com.hashicorp:cdktf:0.10.4");
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", [
-        "provider",
-        "add",
-        "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
-      ]);
+      await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
 
       await driver.exec("cdktn", [
         "provider",
@@ -49,11 +44,11 @@ describe("provider list command", () => {
 
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "com.hashicorp.cdktf-provider-random",
-          packageVersion: "0.2.55",
+          packageName: "io.cdktn.cdktn-provider-random",
+          packageVersion: "14.0.0",
           providerName: "random",
-          providerVersion: "3.1.3",
-          cdktfVersion: "^0.10.3",
+          providerVersion: "3.8.1",
+          cdktnVersion: "^0.23.0",
         }),
       );
     }, 500_000);

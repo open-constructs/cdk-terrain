@@ -8,31 +8,26 @@ describe("provider upgrade command", () => {
 
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        DISABLE_VERSION_CHECK: "true",
-      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
+        CDKTN_OVERRIDE_VERSION: "0.23.1",
+      }); // fake cdktn version for consistent provider version checks
       await driver.setupGoProject();
-
-      await driver.exec("go", [
-        "get",
-        "github.com/hashicorp/terraform-cdk-go/cdktf@v0.13.0",
-      ]);
     });
 
     test("installs pre-built provider using go get", async () => {
       await driver.exec("go", [
         "get",
-        "github.com/cdktf/cdktf-provider-random-go/random/v3@v3.0.2",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.0.0@v14.0.0",
       ]);
 
       expect(driver.readLocalFile("go.mod")).toContain(
-        "github.com/cdktf/cdktf-provider-random-go/random/v3 v3.0.2",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.0.0 v14.0.0",
       );
-      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.4.3"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.9.0"]);
       expect(driver.readLocalFile("go.mod")).not.toContain(
-        "github.com/cdktf/cdktf-provider-random-go/random/v3 v3.0.0",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.0.0 v14.0.0",
       );
       expect(driver.readLocalFile("go.mod")).toContain(
-        "github.com/cdktf/cdktf-provider-random-go/random/v3 v3.0.11",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
       );
     }, 180_000);
   });

@@ -86,26 +86,21 @@ describe("provider add command", () => {
 
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        DISABLE_VERSION_CHECK: "true",
-      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-clie
+        CDKTN_OVERRIDE_VERSION: "0.23.1",
+      }); // fake cdktn version for consistent provider version checks
       await driver.setupGoProject();
-
-      await driver.exec("go", [
-        "get",
-        "github.com/hashicorp/terraform-cdk-go/cdktf@v0.13.0",
-      ]);
     });
 
     it("detects correct cdktn version", async () => {
       const res = await driver.exec("cdktn", ["debug"]);
-      expect(res.stdout).toContain("cdktf: 0.13.0");
+      expect(res.stdout).toContain("cdktn: 0.23.1");
     });
 
     test("installs pre-built provider using go get", async () => {
       const res = await driver.exec("cdktn", [
         "provider",
         "add",
-        "random@=3.4.3", // this won't always be the latest version, but theres v3.0.11 of the pre-built provider resulting in exactly this package
+        "random@=3.9.0",
       ]);
 
       // no snapshot, as the output also contains logs from Go upgrading JSII dependencies which might
@@ -115,32 +110,32 @@ describe("provider add command", () => {
       );
 
       expect(sanitizeTimestamps(res.stdout)).toContain(`provider: random
-  version : =3.4.3
+  version : =3.9.0
   language: go
-  cdktf   : 0.13.0`);
+  cdktn   : 0.23.1`);
 
       expect(sanitizeTimestamps(res.stdout)).toContain(
         `[<TIMESTAMP>] [INFO] default - Found pre-built provider.`,
       );
 
       expect(sanitizeTimestamps(res.stdout)).toContain(
-        `Adding package github.com/cdktf/cdktf-provider-random-go/random @ 3.0.11`,
+        `Adding package github.com/cdktn-io/cdktn-provider-random-go/random @ 14.1.0`,
       );
 
       expect(sanitizeTimestamps(res.stdout)).toContain(
-        "added github.com/cdktf/cdktf-provider-random-go/random/v3 v3.0.11",
+        "added github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
       );
       expect(sanitizeTimestamps(res.stdout)).toContain("Package installed.");
 
       // go also prints to stderr, weird but 🤷
       expect(res.stderr).toContain(
-        "added github.com/cdktf/cdktf-provider-random-go/random/v3 v3.0.11",
+        "added github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
       );
 
       const goMod = driver.readLocalFile("go.mod");
 
       expect(goMod).toContain(
-        "github.com/cdktf/cdktf-provider-random-go/random/v3 v3.0.11",
+        "github.com/cdktn-io/cdktn-provider-random-go/random/v14.1.0 v14.1.0",
       );
     }, 180_000);
   });

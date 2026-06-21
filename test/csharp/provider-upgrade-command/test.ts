@@ -15,19 +15,19 @@ describe("provider upgrade command", () => {
     onPosix(
       "installs pre-built provider using nuget",
       async () => {
-        await driver.exec("cdktn", ["provider", "add", "random@=3.7.2"]);
+        await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
 
         expect(driver.readLocalFile("MyTerraformStack.csproj")).toContain(
-          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="12.1.0" />',
+          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="14.0.0" />',
         );
 
-        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.8.1"]);
+        await driver.exec("cdktn", ["provider", "upgrade", "random@=3.9.0"]);
 
         expect(driver.readLocalFile("MyTerraformStack.csproj")).not.toContain(
-          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="12.1.0" />',
+          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="14.0.0" />',
         );
         expect(driver.readLocalFile("MyTerraformStack.csproj")).toContain(
-          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="12.1.1" />',
+          '<PackageReference Include="Io.Cdktn.Providers.Random" Version="14.1.0" />',
         );
       },
       500_000,
