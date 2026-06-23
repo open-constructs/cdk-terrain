@@ -36,14 +36,11 @@ function statusBar(status: Status): string {
 }
 
 /**
- * Drive a `cdktn output` invocation. Fetches Terraform outputs (optionally
- * skipping synth/provider-lock), prints them in nested form, and writes
- * them to disk when `outputsPath` is provided.
+ * Drive a `cdktn output` invocation. Fetches Terraform outputs (optionally skipping synth/provider-lock), prints them
+ * in nested form, and writes them to disk when `outputsPath` is provided.
  *
- * @param config - Output options. `onOutputsRetrieved` is called with the
- *   fetched outputs before they are printed.
- * @returns Promise that resolves when outputs have been fetched and
- *   printed, rejects on failure.
+ * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs before they are printed.
+ * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure.
  */
 export async function runOutput({
   outDir,

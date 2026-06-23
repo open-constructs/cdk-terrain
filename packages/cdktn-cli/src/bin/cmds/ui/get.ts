@@ -25,16 +25,13 @@ export interface GetConfig {
 }
 
 /**
- * Drive a `cdktn get` invocation: generate language-specific constructs
- * from provider/module constraints. Uses an `ora` spinner (no log streaming
- * required for this command) and emits a final summary line on success.
+ * Drive a `cdktn get` invocation: generate language-specific constructs from provider/module constraints. Uses an
+ * `ora` spinner and emits a final summary line on success.
  *
- * @param config - Get options including target language and constraints.
- *   When `silent: true`, no spinner or summary is printed and the function
- *   only throws on error.
- * @returns Promise that resolves when generation completes, rejects on
- *   failure (wrapped in an `Error`, with the original stack logged unless
- *   the underlying error is a Usage error).
+ * @param config - Get options including target language and constraints. When `silent: true`, no spinner or summary
+ *                 is printed and the function only throws on error.
+ * @returns Promise that resolves when generation completes, rejects on failure (wrapped in an `Error`, with the
+ *          original stack logged unless the underlying error is a Usage error).
  */
 export async function runGet({
   codeMakerOutput,

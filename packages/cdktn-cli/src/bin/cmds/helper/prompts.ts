@@ -3,17 +3,15 @@
 import { select } from "@inquirer/prompts";
 
 /**
- * Message attached to the Error thrown when an interactive prompt is invoked
- * without a TTY. Exported so callers can match against it via
- * {@link isNonTtyError} and degrade gracefully.
+ * Message attached to the Error thrown when an interactive prompt is invoked without a TTY. Exported so callers can
+ * match against it via {@link isNonTtyError} and degrade gracefully.
  */
 export const PROMPT_NEEDS_TTY =
   "Cannot prompt without a TTY. Re-run with --auto-approve, or in an interactive terminal.";
 
 /**
- * Guard that throws {@link PROMPT_NEEDS_TTY} if stdout is not a TTY. Used at
- * the top of every prompt function so cli-core's approval flow fails fast
- * (and cleanly) in CI / piped contexts.
+ * Guard that throws {@link PROMPT_NEEDS_TTY} if stdout is not a TTY. Used at the top of every prompt function so
+ * cli-core's approval flow fails fast (and cleanly) in CI / piped contexts.
  *
  * @throws {Error} With message {@link PROMPT_NEEDS_TTY}.
  */
@@ -25,9 +23,8 @@ function requireTty(): void {
 
 /**
  * @param e - Value caught from a `try`/`catch` around a prompt call.
- * @returns `true` if the error originated from {@link requireTty}, meaning
- *   the caller should fall back to a non-interactive code path (e.g.
- *   `status.stop()`) rather than propagating.
+ * @returns `true` if the error originated from {@link requireTty}, meaning the caller should fall back to a
+ * non-interactive code path (e.g. `status.stop()`) rather than propagating.
  */
 export function isNonTtyError(e: unknown): boolean {
   return e instanceof Error && e.message === PROMPT_NEEDS_TTY;
@@ -37,12 +34,10 @@ export function isNonTtyError(e: unknown): boolean {
 export type ApproveAnswer = "approve" | "dismiss" | "stop";
 
 /**
- * Show an interactive arrow-key menu asking the user how to proceed with a
- * stack that's pending approval.
+ * Show an interactive arrow-key menu asking the user how to proceed with a stack that's pending approval.
  *
- * @param stackName - Name of the stack being approved; included in the prompt
- *   message so the user knows which one they're acting on when multiple are
- *   in flight.
+ * @param stackName - Name of the stack being approved; included in the prompt message so the user knows which one
+ *                    they're acting on when multiple are in flight.
  * @returns The user's selection.
  * @throws {Error} With message {@link PROMPT_NEEDS_TTY} if stdout is not a TTY.
  */
@@ -76,8 +71,7 @@ export async function promptApprove(stackName: string): Promise<ApproveAnswer> {
 export type OverrideAnswer = "override" | "reject";
 
 /**
- * Show an interactive arrow-key menu asking the user whether to override a
- * Sentinel policy check failure.
+ * Show an interactive arrow-key menu asking the user whether to override a Sentinel policy check failure.
  *
  * @param stackName - Stack name with the soft-failed policy check.
  * @returns The user's selection.

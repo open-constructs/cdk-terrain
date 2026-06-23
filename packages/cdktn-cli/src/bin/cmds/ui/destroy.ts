@@ -27,14 +27,11 @@ export interface DestroyConfig {
 }
 
 /**
- * Drive a `cdktn destroy` invocation. Mirrors {@link runDeploy} (logs above
- * a pinned status bar, interactive approval/override via inquirer, clean
- * `status.stop()` in non-TTY contexts) without the trailing outputs print.
+ * Drive a `cdktn destroy` invocation. Mirrors {@link runDeploy} (logs above a pinned status bar, interactive
+ * approval/override via inquirer, clean `status.stop()` in non-TTY contexts) without the trailing outputs print.
  *
- * @param config - Destroy options, forwarded near-verbatim to
- *   `CdktfProject.destroy`.
- * @returns Promise that resolves when the destroy completes, is stopped, or
- *   is dismissed. Rejects on real failures.
+ * @param config - Destroy options, forwarded near-verbatim to `CdktfProject.destroy`.
+ * @returns Promise that resolves when the destroy completes, is stopped, or is dismissed. Rejects on real failures.
  */
 export async function runDestroy({
   outDir,

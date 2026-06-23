@@ -31,20 +31,16 @@ export interface DeployConfig {
 }
 
 /**
- * Drive a `cdktn deploy` invocation: stream logs above a pinned status bar,
- * route approval/override prompts through inquirer, and print final
- * Terraform outputs.
+ * Drive a `cdktn deploy` invocation: stream logs above a pinned status bar, route approval/override prompts through
+ * inquirer, and print final Terraform outputs.
  *
- * In non-TTY contexts an approval prompt cannot run; in that case the
- * function logs a clear stderr message and calls `status.stop()` so
- * cli-core halts cleanly rather than hanging.
+ * In non-TTY contexts an approval prompt cannot run; in that case the function logs a clear stderr message and calls
+ * `status.stop()` so cli-core halts cleanly rather than hanging.
  *
- * @param config - All deploy options, forwarded near-verbatim to
- *   `CdktfProject.deploy`. `onOutputsRetrieved` is invoked once the run
- *   completes (or is stopped) with the final outputs map.
- * @returns Promise that resolves when the deploy completes, is stopped, or
- *   is dismissed. Rejects with whatever cli-core rejects with for real
- *   failures (terraform error, abort signal, etc.).
+ * @param config - All deploy options, forwarded near-verbatim to `CdktfProject.deploy`. `onOutputsRetrieved` is
+ *                 invoked once the run completes (or is stopped) with the final outputs map.
+ * @returns Promise that resolves when the deploy completes, is stopped, or is dismissed. Rejects with whatever
+ *          cli-core rejects with for real failures (terraform error, abort signal, etc.).
  */
 export async function runDeploy({
   outDir,

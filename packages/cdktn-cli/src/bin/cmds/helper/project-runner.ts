@@ -3,9 +3,8 @@
 import { CdktfProject, ProjectUpdate, CdktfStack } from "@cdktn/cli-core";
 
 /**
- * High-level status of a running cdktn project, mapped from cli-core's
- * `ProjectUpdate` events. The renderer/UI layer reacts to these variants —
- * showing a spinner, an execution counter, or an interactive prompt.
+ * High-level status of a running cdktn project, mapped from cli-core's `ProjectUpdate` events. The renderer/UI layer
+ * reacts to these variants — showing a spinner, an execution counter, or an interactive prompt.
  */
 export type Status =
   | { type: "starting" }
@@ -53,22 +52,18 @@ type Signal = "SIGINT" | "SIGTERM" | "SIGQUIT";
 const signals: Signal[] = ["SIGINT", "SIGTERM", "SIGQUIT"];
 
 /**
- * Construct a {@link CdktfProject}, wire its update/log callbacks to the
- * caller's {@link Status} handler, install signal handlers that trigger a
- * hard abort, and run a project operation to completion. Replaces the
- * `useCdktfProject` React hook.
+ * Construct a {@link CdktfProject}, wire its update/log callbacks to the caller's {@link Status} handler, install
+ * signal handlers that trigger a hard abort, and run a project operation to completion.
  *
- * `onStatus` is invoked fire-and-forget from cli-core's synchronous update
- * callback; any rejection it produces is not awaited. Callers wanting to
- * `await` inside `onStatus` (e.g. for an interactive prompt) should manage
- * their own error handling there.
+ * `onStatus` is invoked fire-and-forget from cli-core's synchronous update * callback; any rejection it produces is
+ * not awaited. Callers wanting to `await` inside `onStatus` (e.g. for an interactive prompt) should manage their own
+ * error handling there.
  *
  * @param opts - Project paths, output dir, and status/log callbacks.
- * @param projectCallback - The work to perform on the constructed project
- *   (e.g. `p => p.deploy(...)`, `p => p.synth()`).
+ * @param projectCallback - The work to perform on the constructed project (e.g. `p => p.deploy(...)`, `p => p.synth()`).
  * @returns The project instance and the resolved value of `projectCallback`.
- * @throws Whatever `projectCallback` throws. SIGINT/SIGTERM/SIGQUIT trigger
- *   `project.hardAbort()` which typically causes `projectCallback` to reject.
+ * @throws Whatever `projectCallback` throws. SIGINT/SIGTERM/SIGQUIT trigger `project.hardAbort()` which typically
+ * causes `projectCallback` to reject.
  */
 export async function runCdktfProject<T>(
   opts: ProjectRunnerOpts,

@@ -29,10 +29,9 @@ let colorPointer = 0;
 const colorAssignments: Record<string, ChalkColor> = {};
 
 /**
- * Assign (and remember) a colour for the given stack name. Colours are
- * dispensed round-robin from {@link possibleColors} so multiple concurrent
- * stacks get distinct prefix colours that stay consistent for the lifetime
- * of the process.
+ * Assign (and remember) a colour for the given stack name. Colours are dispensed round-robin from
+ * {@link possibleColors} so multiple concurrent stacks get distinct prefix colours that stay consistent for the
+ * lifetime of the process.
  *
  * @param stackName - Stack identifier used as the cache key.
  * @returns A chalk colour name suitable for `chalk[color].bold(...)`.
@@ -51,8 +50,7 @@ function getColor(stackName: string): ChalkColor {
  * Format a single log line with a coloured stack-name prefix.
  *
  * @param entry - The raw log entry.
- * @returns String of the form `<bold-coloured stackName>  <trimmed content>`,
- *   ready to write to stdout.
+ * @returns String of the form `<bold-coloured stackName>  <trimmed content>`, ready to write to stdout.
  */
 export function formatLogLine(entry: {
   stackName: string;
@@ -64,9 +62,8 @@ export function formatLogLine(entry: {
 }
 
 /**
- * Coerce a Terraform output value to a printable string. Objects are
- * JSON-stringified with 2-space indent; everything else goes through
- * `String()`.
+ * Coerce a Terraform output value to a printable string. Objects are JSON-stringified with 2-space indent; everything
+ * else goes through `String()`.
  *
  * @param value - The output value to render.
  * @returns A printable representation of the value.
@@ -79,8 +76,8 @@ function sanitize(value: any): string {
 }
 
 /**
- * Build a comparator that sorts an outputs object so leaf outputs come
- * before nested groups, then alphabetically within each tier.
+ * Build a comparator that sorts an outputs object so leaf outputs come before nested groups, then alphabetically
+ * within each tier.
  *
  * @param value - The outputs object whose entries are being sorted.
  * @returns Comparator suitable for `Object.entries(...).sort(...)`.
@@ -97,8 +94,7 @@ function compareOutputs(value: NestedTerraformOutputs) {
 }
 
 /**
- * Format a single leaf Terraform output. Sensitive outputs show
- * `<sensitive>` instead of the value.
+ * Format a single leaf Terraform output. Sensitive outputs show `<sensitive>` instead of the value.
  *
  * @param name - Output name.
  * @param value - Output object from cli-core.
@@ -109,14 +105,13 @@ function renderOutput(name: string, value: TerraformOutput): string {
 }
 
 /**
- * Recursively render a (possibly nested) outputs node into indented text.
- * Capped at 500 levels to bound runaway recursion on pathological inputs.
+ * Recursively render a (possibly nested) outputs node into indented text. Capped at 500 levels to bound runaway
+ * recursion on pathological inputs.
  *
  * @param name - Key at the current node.
  * @param value - Either a leaf {@link TerraformOutput} or a nested group.
  * @param indent - Current indent depth (0 at the top level).
- * @returns Multi-line indented string; empty when depth exceeds the safety
- *   cap.
+ * @returns Multi-line indented string; empty when depth exceeds the safety cap.
  */
 function renderNested(
   name: string,
@@ -139,9 +134,8 @@ function renderNested(
  * Render a complete Terraform outputs tree as a printable block.
  *
  * @param outputs - The outputs map (typically `project.outputsByConstructId`).
- * @returns Multi-line string with leaf outputs first, nested groups
- *   indented, suitable for `console.log`. Empty string when there are no
- *   outputs.
+ * @returns Multi-line string with leaf outputs first, nested groups indented, suitable for `console.log`. Empty string
+ *          when there are no outputs.
  */
 export function renderOutputs(outputs: NestedTerraformOutputs): string {
   return Object.entries(outputs)
@@ -150,14 +144,12 @@ export function renderOutputs(outputs: NestedTerraformOutputs): string {
 }
 
 /**
- * Render an array of `{ column: value }` rows as a cli-table3 bordered
- * table. Column headers come from the keys of the first row.
+ * Render an array of `{ column: value }` rows as a cli-table3 bordered table. Column headers come from the keys of the
+ * first row.
  *
- * @param data - Rows to render. Each row's value set must include all
- *   columns named in the first row's keys; missing values render as the
- *   empty string.
- * @returns Multi-line table string ready to print. Empty string when `data`
- *   has no rows.
+ * @param data - Rows to render. Each row's value set must include all columns named in the first row's keys; missing
+ * values render as the empty string.
+ * @returns Multi-line table string ready to print. Empty string when `data` has no rows.
  */
 export function renderProviderTable(
   data: Array<Record<string, string | number | boolean>>,
@@ -172,12 +164,11 @@ export function renderProviderTable(
 }
 
 /**
- * Render a two-column "Stack name / Path" listing for `cdktn list`. Column
- * width is sized to fit the longest stack name.
+ * Render a two-column "Stack name / Path" listing for `cdktn list`. Column width is sized to fit the longest stack
+ * name.
  *
  * @param stacks - Stacks to list.
- * @returns Multi-line string with a bold header row followed by one row per
- *   stack.
+ * @returns Multi-line string with a bold header row followed by one row per stack.
  */
 export function renderStackList(
   stacks: Array<{ name: string; workingDirectory: string }>,
@@ -200,9 +191,8 @@ function localizeStacks(num: number): string {
 }
 
 /**
- * Render the multi-stack progress line shown in the bottom bar during a
- * deploy or destroy run: `<n Stacks deploying>  <n Stacks done>  <n Stacks
- * waiting>`.
+ * Render the multi-stack progress line shown in the bottom bar during a deploy or destroy run: `<n Stacks deploying>
+ * <n Stacks done>  <n Stacks * waiting>`.
  *
  * @param inProgress - Currently-running stacks.
  * @param finished - Completed stacks.
@@ -224,14 +214,12 @@ export function renderExecution(
 }
 
 /**
- * Translate a cli-core watch state into bar text plus a spinner hint. The
- * spinner is on for transient states (waiting for changes, synthesising)
- * and off when displaying the multi-stack execution counter or the terminal
- * "stopped" message — matching the old Ink-based watch UI.
+ * Translate a cli-core watch state into bar text plus a spinner hint. The spinner is on for transient states (waiting
+ * for changes, synthesising) and off when displaying the multi-stack execution counter or the terminal "stopped"
+ * message — matching the old Ink-based watch UI.
  *
  * @param state - Watch state from cli-core.
- * @returns `{ text, spinner }` to pass through to
- *   {@link StreamRenderer.setBar | StreamRenderer's setBar}.
+ * @returns `{ text, spinner }` to pass through to {@link StreamRenderer.setBar | StreamRenderer's setBar}.
  */
 export function renderWatchStatus(state: WatchState): {
   text: string;

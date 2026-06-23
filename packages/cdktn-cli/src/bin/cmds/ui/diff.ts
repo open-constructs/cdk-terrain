@@ -20,7 +20,6 @@ export interface DiffConfig {
 
 /**
  * Map a {@link Status} to the short bar text shown during `cdktn diff`.
- * Returns the empty string for non-progress statuses, which clears the bar.
  *
  * @param status - Current project status.
  * @returns Bar text or empty string.
@@ -39,13 +38,10 @@ function statusBar(status: Status): string {
 }
 
 /**
- * Drive a `cdktn diff` (terraform plan) invocation. Streams logs above a
- * pinned spinner bar; no interactive prompts.
+ * Drive a `cdktn diff` (terraform plan) invocation. Streams logs above a pinned spinner bar; no interactive prompts.
  *
- * @param config - Diff options, forwarded near-verbatim to
- *   `CdktfProject.diff`.
- * @returns Promise that resolves when the diff completes, rejects on
- *   failure.
+ * @param config - Diff options, forwarded near-verbatim to `CdktfProject.diff`.
+ * @returns Promise that resolves when the diff completes, rejects on failure.
  */
 export async function runDiff({
   outDir,

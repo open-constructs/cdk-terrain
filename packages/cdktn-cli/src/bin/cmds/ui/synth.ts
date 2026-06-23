@@ -30,12 +30,11 @@ function statusBar(status: Status): string {
 }
 
 /**
- * Drive a `cdktn synth` invocation. Streams synthesis logs above a pinned
- * spinner bar, then prints a summary line listing the stacks produced.
+ * Drive a `cdktn synth` invocation. Streams synthesis logs above a pinned spinner bar, then prints a summary line
+ * listing the stacks produced.
  *
  * @param config - Synth options, forwarded to `CdktfProject.synth`.
- * @returns Promise that resolves when synthesis completes, rejects on
- *   failure.
+ * @returns Promise that resolves when synthesis completes, rejects on failure.
  */
 export async function runSynth({
   outDir,

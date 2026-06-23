@@ -30,13 +30,11 @@ function statusBar(status: Status): string {
 }
 
 /**
- * Drive a `cdktn list` invocation. Synthesises the project, streaming logs
- * above a pinned spinner bar, then prints a two-column "Stack name / Path"
- * table.
+ * Drive a `cdktn list` invocation. Synthesises the project, streaming logs above a pinned spinner bar, then prints a
+ * two-column "Stack name / Path" table.
  *
  * @param config - List options, forwarded to `CdktfProject.synth`.
- * @returns Promise that resolves when listing completes, rejects on
- *   failure.
+ * @returns Promise that resolves when listing completes, rejects on failure.
  */
 export async function runList({
   outDir,
