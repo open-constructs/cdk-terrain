@@ -272,11 +272,12 @@ export class TerraformProviderConstraint implements TerraformDependencyConstrain
 
 // The targetVersions vocabulary is owned by the cdktn package (its canonical
 // home; cdktn must not depend on commons, so the dependency goes this way).
-// The data type and default baseline are part of cdktn's public API and
-// imported from the package root; the context key and product list are
-// internal wiring imported via subpath.
-import { DEFAULT_TARGET_VERSIONS, TerraformTargetVersions } from "cdktn";
+// cdktn's public (jsii) API intentionally exposes only the author-facing
+// validation, so commons consumes the project-facing type, default baseline,
+// context key, and product list as internal wiring via the subpath.
 import {
+  DEFAULT_TARGET_VERSIONS,
+  TerraformTargetVersions,
   TARGET_PRODUCTS,
   TARGET_VERSIONS_CONTEXT_KEY,
 } from "cdktn/lib/validations";

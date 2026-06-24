@@ -43,14 +43,21 @@ export * from "./upgrade-id-aspect";
 export * from "./terraform-data-resource";
 // required for JSII because Fn extends from it
 export * from "./functions/terraform-functions.generated";
-// Curated public API for construct-library authors validating their features
-// against a project's declared Terraform/OpenTofu targets. Named (not `export
-// *`) on purpose: it keeps internal wiring (TARGET_VERSIONS_CONTEXT_KEY,
-// resolveTargetVersions) and the union-typed parseTerraformCliVersion — which
-// jsii cannot represent — out of the public multi-language assembly.
-export {
-  ValidateFeatureTargetSupport,
-  TerraformTargetVersions,
-  DEFAULT_TARGET_VERSIONS,
-} from "./validations/target-versions";
+// Curated public API for construct-library and provider-generator authors who
+// validate their features (e.g. generated bindings for ephemeral resources or
+// provider functions) against a project's declared Terraform/OpenTofu targets.
+//
+// Named exports (not `export *`) on purpose, and deliberately limited to the two
+// symbols jsii faithfully reproduces in every language binding: the
+// `ValidateFeatureTargetSupport` validation an author attaches, and the
+// `TerraformFeatureVersionConstraints` struct it takes. This is the surface a
+// generated non-TS binding reaches through the jsii contract.
+//
+// Everything else stays internal (consumed by `@cdktn/commons` via the
+// `cdktn/lib/validations` subpath): the project-facing `TerraformTargetVersions`
+// type is surfaced through the CLI config rather than the library;
+// `DEFAULT_TARGET_VERSIONS` is a module-level const jsii silently drops (TS
+// only); and `TARGET_VERSIONS_CONTEXT_KEY` / `resolveTargetVersions` /
+// `parseTerraformCliVersion` are wiring jsii cannot represent.
+export { ValidateFeatureTargetSupport } from "./validations/target-versions";
 export { TerraformFeatureVersionConstraints } from "./validations/validate-terraform-feature-version";
