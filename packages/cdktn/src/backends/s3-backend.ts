@@ -7,7 +7,7 @@ import {
   TerraformRemoteState,
 } from "../terraform-remote-state";
 import { keysToSnakeCase } from "../util";
-import { ValidateTerraformFeatureVersion } from "../validations";
+import { ValidateFeatureTargetSupport } from "../validations";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class S3Backend extends TerraformBackend {
@@ -19,7 +19,7 @@ export class S3Backend extends TerraformBackend {
 
     if (props.useLockfile) {
       this.node.addValidation(
-        new ValidateTerraformFeatureVersion("S3 native state locking", {
+        new ValidateFeatureTargetSupport(this, "S3 native state locking", {
           terraform: ">=1.10.0",
           opentofu: ">=1.10.0",
         }),
