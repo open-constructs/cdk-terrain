@@ -9,8 +9,10 @@ import { TerraformFeatureVersionConstraints } from "./validate-terraform-feature
  * targets (set from the `targetVersions` field in cdktf.json by the CLI, or
  * directly via App context / CDKTF_CONTEXT_JSON for standalone synth).
  *
- * Kept in sync with TARGET_VERSIONS_CONTEXT_KEY in @cdktn/commons — the value
- * is duplicated because cdktn cannot depend on @cdktn/commons.
+ * This is the canonical definition. `@cdktn/commons` imports it from here
+ * (commons depends on cdktn; cdktn must not depend on commons), so the CLI
+ * writes and the construct library reads the exact same key. It is an
+ * internal wiring detail, deliberately not part of cdktn's public API.
  */
 export const TARGET_VERSIONS_CONTEXT_KEY = "targetVersions";
 
@@ -34,7 +36,11 @@ export const DEFAULT_TARGET_VERSIONS: TerraformTargetVersions = {
   opentofu: ">=1.6.0",
 };
 
-const TARGET_PRODUCTS = ["terraform", "opentofu"] as const;
+/**
+ * The product keys a project may declare targets for. Exported for reuse by
+ * `@cdktn/commons` (imported via subpath), not part of cdktn's public API.
+ */
+export const TARGET_PRODUCTS = ["terraform", "opentofu"] as const;
 
 /**
  * Resolves the declared target versions from construct context, falling back

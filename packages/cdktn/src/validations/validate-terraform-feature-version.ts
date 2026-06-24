@@ -32,8 +32,10 @@ export interface TerraformFeatureVersionConstraints {
  * Note: synth-time validations check features against the project's declared
  * `targetVersions` and do not execute any binary; this parser exists for
  * consumers that explicitly interact with an installed CLI (e.g. the opt-in
- * validateInstalledBinary behavior in the cdktn CLI, which uses the mirrored
- * copy in @cdktn/commons).
+ * validateInstalledBinary behavior in the cdktn CLI). This is the canonical
+ * definition; `@cdktn/commons` imports it (commons depends on cdktn). Its
+ * return type uses a string-literal union, so it is kept out of cdktn's
+ * public (jsii) API and consumed via subpath import.
  */
 export function parseTerraformCliVersion(
   versionOutput: string,

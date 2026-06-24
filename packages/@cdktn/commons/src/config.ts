@@ -270,36 +270,22 @@ export class TerraformProviderConstraint implements TerraformDependencyConstrain
   }
 }
 
-export const TERRAFORM_TARGET_PRODUCTS = ["terraform", "opentofu"] as const;
-export type TerraformTargetProduct = (typeof TERRAFORM_TARGET_PRODUCTS)[number];
+// The targetVersions vocabulary is owned by the cdktn package (its canonical
+// home; cdktn must not depend on commons, so the dependency goes this way).
+// cdktn's public (jsii) API intentionally exposes only the author-facing
+// validation, so commons consumes the project-facing type, default baseline,
+// context key, and product list as internal wiring via the subpath.
+import {
+  DEFAULT_TARGET_VERSIONS,
+  TerraformTargetVersions,
+  TARGET_PRODUCTS,
+  TARGET_VERSIONS_CONTEXT_KEY,
+} from "cdktn/lib/validations";
 
-/**
- * The Terraform-compatible runtimes a project declares it supports, as npm
- * semver ranges per product (e.g. `{ terraform: ">=1.5.7" }`). A missing
- * product means the project does not target that product. Declared targets
- * state the project's intent; they are not proof that any locally installed
- * binary satisfies them (see `validateInstalledBinary`).
- */
-export type TerraformTargetVersions = {
-  readonly [product in TerraformTargetProduct]?: string;
-};
-
-/**
- * Context key under which the declared target versions are passed from the
- * CLI to the synthesized app (kept identical to the cdktf.json field name).
- */
-export const TARGET_VERSIONS_CONTEXT_KEY = "targetVersions";
-
-/**
- * Used when a project declares no `targetVersions`: the project is assumed
- * to target every supported release of both products, which is the strictest
- * (most portable) interpretation. Mirrors DEFAULT_TARGET_VERSIONS in the
- * cdktn package's validations.
- */
-export const DEFAULT_TARGET_VERSIONS: TerraformTargetVersions = {
-  terraform: ">=1.5.7",
-  opentofu: ">=1.6.0",
-};
+// Re-exported so existing commons consumers (e.g. @cdktn/cli-core) keep a
+// single import surface.
+export { DEFAULT_TARGET_VERSIONS };
+export type { TerraformTargetVersions };
 
 interface ConfigBase {
   readonly app?: string;
@@ -343,9 +329,7 @@ export function validateTargetVersions(targetVersions: unknown): string[] {
 
   const problems: string[] = [];
   for (const [product, range] of entries) {
-    if (
-      !TERRAFORM_TARGET_PRODUCTS.includes(product as TerraformTargetProduct)
-    ) {
+    if (!(TARGET_PRODUCTS as readonly string[]).includes(product)) {
       problems.push(
         `targetVersions has unknown product "${product}" (expected "terraform" or "opentofu")`,
       );

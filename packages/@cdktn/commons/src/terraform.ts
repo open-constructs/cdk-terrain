@@ -6,42 +6,15 @@ import { exec } from "./util";
 export const terraformBinaryName =
   process.env.TERRAFORM_BINARY_NAME || "terraform";
 
-export type TerraformCliProduct = "terraform" | "opentofu" | "unknown";
-
-export interface ParsedTerraformCliVersion {
-  readonly name: TerraformCliProduct;
-  readonly version?: string;
-}
-
-/**
- * Parses the output of `terraform version` / `tofu version` into product and
- * version. Plain text output is used because both Terraform and OpenTofu
- * expose a Terraform-compatible `terraform_version` key in `version -json`
- * output, which makes the JSON output unsuitable for product detection.
- *
- * Mirrors parseTerraformCliVersion in the cdktn package's validations (which
- * cannot be imported here without pulling the whole construct library in).
- */
-export function parseTerraformCliVersion(
-  versionOutput: string,
-): ParsedTerraformCliVersion {
-  const firstLine = versionOutput.trim().split(/\r?\n/)[0] || "";
-  const firstLineMatch = firstLine.match(
-    /^(Terraform|OpenTofu) v(\d+\.\d+\.\d+(?:[-+][^\s]+)?)/,
-  );
-
-  if (firstLineMatch) {
-    return {
-      name: firstLineMatch[1] === "OpenTofu" ? "opentofu" : "terraform",
-      version: firstLineMatch[2],
-    };
-  }
-
-  return {
-    name: "unknown",
-    version: versionOutput.match(/\d+\.\d+\.\d+(?:[-+][^\s]+)?/)?.[0],
-  };
-}
+// The Terraform CLI version parser lives in the cdktn package (its canonical
+// home). It is consumed via subpath because its string-literal union return
+// type is not part of cdktn's public jsii API. Re-exported here so existing
+// commons consumers (e.g. @cdktn/cli-core) keep a single import surface.
+export { parseTerraformCliVersion } from "cdktn/lib/validations";
+export type {
+  TerraformCliVersion,
+  TerraformCliName,
+} from "cdktn/lib/validations";
 
 export const terraformVersion = exec(
   terraformBinaryName,
