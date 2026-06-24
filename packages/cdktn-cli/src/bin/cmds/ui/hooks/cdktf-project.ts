@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { useApp } from "ink";
 import { useEffect, useState } from "react";
+import * as Sentry from "@sentry/node";
 import { CdktfProject, ProjectUpdate, CdktfStack } from "@cdktn/cli-core";
 
 export type LogEntry = {
@@ -129,9 +130,12 @@ export function useCdktfProject<T>(
         setReturnValue(value);
         setStatus({ type: "done" });
 
-        setTimeout(() => {
+        setTimeout(async () => {
           exit();
           if (process.platform === "win32") {
+            // explicit exit skips the beforeExit telemetry flush in
+            // cdktn.ts, so flush (bounded) before terminating
+            await Sentry.flush(4000);
             process.exit(0);
           }
         }, 100);

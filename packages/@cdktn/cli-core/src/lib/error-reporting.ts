@@ -4,6 +4,8 @@ import * as Sentry from "@sentry/node";
 import {
   getProjectId,
   getUserId,
+  getUsageTelemetryConsent,
+  setUsageTelemetryEnabled,
   collectDebugInformation,
   DISPLAY_VERSION,
 } from "@cdktn/commons";
@@ -20,6 +22,13 @@ export function shouldReportCrash(
       fs.readFileSync(path.resolve(projectPath, "cdktf.json"), "utf8"),
     );
 
+    // tri-state: an absent flag means "unset" and triggers the
+    // interactive consent prompt; outside a project (no readable
+    // cdktf.json) crash reporting stays off
+    if (!("sendCrashReports" in cdktfJson)) {
+      return undefined;
+    }
+
     return typeof cdktfJson.sendCrashReports === "boolean"
       ? cdktfJson.sendCrashReports
       : cdktfJson.sendCrashReports === "true";
@@ -31,18 +40,33 @@ export function shouldReportCrash(
   }
 }
 
-export function persistReportCrashReportDecision(
+function persistConsentDecision(
+  key: "sendCrashReports" | "sendUsageTelemetry",
   decision: boolean,
   projectPath = process.cwd(),
 ) {
   const cdktfJson = JSON.parse(
     fs.readFileSync(path.resolve(projectPath, "cdktf.json"), "utf8"),
   );
-  cdktfJson.sendCrashReports = decision;
+  cdktfJson[key] = decision;
   fs.writeFileSync(
     path.resolve(projectPath, "cdktf.json"),
     JSON.stringify(cdktfJson, null, 2),
   );
+}
+
+export function persistReportCrashReportDecision(
+  decision: boolean,
+  projectPath = process.cwd(),
+) {
+  persistConsentDecision("sendCrashReports", decision, projectPath);
+}
+
+export function persistSendUsageTelemetryDecision(
+  decision: boolean,
+  projectPath = process.cwd(),
+) {
+  persistConsentDecision("sendUsageTelemetry", decision, projectPath);
 }
 
 function isPromise(p: any): p is Promise<any> {
@@ -54,38 +78,75 @@ function isPromise(p: any): p is Promise<any> {
 }
 
 export async function initializErrorReporting(
-  runConsentPrompt?: () => Promise<boolean>,
+  runCrashConsentPrompt?: () => Promise<boolean>,
+  runUsageTelemetryConsentPrompt?: () => Promise<boolean>,
 ) {
   let shouldReport = shouldReportCrash();
-  const ci: string | false = ciInfo.isCI ? ciInfo.name || "unknown" : false;
+  let usageConsent = getUsageTelemetryConsent();
 
-  // We have no info yet, so we need to ask the user
-  if (shouldReport === undefined && runConsentPrompt) {
-    // But only if it's a user
-    if (ci) {
-      return;
+  // Prompting requires a real user at a terminal (TTY and not CI) and a
+  // cdktf.json to persist the decision into; otherwise fall through to
+  // the per-flag non-interactive defaults below.
+  const canPrompt =
+    Boolean(process.stdout.isTTY) &&
+    !ciInfo.isCI &&
+    !process.env.CI &&
+    fs.existsSync(path.resolve(process.cwd(), "cdktf.json"));
+
+  if (canPrompt) {
+    if (shouldReport === undefined && runCrashConsentPrompt) {
+      shouldReport = await runCrashConsentPrompt();
+      persistReportCrashReportDecision(shouldReport);
     }
-
-    shouldReport = await runConsentPrompt();
-    persistReportCrashReportDecision(shouldReport);
+    if (
+      usageConsent === undefined &&
+      runUsageTelemetryConsentPrompt &&
+      !process.env.CHECKPOINT_DISABLE
+    ) {
+      usageConsent = await runUsageTelemetryConsentPrompt();
+      persistSendUsageTelemetryDecision(usageConsent);
+    }
   }
 
-  if (!shouldReport) {
-    logger.debug("Error reporting disabled");
+  // Non-interactive defaults preserve each system's legacy behavior:
+  // crash reporting stays opt-in (off), usage telemetry stays on by
+  // default — still subject to the CHECKPOINT_DISABLE override.
+  const crashReportingEnabled = shouldReport === true;
+  const usageTelemetryEnabled =
+    !process.env.CHECKPOINT_DISABLE && usageConsent !== false;
+
+  // Capture the decision while we are still in the user's working
+  // directory: some commands (convert) chdir into a temporary project
+  // before sendTelemetry runs and must not consult that project's flags.
+  setUsageTelemetryEnabled(usageTelemetryEnabled);
+
+  if (!crashReportingEnabled && !usageTelemetryEnabled) {
+    logger.debug("Error reporting and usage telemetry disabled");
     return;
   }
   if (!process.env.SENTRY_DSN) {
-    logger.info("Error reporting disabled: SENTRY_DSN not set");
+    logger.info("Reporting disabled: SENTRY_DSN not set");
     return;
   }
 
-  logger.debug("Initializing error reporting");
+  logger.debug("Initializing reporting");
 
   Sentry.init({
-    autoSessionTracking: true,
     dsn: process.env.SENTRY_DSN,
     release: `cdktn-cli-${DISPLAY_VERSION}`,
+    // Usage metrics are delivered independently of trace sampling (confirmed
+    // against @sentry/node 10.57), so no trace quota is spent.
+    tracesSampleRate: 0,
+    // Fixed constant so the machine hostname is never attached to events or
+    // metrics (v10 defaults server_name/server.address to the hostname).
+    serverName: "cdktn-cli",
     async beforeSend(event, hint) {
+      // Error/crash events require their own consent: when Sentry is
+      // initialized only for usage metrics, drop every error event
+      // (metrics do not pass through beforeSend).
+      if (!crashReportingEnabled) {
+        return null;
+      }
       if (!hint) {
         return event;
       }
@@ -117,17 +178,18 @@ export async function initializErrorReporting(
     },
   });
 
-  Sentry.configureScope(function (scope) {
-    scope.setUser({
-      id: getUserId(),
-    });
-    scope.setTag("projectId", getProjectId());
+  const scope = Sentry.getCurrentScope();
+  scope.setUser({
+    id: getUserId(),
   });
+  scope.setTag("projectId", getProjectId());
 
-  logger.debug("Collecting environment information for error reporting");
-  collectDebugInformation().then((debugOutput) => {
-    Sentry.setContext("environment", debugOutput);
-  });
+  if (crashReportingEnabled) {
+    logger.debug("Collecting environment information for error reporting");
+    collectDebugInformation().then((debugOutput) => {
+      Sentry.setContext("environment", debugOutput);
+    });
+  }
 }
 
 export function captureException({

@@ -3,6 +3,7 @@
   "app": "npx ts-node main.ts",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
   "terraformProviders": [],
   "terraformModules": [],
   "context": {

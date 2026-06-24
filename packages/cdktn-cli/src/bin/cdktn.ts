@@ -41,6 +41,23 @@ if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
   process.env.TF_PLUGIN_CACHE_DIR = ensurePluginCache();
 }
 
+// Flush buffered telemetry (usage metrics) before a normal exit: the CLI is
+// short-lived and Sentry buffers metrics asynchronously, so without this
+// bounded flush successful commands would drop their analytics. After the
+// bounded flush resolves (or times out) exit explicitly — an unresponsive
+// ingest endpoint would otherwise keep the transport's socket (and the
+// process) alive indefinitely. The error path flushes via Sentry.close(4000)
+// in the fail handler below.
+let telemetryFlushStarted = false;
+process.on("beforeExit", async () => {
+  if (telemetryFlushStarted) {
+    return;
+  }
+  telemetryFlushStarted = true;
+  await Sentry.flush(4000).catch(() => undefined);
+  process.exit(process.exitCode ?? 0);
+});
+
 const customCompletion = function (
   _current: string,
   argv: any,
