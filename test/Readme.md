@@ -52,21 +52,26 @@ We also build a helper to translate an initial version of these tests through th
 
 Everything that shells out to a Terraform-compatible CLI honors the
 `TERRAFORM_BINARY_NAME` environment variable (default: `terraform`). This
-includes the `cdktn` CLI (init/diff/deploy), the framework's synth-time
-validations (e.g. function version validation runs `<binary> version`), and
-the unit-test matchers (`toPlanSuccessfully` and friends run
-`<binary> init/plan`).
+includes the `cdktn` CLI (init/diff/deploy), the optional binary verification
+validation (runs `<binary> version` to check the installed CLI against the
+declared `targetVersions`), and the unit-test matchers (`toPlanSuccessfully`
+and friends run `<binary> init/plan`).
+
+Note that function version validation does **not** shell out: it checks the
+functions used through `Fn` against the declared `targetVersions` statically,
+using the vendored availability matrix.
 
 Which tests execute the binary:
 
 - **Integration tests** that call `driver.diff()` / `driver.deploy()` (e.g.
   `typescript/variables`) run full `terraform init/plan/apply` cycles.
-  Synth-only tests (e.g. `typescript/synth-app`,
-  `typescript/function-version-validation`) execute the binary at most for a
-  `version` lookup.
+  Synth-only tests (e.g. `typescript/synth-app`) execute the binary at most
+  for a `version` lookup, while purely static ones (e.g.
+  `typescript/function-version-validation`, which deliberately runs against a
+  nonexistent binary) never invoke a CLI at all.
 - **Unit tests** in `packages/cdktn` run `terraform init/plan` through the
-  testing matchers and `terraform version` through validations (stubbed with
-  `echo` in most validation tests).
+  testing matchers and `terraform version` through the binary verification
+  validation (stubbed with `echo` in most validation tests).
 
 ### CI version matrix
 

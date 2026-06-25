@@ -93,7 +93,8 @@ const openTofuOnlyFunctions = new Set<string>();
  * bindings cover both products. `core::` namespaced aliases (terraform >= 1.8)
  * mirror every builtin 1:1 and are dropped — they are not valid identifiers.
  * Functions that are not universally available are validated at synth time
- * against the selected CLI (see ValidateFunctionVersionSupport in cdktn).
+ * against the declared `targetVersions` (see ValidateFunctionVersionSupport in
+ * cdktn); the check is static and never executes a CLI.
  */
 async function loadFunctionSignatures(): Promise<{
   [name: string]: FunctionSignature;
