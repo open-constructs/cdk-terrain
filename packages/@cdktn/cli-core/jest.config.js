@@ -2,7 +2,6 @@
  * Copyright (c) HashiCorp, Inc.
  * SPDX-License-Identifier: MPL-2.0
  */
-/* eslint-disable */
 const { readFileSync } = require('fs');
 
 const swcJestConfig = JSON.parse(
@@ -21,7 +20,7 @@ module.exports = {
   },
   // sscaff (in node_modules) ships both .ts source and compiled .js — prefer
   // .js so jest doesn't try to parse the untransformed source.
-  moduleFileExtensions: ['js', 'ts', 'tsx'],
+  moduleFileExtensions: ['js', 'ts'],
   // sscaff template hooks under templates/ rely on sloppy-mode globals
   // (e.g. `template = readFileSync(...)`) — let node's CJS loader handle them
   // instead of putting them through swc-jest's strict-mode transform.

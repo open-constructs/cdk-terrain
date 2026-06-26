@@ -18,7 +18,6 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "jsx": "react",
     "resolveJsonModule": true,
     "strict": true,
     "strictNullChecks": true,

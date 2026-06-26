@@ -21,6 +21,6 @@ module.exports = {
   },
   // sscaff (in node_modules) ships both .ts source and compiled .js — prefer
   // .js so jest doesn't try to parse the untransformed source.
-  moduleFileExtensions: ['js', 'ts', 'tsx'],
+  moduleFileExtensions: ['js', 'ts'],
   coverageDirectory: 'test-output/jest/coverage',
 };

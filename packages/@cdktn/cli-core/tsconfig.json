@@ -17,7 +17,6 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "jsx": "react",
     "resolveJsonModule": true,
     "strict": true,
     "strictNullChecks": true,
@@ -34,13 +33,11 @@
     "ambient.d.ts"
   ],
   "include": [
-    "src/**/*.ts",
-    "src/test/ui/deploy.test.tsx"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "../../node_modules/**",
-    "**/*.d.ts",
-    "**/*.test.tsx"
+    "**/*.d.ts"
   ],
 }
