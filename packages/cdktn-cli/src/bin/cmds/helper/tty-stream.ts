@@ -43,13 +43,12 @@ export class StreamRenderer {
   }
 
   /**
-   * Begin a rendering session. In TTY mode, writes a leading blank line so the bar/output is visually separated from
-   * the shell prompt, hides the cursor, and registers signal handlers so the cursor is restored on
-   * SIGINT/SIGTERM/SIGQUIT even if `stop()` is never reached. No-op in non-TTY mode.
+   * Begin a rendering session. Writes a leading blank line so output is separated from prior content. In TTY mode
+   * also hides the cursor and registers signal handlers to restore it on SIGINT/SIGTERM/SIGQUIT.
    */
   start(): void {
-    if (!this.tty) return;
     this.out.write("\n");
+    if (!this.tty) return;
     cliCursor.hide(this.out);
     this.cursorRestore = () => cliCursor.show(this.out);
     for (const sig of signals) process.once(sig, this.cursorRestore);
