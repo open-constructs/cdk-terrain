@@ -7,10 +7,6 @@
   "workspaces": {
     ".": {
       "ignoreDependencies": [
-        // TODO: triage and remove entries — each is a declared dep with no detected usage.
-        "changelog-parser",
-        "infer-owner",
-        "semver",
         // Referenced only via `--format=gha` CLI flag in CI; knip can't detect this.
         "eslint-formatter-gha"
       ]
@@ -72,9 +68,6 @@
       "entry": ["provider-tests/generate-provider-test.js"],
       "project": ["**/*.ts"],
       "ignoreDependencies": [
-        // TODO: triage and remove entries — each is a declared dep with no detected usage.
-        "@types/express",
-        "express",
         // TODO: triage and add to package.json — each is imported but undeclared.
         "constructs"
       ]
