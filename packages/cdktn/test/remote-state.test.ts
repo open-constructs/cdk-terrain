@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack } from "../src";
+import { TerraformStack, Testing } from "../src";
 import * as b from "../src/backends";
 import { TestResource } from "./helper";
 import { TestProvider } from "./helper/provider";
@@ -171,72 +171,108 @@ test("pg", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
-test("s3", () => {
-  const app = Testing.app();
-  const stack = new TerraformStack(app, "test");
+describe("s3", () => {
+  const createStack = (
+    override: Partial<b.DataTerraformRemoteStateS3Config>,
+  ) => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
 
-  new b.DataTerraformRemoteStateS3(stack, "remote", {
-    bucket: "mybucket",
-    key: "path/to/my/key",
-    region: "us-east-1",
-    endpoint: "AWS_S3_ENDPOINT",
-    encrypt: true,
-    acl: "Canned ACL",
-    accessKey: "AWS_ACCESS_KEY_ID",
-    secretKey: "AWS_SECRET_ACCESS_KEY",
-    kmsKeyId: "ARN of a KMS Key",
-    dynamodbTable: "DynamoDB table",
-    profile: "AWS_PROFILE",
-    sharedCredentialsFile: "~/.aws/credentials",
-    token: "AWS_SESSION_TOKEN",
-    roleArn: "role to be assumed",
-    assumeRolePolicy: "permissions for assuming role",
-    externalId: "external ID",
-    sessionName: "role session name",
-    workspaceKeyPrefix: "env:",
-    dynamodbEndpoint: "AWS_DYNAMODB_ENDPOINT",
-    iamEndpoint: "AWS_IAM_ENDPOINT",
-    stsEndpoint: "AWS_STS_ENDPOINT",
-    forcePathStyle: false,
-    skipCredentialsValidation: false,
-    skipMetadataApiCheck: true,
-    sseCustomerKey: "AWS_SSE_CUSTOMER_KEY",
-    maxRetries: 5,
+    const remoteState = new b.DataTerraformRemoteStateS3(stack, "remote", {
+      bucket: "mybucket",
+      key: "path/to/my/key",
+      region: "us-east-1",
+      endpoint: "AWS_S3_ENDPOINT",
+      encrypt: true,
+      acl: "Canned ACL",
+      accessKey: "AWS_ACCESS_KEY_ID",
+      secretKey: "AWS_SECRET_ACCESS_KEY",
+      kmsKeyId: "ARN of a KMS Key",
+      useLockfile: false,
+      dynamodbTable: "DynamoDB table",
+      profile: "AWS_PROFILE",
+      sharedCredentialsFile: "~/.aws/credentials",
+      token: "AWS_SESSION_TOKEN",
+      roleArn: "role to be assumed",
+      assumeRolePolicy: "permissions for assuming role",
+      externalId: "external ID",
+      sessionName: "role session name",
+      workspaceKeyPrefix: "env:",
+      dynamodbEndpoint: "AWS_DYNAMODB_ENDPOINT",
+      iamEndpoint: "AWS_IAM_ENDPOINT",
+      stsEndpoint: "AWS_STS_ENDPOINT",
+      forcePathStyle: false,
+      skipCredentialsValidation: false,
+      skipMetadataApiCheck: true,
+      sseCustomerKey: "AWS_SSE_CUSTOMER_KEY",
+      maxRetries: 5,
+      ...override,
+    });
+
+    return {
+      app,
+      stack,
+      remoteState,
+    };
+  };
+
+  test("with `useLockfile: false` & `dynamodbTable` set", () => {
+    const { stack } = createStack({ useLockfile: false });
+    expect(Testing.synth(stack)).toMatchSnapshot();
   });
 
-  expect(Testing.synth(stack)).toMatchSnapshot();
-});
-
-test("s3 with options", () => {
-  const app = Testing.app();
-  const stack = new TerraformStack(app, "test");
-
-  new b.DataTerraformRemoteStateS3(stack, "remote", {
-    bucket: "mybucket",
-    key: "path/to/my/key",
-    workspace: "my_workspace",
-    defaults: {
-      someProp: "some_value",
-    },
+  test("with `useLockfile: true` & `dynamodbTable` set", () => {
+    const { stack } = createStack({ useLockfile: true });
+    expect(Testing.synth(stack)).toMatchSnapshot();
   });
 
-  expect(Testing.synth(stack)).toMatchSnapshot();
-});
-
-test("s3 reference", () => {
-  const app = Testing.app();
-  const stack = new TerraformStack(app, "test");
-
-  new TestProvider(stack, "provider", {});
-
-  const remoteState = new b.DataTerraformRemoteStateS3(stack, "remote", {
-    bucket: "mybucket",
-    key: "path/to/my/key",
+  test("with `useLockfile: false` & `dynamodbTable` NOT set", () => {
+    const { stack } = createStack({
+      useLockfile: false,
+      dynamodbTable: undefined,
+    });
+    expect(Testing.synth(stack)).toMatchSnapshot();
   });
 
-  new TestResource(stack, "test_resource", {
-    name: remoteState.getString("name"),
+  test("with `useLockfile: true` & `dynamodbTable` NOT set", () => {
+    const { stack } = createStack({
+      useLockfile: true,
+      dynamodbTable: undefined,
+    });
+    expect(Testing.synth(stack)).toMatchSnapshot();
   });
 
-  expect(Testing.synth(stack)).toMatchSnapshot();
+  test("with options", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new b.DataTerraformRemoteStateS3(stack, "remote", {
+      bucket: "mybucket",
+      key: "path/to/my/key",
+      workspace: "my_workspace",
+      defaults: {
+        someProp: "some_value",
+      },
+    });
+
+    expect(Testing.synth(stack)).toMatchSnapshot();
+  });
+
+  test("reference", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new TestProvider(stack, "provider", {});
+
+    const remoteState = new b.DataTerraformRemoteStateS3(stack, "remote", {
+      bucket: "mybucket",
+      key: "path/to/my/key",
+    });
+
+    new TestResource(stack, "test_resource", {
+      name: remoteState.getString("name"),
+    });
+
+    expect(Testing.synth(stack)).toMatchSnapshot();
+  });
 });

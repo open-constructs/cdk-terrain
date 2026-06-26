@@ -3,7 +3,13 @@
 import { SynthesizedStack } from "./synth-stack";
 import { Terraform } from "./models/terraform";
 import { getConstructIdsForOutputs, NestedTerraformOutputs } from "./output";
-import { logger } from "@cdktn/commons";
+import {
+  Errors,
+  logger,
+  readConfigSync,
+  terraformBinaryName,
+} from "@cdktn/commons";
+import { checkInstalledBinaryAgainstTargets } from "./installed-binary-check";
 import { extractJsonLogIfPresent } from "./server/terraform-logs";
 import {
   TerraformCli,
@@ -250,12 +256,34 @@ export class CdktfStack {
     );
   }
 
+  /**
+   * When the project opts in via `validateInstalledBinary: true` in
+   * cdktf.json, verifies the installed Terraform-compatible binary against
+   * the project's declared `targetVersions` before executing it.
+   */
+  private async validateInstalledBinaryIfConfigured(terraform: Terraform) {
+    const config = readConfigSync();
+    if (!config.validateInstalledBinary) {
+      return;
+    }
+
+    const problems = checkInstalledBinaryAgainstTargets(
+      await terraform.version(),
+      config.targetVersions,
+      terraformBinaryName,
+    );
+    if (problems.length > 0) {
+      throw Errors.Usage(problems.join("\n"));
+    }
+  }
+
   public async initalizeTerraform(
     noColor?: boolean,
     skipProviderLock?: boolean,
     migrateState?: boolean,
   ) {
     const terraform = await this.terraformClient();
+    await this.validateInstalledBinaryIfConfigured(terraform);
     const needsLockfileUpdate = skipProviderLock
       ? false
       : await this.checkNeedsLockfileUpdate();

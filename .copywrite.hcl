@@ -14,6 +14,7 @@ project {
     ".agents/**",
     ".claude/**",
     "**/pnpm-lock.yaml",
-    "**/pnpm-workspace.yaml"
+    "**/pnpm-workspace.yaml",
+    "tools/generate-function-bindings/function-availability/**"
   ]
 }

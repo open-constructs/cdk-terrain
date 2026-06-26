@@ -4,6 +4,10 @@
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
   "codeMakerOutput": "imports",
+  "targetVersions": {
+    "terraform": ">=1.5.7",
+    "opentofu": ">=1.6.0"
+  },
   "terraformProviders": [],
   "terraformModules": [],
   "context": {

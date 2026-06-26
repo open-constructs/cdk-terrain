@@ -58,6 +58,15 @@ export const functionsMapGenerated = {
       },
     ],
   },
+  base64gunzip: {
+    name: "base64gunzip",
+    returnType: "string",
+    parameters: [
+      {
+        type: "string",
+      },
+    ],
+  },
   base64gzip: {
     name: "base64gzip",
     returnType: "string",
@@ -130,6 +139,18 @@ export const functionsMapGenerated = {
       },
       {
         type: "number",
+      },
+    ],
+  },
+  cidrcontains: {
+    name: "cidrcontains",
+    returnType: "bool",
+    parameters: [
+      {
+        type: "string",
+      },
+      {
+        type: "string",
       },
     ],
   },
@@ -233,6 +254,18 @@ export const functionsMapGenerated = {
       },
     ],
   },
+  convert: {
+    name: "convert",
+    returnType: "dynamic",
+    parameters: [
+      {
+        type: "dynamic",
+      },
+      {
+        type: "dynamic",
+      },
+    ],
+  },
   csvdecode: {
     name: "csvdecode",
     returnType: "dynamic",
@@ -281,6 +314,15 @@ export const functionsMapGenerated = {
       },
       {
         type: "string",
+      },
+    ],
+  },
+  ephemeralasnull: {
+    name: "ephemeralasnull",
+    returnType: "dynamic",
+    parameters: [
+      {
+        type: "dynamic",
       },
     ],
   },
@@ -397,7 +439,7 @@ export const functionsMapGenerated = {
   },
   format: {
     name: "format",
-    returnType: "dynamic",
+    returnType: "string",
     parameters: [
       {
         type: "string",
@@ -422,7 +464,7 @@ export const functionsMapGenerated = {
   },
   formatlist: {
     name: "formatlist",
-    returnType: "dynamic",
+    returnType: ["list", "string"],
     parameters: [
       {
         type: "string",
@@ -452,6 +494,15 @@ export const functionsMapGenerated = {
       {
         type: "dynamic",
       },
+      {
+        type: "dynamic",
+      },
+    ],
+  },
+  issensitive: {
+    name: "issensitive",
+    returnType: "bool",
+    parameters: [
       {
         type: "dynamic",
       },
@@ -882,6 +933,18 @@ export const functionsMapGenerated = {
       },
     ],
   },
+  templatestring: {
+    name: "templatestring",
+    returnType: "string",
+    parameters: [
+      {
+        type: "string",
+      },
+      {
+        type: "dynamic",
+      },
+    ],
+  },
   textdecodebase64: {
     name: "textdecodebase64",
     returnType: "string",
@@ -1064,6 +1127,15 @@ export const functionsMapGenerated = {
   },
   upper: {
     name: "upper",
+    returnType: "string",
+    parameters: [
+      {
+        type: "string",
+      },
+    ],
+  },
+  urldecode: {
+    name: "urldecode",
     returnType: "string",
     parameters: [
       {

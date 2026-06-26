@@ -47,3 +47,61 @@ The provider lives under `packages/@cdktn/provider-generator/lib/__tests__/edge-
 We generate the schema into `packages/@cdktn/provider-generator/edge-provider-bindings` on build and copy them through GH Actions or the `edge:install` command.
 
 We also build a helper to translate an initial version of these tests through the different languages, `edge:translateTests` takes the typescript `main.ts` and translates it to the other languages. The translation is not perfect, but a good start.
+
+## Running Against Different Terraform / OpenTofu Versions
+
+Everything that shells out to a Terraform-compatible CLI honors the
+`TERRAFORM_BINARY_NAME` environment variable (default: `terraform`). This
+includes the `cdktn` CLI (init/diff/deploy), the optional binary verification
+validation (runs `<binary> version` to check the installed CLI against the
+declared `targetVersions`), and the unit-test matchers (`toPlanSuccessfully`
+and friends run `<binary> init/plan`).
+
+Note that function version validation does **not** shell out: it checks the
+functions used through `Fn` against the declared `targetVersions` statically,
+using the vendored availability matrix.
+
+Which tests execute the binary:
+
+- **Integration tests** that call `driver.diff()` / `driver.deploy()` (e.g.
+  `typescript/variables`) run full `terraform init/plan/apply` cycles.
+  Synth-only tests (e.g. `typescript/synth-app`) execute the binary at most
+  for a `version` lookup, while purely static ones (e.g.
+  `typescript/function-version-validation`, which deliberately runs against a
+  nonexistent binary) never invoke a CLI at all.
+- **Unit tests** in `packages/cdktn` run `terraform init/plan` through the
+  testing matchers and `terraform version` through the binary verification
+  validation (stubbed with `echo` in most validation tests).
+
+### CI version matrix
+
+`.terraform.versions.json` at the repository root drives the matrix:
+
+- `available` — versions baked into the CI Docker image (see `Dockerfile`);
+  each is installed as `/usr/local/bin/terraform<version>` with the `default`
+  version symlinked to `terraform`.
+- `tested` — the subset run in CI workflows, exported as
+  `TERRAFORM_BINARY_NAME=terraform<version>` per matrix job.
+
+OpenTofu is currently **not** part of the CI image; OpenTofu runs are local
+only for now.
+
+### Local runs
+
+Pick any locally installed binary per run:
+
+```shell
+# specific Terraform version (e.g. via mise/tfenv shims or a direct download)
+TERRAFORM_BINARY_NAME=terraform1.6.5 npx jest --runInBand typescript/function-version-validation
+
+# OpenTofu
+TERRAFORM_BINARY_NAME=tofu npx jest --runInBand typescript/function-version-validation
+```
+
+Version-sensitive tests should detect the product/version themselves and
+adapt their expectations instead of hardcoding one binary. Note that
+synth-time validations are deliberately _not_ version-sensitive: they check
+the project's declared `targetVersions` from cdktf.json and never execute a
+binary — `typescript/function-version-validation/test.ts` demonstrates this
+by running every synth with a nonexistent `TERRAFORM_BINARY_NAME` and driving
+expectations purely through the declared targets.

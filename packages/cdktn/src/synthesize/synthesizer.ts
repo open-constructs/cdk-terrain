@@ -30,6 +30,10 @@ export class StackSynthesizer implements IStackSynthesizer {
     invokeAspects(this.stack);
 
     if (this.stack.hasResourceMove()) {
+      // TODO(target-versions): this probes the locally installed binary during
+      // synth. Migrate to ValidateFeatureTargetSupport (declared cdktf.json
+      // targetVersions) and leave installed-binary verification to the opt-in
+      // validateInstalledBinary CLI behavior.
       this.stack.node.addValidation(
         new ValidateTerraformVersion(
           ">=1.5",

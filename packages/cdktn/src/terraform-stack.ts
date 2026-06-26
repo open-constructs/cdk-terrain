@@ -15,7 +15,11 @@ import { IStackSynthesizer } from "./synthesize/types";
 import { StackSynthesizer } from "./synthesize/synthesizer";
 
 const STACK_SYMBOL = Symbol.for("cdktf/TerraformStack");
-import { ValidateProviderPresence } from "./validations";
+import {
+  ValidateFunctionVersionSupport,
+  ValidateProviderPresence,
+} from "./validations";
+import { VALIDATE_FUNCTION_VERSIONS } from "./features";
 import { App } from "./app";
 import { TerraformBackend } from "./terraform-backend";
 import { TerraformResourceTargets } from "./terraform-resource-targets";
@@ -94,6 +98,9 @@ export class TerraformStack extends Construct {
     );
     Object.defineProperty(this, STACK_SYMBOL, { value: true });
     this.node.addValidation(new ValidateProviderPresence(this));
+    if (this.node.tryGetContext(VALIDATE_FUNCTION_VERSIONS)) {
+      this.node.addValidation(new ValidateFunctionVersionSupport(this));
+    }
   }
 
   public static isStack(x: any): x is TerraformStack {

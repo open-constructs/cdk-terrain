@@ -166,5 +166,6 @@ export interface Terraform {
     callback: (state: TerraformDeployState) => void,
   ): Promise<{ cancelled: boolean }>;
   output(): Promise<{ [key: string]: TerraformOutput }>;
+  version(): Promise<string>;
   abort: () => Promise<void>;
 }
