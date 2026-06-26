@@ -25,8 +25,8 @@ export interface GetConfig {
 }
 
 /**
- * Drive a `cdktn get` invocation: generate language-specific constructs from provider/module constraints. Uses an
- * `ora` spinner and emits a final summary line on success.
+ * Drive a `cdktn get` invocation: generate language-specific constructs from provider/module constraints. Drives a
+ * spinner bar from cli-core's status callbacks and emits a final summary line on success.
  *
  * @param config - Get options including target language and constraints. When `silent: true`, no spinner or summary
  *                 is printed and the function only throws on error.

@@ -164,8 +164,9 @@ export function renderProviderTable(
 }
 
 /**
- * Render a two-column "Stack name / Path" listing for `cdktn list`. Column width is sized to fit the longest stack
- * name.
+ * Render a two-column "Stack name / Path" listing for `cdktn list`. The Stack-name column is sized to 40% of the
+ * terminal width, with a floor that ensures the longest name still fits, so column positions stay stable across
+ * runs.
  *
  * @param stacks - Stacks to list.
  * @returns Multi-line string with a bold header row followed by one row per stack.
@@ -173,7 +174,12 @@ export function renderProviderTable(
 export function renderStackList(
   stacks: Array<{ name: string; workingDirectory: string }>,
 ): string {
-  const nameWidth = Math.max(10, ...stacks.map((s) => s.name.length)) + 2;
+  const columns =
+    process.stdout.columns && process.stdout.columns > 0
+      ? process.stdout.columns
+      : 80;
+  const longestName = Math.max(10, ...stacks.map((s) => s.name.length));
+  const nameWidth = Math.max(Math.floor(columns * 0.4), longestName + 2);
   const header =
     chalk.bold("Stack name".padEnd(nameWidth)) + chalk.bold("Path");
   const rows = stacks.map((s) => s.name.padEnd(nameWidth) + s.workingDirectory);

@@ -31,6 +31,7 @@ export class StreamRenderer {
   private cursorRestore?: () => void;
   private spinnerFrame = 0;
   private spinnerInterval?: NodeJS.Timeout;
+  private hasEmittedLog = false;
 
   /**
    * @param out - Stream to write to. Defaults to process.stdout. TTY detection is based on whether this stream reports
@@ -41,11 +42,13 @@ export class StreamRenderer {
   }
 
   /**
-   * Begin a rendering session. In TTY mode, hides the cursor and registers signal handlers so the cursor is restored
-   * on SIGINT/SIGTERM/SIGQUIT even if `stop()` is never reached. No-op in non-TTY mode.
+   * Begin a rendering session. In TTY mode, writes a leading blank line so the bar/output is visually separated from
+   * the shell prompt, hides the cursor, and registers signal handlers so the cursor is restored on
+   * SIGINT/SIGTERM/SIGQUIT even if `stop()` is never reached. No-op in non-TTY mode.
    */
   start(): void {
     if (!this.tty) return;
+    this.out.write("\n");
     cliCursor.hide(this.out);
     this.cursorRestore = () => cliCursor.show(this.out);
     for (const sig of signals) process.once(sig, this.cursorRestore);
@@ -86,6 +89,7 @@ export class StreamRenderer {
     }
     this.eraseBar();
     this.out.write(line + "\n");
+    this.hasEmittedLog = true;
     this.paintBar();
   }
 
@@ -144,7 +148,9 @@ export class StreamRenderer {
   /**
    * Write the bar (with spinner prefix if active) followed by a trailing newline, so the cursor parks on the row below
    * the bar. The trailing newline is load-bearing: it makes `eraseLines(barLines + 1)` align deterministically with
-   * the bar's wrapped rows.
+   * the bar's wrapped rows. When at least one log has been emitted, a leading blank row separates the bar from the
+   * scrollback above; for spinner-only commands the single top-of-output blank from `start()` does the same job and
+   * we skip the leading blank here.
    */
   private paintBar(): void {
     if (!this.tty) return;
@@ -154,8 +160,10 @@ export class StreamRenderer {
     }
     const prefix = this.spinnerInterval ? this.currentSpinnerFrame() + " " : "";
     const painted = prefix + this.bar;
-    this.out.write(painted + "\n");
-    this.barLines = visualRowCount(painted, this.out.columns);
+    const leadingBlank = this.hasEmittedLog ? "\n" : "";
+    this.out.write(leadingBlank + painted + "\n");
+    this.barLines =
+      visualRowCount(painted, this.out.columns) + (leadingBlank ? 1 : 0);
   }
 
   /**
