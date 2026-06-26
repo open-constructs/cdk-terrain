@@ -3,6 +3,7 @@
 import ansiEscapes from "ansi-escapes";
 import cliCursor from "cli-cursor";
 import cliSpinners from "cli-spinners";
+import isCI from "is-ci";
 import stripAnsi from "strip-ansi";
 import { formatLogLine } from "./format";
 
@@ -34,11 +35,11 @@ export class StreamRenderer {
   private hasEmittedLog = false;
 
   /**
-   * @param out - Stream to write to. Defaults to process.stdout. TTY detection is based on whether this stream reports
-   * `isTTY === true`.
+   * @param out - Stream to write to. Defaults to process.stdout. The renderer paints only when this stream reports
+   * `isTTY === true` and no CI environment is detected.
    */
   constructor(private readonly out: NodeJS.WriteStream = process.stdout) {
-    this.tty = Boolean(out.isTTY);
+    this.tty = Boolean(out.isTTY) && !isCI;
   }
 
   /**

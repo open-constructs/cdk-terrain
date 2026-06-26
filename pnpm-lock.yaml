@@ -1421,6 +1421,9 @@ importers:
       constructs:
         specifier: 10.6.0
         version: 10.6.0
+      is-ci:
+        specifier: ^4.1.0
+        version: 4.1.0
       jsii:
         specifier: ~5.9.0
         version: 5.9.43
@@ -6071,6 +6074,10 @@ packages:
 
   is-ci@3.0.1:
     resolution: {integrity: sha512-ZYvCgrefwqoQ6yTyYUbQu64HsITZ3NfKX1lzaEYdkTDcfKzzCI/wthRRYKkdjHKFVgNiXKAKm65Zo1pk2as/QQ==}
+    hasBin: true
+
+  is-ci@4.1.0:
+    resolution: {integrity: sha512-Ab9bQDQ11lWootZUI5qxgN2ZXwxNI5hTwnsvOc1wyxQ7zQ8OkEDw79mI0+9jI3x432NfwbVRru+3noJfXF6lSQ==}
     hasBin: true
 
   is-core-module@2.16.1:
@@ -14101,6 +14108,10 @@ snapshots:
   is-ci@3.0.1:
     dependencies:
       ci-info: 3.9.0
+
+  is-ci@4.1.0:
+    dependencies:
+      ci-info: 4.4.0
 
   is-core-module@2.16.1:
     dependencies:

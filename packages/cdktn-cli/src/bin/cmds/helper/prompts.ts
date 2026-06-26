@@ -10,13 +10,13 @@ export const PROMPT_NEEDS_TTY =
   "Cannot prompt without a TTY. Re-run with --auto-approve, or in an interactive terminal.";
 
 /**
- * Guard that throws {@link PROMPT_NEEDS_TTY} if stdout is not a TTY. Used at the top of every prompt function so
- * cli-core's approval flow fails fast (and cleanly) in CI / piped contexts.
+ * Guard that throws {@link PROMPT_NEEDS_TTY} if stdin cannot deliver keystrokes (i.e. is not a TTY). Used at the top
+ * of every prompt function so cli-core's approval flow fails fast (and cleanly) when stdin is piped or detached.
  *
  * @throws {Error} With message {@link PROMPT_NEEDS_TTY}.
  */
 function requireTty(): void {
-  if (!process.stdout.isTTY) {
+  if (!process.stdin.isTTY) {
     throw new Error(PROMPT_NEEDS_TTY);
   }
 }
