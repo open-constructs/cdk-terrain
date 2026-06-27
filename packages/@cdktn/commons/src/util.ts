@@ -136,8 +136,12 @@ export const exec = async (
     options.noColor = true;
   }
 
+  // Drop spawn's `signal` option: the child already gets the interrupt via the process group, and a second signal
+  // aborts terraform's graceful shutdown. Just wait for its own "close".
+  const { signal: _signal, ...spawnOptions } = options;
+
   return new Promise((ok, ko) => {
-    const child = spawn(command, args, options);
+    const child = spawn(command, args, spawnOptions);
     const out = new Array<string>();
     const err = new Array<string>();
     if (stdout !== undefined) {

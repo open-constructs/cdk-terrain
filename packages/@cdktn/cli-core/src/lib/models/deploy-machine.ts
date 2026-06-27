@@ -76,6 +76,10 @@ export type DeployState =
       context: DeployContext;
     }
   | {
+      value: { running: "stopping" };
+      context: DeployContext;
+    }
+  | {
       value: "exited";
       context: DeployContext & { exitCode: number };
     }
@@ -230,7 +234,7 @@ export const deployMachine = createMachine<
         },
         on: {
           EXITED: "exited",
-          STOP: "stopped",
+          STOP: ".stopping", // wait for terraform to exit, don't stop immediately (see the "stopping" state)
         },
         initial: "processing",
         states: {
@@ -307,6 +311,15 @@ export const deployMachine = createMachine<
                   }),
                 ],
               },
+            },
+          },
+          // On STOP, wait for terraform's own EXITED before reaching the final "stopped" state, so the run only
+          // resolves once it has exited and released its lock. Don't re-signal it — it already got the interrupt via
+          // the process group, and a second signal aborts its graceful shutdown.
+          stopping: {
+            entry: assign<DeployContext, DeployEvent>({ cancelled: true }),
+            on: {
+              EXITED: "#root.stopped",
             },
           },
         },

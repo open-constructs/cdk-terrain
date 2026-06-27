@@ -227,6 +227,52 @@ describe("pty events", () => {
     });
   });
 
+  it("waits for terraform to exit on STOP rather than stopping immediately", (done) => {
+    // The pty stays alive until we resolve its exit, letting us assert the machine waits for terraform's own exit
+    // before reaching "stopped".
+    const stop = jest.fn();
+    let resolveExit: (code: number) => void = () => {};
+    const controllablePty: typeof spawnInteractive = () => ({
+      actions: { write: jest.fn(), writeLine: jest.fn(), stop },
+      exitCode: new Promise<number>((resolve) => {
+        resolveExit = resolve;
+      }),
+    });
+
+    const mockDeployMachine = deployMachine.withConfig({
+      services: {
+        runTerraformInPty: (context, event) =>
+          terraformPtyService(context, event, controllablePty),
+      },
+    });
+
+    let interrupted = false;
+    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
+      if (state.matches({ running: "stopping" }) && !interrupted) {
+        interrupted = true;
+        // We are waiting for terraform to exit, not yet at the final "stopped" state, and we have not re-signalled it.
+        expect(state.matches("stopped")).toBe(false);
+        expect(stop).not.toHaveBeenCalled();
+        setTimeout(() => resolveExit(0), 50); // terraform finishes exiting, releasing its lock
+      }
+
+      if (state.matches("stopped")) {
+        expect(state.context.cancelled).toBe(true);
+        done();
+      }
+    });
+
+    ptyService.start();
+
+    ptyService.send({
+      type: "START",
+      pty: { file: "", args: [], options: { cwd: "" } },
+    });
+
+    // Give the pty service a tick to start before requesting a stop.
+    setTimeout(() => ptyService.send({ type: "STOP" }), 50);
+  });
+
   it("transitions to rejected state when done externally", (done) => {
     const mockDeployMachine = deployMachine.withConfig({
       services: {
