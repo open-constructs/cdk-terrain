@@ -77,9 +77,10 @@ export async function runDestroy({
           else if (answer === "dismiss") status.dismiss();
           else status.stop();
         } catch (e) {
-          if (!isNonTtyError(e)) throw e;
           console.error(
-            "\nApproval required but stdin is not a TTY. Re-run with --auto-approve. Stopping.",
+            isNonTtyError(e)
+              ? "\nApproval required but stdin is not a TTY. Re-run with --auto-approve. Stopping."
+              : "\nApproval prompt cancelled. Stopping.",
           );
           status.stop();
         } finally {
@@ -94,9 +95,10 @@ export async function runDestroy({
           if (answer === "override") status.override();
           else status.reject();
         } catch (e) {
-          if (!isNonTtyError(e)) throw e;
           console.error(
-            "\nSentinel override required but stdin is not a TTY. Rejecting.",
+            isNonTtyError(e)
+              ? "\nSentinel override required but stdin is not a TTY. Rejecting."
+              : "\nSentinel override prompt cancelled. Rejecting.",
           );
           status.reject();
         } finally {
