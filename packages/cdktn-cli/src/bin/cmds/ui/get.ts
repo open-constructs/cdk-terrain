@@ -74,7 +74,7 @@ export async function runGet({
     if (!IsErrorType(e, "Usage")) {
       console.error(e);
     }
-    throw new Error(e);
+    throw e;
   }
 
   stream?.stop();

@@ -768,5 +768,6 @@ export async function providerList(argv: any) {
       "Package Version": provider.packageVersion || "",
     });
   }
+  await terraformCheck();
   printProviderList(data);
 }
