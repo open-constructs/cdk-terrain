@@ -1,17 +1,23 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App, TerraformStack, Testing } from "../src";
+import * as child_process from "child_process";
+import { App, Fn, TerraformStack, Testing } from "../src";
 
 import { Construct, IValidation } from "constructs";
 import { TestResource } from "./helper/resource";
 import {
+  checkFeatureSupportedByTargets,
   parseTerraformCliVersion,
+  resolveTargetVersions,
   ValidateBinaryVersion,
-  ValidateTerraformFeatureVersion,
+  ValidateFeatureTargetSupport,
+  ValidateFunctionVersionSupport,
 } from "../src/validations";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
 import { terraformBinaryName } from "../src/util";
+import { resetFunctionUsageRegistry } from "../src/functions/usage-registry";
+import { VALIDATE_FUNCTION_VERSIONS } from "../src/features";
 
 const tmp = createTmpHelper();
 
@@ -177,106 +183,374 @@ describe("parseTerraformCliVersion", () => {
   });
 });
 
-describe("ValidateTerraformFeatureVersion", () => {
-  test("passes when the detected Terraform version satisfies the feature matrix", () => {
+describe("resolveTargetVersions", () => {
+  function stackWithContext(context?: Record<string, any>) {
     const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir, context }),
+    );
+    return new TerraformStack(app, "MyStack");
+  }
+
+  test("defaults to the dual product baseline when undeclared", () => {
+    expect(resolveTargetVersions(stackWithContext())).toEqual({
+      targets: { terraform: ">=1.5.7", opentofu: ">=1.6.0" },
+      errors: [],
+    });
+  });
+
+  test("uses the declared targets from context", () => {
+    const stack = stackWithContext({
+      targetVersions: { terraform: ">=1.9.0" },
+    });
+    expect(resolveTargetVersions(stack)).toEqual({
+      targets: { terraform: ">=1.9.0" },
+      errors: [],
+    });
+  });
+
+  test("reports unknown products", () => {
+    const stack = stackWithContext({ targetVersions: { tofu: ">=1.6.0" } });
+    expect(resolveTargetVersions(stack).errors).toEqual([
+      `targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")`,
+    ]);
+  });
+
+  test("reports invalid semver ranges", () => {
+    const stack = stackWithContext({
+      targetVersions: { terraform: "latest" },
+    });
+    expect(resolveTargetVersions(stack).errors).toEqual([
+      `targetVersions.terraform "latest" is not a valid semver range`,
+    ]);
+  });
+
+  test("rejects Terraform provider constraint syntax with a hint", () => {
+    const stack = stackWithContext({
+      targetVersions: { terraform: "~> 1.5" },
+    });
+    expect(resolveTargetVersions(stack).errors).toEqual([
+      `targetVersions.terraform "~> 1.5" uses Terraform provider constraint syntax; use npm semver ranges instead (e.g. ">=1.5.7" or "~1.5.7")`,
+    ]);
+  });
+
+  test("reports empty declarations", () => {
+    const stack = stackWithContext({ targetVersions: {} });
+    expect(resolveTargetVersions(stack).errors[0]).toContain(
+      "must declare at least one product",
+    );
+  });
+});
+
+describe("checkFeatureSupportedByTargets", () => {
+  test("passes when the feature covers the whole declared range of each product", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "S3 native state locking",
+        { terraform: ">=1.10.0", opentofu: ">=1.10.0" },
+        { terraform: ">=1.11.0", opentofu: ">=1.10.0" },
+      ),
+    ).toEqual([]);
+  });
+
+  test("fails when the declared range starts below the feature's minimum", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "S3 native state locking",
+        { terraform: ">=1.10.0" },
+        { terraform: ">=1.5.7" },
+      ),
+    ).toEqual([
+      "S3 native state locking requires terraform >=1.10.0, but the project targets terraform >=1.5.7.",
+    ]);
+  });
+
+  test("evaluates each targeted product independently", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "S3 native state locking",
+        { terraform: ">=1.11.0", opentofu: ">=1.10.0" },
+        { terraform: ">=1.5.7", opentofu: ">=1.10.0" },
+      ),
+    ).toEqual([
+      "S3 native state locking requires terraform >=1.11.0, but the project targets terraform >=1.5.7.",
+    ]);
+  });
+
+  test("fails when a targeted product does not support the feature at all", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "ephemeral resources",
+        { terraform: ">=1.10.0" },
+        { terraform: ">=1.10.0", opentofu: ">=1.6.0" },
+        "Remove opentofu from targetVersions to use this feature.",
+      ),
+    ).toEqual([
+      "ephemeral resources is not supported by opentofu, but the project targets opentofu >=1.6.0. Remove opentofu from targetVersions to use this feature.",
+    ]);
+  });
+
+  test("ignores products the project does not target", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "ephemeral resources",
+        { terraform: ">=1.10.0" },
+        { terraform: ">=1.10.0" },
+      ),
+    ).toEqual([]);
+  });
+
+  test("supports complex declared ranges via subset semantics", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.8.0" },
+        { terraform: "1.8.x || 1.9.x" },
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("ValidateFeatureTargetSupport", () => {
+  function appWithStack(context?: Record<string, any>) {
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir, context }),
+    );
     const stack = new TerraformStack(app, "MyStack");
     new TestProvider(stack, "foo", {});
     const testResource = new TestResource(stack, "testResource", {
       name: "foo",
     });
+    return { app, stack, testResource };
+  }
+
+  test("validates against declared targets without executing any binary", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.10.0" },
+    });
     testResource.node.addValidation(
-      new ValidateTerraformFeatureVersion(
+      new ValidateFeatureTargetSupport(
+        testResource,
         "S3 native state locking",
         {
           terraform: ">=1.10.0",
           opentofu: ">=1.10.0",
         },
-        `echo "Terraform v1.10.5\non linux_arm64"`,
       ),
     );
 
-    expect(() => app.synth()).not.toThrow();
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
   });
 
-  test("fails with the product-specific constraint when Terraform is too old", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
-    });
+  test("fails against the default baseline when the feature needs a newer floor", () => {
+    const { app, testResource } = appWithStack();
     testResource.node.addValidation(
-      new ValidateTerraformFeatureVersion(
+      new ValidateFeatureTargetSupport(
+        testResource,
         "S3 native state locking",
         {
           terraform: ">=1.10.0",
-          opentofu: ">=1.9.0",
+          opentofu: ">=1.10.0",
         },
-        `echo "Terraform v1.7.5\non linux_arm64"`,
       ),
     );
 
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
-        [MyStack/testResource] S3 native state locking requires terraform >=1.10.0, but terraform version 1.7.5 was found.
+        [MyStack/testResource] S3 native state locking requires terraform >=1.10.0, but the project targets terraform >=1.5.7.
+        [MyStack/testResource] S3 native state locking requires opentofu >=1.10.0, but the project targets opentofu >=1.6.0.
 
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
     `);
   });
 
-  test("uses the OpenTofu constraint when OpenTofu is detected", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
+  test("surfaces malformed context declarations as validation errors", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { tofu: ">=1.6.0" },
     });
     testResource.node.addValidation(
-      new ValidateTerraformFeatureVersion(
-        "S3 native state locking",
-        {
-          terraform: ">=1.12.0",
-          opentofu: ">=1.10.0",
-        },
-        `echo "OpenTofu v1.10.10\non linux_arm64"`,
-      ),
-    );
-
-    expect(() => app.synth()).not.toThrow();
-  });
-
-  test("fails when the CLI product cannot be detected from the first line", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
-    });
-    testResource.node.addValidation(
-      new ValidateTerraformFeatureVersion(
+      new ValidateFeatureTargetSupport(
+        testResource,
         "S3 native state locking",
         {
           terraform: ">=1.10.0",
-          opentofu: ">=1.10.0",
         },
-        `echo '{"terraform_version":"1.10.10"}'`,
       ),
     );
 
-    const binaryName = terraformBinaryName;
-
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
-        [MyStack/testResource] Could not determine whether ${binaryName} is Terraform or OpenTofu from the first line of ${binaryName} version output: {\"terraform_version\":\"1.10.10\"}
+        [MyStack/testResource] targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")
 
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
     `);
+  });
+});
+
+describe("ValidateFunctionVersionSupport", () => {
+  beforeEach(() => {
+    resetFunctionUsageRegistry();
+  });
+
+  function appWithStack(context?: Record<string, any>) {
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir, context }),
+    );
+    const stack = new TerraformStack(app, "MyStack");
+    new TestProvider(stack, "foo", {});
+    const testResource = new TestResource(stack, "testResource", {
+      name: "foo",
+    });
+    return { app, stack, testResource };
+  }
+
+  test("ignores universally available functions without resolving targets", () => {
+    const { app, stack, testResource } = appWithStack();
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(stack, "usesBaselineFunction", {
+      name: Fn.abs(-42).toString(),
+    });
+
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
+  });
+
+  test("fails against the default baseline targets when a function needs a newer floor", () => {
+    const { app, testResource } = appWithStack();
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] Terraform function "templatestring" requires terraform >=1.9.0, but the project targets terraform >=1.5.7. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+        [MyStack/testResource] Terraform function "templatestring" requires opentofu >=1.7.0, but the project targets opentofu >=1.6.0. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("passes when the declared targets are within the function's availability", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
+  });
+
+  test("fails with an availability hint when a targeted product does not support the function", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.15.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesCidrcontains", {
+      name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] Terraform function "cidrcontains" is not supported by terraform, but the project targets terraform >=1.15.0. It is available in opentofu >=1.7.0.
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("passes for an OpenTofu-only function when only OpenTofu is targeted", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { opentofu: ">=1.7.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesCidrcontains", {
+      name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
+    });
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("surfaces malformed declared targets as validation errors", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { tofu: ">=1.7.0" },
+    });
+    testResource.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource),
+    );
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("is added to stacks via the validateFunctionVersions feature flag", () => {
+    const { app, stack } = appWithStack({
+      [VALIDATE_FUNCTION_VERSIONS]: "true",
+      targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
+    });
+    new TestResource(stack, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    const execSpy = jest.spyOn(child_process, "execSync");
+    try {
+      expect(() => app.synth()).not.toThrow();
+      expect(execSpy).not.toHaveBeenCalled();
+    } finally {
+      execSpy.mockRestore();
+    }
+  });
+
+  test("is not added to stacks without the feature flag", () => {
+    const { app, testResource } = appWithStack();
+    new TestResource(testResource, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    // no validation registered: even a function outside the default baseline
+    // does not fail synth
+    expect(() => app.synth()).not.toThrow();
   });
 });

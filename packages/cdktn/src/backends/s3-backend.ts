@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
 import { TerraformBackend } from "../terraform-backend";
-import { keysToSnakeCase } from "../util";
 import {
-  TerraformRemoteState,
   DataTerraformRemoteStateConfig,
+  TerraformRemoteState,
 } from "../terraform-remote-state";
+import { keysToSnakeCase } from "../util";
+import { ValidateFeatureTargetSupport } from "../validations";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class S3Backend extends TerraformBackend {
@@ -15,6 +16,15 @@ export class S3Backend extends TerraformBackend {
     private readonly props: S3BackendConfig,
   ) {
     super(scope, "backend", "s3");
+
+    if (props.useLockfile) {
+      this.node.addValidation(
+        new ValidateFeatureTargetSupport(this, "S3 native state locking", {
+          terraform: ">=1.10.0",
+          opentofu: ">=1.10.0",
+        }),
+      );
+    }
   }
 
   protected synthesizeAttributes(): { [name: string]: any } {
@@ -184,9 +194,19 @@ export interface S3BackendConfig {
    */
   readonly kmsKeyId?: string;
   /**
+   * (Optional) Whether to use a lockfile for locking the state file. Defaults to false.
+   * State locking is an opt-in feature of the S3 backend.
+   * Locking can be enabled via S3 or DynamoDB (see dynamodbTable). However, DynamoDB-based locking
+   *   is deprecated and will be removed in a future minor version. To support migration from older
+   *   versions of Terraform that only support DynamoDB-based locking, the S3 (useLockfile) and DynamoDB
+   *   (dynamodbTable) arguments can be configured simultaneously.
+   */
+  readonly useLockfile?: boolean;
+  /**
    * (Optional) Name of DynamoDB Table to use for state locking and consistency.
    * The table must have a partition key named LockID with type of String.
    * If not configured, state locking will be disabled.
+   * @deprecated Use useLockfile instead, which uses S3 for locking
    */
   readonly dynamodbTable?: string;
   /**

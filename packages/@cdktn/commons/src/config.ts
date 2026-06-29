@@ -5,6 +5,7 @@
 
 import * as fs from "fs-extra";
 import * as path from "path";
+import * as semver from "semver";
 import { logger } from "./logging";
 import { isRegistryModule } from "./terraform-module";
 import { env } from "process";
@@ -269,6 +270,23 @@ export class TerraformProviderConstraint implements TerraformDependencyConstrain
   }
 }
 
+// The targetVersions vocabulary is owned by the cdktn package (its canonical
+// home; cdktn must not depend on commons, so the dependency goes this way).
+// cdktn's public (jsii) API intentionally exposes only the author-facing
+// validation, so commons consumes the project-facing type, default baseline,
+// context key, and product list as internal wiring via the subpath.
+import {
+  DEFAULT_TARGET_VERSIONS,
+  TerraformTargetVersions,
+  TARGET_PRODUCTS,
+  TARGET_VERSIONS_CONTEXT_KEY,
+} from "cdktn/lib/validations";
+
+// Re-exported so existing commons consumers (e.g. @cdktn/cli-core) keep a
+// single import surface.
+export { DEFAULT_TARGET_VERSIONS };
+export type { TerraformTargetVersions };
+
 interface ConfigBase {
   readonly app?: string;
   readonly output: string;
@@ -276,6 +294,69 @@ interface ConfigBase {
   terraformProviders?: TerraformProviderConstraint[];
   terraformModules?: TerraformModuleConstraint[];
   readonly context?: { [key: string]: any };
+  readonly targetVersions?: TerraformTargetVersions;
+  /**
+   * When true, commands that execute the Terraform-compatible CLI (diff,
+   * deploy, destroy) verify that the installed binary satisfies the declared
+   * `targetVersions` before running it.
+   */
+  readonly validateInstalledBinary?: boolean;
+}
+
+/**
+ * Validates the shape of a `targetVersions` declaration; returns a list of
+ * human-readable problems (empty when valid).
+ */
+export function validateTargetVersions(targetVersions: unknown): string[] {
+  if (targetVersions === undefined) return [];
+
+  if (
+    typeof targetVersions !== "object" ||
+    targetVersions === null ||
+    Array.isArray(targetVersions)
+  ) {
+    return [
+      `targetVersions must be an object mapping products to semver ranges, e.g. { "terraform": ">=1.5.7" }`,
+    ];
+  }
+
+  const entries = Object.entries(targetVersions);
+  if (entries.length === 0) {
+    return [
+      `targetVersions must declare at least one product ("terraform" or "opentofu") or be omitted entirely`,
+    ];
+  }
+
+  const problems: string[] = [];
+  for (const [product, range] of entries) {
+    if (!(TARGET_PRODUCTS as readonly string[]).includes(product)) {
+      problems.push(
+        `targetVersions has unknown product "${product}" (expected "terraform" or "opentofu")`,
+      );
+      continue;
+    }
+    if (typeof range !== "string") {
+      problems.push(
+        `targetVersions.${product} must be a semver range string, got ${JSON.stringify(
+          range,
+        )}`,
+      );
+      continue;
+    }
+    if (range.includes("~>")) {
+      problems.push(
+        `targetVersions.${product} "${range}" uses Terraform provider constraint syntax; use npm semver ranges instead (e.g. ">=1.5.7" or "~1.5.7")`,
+      );
+      continue;
+    }
+    if (semver.validRange(range) === null) {
+      problems.push(
+        `targetVersions.${product} "${range}" is not a valid semver range`,
+      );
+    }
+  }
+
+  return problems;
 }
 
 /**
@@ -325,8 +406,23 @@ export const parseConfig = (configJSON?: string) => {
     );
   }
 
-  if (config.context) {
-    env[CONTEXT_ENV] = JSON.stringify(config.context);
+  const targetVersionProblems = validateTargetVersions(config.targetVersions);
+  if (targetVersionProblems.length > 0) {
+    throw new Error(
+      `Invalid ${CONFIG_FILE}:\n  ${targetVersionProblems.join("\n  ")}`,
+    );
+  }
+
+  // declared target versions ride along in the context so they reach the
+  // synthesized app without a separate channel
+  const context = {
+    ...config.context,
+    ...(config.targetVersions
+      ? { [TARGET_VERSIONS_CONTEXT_KEY]: config.targetVersions }
+      : {}),
+  };
+  if (Object.keys(context).length > 0) {
+    env[CONTEXT_ENV] = JSON.stringify(context);
   }
 
   return config;

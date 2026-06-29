@@ -22,6 +22,7 @@ export const baseConfig = [
       "**/*.mjs",
       "**/.gen/**",
       "packages/@cdktn/provider-generator/edge-provider-bindings/providers/**",
+      "tools/generate-function-bindings/function-availability/**",
     ],
   },
   eslint.configs.recommended,

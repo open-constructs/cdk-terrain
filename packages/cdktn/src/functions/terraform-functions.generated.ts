@@ -63,6 +63,13 @@ export class FnGenerated {
     return asString(terraformFunction("base64encode", [stringValue])(str));
   }
   /**
+   * {@link https://opentofu.org/docs/language/functions/base64gunzip base64gunzip} decodes a Base64-encoded string and uncompresses the result with gzip.
+   * @param {string} str
+   */
+  static base64gunzip(str: string) {
+    return asString(terraformFunction("base64gunzip", [stringValue])(str));
+  }
+  /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/base64gzip base64gzip} compresses a string with gzip and then encodes the result in Base64 encoding.
    * @param {string} str
    */
@@ -135,6 +142,22 @@ export class FnGenerated {
       terraformFunction("chunklist", [listOf(anyValue), numericValue])(
         list,
         size,
+      ),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/cidrcontains cidrcontains} determines whether a given IP address or an address prefix given in CIDR notation is within a given IP network address prefix.
+   * @param {string} containing_prefix
+   * @param {string} contained_ip_or_prefix
+   */
+  static cidrcontains(
+    containing_prefix: string,
+    contained_ip_or_prefix: string,
+  ) {
+    return asBoolean(
+      terraformFunction("cidrcontains", [stringValue, stringValue])(
+        containing_prefix,
+        contained_ip_or_prefix,
       ),
     );
   }
@@ -225,6 +248,16 @@ export class FnGenerated {
     );
   }
   /**
+   * {@link https://developer.hashicorp.com/terraform/language/functions/convert convert} converts a value to the given type constraint.
+   * @param {any} value
+   * @param {any} type
+   */
+  static convert(value: any, type: any) {
+    return asAny(
+      terraformFunction("convert", [anyValue, anyValue])(value, type),
+    );
+  }
+  /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/csvdecode csvdecode} decodes a string containing CSV-formatted data and produces a list of maps representing that data.
    * @param {string} str
    */
@@ -264,6 +297,13 @@ export class FnGenerated {
     return asBoolean(
       terraformFunction("endswith", [stringValue, stringValue])(str, suffix),
     );
+  }
+  /**
+   * {@link https://developer.hashicorp.com/terraform/language/functions/ephemeralasnull ephemeralasnull} takes a value of any type and returns a similar value of the same type with any ephemeral values replaced with non-ephemeral null values and all non-ephemeral values preserved.
+   * @param {any} value
+   */
+  static ephemeralasnull(value: any) {
+    return asAny(terraformFunction("ephemeralasnull", [anyValue])(value));
   }
   /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/file file} reads the contents of a file at the given path and returns them as a string.
@@ -358,7 +398,7 @@ export class FnGenerated {
    * @param {Array<any>} args
    */
   static format(format: string, args: any[]) {
-    return asAny(
+    return asString(
       terraformFunction("format", [stringValue, variadic(anyValue)])(
         format,
         args,
@@ -381,7 +421,7 @@ export class FnGenerated {
    * @param {Array<any>} args
    */
   static formatlist(format: string, args: any[]) {
-    return asAny(
+    return asList(
       terraformFunction("formatlist", [stringValue, variadic(anyValue)])(
         format,
         args,
@@ -405,6 +445,13 @@ export class FnGenerated {
    */
   static index(list: any, value: any) {
     return asAny(terraformFunction("index", [anyValue, anyValue])(list, value));
+  }
+  /**
+   * {@link https://developer.hashicorp.com/terraform/language/functions/issensitive issensitive} takes a value and returns a boolean indicating if the value is sensitive.
+   * @param {any} value
+   */
+  static issensitive(value: any) {
+    return asBoolean(terraformFunction("issensitive", [anyValue])(value));
   }
   /**
    * @internal
@@ -811,6 +858,19 @@ export class FnGenerated {
     );
   }
   /**
+   * {@link https://developer.hashicorp.com/terraform/language/functions/templatestring templatestring} takes a string from elsewhere in the module and renders its content as a template using a supplied set of template variables.
+   * @param {string} template
+   * @param {any} vars
+   */
+  static templatestring(template: string, vars: any) {
+    return asString(
+      terraformFunction("templatestring", [stringValue, anyValue])(
+        template,
+        vars,
+      ),
+    );
+  }
+  /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/textdecodebase64 textdecodebase64} function decodes a string that was previously Base64-encoded, and then interprets the result as characters in a specified character encoding.
    * @param {string} source
    * @param {string} encoding
@@ -974,6 +1034,13 @@ export class FnGenerated {
    */
   static upper(str: string) {
     return asString(terraformFunction("upper", [stringValue])(str));
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/urldecode urldecode} applies URL decoding to a given encoded string.
+   * @param {string} str
+   */
+  static urldecode(str: string) {
+    return asString(terraformFunction("urldecode", [stringValue])(str));
   }
   /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/urlencode urlencode} applies URL encoding to a given string.
