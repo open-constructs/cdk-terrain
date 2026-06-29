@@ -59,6 +59,7 @@
         "@types/jest": "30.0.0",
         "@types/prettier": "2.6.0",
         "@typescript-eslint/parser": "^8.58.0",
+        "changelog-parser": "^2.8.1",
         "eslint": "^9.39.4",
         "eslint-config-prettier": "^10.1.8",
         "eslint-formatter-gha": "^2.0.1",

@@ -7,6 +7,8 @@
   "workspaces": {
     ".": {
       "ignoreDependencies": [
+        // Required by the tools/extract-changelog script (run from tools/release-github.sh).
+        "changelog-parser",
         // Referenced only via `--format=gha` CLI flag in CI; knip can't detect this.
         "eslint-formatter-gha"
       ]
