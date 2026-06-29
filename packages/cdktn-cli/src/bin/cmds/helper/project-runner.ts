@@ -1,6 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { CdktfProject, ProjectUpdate, CdktfStack } from "@cdktn/cli-core";
+import { Errors } from "@cdktn/commons";
 
 /**
  * High-level status of a running cdktn project, mapped from cli-core's `ProjectUpdate` events. The renderer/UI layer
@@ -76,15 +77,22 @@ export async function runCdktfProject<T>(
     pending: project.stacksToRun.filter((s) => s.isPending),
   });
 
+  // cli-core's onUpdate is sync, so onStatus is fire-and-forget. Wrap the promise with `.catch(() => {})` so any
+  // rejection from the UI layer (an approval prompt the user cancelled, an inquirer Exit/Abort, etc.) doesn't
+  // bubble up as an UnhandledPromiseRejection after we've already moved on.
+  const fireStatus = (status: Status) => {
+    void Promise.resolve(opts.onStatus(status)).catch(() => {});
+  };
+
   const project = new CdktfProject({
     outDir: opts.outDir,
     hcl: opts.hcl,
     synthCommand: opts.synthCommand,
     onUpdate: (update: ProjectUpdate) => {
       if (update.type === "synthesizing") {
-        void opts.onStatus({ type: "synthesizing" });
+        fireStatus({ type: "synthesizing" });
       } else if (update.type === "waiting for approval") {
-        void opts.onStatus({
+        fireStatus({
           type: "waiting for approval of stack",
           stackName: update.stackName,
           approve: update.approve,
@@ -92,31 +100,51 @@ export async function runCdktfProject<T>(
           stop: update.stop,
         });
       } else if (update.type === "waiting for sentinel override") {
-        void opts.onStatus({
+        fireStatus({
           type: "waiting for override of sentinel policy check failure",
           stackName: update.stackName,
           override: update.override,
           reject: update.reject,
         });
       } else {
-        void opts.onStatus(runningStatus(project));
+        fireStatus(runningStatus(project));
       }
     },
     onLog: (event: LogEvent) => {
       opts.onLog?.(event);
-      void opts.onStatus(runningStatus(project));
+      fireStatus(runningStatus(project));
     },
   });
 
-  const onAbort = () => project.hardAbort();
+  let aborted = false;
+  const onAbort = () => {
+    aborted = true;
+    project.hardAbort();
+  };
   for (const sig of signals) process.on(sig, onAbort);
 
   try {
-    void opts.onStatus({ type: "starting" });
+    fireStatus({ type: "starting" });
     const returnValue = await projectCallback(project);
-    void opts.onStatus({ type: "done" });
+    fireStatus({ type: "done" });
     return { returnValue, project };
+  } catch (err) {
+    // When the user hits Ctrl-C, our onAbort fires `project.hardAbort()`, which causes cli-core to reject with an
+    // `AbortError`. That's expected — convert it into a clean exit so callers don't see Node's unhandled-rejection
+    // banner. Non-abort failures (real terraform errors, etc.) propagate normally.
+    if (aborted && isAbortError(err)) {
+      throw Errors.Usage("Operation cancelled by user.");
+    }
+    throw err;
   } finally {
     for (const sig of signals) process.removeListener(sig, onAbort);
   }
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    err instanceof Error &&
+    (err.name === "AbortError" ||
+      (err as { code?: string }).code === "ABORT_ERR")
+  );
 }
