@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as https from "https";
 import { format } from "url";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "node:crypto";
 import * as os from "os";
 import ciInfo from "ci-info";
 import { logger, processLoggerError } from "./logging";
@@ -101,7 +101,7 @@ function getId(
   forceCreation = false,
   explanatoryComment?: string,
 ): string {
-  const _uuid = uuidv4(); // create a new UUID in case we don't find one
+  const _uuid = randomUUID(); // create a new UUID in case we don't find one
 
   let jsonFile;
   try {
@@ -157,7 +157,7 @@ export async function ReportRequest(reportParams: ReportParams): Promise<void> {
   }
 
   if (!reportParams.runID) {
-    reportParams.runID = uuidv4();
+    reportParams.runID = randomUUID();
   }
 
   if (!reportParams.dateTime) {

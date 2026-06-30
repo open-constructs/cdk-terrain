@@ -24,7 +24,7 @@ import {
 } from "@cdktn/hcl2cdk";
 import { isLocalModule } from "@cdktn/provider-generator";
 import { ExecSyncOptions, execSync } from "child_process";
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "node:crypto";
 import { readSchema } from "@cdktn/provider-schema";
 import {
   LANGUAGES,
@@ -140,7 +140,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
     argv.projectName,
     argv.projectDescription,
   );
-  const projectId = uuid();
+  const projectId = randomUUID();
   telemetryData.projectId = projectId;
 
   let fromTerraformProject = argv.fromTerraformProject || undefined;

@@ -72,7 +72,6 @@
     "@types/pidusage": "2.0.5",
     "@types/react": "18.3.28",
     "@types/semver": "7.7.1",
-    "@types/uuid": "8.3.4",
     "@types/yargs": "17.0.35",
     "chalk": "4.1.2",
     "esbuild": "^0.28.0",
@@ -94,7 +93,6 @@
     "semver": "7.7.4",
     "strip-ansi": "6.0.1",
     "tsc-files": "1.1.4",
-    "typescript": "^5.0.0",
-    "uuid": "8.3.2"
+    "typescript": "^5.0.0"
   }
 }
