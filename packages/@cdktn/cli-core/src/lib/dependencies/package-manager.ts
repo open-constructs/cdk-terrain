@@ -88,6 +88,142 @@ const pipPackageSchema = z.array(
 );
 
 /**
+ * Marks failures worth retrying (network errors, 408/429, 5xx). A definitive non-transient response — e.g. a 4xx
+ * from the registry — is not wrapped and so surfaces immediately without burning retries.
+ */
+class TransientFetchError extends Error {}
+
+function isTransientStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+/**
+ * Retry tuning. The delay before retry `n` (1-indexed) is `baseBackoffMs * backoffFactor ** (n - 1)`.
+ */
+export type RetryOptions = {
+  /** Maximum number of attempts before giving up (default 3). */
+  attempts?: number;
+  /** Delay before the first retry, in ms (default 500). */
+  baseBackoffMs?: number;
+  /** Multiplier applied to the backoff per subsequent retry (default 2). */
+  backoffFactor?: number;
+};
+
+/**
+ * Runs an operation, retrying only failures it raises as a {@link TransientFetchError} (network errors, 408/429, 5xx)
+ * with exponential backoff. Definitive failures propagate immediately. Throws if every transient attempt is exhausted
+ * so callers can tell "the registry is unreachable" apart from a definitive answer.
+ *
+ * @param label - Human-readable description of the request, used in retry/exhaustion log and error messages.
+ * @param op - The operation to run; should throw a {@link TransientFetchError} for retryable failures.
+ * @param opts - Retry tuning; see {@link RetryOptions}.
+ * @returns The operation's resolved value.
+ * @throws If a definitive (non-transient) failure occurs, or every transient attempt is exhausted.
+ */
+async function withRetry<T>(
+  label: string,
+  op: () => Promise<T>,
+  { attempts = 3, baseBackoffMs = 500, backoffFactor = 2 }: RetryOptions = {},
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await op();
+    } catch (err) {
+      lastError = err;
+      // Non-transient failures are definitive — surface them immediately without burning retries.
+      if (!(err instanceof TransientFetchError)) {
+        throw err;
+      }
+      // Transient failure on the final attempt: fall through to the "failed after N attempts" throw below so
+      // callers can distinguish an unreachable registry from a definitive answer.
+      if (attempt === attempts) {
+        break;
+      }
+      const backoffMs = baseBackoffMs * backoffFactor ** (attempt - 1);
+      logger.debug(
+        `${label} failed (attempt ${attempt}/${attempts}): ${err}. Retrying in ${backoffMs}ms`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+  throw new Error(`${label} failed after ${attempts} attempts: ${lastError}`);
+}
+
+/** Performs a single fetch, raising a {@link TransientFetchError} for network errors and transient HTTP statuses. */
+async function fetchOrThrow(url: string) {
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (networkErr) {
+    // fetch rejects only on connectivity issues, which are transient.
+    throw new TransientFetchError(`Request to ${url} failed: ${networkErr}`);
+  }
+  if (!response.ok && isTransientStatus(response.status)) {
+    throw new TransientFetchError(
+      `Received HTTP ${response.status} from ${url}`,
+    );
+  }
+  return response;
+}
+
+/**
+ * Fetches a JSON endpoint, retrying only transient failures with exponential backoff. Definitive failures resolve or
+ * throw immediately. Throws if every transient attempt is exhausted so callers can tell "the registry is unreachable"
+ * apart from a successful response.
+ *
+ * @param url - The endpoint to fetch; its response body is parsed as JSON.
+ * @param opts - Retry tuning; see {@link RetryOptions}.
+ * @returns The parsed JSON response body.
+ * @throws If a definitive (non-transient) failure occurs, or every transient attempt is exhausted.
+ */
+export async function fetchWithRetry<T>(
+  url: string,
+  opts?: RetryOptions,
+): Promise<T> {
+  return withRetry(
+    `Request to ${url}`,
+    async () => {
+      const response = await fetchOrThrow(url);
+      if (!response.ok) {
+        throw new Error(`Received HTTP ${response.status} from ${url}`);
+      }
+      return (await response.json()) as T;
+    },
+    opts,
+  );
+}
+
+/**
+ * Checks whether a URL exists (HTTP 200), retrying transient failures. A 404 is a definitive "absent" and resolves to
+ * `false`; any other non-2xx is a definitive error and throws.
+ *
+ * @param url - The URL to probe for existence.
+ * @param opts - Retry tuning; see {@link RetryOptions}.
+ * @returns `true` if the URL returns 200, `false` if it returns 404.
+ * @throws If a definitive (non-transient, non-404) failure occurs, or every transient attempt is exhausted.
+ */
+export async function urlExistsWithRetry(
+  url: string,
+  opts?: RetryOptions,
+): Promise<boolean> {
+  return withRetry(
+    `Existence check for ${url}`,
+    async () => {
+      const response = await fetchOrThrow(url);
+      if (response.ok) {
+        return true;
+      }
+      if (response.status === 404) {
+        return false;
+      }
+      throw new Error(`Received HTTP ${response.status} from ${url}`);
+    },
+    opts,
+  );
+}
+
+/**
  * manages installing, updating, and removing dependencies
  * in the package system used by the target language of a CDKTN
  * project
@@ -535,23 +671,23 @@ abstract class JavaPackageManager extends PackageManager {
       );
     }
 
-    const packageIdentifier = parts.pop();
+    const artifactId = parts.pop();
     const groupId = parts.join(".");
 
-    const url = `https://search.maven.org/solrsearch/select?q=g:${groupId}+AND+a:${packageIdentifier}+AND+v:${packageVersion}&rows=5&wt=json`;
+    // Probe the artifact CDN directly for the .pom: 200 = present, 404 = definitively absent.
+    const groupPath = groupId.replace(/\./g, "/");
+    const url = `https://repo1.maven.org/maven2/${groupPath}/${artifactId}/${packageVersion}/${artifactId}-${packageVersion}.pom`;
     logger.debug(
-      `Trying to find package version by querying Maven Central under '${url}'`,
+      `Checking whether ${packageName}@${packageVersion} exists on Maven Central under '${url}'`,
     );
-    const response = await fetch(url);
-
-    const json = (await response.json()) as any;
+    const exists = await urlExistsWithRetry(url);
     logger.debug(
-      `Got response from the Maven package search for ${packageName}: ${JSON.stringify(
-        json,
-      )}`,
+      `Maven Central ${
+        exists ? "has" : "does not have"
+      } ${packageName}@${packageVersion}`,
     );
 
-    return (json?.response?.numFound ?? 0) > 0;
+    return exists;
   }
 }
 

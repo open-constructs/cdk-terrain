@@ -333,21 +333,15 @@ export class DependencyManager {
     );
 
     for (const { name, version } of prebuiltProviderNpmVersions) {
-      try {
-        const languagePackageName = await this.tryGetLanguagePackageName(name);
-        if (!languagePackageName) continue;
+      const languagePackageName = await this.tryGetLanguagePackageName(name);
+      if (!languagePackageName) continue;
 
-        const isAvailable = await this.packageManager.isNpmVersionAvailable(
-          languagePackageName,
-          version,
-        );
-        if (isAvailable) {
-          return { name: languagePackageName, version };
-        }
-      } catch (err) {
-        logger.info(
-          `Could not find version ${version} for package ${name}: '${err}'. Skipping...`,
-        );
+      const isAvailable = await this.packageManager.isNpmVersionAvailable(
+        languagePackageName,
+        version,
+      );
+      if (isAvailable) {
+        return { name: languagePackageName, version };
       }
     }
     return null;
