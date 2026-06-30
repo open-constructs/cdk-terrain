@@ -25,6 +25,23 @@ import { readSchema } from "@cdktn/provider-schema";
 const pacmakModule = require.resolve("jsii-pacmak/bin/jsii-pacmak");
 const jsiiModule = require.resolve("jsii/bin/jsii");
 
+/**
+ * Returns the files `npm pack` would publish for the package at `dir`, as paths relative to `dir`. This is the set
+ * jsii needs to compile against a dependency — its sources and declared metadata — and excludes build outputs
+ * (`dist`, `.pack-staging`, `node_modules`, tsbuildinfo, ...) that a blanket directory copy would otherwise pull in.
+ *
+ * @param dir - Absolute path to the package directory to inspect (must contain a package.json).
+ * @returns Publishable file paths, relative to `dir`, with `..`-escape paths (from following pnpm symlinks) dropped.
+ */
+async function resolvePublishableFiles(dir: string): Promise<string[]> {
+  const stdout = await exec("npm", ["pack", "--dry-run", "--json"], {
+    cwd: dir,
+  });
+  const packInfo = JSON.parse(stdout) as Array<{ files: { path: string }[] }>;
+  // Drop `..`-escape paths npm emits when following pnpm's node_modules symlinks.
+  return packInfo[0].files.map((f) => f.path).filter((p) => !p.includes(".."));
+}
+
 export interface GenerateJSIIOptions {
   entrypoint: string;
   deps: string[];
@@ -115,8 +132,14 @@ export async function generateJsiiLanguage(
         path.join(staging, "node_modules"),
         moduleName,
       );
-      await fs.mkdirp(path.dirname(targetdir));
-      await fs.copy(dir, targetdir, { dereference: true });
+      await fs.mkdirp(targetdir);
+      // Copy only the dep's publishable files (what `npm pack` would ship) into the jsii compile bundle.
+      for (const relPath of await resolvePublishableFiles(dir)) {
+        const src = path.join(dir, relPath);
+        const dst = path.join(targetdir, relPath);
+        await fs.mkdirp(path.dirname(dst));
+        await fs.copy(src, dst, { dereference: true });
+      }
 
       // add to "deps" and "peer deps"
       if (!moduleName.startsWith("@types/")) {
