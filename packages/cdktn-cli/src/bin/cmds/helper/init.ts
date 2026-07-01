@@ -66,16 +66,16 @@ type GatheredInfo = {
   projectInfo: Project;
   useTerraformCloud: boolean | undefined;
 };
-type Options = {
+export type RunInitOptions = {
   local?: boolean;
   template?: string;
   projectName?: string;
   projectDescription?: string;
-  cdktfVersion?: string;
+  cdktnVersion?: string;
   dist?: string;
   providers?: string[];
   providersForceLocal?: boolean;
-  destination: string;
+  destination?: string;
   fromTerraformProject?: string;
   enableCrashReporting?: boolean;
   tfeHostname?: string;
@@ -83,7 +83,7 @@ type Options = {
   nonInteractive?: boolean;
 };
 
-export async function runInit(argv: Options) {
+export async function runInit(argv: RunInitOptions) {
   const telemetryData: Record<string, unknown> = {};
   const destination = argv.destination || ".";
   const terraformRemoteHostname = argv.tfeHostname || tfcHostname;
@@ -101,7 +101,7 @@ export async function runInit(argv: Options) {
 This means that your Terraform state file will be stored locally on disk in a file 'terraform.<STACK NAME>.tfstate' in the root of your project.}`);
     }
   }
-  const isRemote = token != "";
+  const isRemote = token !== "";
 
   // Check if template was specified by the user
   let template = "";
@@ -219,7 +219,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
   }
 
   const needsGet = await init({
-    cdktfVersion: argv.cdktfVersion,
+    cdktnVersion: argv.cdktnVersion,
     destination,
     dist: argv.dist,
     projectId,
@@ -244,18 +244,18 @@ This means that your Terraform state file will be stored locally on disk in a fi
       "utf8",
     );
 
-    const renderedCdktfJson = cdktfJson(
+    const renderedCdktnJson = cdktfJson(
       JSON.parse(
         fs.readFileSync(path.resolve(destination, "cdktf.json"), "utf-8"),
       ),
     );
     fs.writeFileSync(
       path.resolve(destination, "cdktf.json"),
-      JSON.stringify(renderedCdktfJson, null, 2),
+      JSON.stringify(renderedCdktnJson, null, 2),
       "utf8",
     );
 
-    const { terraformModules, terraformProviders } = renderedCdktfJson;
+    const { terraformModules, terraformProviders } = renderedCdktnJson;
 
     if (terraformModules.length > 0) {
       copyLocalModules(terraformModules, importPath, destination);

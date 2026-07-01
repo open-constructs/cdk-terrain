@@ -43,8 +43,8 @@ jobs:
           echo "available=$AVAILABLE_TERRAFORM_VERSIONS" >> $GITHUB_OUTPUT
       - id: cdktn-version
         run: |
-          CDKTF_VERSION=$(cat package.json | jq -r '.version')
-          echo "cdktn=$CDKTF_VERSION" >> $GITHUB_OUTPUT
+          CDKTN_VERSION=$(cat package.json | jq -r '.version')
+          echo "cdktn=$CDKTN_VERSION" >> $GITHUB_OUTPUT
       - id: git-sha
         run: |
           GIT_SHA=$(git rev-parse HEAD)

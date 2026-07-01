@@ -195,7 +195,7 @@ export const exec = async (
   });
 };
 
-export async function readCDKTFVersion(outputDir: string): Promise<string> {
+export async function readCDKTNVersion(outputDir: string): Promise<string> {
   const outputFile = path.join(outputDir, "cdk.tf.json");
   if (fs.existsSync(outputFile)) {
     const outputJSON = fs.readFileSync(outputFile, "utf8");

@@ -252,16 +252,16 @@ export async function getAllPrebuiltProviderVersions(
   return versions;
 }
 
-function cdktfVersionMatches(
-  cdktfVersion: string,
-  cdktfPeerDependencyConstraint: string,
+function cdktnVersionMatches(
+  cdktnVersion: string,
+  cdktnPeerDependencyConstraint: string,
 ): boolean {
-  return semver.satisfies(cdktfVersion, cdktfPeerDependencyConstraint);
+  return semver.satisfies(cdktnVersion, cdktnPeerDependencyConstraint);
 }
 
 export async function getPrebuiltProviderVersions(
   constraint: ProviderConstraint,
-  cdktfVersion: string,
+  cdktnVersion: string,
 ): Promise<{ name: string; version: string }[] | null> {
   const cdktfProviderName = await getNpmPackageName(constraint, false);
   const cdktnProviderName = await getNpmPackageName(constraint, true);
@@ -294,8 +294,8 @@ export async function getPrebuiltProviderVersions(
   // find first the version that matches the requested provider version and cdktf version
   const matchingVersions = versions.filter((v) => {
     if (
-      !cdktfVersionMatches(cdktfVersion, v.cdktfPeerDependencyConstraint) &&
-      !cdktfVersionMatches(cdktfVersion, v.cdktnPeerDependencyConstraint)
+      !cdktnVersionMatches(cdktnVersion, v.cdktfPeerDependencyConstraint) &&
+      !cdktnVersionMatches(cdktnVersion, v.cdktnPeerDependencyConstraint)
     ) {
       return false; // skip if cdktf version does not match
     }
