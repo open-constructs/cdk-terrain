@@ -54,6 +54,13 @@ const isMatching = (
         name: "",
       };
       const targetElements = target.source.split("/");
+      // Only a 3-part source explicitly pins a registry hostname. Shorthand
+      // sources (e.g. "hashicorp/awscc") omit it, so we must not assume a
+      // default: Terraform resolves them under registry.terraform.io while
+      // OpenTofu resolves them under registry.opentofu.org. Comparing against a
+      // hard-coded default would make schema lookup fail under OpenTofu even
+      // though the provider was installed correctly.
+      const explicitHostname = targetElements.length === 3;
       switch (targetElements.length) {
         case 1: // only name set
           targetSource.name = targetElements[0].toLowerCase();
@@ -74,7 +81,7 @@ const isMatching = (
       }
 
       return (
-        targetSource.hostname === hostname &&
+        (!explicitHostname || targetSource.hostname === hostname) &&
         targetSource.namespace === namespace &&
         targetSource.name === provider
       );
