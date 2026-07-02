@@ -14,8 +14,108 @@ import path from "path";
 import { xml2js, js2xml, Element } from "xml-js";
 import * as fs from "fs-extra";
 import * as semver from "semver";
-import fetch from "node-fetch";
+import fetch, { RequestInit, Response } from "node-fetch";
 import * as z from "zod";
+
+/**
+ * Number of attempts (initial try + retries) for a registry probe before we give up and treat the registry as
+ * unreachable. Transient failures (network errors / 408 / 429 / 5xx) are retried; definitive responses are not.
+ */
+const REGISTRY_PROBE_ATTEMPTS = 3;
+
+/** Base backoff between retries, doubled each attempt (250ms, 500ms). */
+const REGISTRY_PROBE_BACKOFF_MS = 250;
+
+/**
+ * HTTP 408 Request Timeout — a transient status worth retrying.
+ */
+const HTTP_REQUEST_TIMEOUT = 408;
+
+/**
+ * HTTP 429 Too Many Requests (rate limit) — a transient status worth retrying.
+ */
+const HTTP_TOO_MANY_REQUESTS = 429;
+
+/**
+ * Lowest HTTP 5xx status — any status at or above this is a server error and treated as a transient status worth
+ * retrying.
+ */
+const HTTP_SERVER_ERROR_MIN = 500;
+
+/**
+ * HTTP 404 Not Found — a definitive "the version is not published" answer from a registry (not transient).
+ */
+const HTTP_NOT_FOUND = 404;
+
+/**
+ * Reports whether an HTTP status is transient and therefore worth retrying: request timeout (408), rate limit (429),
+ * or any server error (5xx). Definitive statuses (2xx, 404, other 4xx) are not transient.
+ *
+ * @param status - The HTTP status code from a registry response.
+ * @returns `true` if the status is transient and the request should be retried, `false` otherwise.
+ */
+function isTransientStatus(status: number): boolean {
+  return (
+    status === HTTP_REQUEST_TIMEOUT ||
+    status === HTTP_TOO_MANY_REQUESTS ||
+    status >= HTTP_SERVER_ERROR_MIN
+  );
+}
+
+/**
+ * Resolves after `ms` milliseconds; used to back off between registry-probe retries.
+ *
+ * @param ms - The number of milliseconds to wait.
+ * @returns A promise that resolves once the delay has elapsed.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetches `url`, retrying only on transient failures — network errors and HTTP 408/429/5xx — so a registry hiccup is
+ * not mistaken for a definitive answer. Definitive responses (2xx, 404, other 4xx) are returned immediately without
+ * retry. If every attempt fails transiently, throws an `External` error so callers can distinguish "registry
+ * unreachable" from "version absent" rather than silently treating a hiccup as absence.
+ *
+ * @param url - The registry URL to fetch.
+ * @param init - Optional `fetch` request options (e.g. headers), passed through unchanged on every attempt.
+ * @returns The `Response` for the first definitive (non-transient) result.
+ * @throws An `External` error if every attempt (up to `REGISTRY_PROBE_ATTEMPTS`) fails transiently.
+ */
+async function fetchWithRetry(
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= REGISTRY_PROBE_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch(url, init);
+      if (!isTransientStatus(response.status)) {
+        return response;
+      }
+      lastError = new Error(`registry responded HTTP ${response.status}`);
+      logger.debug(
+        `Transient HTTP ${response.status} from '${url}' (attempt ${attempt}/${REGISTRY_PROBE_ATTEMPTS})`,
+      );
+    } catch (e: any) {
+      // fetch rejects on network-level failures (DNS, connection reset, timeout) — always transient.
+      lastError = e;
+      logger.debug(
+        `Network error fetching '${url}' (attempt ${attempt}/${REGISTRY_PROBE_ATTEMPTS}): ${e}`,
+      );
+    }
+
+    if (attempt < REGISTRY_PROBE_ATTEMPTS) {
+      await delay(REGISTRY_PROBE_BACKOFF_MS * 2 ** (attempt - 1));
+    }
+  }
+
+  throw Errors.External(
+    `Could not reach the registry at '${url}' after ${REGISTRY_PROBE_ATTEMPTS} attempts: ${lastError}`,
+  );
+}
 
 // Can't use CDKTF_ as prefix because yargs .env("CDKTF") in strict mode does not allow us to
 // Refer to: https://github.com/yargs/yargs/issues/873
@@ -351,7 +451,12 @@ class PythonPackageManager extends PackageManager {
     const url = `https://pypi.org/pypi/${packageName}/${packageVersion}/json`;
     logger.debug(`Fetching package information for ${packageName} from ${url}`);
 
-    const response = await fetch(url);
+    const response = await fetchWithRetry(url);
+    if (response.status === HTTP_NOT_FOUND) {
+      logger.debug(`PyPI reports ${packageName}@${packageVersion} not found`);
+      return false;
+    }
+
     const json = (await response.json()) as any;
     logger.debug(
       `Got response from PyPI for ${packageName}@${packageVersion}: ${JSON.stringify(
@@ -359,15 +464,7 @@ class PythonPackageManager extends PackageManager {
       )}`,
     );
 
-    if (json.info) {
-      // We found the version, so it exists
-      return true;
-    } else {
-      logger.debug(
-        `Could not get PyPI package info, got: ${JSON.stringify(json)}`,
-      );
-      return false;
-    }
+    return Boolean(json.info);
   }
 
   public async listPipenvPackages(): Promise<
@@ -461,7 +558,11 @@ class NugetPackageManager extends PackageManager {
     const url = `https://azuresearch-usnc.nuget.org/query?q=owner:${owner}%20id:${id}&prerelease=false&semVerLevel=2.0.0`;
     logger.debug(`Fetching package metadata from Nuget: '${url}'`);
 
-    const response = await fetch(url);
+    const response = await fetchWithRetry(url);
+    if (response.status === HTTP_NOT_FOUND) {
+      logger.debug(`NuGet reports ${packageName}@${packageVersion} not found`);
+      return false;
+    }
     const json = (await response.json()) as {
       data: { id: string; versions: { version: string }[] }[];
     };
@@ -558,7 +659,13 @@ abstract class JavaPackageManager extends PackageManager {
     logger.debug(
       `Checking whether ${packageName}@${packageVersion} exists on Maven Central under '${url}'`,
     );
-    const response = await fetch(url);
+    const response = await fetchWithRetry(url);
+    if (response.status === HTTP_NOT_FOUND) {
+      logger.debug(
+        `Maven Central reports ${packageName}@${packageVersion} not found`,
+      );
+      return false;
+    }
     logger.debug(
       `Maven Central responded HTTP ${response.status} for ${packageName}@${packageVersion}`,
     );
@@ -791,7 +898,7 @@ class GoPackageManager extends PackageManager {
 
     const url = `https://api.github.com/repos/${org}/${repo}/git/ref/tags/${packagePath}/v${packageVersion}`;
     logger.debug(`Fetching tags for ${org}/${repo} from '${url}'`);
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: {
         Accept: "application/vnd.github+json",
         "User-Agent": "OpenConstructs/cdktn-cli",
@@ -801,6 +908,13 @@ class GoPackageManager extends PackageManager {
       },
     });
 
+    if (response.status === HTTP_NOT_FOUND) {
+      logger.info(
+        `Could not find the tag ${packagePath}/v${packageVersion} in the repository ${org}/${repo}`,
+      );
+      return false;
+    }
+
     const json = (await response.json()) as any;
     logger.debug(
       `Got response from GitHubs repository tag endpoint for ${packageName}: ${JSON.stringify(
@@ -808,17 +922,7 @@ class GoPackageManager extends PackageManager {
       )}`,
     );
 
-    if (json && json.ref) {
-      return true;
-    }
-
-    logger.info(
-      `Could not find the tag ${packagePath}/v${packageVersion} in the repository ${org}/${repo}: ${JSON.stringify(
-        json,
-      )}}`,
-    );
-
-    return false;
+    return Boolean(json && json.ref);
   }
 
   public async listProviderPackages(): Promise<

@@ -3,6 +3,7 @@
 import {
   Language,
   Errors,
+  IsErrorType,
   logger,
   TerraformDependencyConstraint,
 } from "@cdktn/commons";
@@ -345,6 +346,9 @@ export class DependencyManager {
           return { name: languagePackageName, version };
         }
       } catch (err) {
+        if (IsErrorType(err, "External")) {
+          throw err;
+        }
         logger.info(
           `Could not find version ${version} for package ${name}: '${err}'. Skipping...`,
         );
