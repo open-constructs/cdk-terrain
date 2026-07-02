@@ -7,6 +7,7 @@ import {
   CONFIG_DEFAULTS,
   type LanguageOptions,
   type TerraformDependencyConstraint,
+  type TerraformTargetVersions,
 } from "@cdktn/commons";
 import path from "path";
 import { logger } from "@cdktn/commons";
@@ -85,6 +86,12 @@ export class CdktfConfig {
       );
     }
     return options;
+  }
+
+  public get targetVersions(): TerraformTargetVersions | undefined {
+    return this.getProperty("targetVersions") as
+      | TerraformTargetVersions
+      | undefined;
   }
 
   public get terraformProviders(): (TerraformDependencyConstraint | string)[] {

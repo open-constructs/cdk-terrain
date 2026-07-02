@@ -8,6 +8,7 @@ import {
   LanguageOptions,
   sendTelemetry,
   TerraformDependencyConstraint,
+  TerraformTargetVersions,
 } from "@cdktn/commons";
 import { get, GetStatus } from "@cdktn/cli-core";
 import { StreamRenderer } from "../helper/tty-stream";
@@ -22,6 +23,7 @@ export interface GetConfig {
   force?: boolean;
   silent?: boolean;
   providerSchemaCachePath?: string;
+  targetVersions?: TerraformTargetVersions;
 }
 
 /**
@@ -42,12 +44,14 @@ export async function runGet({
   silent = false,
   providerSchemaCachePath,
   languageOptions,
+  targetVersions,
 }: GetConfig): Promise<void> {
   const constructsOptions: GetOptions = {
     codeMakerOutput,
     targetLanguage: language,
     jsiiParallelism: parallelism,
     languageOptions,
+    targetVersions,
   };
 
   const stream = silent ? undefined : new StreamRenderer();

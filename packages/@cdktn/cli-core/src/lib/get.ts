@@ -102,6 +102,7 @@ export async function runGetInDir(dir: string, clean = true) {
       targetLanguage: config.language,
       jsiiParallelism: 1,
       languageOptions: config.languageOptions,
+      targetVersions: config.targetVersions,
     },
     cleanDirectory: clean,
   });

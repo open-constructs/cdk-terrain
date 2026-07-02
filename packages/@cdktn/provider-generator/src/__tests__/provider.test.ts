@@ -31,6 +31,9 @@ function directorySnapshot(root: string) {
 
       if (path.basename(filePath) === "constraints.json") {
         delete content.cdktf;
+        // cli identity depends on the terraform/opentofu binary installed
+        // on the test runner - not deterministic, so excluded like cdktf.
+        delete content.cli;
       }
     } else {
       content = fs.readFileSync(filePath, "utf-8");

@@ -345,6 +345,7 @@ export async function get(argv: {
       silent: argv.silent,
       providerSchemaCachePath: argv.experimentalProviderSchemaCachePath,
       languageOptions: config.languageOptions,
+      targetVersions: config.targetVersions,
     });
   } finally {
     if (!argv.silent) {
@@ -700,6 +701,7 @@ export async function providerUpgrade(argv: any) {
       targetLanguage: language,
       languageOptions: config.languageOptions,
       jsiiParallelism: 1,
+      targetVersions: config.targetVersions,
     };
 
     const constraints: TerraformDependencyConstraint[] = [

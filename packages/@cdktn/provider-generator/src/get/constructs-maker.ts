@@ -15,6 +15,7 @@ import {
   ModuleSchema,
   Errors,
   type LanguageOptions,
+  type TerraformTargetVersions,
 } from "@cdktn/commons";
 import { DISPLAY_VERSION, Language } from "@cdktn/commons";
 import { TerraformProviderGenerator } from "./generator/provider-generator";
@@ -265,7 +266,23 @@ export async function generateJsiiLanguage(
   });
 }
 
-type ConstraintFile = { providers: Record<string, string>; cdktf: string };
+type ConstraintFile = {
+  providers: Record<string, string>;
+  cdktf: string;
+  /**
+   * The project's declared targetVersions (cdktf.json), stamped for
+   * diagnostics/cache debugging. Purely informational - never read back to
+   * decide whether cached output is stale, since it doesn't affect the
+   * generated surface (the full surface is always generated; narrowing
+   * happens at synth).
+   */
+  targetVersions?: TerraformTargetVersions;
+  /**
+   * Identity of the CLI (terraform/opentofu) that fetched the schemas used
+   * for this generation, stamped for diagnostics/cache debugging.
+   */
+  cli?: { name?: string; version?: string };
+};
 
 export interface GetOptions {
   readonly targetLanguage: Language;
@@ -280,6 +297,13 @@ export interface GetOptions {
    * Language-specific code generation options.
    */
   readonly languageOptions?: LanguageOptions;
+  /**
+   * The project's declared targetVersions (cdktf.json). Used to drive the
+   * fetch-time emission-gap warning in @cdktn/provider-schema and to stamp
+   * the generated constraints.json for diagnostics. Does NOT filter codegen:
+   * the full surface is always generated, narrowing happens at synth.
+   */
+  readonly targetVersions?: TerraformTargetVersions;
 }
 
 export class ConstructsMaker {
@@ -570,6 +594,7 @@ export class ConstructsMaker {
   // this is used for caching purposes
   private emitConstraintsFile(
     allowedConstraints: TerraformDependencyConstraint[],
+    providerSchema?: ProviderSchema,
   ) {
     const filePath = "constraints.json";
 
@@ -585,6 +610,17 @@ export class ConstructsMaker {
           {},
         ),
     };
+
+    if (this.options.targetVersions) {
+      content.targetVersions = this.options.targetVersions;
+    }
+
+    if (providerSchema?.cli_name || providerSchema?.cli_version) {
+      content.cli = {
+        name: providerSchema.cli_name,
+        version: providerSchema.cli_version,
+      };
+    }
 
     this.code.openFile(filePath);
     this.code.line(JSON.stringify(content, null, 2));
@@ -686,7 +722,11 @@ a NODE_OPTIONS variable, we won't override it. Hence, the provider generation mi
   }
 
   public async getSchemas(targets: TerraformDependencyConstraint[]) {
-    return await readSchema(targets, this.schemaCachePath);
+    return await readSchema(
+      targets,
+      this.schemaCachePath,
+      this.options.targetVersions,
+    );
   }
 
   public async generate(
@@ -708,7 +748,7 @@ a NODE_OPTIONS variable, we won't override it. Hence, the provider generation mi
     endGenerateTimer();
 
     this.updateVersionsFile(allConstraints);
-    this.emitConstraintsFile(allConstraints);
+    this.emitConstraintsFile(allConstraints, schemas.providerSchema);
 
     if (this.isJavascriptTarget) {
       await this.save();
