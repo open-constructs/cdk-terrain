@@ -81,7 +81,11 @@ export class ResourceModel {
   }
 
   public get configStruct() {
-    return new ConfigStruct(this.configStructName, this.attributes);
+    return new ConfigStruct(
+      this.configStructName,
+      this.attributes,
+      this.isEphemeralResource ? "TerraformEphemeralMetaArguments" : undefined,
+    );
   }
 
   public get synthesizableAttributes(): AttributeModel[] {
@@ -103,6 +107,8 @@ export class ResourceModel {
     if (this.isProvider) return base;
     if (this.isDataSource)
       return `${base}/data-sources/${this.terraformDocName}`;
+    if (this.isEphemeralResource)
+      return `${base}/ephemeral-resources/${this.terraformDocName}`;
     return `${base}/resources/${this.terraformDocName}`;
   }
 
@@ -114,12 +120,18 @@ export class ResourceModel {
     return this.terraformSchemaType === "data_source";
   }
 
+  public get isEphemeralResource(): boolean {
+    return this.terraformSchemaType === "ephemeral_resource";
+  }
+
   public get parentClassName(): string {
     return this.isProvider
       ? "TerraformProvider"
       : this.isDataSource
         ? "TerraformDataSource"
-        : "TerraformResource";
+        : this.isEphemeralResource
+          ? "TerraformEphemeralResource"
+          : "TerraformResource";
   }
 
   public get terraformResourceType(): string {
@@ -127,7 +139,9 @@ export class ResourceModel {
       ? this.terraformProviderName
       : this.isDataSource
         ? this.terraformType.replace(/^data_/, "")
-        : this.terraformType;
+        : this.isEphemeralResource
+          ? this.terraformType.replace(/^ephemeral_/, "")
+          : this.terraformType;
   }
 
   public get terraformDocName(): string {

@@ -1,0 +1,524 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`generate an ephemeral random_password resource alongside a regular random_uuid resource: ephemeral-random-password 1`] = `
+"// https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface EphemeralRandomPasswordConfig extends cdktn.TerraformEphemeralMetaArguments {
+  /**
+  * The length of the string desired. The minimum value for length is 1 and, length must also be >= (\`min_upper\` + \`min_lower\` + \`min_numeric\` + \`min_special\`).
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#length EphemeralRandomPassword#length}
+  */
+  readonly length: number;
+  /**
+  * Include lowercase alphabet characters in the result. Default value is \`true\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#lower EphemeralRandomPassword#lower}
+  */
+  readonly lower?: boolean | cdktn.IResolvable;
+  /**
+  * Minimum number of lowercase alphabet characters in the result. Default value is \`0\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#min_lower EphemeralRandomPassword#min_lower}
+  */
+  readonly minLower?: number;
+  /**
+  * Minimum number of numeric characters in the result. Default value is \`0\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#min_numeric EphemeralRandomPassword#min_numeric}
+  */
+  readonly minNumeric?: number;
+  /**
+  * Minimum number of special characters in the result. Default value is \`0\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#min_special EphemeralRandomPassword#min_special}
+  */
+  readonly minSpecial?: number;
+  /**
+  * Minimum number of uppercase alphabet characters in the result. Default value is \`0\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#min_upper EphemeralRandomPassword#min_upper}
+  */
+  readonly minUpper?: number;
+  /**
+  * Include numeric characters in the result. Default value is \`true\`. If \`numeric\`, \`upper\`, \`lower\`, and \`special\` are all configured, at least one of them must be set to \`true\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#numeric EphemeralRandomPassword#numeric}
+  */
+  readonly numeric?: boolean | cdktn.IResolvable;
+  /**
+  * Supply your own list of special characters to use for string generation.  This overrides the default character list in the special argument.  The \`special\` argument must still be set to true for any overwritten characters to be used in generation.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#override_special EphemeralRandomPassword#override_special}
+  */
+  readonly overrideSpecial?: string;
+  /**
+  * Include special characters in the result. These are \`!@#$%&*()-_=+[]{}<>:?\`. Default value is \`true\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#special EphemeralRandomPassword#special}
+  */
+  readonly special?: boolean | cdktn.IResolvable;
+  /**
+  * Include uppercase alphabet characters in the result. Default value is \`true\`.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password#upper EphemeralRandomPassword#upper}
+  */
+  readonly upper?: boolean | cdktn.IResolvable;
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password random_password}
+*/
+export class EphemeralRandomPassword extends cdktn.TerraformEphemeralResource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "random_password";
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/ephemeral-resources/password random_password} Ephemeral Resource
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options EphemeralRandomPasswordConfig
+  */
+  public constructor(scope: Construct, id: string, config: EphemeralRandomPasswordConfig) {
+    super(scope, id, {
+      terraformResourceType: 'random_password',
+      terraformGeneratorMetadata: {
+        providerName: 'random'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      forEach: config.forEach
+    });
+    this._length = config.length;
+    this._lower = config.lower;
+    this._minLower = config.minLower;
+    this._minNumeric = config.minNumeric;
+    this._minSpecial = config.minSpecial;
+    this._minUpper = config.minUpper;
+    this._numeric = config.numeric;
+    this._overrideSpecial = config.overrideSpecial;
+    this._special = config.special;
+    this._upper = config.upper;
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // bcrypt_hash - computed: true, optional: false, required: false
+  public get bcryptHash() {
+    return this.getStringAttribute('bcrypt_hash');
+  }
+
+  // length - computed: false, optional: false, required: true
+  private _length?: number; 
+  public get length() {
+    return this.getNumberAttribute('length');
+  }
+  public set length(value: number) {
+    this._length = value;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get lengthInput() {
+    return this._length;
+  }
+
+  // lower - computed: true, optional: true, required: false
+  private _lower?: boolean | cdktn.IResolvable; 
+  public get lower() {
+    return this.getBooleanAttribute('lower');
+  }
+  public set lower(value: boolean | cdktn.IResolvable) {
+    this._lower = value;
+  }
+  public resetLower() {
+    this._lower = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get lowerInput() {
+    return this._lower;
+  }
+
+  // min_lower - computed: true, optional: true, required: false
+  private _minLower?: number; 
+  public get minLower() {
+    return this.getNumberAttribute('min_lower');
+  }
+  public set minLower(value: number) {
+    this._minLower = value;
+  }
+  public resetMinLower() {
+    this._minLower = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get minLowerInput() {
+    return this._minLower;
+  }
+
+  // min_numeric - computed: true, optional: true, required: false
+  private _minNumeric?: number; 
+  public get minNumeric() {
+    return this.getNumberAttribute('min_numeric');
+  }
+  public set minNumeric(value: number) {
+    this._minNumeric = value;
+  }
+  public resetMinNumeric() {
+    this._minNumeric = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get minNumericInput() {
+    return this._minNumeric;
+  }
+
+  // min_special - computed: true, optional: true, required: false
+  private _minSpecial?: number; 
+  public get minSpecial() {
+    return this.getNumberAttribute('min_special');
+  }
+  public set minSpecial(value: number) {
+    this._minSpecial = value;
+  }
+  public resetMinSpecial() {
+    this._minSpecial = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get minSpecialInput() {
+    return this._minSpecial;
+  }
+
+  // min_upper - computed: true, optional: true, required: false
+  private _minUpper?: number; 
+  public get minUpper() {
+    return this.getNumberAttribute('min_upper');
+  }
+  public set minUpper(value: number) {
+    this._minUpper = value;
+  }
+  public resetMinUpper() {
+    this._minUpper = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get minUpperInput() {
+    return this._minUpper;
+  }
+
+  // numeric - computed: true, optional: true, required: false
+  private _numeric?: boolean | cdktn.IResolvable; 
+  public get numeric() {
+    return this.getBooleanAttribute('numeric');
+  }
+  public set numeric(value: boolean | cdktn.IResolvable) {
+    this._numeric = value;
+  }
+  public resetNumeric() {
+    this._numeric = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get numericInput() {
+    return this._numeric;
+  }
+
+  // override_special - computed: false, optional: true, required: false
+  private _overrideSpecial?: string; 
+  public get overrideSpecial() {
+    return this.getStringAttribute('override_special');
+  }
+  public set overrideSpecial(value: string) {
+    this._overrideSpecial = value;
+  }
+  public resetOverrideSpecial() {
+    this._overrideSpecial = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get overrideSpecialInput() {
+    return this._overrideSpecial;
+  }
+
+  // result - computed: true, optional: false, required: false
+  public get result() {
+    return this.getStringAttribute('result');
+  }
+
+  // special - computed: true, optional: true, required: false
+  private _special?: boolean | cdktn.IResolvable; 
+  public get special() {
+    return this.getBooleanAttribute('special');
+  }
+  public set special(value: boolean | cdktn.IResolvable) {
+    this._special = value;
+  }
+  public resetSpecial() {
+    this._special = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get specialInput() {
+    return this._special;
+  }
+
+  // upper - computed: true, optional: true, required: false
+  private _upper?: boolean | cdktn.IResolvable; 
+  public get upper() {
+    return this.getBooleanAttribute('upper');
+  }
+  public set upper(value: boolean | cdktn.IResolvable) {
+    this._upper = value;
+  }
+  public resetUpper() {
+    this._upper = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get upperInput() {
+    return this._upper;
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+      length: cdktn.numberToTerraform(this._length),
+      lower: cdktn.booleanToTerraform(this._lower),
+      min_lower: cdktn.numberToTerraform(this._minLower),
+      min_numeric: cdktn.numberToTerraform(this._minNumeric),
+      min_special: cdktn.numberToTerraform(this._minSpecial),
+      min_upper: cdktn.numberToTerraform(this._minUpper),
+      numeric: cdktn.booleanToTerraform(this._numeric),
+      override_special: cdktn.stringToTerraform(this._overrideSpecial),
+      special: cdktn.booleanToTerraform(this._special),
+      upper: cdktn.booleanToTerraform(this._upper),
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+      length: {
+        value: cdktn.numberToHclTerraform(this._length),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "number",
+      },
+      lower: {
+        value: cdktn.booleanToHclTerraform(this._lower),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      min_lower: {
+        value: cdktn.numberToHclTerraform(this._minLower),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "number",
+      },
+      min_numeric: {
+        value: cdktn.numberToHclTerraform(this._minNumeric),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "number",
+      },
+      min_special: {
+        value: cdktn.numberToHclTerraform(this._minSpecial),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "number",
+      },
+      min_upper: {
+        value: cdktn.numberToHclTerraform(this._minUpper),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "number",
+      },
+      numeric: {
+        value: cdktn.booleanToHclTerraform(this._numeric),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      override_special: {
+        value: cdktn.stringToHclTerraform(this._overrideSpecial),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      special: {
+        value: cdktn.booleanToHclTerraform(this._special),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+      upper: {
+        value: cdktn.booleanToHclTerraform(this._upper),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "boolean",
+      },
+    };
+
+    // remove undefined attributes
+    return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined ))
+  }
+}
+"
+`;
+
+exports[`generate an ephemeral random_password resource alongside a regular random_uuid resource: provider-index 1`] = `
+"// generated by cdktn get
+export * as uuid from './uuid/index';
+export * as ephemeralRandomBytes from './ephemeral-random-bytes/index';
+export * as ephemeralRandomPassword from './ephemeral-random-password/index';
+
+"
+`;
+
+exports[`generate an ephemeral random_password resource alongside a regular random_uuid resource: provider-lazy-index 1`] = `
+"// generated by cdktn get
+Object.defineProperty(exports, 'uuid', { get: function () { return require('./uuid'); } });
+Object.defineProperty(exports, 'ephemeralRandomBytes', { get: function () { return require('./ephemeral-random-bytes'); } });
+Object.defineProperty(exports, 'ephemeralRandomPassword', { get: function () { return require('./ephemeral-random-password'); } });
+
+"
+`;
+
+exports[`generate an ephemeral random_password resource alongside a regular random_uuid resource: random-uuid 1`] = `
+"// https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface UuidConfig extends cdktn.TerraformMetaArguments {
+  /**
+  * Arbitrary map of values that, when changed, will trigger recreation of resource. See [the main provider documentation](../index.html) for more information.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid#keepers Uuid#keepers}
+  */
+  readonly keepers?: { [key: string]: string };
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid random_uuid}
+*/
+export class Uuid extends cdktn.TerraformResource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "random_uuid";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a Uuid resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the Uuid to import
+  * @param importFromId The id of the existing Uuid that should be imported. Refer to the {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the Uuid to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "random_uuid", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid random_uuid} Resource
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options UuidConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: UuidConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'random_uuid',
+      terraformGeneratorMetadata: {
+        providerName: 'random'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+    this._keepers = config.keepers;
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // id - computed: true, optional: false, required: false
+  public get id() {
+    return this.getStringAttribute('id');
+  }
+
+  // keepers - computed: false, optional: true, required: false
+  private _keepers?: { [key: string]: string }; 
+  public get keepers() {
+    return this.getStringMapAttribute('keepers');
+  }
+  public set keepers(value: { [key: string]: string }) {
+    this._keepers = value;
+  }
+  public resetKeepers() {
+    this._keepers = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get keepersInput() {
+    return this._keepers;
+  }
+
+  // result - computed: true, optional: false, required: false
+  public get result() {
+    return this.getStringAttribute('result');
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+      keepers: cdktn.hashMapper(cdktn.stringToTerraform)(this._keepers),
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+      keepers: {
+        value: cdktn.hashMapperHcl(cdktn.stringToHclTerraform)(this._keepers),
+        isBlock: false,
+        type: "map",
+        storageClassType: "stringMap",
+      },
+    };
+
+    // remove undefined attributes
+    return Object.fromEntries(Object.entries(attrs).filter(([_, value]) => value !== undefined && value.value !== undefined ))
+  }
+}
+"
+`;

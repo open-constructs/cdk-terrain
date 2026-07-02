@@ -185,7 +185,26 @@ export class TerraformProviderGenerator {
         ),
     );
 
-    return ([] as ResourceModel[]).concat(...resources, ...dataSources);
+    const ephemeralResources = Object.entries(
+      provider.ephemeral_resource_schemas || {},
+    ).map(([type, resource]) =>
+      this.resourceParser.parse(
+        fqpn,
+        `ephemeral_${type}`,
+        resource,
+        "ephemeral_resource",
+        constraint,
+      ),
+    );
+
+    // CRITICAL: ephemeral resources must be appended AFTER resources and data
+    // sources - uniqueClassName dedup is order-dependent and existing
+    // prebuilt snapshots must not churn.
+    return ([] as ResourceModel[]).concat(
+      ...resources,
+      ...dataSources,
+      ...ephemeralResources,
+    );
   }
 
   public getClassNameForResource(terraformType: string) {

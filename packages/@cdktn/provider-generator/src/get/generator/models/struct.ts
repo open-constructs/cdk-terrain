@@ -110,7 +110,15 @@ export class Struct {
 }
 
 export class ConfigStruct extends Struct {
+  constructor(
+    name: string,
+    attributes: AttributeModel[],
+    private readonly extendsClass: string = "TerraformMetaArguments",
+  ) {
+    super(name, attributes);
+  }
+
   public get extends(): string {
-    return ` extends cdktn.TerraformMetaArguments`;
+    return ` extends cdktn.${this.extendsClass}`;
   }
 }

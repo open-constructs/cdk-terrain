@@ -26,8 +26,10 @@ export class ResourceEmitter {
     this.emitHeader("STATIC PROPERTIES");
     this.emitStaticProperties(resource);
 
-    this.emitHeader("STATIC Methods");
-    this.emitStaticMethods(resource);
+    if (!resource.isEphemeralResource) {
+      this.emitHeader("STATIC Methods");
+      this.emitStaticMethods(resource);
+    }
 
     this.emitHeader("INITIALIZER");
     this.emitInitializer(resource);
@@ -136,7 +138,13 @@ export class ResourceEmitter {
     comment.line(
       `Create a new {@link ${resource.linkToDocs} ${
         resource.terraformResourceType
-      }} ${resource.isDataSource ? "Data Source" : "Resource"}`,
+      }} ${
+        resource.isDataSource
+          ? "Data Source"
+          : resource.isEphemeralResource
+            ? "Ephemeral Resource"
+            : "Resource"
+      }`,
     );
     comment.line(``);
     comment.line(`@param scope The scope in which to define this construct`);
@@ -151,6 +159,8 @@ export class ResourceEmitter {
 
     if (resource.isProvider) {
       this.emitProviderSuper(resource);
+    } else if (resource.isEphemeralResource) {
+      this.emitEphemeralResourceSuper(resource);
     } else {
       this.emitResourceSuper(resource);
     }
@@ -181,6 +191,20 @@ export class ResourceEmitter {
     this.code.line(`lifecycle: config.lifecycle,`);
     this.code.line(`provisioners: config.provisioners,`);
     this.code.line(`connection: config.connection,`);
+    this.code.line(`forEach: config.forEach`);
+    this.code.close(`});`);
+  }
+
+  private emitEphemeralResourceSuper(resource: ResourceModel) {
+    this.code.open(`super(scope, id, {`);
+    this.code.line(
+      `terraformResourceType: '${resource.terraformResourceType}',`,
+    );
+    this.emitTerraformGeneratorMetadata(resource);
+    this.code.line(`provider: config.provider,`);
+    this.code.line(`dependsOn: config.dependsOn,`);
+    this.code.line(`count: config.count,`);
+    this.code.line(`lifecycle: config.lifecycle,`);
     this.code.line(`forEach: config.forEach`);
     this.code.close(`});`);
   }
