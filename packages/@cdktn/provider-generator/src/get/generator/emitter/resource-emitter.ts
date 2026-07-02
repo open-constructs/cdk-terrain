@@ -127,6 +127,15 @@ export class ResourceEmitter {
     // registerProviderFeatureUsage available); data sources, providers, and
     // ephemeral resources do not, so their write-only attributes (if any)
     // only get the deprecated getter.
+    //
+    // write-only is fundamentally a state concept - the value is passed to
+    // the provider but never persisted to state - so gating this on
+    // TerraformResource is more than an implementation detail: ephemeral
+    // resources have no state at all, and, consistent with that, no
+    // provider schema in the RFC-04 sweep (including vault's 16 ephemeral
+    // resources) marks an ephemeral attribute write_only. So ephemeral
+    // classes deliberately land in the same "getter only" bucket as data
+    // sources and providers.
     const canRegisterProviderFeatureUsage =
       resource.parentClassName === "TerraformResource";
 

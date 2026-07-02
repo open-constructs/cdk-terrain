@@ -10,6 +10,9 @@ import { sanitizedComment } from "../sanitized-comments";
 const PROVIDER_LOCAL_NAME_JSDOC =
   "The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.";
 
+const SELF_REFERENCE_CYCLE_JSDOC =
+  "Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).";
+
 export class ProviderFunctionsEmitter {
   constructor(private readonly code: CodeMaker) {}
 
@@ -40,6 +43,7 @@ export class ProviderFunctionsEmitter {
     const comment = sanitizedComment(this.code);
     const description = fn.description ?? fn.summary;
     if (description) comment.line(description);
+    comment.line(SELF_REFERENCE_CYCLE_JSDOC);
     for (const param of [...fn.parameters, fn.variadicParameter].filter(
       (p): p is NonNullable<typeof p> => !!p,
     )) {

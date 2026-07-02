@@ -15,6 +15,10 @@ export class TerraformProviderFunction {
    * Invokes a provider-defined function (Terraform's
    * `provider::<providerLocalName>::<functionName>(...)` syntax).
    *
+   * Note: provider-defined functions are evaluated by the provider itself —
+   * do not call this inside the configuration of the same provider
+   * (Terraform reports a self-referential cycle).
+   *
    * @param providerLocalName the local name of the provider as declared in
    * `required_providers` (defaults to the registry short name; callers may
    * override this when the provider is aliased under a different local

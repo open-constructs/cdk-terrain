@@ -12,6 +12,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Joins the given strings together using the provided separator.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param separator
   * @param values
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
@@ -22,6 +23,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Returns a list of names prefixed with the given prefix.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param prefix
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
@@ -31,6 +33,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Adds up a default starting value and any number of addends.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param defaultValue
   * @param addends
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
@@ -84,6 +87,7 @@ export class TimeProviderFunctions {
 
   /**
   * Given a [Go duration string](https://pkg.go.dev/time#ParseDuration), will parse and return an object representation of that duration.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param duration Go time package duration string to parse
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
@@ -93,6 +97,7 @@ export class TimeProviderFunctions {
 
   /**
   * Given an RFC3339 timestamp string, will parse and return an object representation of that date and time.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param timestamp RFC3339 timestamp string to parse
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
@@ -102,6 +107,7 @@ export class TimeProviderFunctions {
 
   /**
   * Given a unix timestamp integer, will parse and return an object representation of that date and time. A unix timestamp is the number of seconds elapsed since January 1, 1970 UTC.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param unixTimestamp Unix Timestamp integer to parse
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
