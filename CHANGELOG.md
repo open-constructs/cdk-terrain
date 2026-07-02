@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.23.4](https://github.com/open-constructs/cdk-terrain/compare/v0.23.3...v0.23.4) (2026-07-02)
+
+
+### Features
+
+* **cli:** validate Terraform CLI feature versions ([#237](https://github.com/open-constructs/cdk-terrain/issues/237)) ([32d434c](https://github.com/open-constructs/cdk-terrain/commit/32d434c1f47453f8648b9ea5dfc481e07fce360d))
+* declared Terraform/OpenTofu target versions (validation foundation) ([#269](https://github.com/open-constructs/cdk-terrain/issues/269)) ([0aa2343](https://github.com/open-constructs/cdk-terrain/commit/0aa234399933be88c55c8c82b03fce4f9ddf600a))
+* **lib:** S3-backend - Add `useLockfile` field and update `dynamodbTable` deprecated JSDoc ([#234](https://github.com/open-constructs/cdk-terrain/issues/234)) ([32a408f](https://github.com/open-constructs/cdk-terrain/commit/32a408fd8040afab63080d9c096f355d45fe2e98))
+* **lib:** validate Fn usage against Terraform/OpenTofu versions ([#268](https://github.com/open-constructs/cdk-terrain/issues/268)) ([cdf8115](https://github.com/open-constructs/cdk-terrain/commit/cdf811544b7c8327f219f9668f30a574bfbec87b))
+
+
+### Bug Fixes
+
+* **cli:** don't mistake terraform error output for a missing-variable prompt ([#267](https://github.com/open-constructs/cdk-terrain/issues/267)) ([0ea946f](https://github.com/open-constructs/cdk-terrain/commit/0ea946f21025f3894215b2c58a829189539a9416))
+* **cli:** release terraform state lock when interrupting diff/deploy ([#284](https://github.com/open-constructs/cdk-terrain/issues/284)) ([de617db](https://github.com/open-constructs/cdk-terrain/commit/de617dbb5e26a606e611f9a5477a12245f0650f4))
+* **cli:** resolve prebuilt Java provider versions via repo1.maven.org ([#285](https://github.com/open-constructs/cdk-terrain/issues/285)) ([d5af07d](https://github.com/open-constructs/cdk-terrain/commit/d5af07dd8679b5b6746b7b790d2558341f0fea26))
+* **gha:** Adding CHANGELOG.md to prettier ignore list ([#258](https://github.com/open-constructs/cdk-terrain/issues/258)) ([5160469](https://github.com/open-constructs/cdk-terrain/commit/516046999da85ae5b158ba1d23ab1a1c7c81b586))
+* **gha:** pull jsii-terraform CI image from GHCR instead of Docker Hub ([#261](https://github.com/open-constructs/cdk-terrain/issues/261)) ([f19d34b](https://github.com/open-constructs/cdk-terrain/commit/f19d34b4d64d09571b4789fd4a45b520da2827e2))
+* **provider-generator:** copy only publishable files into the jsii compile bundle ([#292](https://github.com/open-constructs/cdk-terrain/issues/292)) ([562d4c7](https://github.com/open-constructs/cdk-terrain/commit/562d4c7b90ba37c1b1e1385f552c86e4f1ee7879))
+* **provider-generator:** match shorthand provider sources against OpenTofu schema keys ([#293](https://github.com/open-constructs/cdk-terrain/issues/293)) ([fda0103](https://github.com/open-constructs/cdk-terrain/commit/fda0103de7d65956f8172af0055e6c880d7065cf))
+* **release:** add Changelog title for correct release-please insertion ([#255](https://github.com/open-constructs/cdk-terrain/issues/255)) ([004818a](https://github.com/open-constructs/cdk-terrain/commit/004818a5ee554f0276ea8f0718ce6ffb0e5037fe))
+* **release:** drop devEngines.packageManager that broke npm publish ([ef508a6](https://github.com/open-constructs/cdk-terrain/commit/ef508a659e52bb8f5cd0d827e4cad8ff70e0809d))
+* **tools:** repair generate-function-bindings tool ([#273](https://github.com/open-constructs/cdk-terrain/issues/273)) ([821e1cf](https://github.com/open-constructs/cdk-terrain/commit/821e1cffcc1fa3973267a20b7af73197b7a3190b))
+
+
+### Miscellaneous Chores
+
+* Add Gradle to Mise config ([#271](https://github.com/open-constructs/cdk-terrain/issues/271)) ([1578270](https://github.com/open-constructs/cdk-terrain/commit/1578270b57ef6eebc75df74e96d5329f9603b277))
+* add pnpm to mise ([#266](https://github.com/open-constructs/cdk-terrain/issues/266)) ([48ab91f](https://github.com/open-constructs/cdk-terrain/commit/48ab91f7fa268a9c15daa2d041fe30e31b6015bc))
+* add uv to mise ([#260](https://github.com/open-constructs/cdk-terrain/issues/260)) ([163cf3d](https://github.com/open-constructs/cdk-terrain/commit/163cf3df117170c74a01598668b2e56e618a2e19))
+* **deps:** bump nrwl/nx-set-shas from 38457b511e60ee4e1da09255b658e480748a1af4 to afb73a62d26e41464e9254689e1fd6122ee683c1 ([#236](https://github.com/open-constructs/cdk-terrain/issues/236)) ([b5ac018](https://github.com/open-constructs/cdk-terrain/commit/b5ac018a03b6195d12da7631076b41e5b36ebaeb))
+* **deps:** bump the github-actions-backward-compatible group across 1 directory with 7 updates ([#235](https://github.com/open-constructs/cdk-terrain/issues/235)) ([de67d9f](https://github.com/open-constructs/cdk-terrain/commit/de67d9f3ec59f99d6e736e5c01fe365581a01c79))
+* **deps:** replace uuid dependency with node:crypto.randomUUID ([#291](https://github.com/open-constructs/cdk-terrain/issues/291)) ([6d3657a](https://github.com/open-constructs/cdk-terrain/commit/6d3657af14fe6abb598689999b5756bec672fa4c))
+* ESLint ignore test edge-provider-bindings ([#270](https://github.com/open-constructs/cdk-terrain/issues/270)) ([ba407bb](https://github.com/open-constructs/cdk-terrain/commit/ba407bbe4742ab2c6126114341b928d729347114))
+* Fix Verdaccio logging config ([#272](https://github.com/open-constructs/cdk-terrain/issues/272)) ([aded64b](https://github.com/open-constructs/cdk-terrain/commit/aded64b0e28e1056bf8b9b818a0daa728be1cb94))
+* **gha:** parallelize provider binding generation for documentation examples ([#244](https://github.com/open-constructs/cdk-terrain/issues/244)) ([0a9c955](https://github.com/open-constructs/cdk-terrain/commit/0a9c9554f3936e95c1291a911d4b1cc59bf66644))
+* Migrate package manager from yarn to pnpm ([#170](https://github.com/open-constructs/cdk-terrain/issues/170)) ([d23da4e](https://github.com/open-constructs/cdk-terrain/commit/d23da4e11bc93aa387abf35fbba1b628724190f0))
+* migrate planning artifacts to cdktn-planning [skip ci] ([968c358](https://github.com/open-constructs/cdk-terrain/commit/968c358b2c82f2ff5aa4cdb18b12fe9467129d6f))
+* **release:** add release-please automation for versioning ([#243](https://github.com/open-constructs/cdk-terrain/issues/243)) ([c759eec](https://github.com/open-constructs/cdk-terrain/commit/c759eec921d164ce171878ed50eeaee5b5c59749))
+* Remove dependency-pinner tool ([#250](https://github.com/open-constructs/cdk-terrain/issues/250)) ([42c27d5](https://github.com/open-constructs/cdk-terrain/commit/42c27d5b65c8473236c0cf784668e62a13c0559b))
+* Remove unused dependencies ([#281](https://github.com/open-constructs/cdk-terrain/issues/281)) ([c7de65e](https://github.com/open-constructs/cdk-terrain/commit/c7de65e965a4575c5359b6923dde2f467e1855ee))
+* **tests:** run verdaccio in-process ([#248](https://github.com/open-constructs/cdk-terrain/issues/248)) ([c17677d](https://github.com/open-constructs/cdk-terrain/commit/c17677dc27706a626dcf5f88baa2e323787a2cf6))
+* Update JSII version constraint ([#245](https://github.com/open-constructs/cdk-terrain/issues/245)) ([d89558f](https://github.com/open-constructs/cdk-terrain/commit/d89558f568eff134969586a5cd572869d3910955))
+* Update scheduled workflows to only run on open-constructs/cdk-terrain ([#256](https://github.com/open-constructs/cdk-terrain/issues/256)) ([ba408cf](https://github.com/open-constructs/cdk-terrain/commit/ba408cf1623ed4e5cbd9df3fb4607c7e67754dd8))
+
 ## 0.23.3
 
 ### chore
