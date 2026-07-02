@@ -37,8 +37,7 @@ const HTTP_REQUEST_TIMEOUT = 408;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
- * Lowest HTTP 5xx status — any status at or above this is a server error and treated as a transient status worth
- * retrying.
+ * Lowest HTTP 5xx status — any status at or above this is a server error and treated as a transient status worth retrying.
  */
 const HTTP_SERVER_ERROR_MIN = 500;
 
