@@ -287,6 +287,38 @@ export function renderDatasource(dataSource: any) {
 /**
  *
  */
+export function renderEphemeral(ephemeral: any) {
+  const ephemeralType = Object.keys(ephemeral)[0];
+  const ephemeralsWithType = ephemeral[ephemeralType];
+  const ephemeralName = Object.keys(ephemeralsWithType)[0];
+  const ephemeralAttributes = ephemeralsWithType[ephemeralName];
+
+  const { dynamic, ...otherAttrs } = ephemeralAttributes;
+
+  const hcl = [`ephemeral "${ephemeralType}" "${ephemeralName}" {`];
+
+  const attrs = renderAttributes(otherAttrs);
+  if (attrs) hcl.push(attrs);
+  if (dynamic) hcl.push(...renderDynamicBlocks(dynamic));
+  hcl.push("}");
+
+  return {
+    hcl: hcl.join("\n"),
+    metadata: {
+      ephemeral: {
+        [ephemeralType]: {
+          [ephemeralName]: {
+            "//": ephemeralAttributes["//"],
+          },
+        },
+      },
+    },
+  };
+}
+
+/**
+ *
+ */
 export function renderProvisionerBlock(provisioners: any) {
   return provisioners
     .map((provisioner: any) => {

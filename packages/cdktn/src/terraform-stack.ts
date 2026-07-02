@@ -26,6 +26,7 @@ import { TerraformResourceTargets } from "./terraform-resource-targets";
 import { TerraformResource } from "./terraform-resource";
 import {
   renderDatasource,
+  renderEphemeral,
   renderModule,
   renderMoved,
   renderOutput,
@@ -279,6 +280,12 @@ export class TerraformStack extends Construct {
 
         if (frag.data) {
           const { hcl, metadata } = renderDatasource(frag.data);
+          deepMerge(tfMeta, metadata);
+          res = [res, hcl].join("\n");
+        }
+
+        if (frag.ephemeral) {
+          const { hcl, metadata } = renderEphemeral(frag.ephemeral);
           deepMerge(tfMeta, metadata);
           res = [res, hcl].join("\n");
         }
