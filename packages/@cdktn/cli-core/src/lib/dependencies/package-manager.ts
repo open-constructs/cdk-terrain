@@ -521,7 +521,21 @@ class NugetPackageManager extends PackageManager {
   }
 }
 
+/**
+ * Shared base for the Java package managers (Maven and Gradle). Both install from Maven Central, so the check for
+ * whether a given provider version exists is common to both and lives here; the concrete subclasses differ only in how
+ * they declare and list dependencies (pom.xml vs build.gradle).
+ */
 abstract class JavaPackageManager extends PackageManager {
+  /**
+   * Reports whether `packageName@packageVersion` is published on Maven Central by probing the artifact repository for
+   * the version's `.pom` directly: HTTP 200 means present, anything else means not available.
+   *
+   * @param packageName - The Java coordinates in "group.artifact" form, e.g. "com.hashicorp.cdktf-provider-random".
+   * @param packageVersion - The exact version to check for.
+   * @returns `true` if the `.pom` exists on Maven Central, `false` otherwise.
+   * @throws If `packageName` is not in the expected "group.artifact" format.
+   */
   public async isNpmVersionAvailable(
     packageName: string,
     packageVersion: string,
