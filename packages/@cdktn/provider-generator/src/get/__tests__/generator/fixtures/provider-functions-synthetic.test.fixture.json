@@ -1,0 +1,29 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/example": {
+      "resource_schemas": {},
+      "functions": {
+        "join_strings": {
+          "description": "Joins the given strings together using the provided separator.",
+          "summary": "Join strings with a separator",
+          "return_type": "string",
+          "parameters": [{ "name": "separator", "type": "string" }],
+          "variadic_parameter": { "name": "values", "type": "string" }
+        },
+        "sum": {
+          "description": "Adds up a default starting value and any number of addends.",
+          "summary": "Sum numbers",
+          "return_type": "number",
+          "parameters": [{ "name": "default", "type": "number" }],
+          "variadic_parameter": { "name": "addends", "type": "number" }
+        },
+        "list_prefixed_names": {
+          "description": "Returns a list of names prefixed with the given prefix.",
+          "summary": "List prefixed names",
+          "return_type": ["list", "string"],
+          "parameters": [{ "name": "prefix", "type": "string" }]
+        }
+      }
+    }
+  }
+}

@@ -3,5 +3,6 @@
 export * from "./target-versions";
 export * from "./validate-binary-version";
 export * from "./validate-function-version-support";
+export * from "./validate-provider-function-target-support";
 export * from "./validate-provider-presence";
 export * from "./validate-terraform-feature-version";

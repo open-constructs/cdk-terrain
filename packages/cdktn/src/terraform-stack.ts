@@ -17,6 +17,7 @@ import { StackSynthesizer } from "./synthesize/synthesizer";
 const STACK_SYMBOL = Symbol.for("cdktf/TerraformStack");
 import {
   ValidateFunctionVersionSupport,
+  ValidateProviderFunctionTargetSupport,
   ValidateProviderPresence,
 } from "./validations";
 import { VALIDATE_FUNCTION_VERSIONS } from "./features";
@@ -102,6 +103,7 @@ export class TerraformStack extends Construct {
     if (this.node.tryGetContext(VALIDATE_FUNCTION_VERSIONS)) {
       this.node.addValidation(new ValidateFunctionVersionSupport(this));
     }
+    this.node.addValidation(new ValidateProviderFunctionTargetSupport(this));
   }
 
   public static isStack(x: any): x is TerraformStack {

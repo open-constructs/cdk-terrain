@@ -1,0 +1,163 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/time": {
+      "resource_schemas": {
+        "time_static": {
+          "version": 0,
+          "block": {
+            "attributes": {
+              "day": {
+                "type": "number",
+                "description": "Number day of timestamp.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "hour": {
+                "type": "number",
+                "description": "Number hour of timestamp.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "id": {
+                "type": "string",
+                "description": "RFC3339 format of the offset timestamp, e.g. `2020-02-12T06:36:13Z`.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "minute": {
+                "type": "number",
+                "description": "Number minute of timestamp.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "month": {
+                "type": "number",
+                "description": "Number month of timestamp.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "rfc3339": {
+                "type": "string",
+                "description": "Base timestamp in [RFC3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.8) format (see [RFC3339 time string](https://tools.ietf.org/html/rfc3339#section-5.8) e.g., `YYYY-MM-DDTHH:MM:SSZ`). Defaults to the current time.",
+                "description_kind": "plain",
+                "optional": true,
+                "computed": true
+              },
+              "second": {
+                "type": "number",
+                "description": "Number second of timestamp.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "triggers": {
+                "type": [
+                  "map",
+                  "string"
+                ],
+                "description": "Arbitrary map of values that, when changed, will trigger a new base timestamp value to be saved. See [the main provider documentation](../index.md) for more information.",
+                "description_kind": "plain",
+                "optional": true
+              },
+              "unix": {
+                "type": "number",
+                "description": "Number of seconds since epoch time, e.g. `1581489373`.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "year": {
+                "type": "number",
+                "description": "Number year of timestamp.",
+                "description_kind": "plain",
+                "computed": true
+              }
+            },
+            "description": "Manages a static time resource, which keeps a locally sourced UTC timestamp stored in the Terraform state. This prevents perpetual differences caused by using the [`timestamp()` function](https://www.terraform.io/docs/configuration/functions/timestamp.html).",
+            "description_kind": "plain"
+          }
+        }
+      },
+      "functions": {
+        "duration_parse": {
+          "description": "Given a [Go duration string](https://pkg.go.dev/time#ParseDuration), will parse and return an object representation of that duration.",
+          "summary": "Parse a [Go duration string](https://pkg.go.dev/time#ParseDuration) into an object",
+          "return_type": [
+            "object",
+            {
+              "hours": "number",
+              "microseconds": "number",
+              "milliseconds": "number",
+              "minutes": "number",
+              "nanoseconds": "number",
+              "seconds": "number"
+            }
+          ],
+          "parameters": [
+            {
+              "name": "duration",
+              "description": "Go time package duration string to parse",
+              "type": "string"
+            }
+          ]
+        },
+        "rfc3339_parse": {
+          "description": "Given an RFC3339 timestamp string, will parse and return an object representation of that date and time.",
+          "summary": "Parse an RFC3339 timestamp string into an object",
+          "return_type": [
+            "object",
+            {
+              "day": "number",
+              "hour": "number",
+              "iso_week": "number",
+              "iso_year": "number",
+              "minute": "number",
+              "month": "number",
+              "month_name": "string",
+              "second": "number",
+              "unix": "number",
+              "weekday": "number",
+              "weekday_name": "string",
+              "year": "number",
+              "year_day": "number"
+            }
+          ],
+          "parameters": [
+            {
+              "name": "timestamp",
+              "description": "RFC3339 timestamp string to parse",
+              "type": "string"
+            }
+          ]
+        },
+        "unix_timestamp_parse": {
+          "description": "Given a unix timestamp integer, will parse and return an object representation of that date and time. A unix timestamp is the number of seconds elapsed since January 1, 1970 UTC.",
+          "summary": "Parse a unix timestamp integer into an object",
+          "return_type": [
+            "object",
+            {
+              "day": "number",
+              "hour": "number",
+              "iso_week": "number",
+              "iso_year": "number",
+              "minute": "number",
+              "month": "number",
+              "month_name": "string",
+              "rfc3339": "string",
+              "second": "number",
+              "weekday": "number",
+              "weekday_name": "string",
+              "year": "number",
+              "year_day": "number"
+            }
+          ],
+          "parameters": [
+            {
+              "name": "unix_timestamp",
+              "description": "Unix Timestamp integer to parse",
+              "type": "number"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

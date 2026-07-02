@@ -10,9 +10,17 @@ import {
   TerraformProviderConstraint,
 } from "@cdktn/commons";
 import { FQPN, parseFQPN, ProviderName } from "@cdktn/provider-schema";
-import { ResourceModel } from "./models";
+import {
+  ProviderFunctionsModel,
+  ResourceModel,
+  buildProviderFunctionsModel,
+} from "./models";
 import { ResourceParser } from "./resource-parser";
-import { ResourceEmitter, StructEmitter } from "./emitter";
+import {
+  ProviderFunctionsEmitter,
+  ResourceEmitter,
+  StructEmitter,
+} from "./emitter";
 
 export interface TerraformProviderGeneratorOptions {
   /**
@@ -101,6 +109,7 @@ export class TerraformProviderGenerator {
   private resourceParser = new ResourceParser();
   private resourceEmitter: ResourceEmitter;
   private structEmitter: StructEmitter;
+  private providerFunctionsEmitter: ProviderFunctionsEmitter;
   private readonly importExtension: string;
   public versions: { [fqpn: string]: string | undefined } = {};
 
@@ -113,6 +122,7 @@ export class TerraformProviderGenerator {
     this.importExtension = options.importExtension ?? "";
     this.resourceEmitter = new ResourceEmitter(this.code);
     this.structEmitter = new StructEmitter(this.code, this.importExtension);
+    this.providerFunctionsEmitter = new ProviderFunctionsEmitter(this.code);
   }
 
   private getProviderByConstraint(
@@ -262,8 +272,29 @@ export class TerraformProviderGenerator {
       this.emitResourceReadme(providerResource);
     }
 
+    const providerFunctionsModel = buildProviderFunctionsModel(
+      name,
+      provider.functions,
+    );
+    if (providerFunctionsModel) {
+      files.push(this.emitProviderFunctions(name, providerFunctionsModel));
+    }
+
     this.emitIndexFile(name, files);
     this.emitLazyIndexFile(name, files);
+  }
+
+  private emitProviderFunctions(
+    provider: ProviderName,
+    model: ProviderFunctionsModel,
+  ): string {
+    const filePath = `providers/${provider}/provider-functions/index.ts`;
+    this.code.openFile(filePath);
+    this.code.line(`// generated from provider function schema`);
+    this.code.line();
+    this.providerFunctionsEmitter.emit(model);
+    this.code.closeFile(filePath);
+    return filePath;
   }
 
   private emitResourceReadme(resource: ResourceModel): void {
