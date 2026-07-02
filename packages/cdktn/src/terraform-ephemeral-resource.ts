@@ -6,9 +6,9 @@ import { TerraformElement } from "./terraform-element";
 import { TerraformProvider } from "./terraform-provider";
 import {
   TerraformProviderGeneratorMetadata,
-  TerraformResourceLifecycle,
   lifecycleToTerraform,
 } from "./terraform-resource";
+import { Precondition, Postcondition } from "./terraform-conditions";
 import {
   keysToSnakeCase,
   deepMerge,
@@ -40,6 +40,18 @@ const EPHEMERAL_RESOURCES_HINT = `Ephemeral resources are available in ${Object.
   .map(([product, range]) => `${product} ${range}`)
   .join(" and ")}.`;
 
+/**
+ * Lifecycle options supported by Terraform ephemeral blocks. Unlike managed
+ * resources, ephemeral resources have no state, so Terraform only supports
+ * `precondition`/`postcondition` here - `createBeforeDestroy`,
+ * `preventDestroy`, `ignoreChanges`, and `replaceTriggeredBy` are all
+ * state-oriented concepts that do not apply.
+ */
+export interface TerraformEphemeralResourceLifecycle {
+  readonly precondition?: Precondition[];
+  readonly postcondition?: Postcondition[];
+}
+
 export interface ITerraformEphemeralResource {
   readonly terraformResourceType: string;
   readonly fqn: string;
@@ -48,7 +60,7 @@ export interface ITerraformEphemeralResource {
   dependsOn?: string[];
   count?: number | TerraformCount;
   provider?: TerraformProvider;
-  lifecycle?: TerraformResourceLifecycle;
+  lifecycle?: TerraformEphemeralResourceLifecycle;
   forEach?: ITerraformIterator;
 
   interpolationForAttribute(terraformAttribute: string): IResolvable;
@@ -62,7 +74,7 @@ export interface TerraformEphemeralMetaArguments {
   readonly dependsOn?: ITerraformDependable[];
   readonly count?: number | TerraformCount;
   readonly provider?: TerraformProvider;
-  readonly lifecycle?: TerraformResourceLifecycle;
+  readonly lifecycle?: TerraformEphemeralResourceLifecycle;
   readonly forEach?: ITerraformIterator;
 }
 
@@ -87,7 +99,7 @@ export class TerraformEphemeralResource
   public dependsOn?: string[];
   public count?: number | TerraformCount;
   public provider?: TerraformProvider;
-  public lifecycle?: TerraformResourceLifecycle;
+  public lifecycle?: TerraformEphemeralResourceLifecycle;
   public forEach?: ITerraformIterator;
 
   constructor(

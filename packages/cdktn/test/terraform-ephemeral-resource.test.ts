@@ -95,6 +95,56 @@ test("renders an ephemeral HCL block", () => {
   `);
 });
 
+test("renders a precondition lifecycle block", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+  new TestProvider(stack, "provider", {});
+
+  new TestEphemeralResource(stack, "test", {
+    name: "foo",
+    lifecycle: {
+      precondition: [
+        {
+          condition: '${var.foo != ""}',
+          errorMessage: "foo must not be empty",
+        },
+      ],
+    },
+  });
+
+  expect(Testing.synth(stack)).toMatchInlineSnapshot(`
+    "{
+      "ephemeral": {
+        "test_ephemeral": {
+          "test": {
+            "lifecycle": {
+              "precondition": [
+                {
+                  "condition": "\${var.foo != \\"\\"}",
+                  "error_message": "foo must not be empty"
+                }
+              ]
+            },
+            "name": "foo"
+          }
+        }
+      },
+      "provider": {
+        "test": [
+          {}
+        ]
+      },
+      "terraform": {
+        "required_providers": {
+          "test": {
+            "version": "~> 2.0"
+          }
+        }
+      }
+    }"
+  `);
+});
+
 test("interpolationForAttribute produces ephemeral.-prefixed references", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");
