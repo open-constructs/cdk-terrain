@@ -123,11 +123,19 @@ export class ResourceEmitter {
   }
 
   private emitResourceAttributes(resource: ResourceModel) {
+    // Only managed resources extend TerraformResource (and therefore have
+    // registerProviderFeatureUsage available); data sources, providers, and
+    // ephemeral resources do not, so their write-only attributes (if any)
+    // only get the deprecated getter.
+    const canRegisterProviderFeatureUsage =
+      resource.parentClassName === "TerraformResource";
+
     for (const att of resource.attributes) {
       this.attributesEmitter.emit(
         att,
         this.attributesEmitter.needsResetEscape(att, resource.attributes),
         this.attributesEmitter.needsInputEscape(att, resource.attributes),
+        canRegisterProviderFeatureUsage,
       );
     }
   }
@@ -166,6 +174,8 @@ export class ResourceEmitter {
     }
 
     // initialize config properties
+    const canRegisterProviderFeatureUsage =
+      resource.parentClassName === "TerraformResource";
     for (const att of resource.configStruct.assignableAttributes) {
       if (att.setterType._type === "stored_class") {
         this.code.line(
@@ -173,6 +183,16 @@ export class ResourceEmitter {
         );
       } else {
         this.code.line(`this.${att.storageName} = config.${att.name};`);
+      }
+
+      // Constructor assignments bypass the setter above, so write-only
+      // usage must be registered here as well for the config value passed
+      // directly to the constructor (see the setter registration in
+      // AttributesEmitter for the corresponding property-set path).
+      if (att.isWriteOnly && canRegisterProviderFeatureUsage) {
+        this.code.line(
+          `if (config.${att.name} !== undefined) { this.registerProviderFeatureUsage("writeOnlyAttributes"); }`,
+        );
       }
     }
 

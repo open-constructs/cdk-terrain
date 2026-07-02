@@ -463,6 +463,7 @@ class Parser {
           provider: parentType.isProvider,
           required: !!att.required,
           forcePlainGetterType,
+          isWriteOnly: !!att.write_only,
         }),
       );
     }
@@ -669,6 +670,7 @@ class Parser {
             type,
             provider: parent.isProvider,
             required: required,
+            isWriteOnly: !!att.write_only,
           }),
         );
       }

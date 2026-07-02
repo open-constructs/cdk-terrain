@@ -549,6 +549,11 @@ export const assetCanNotCreateZipArchive = (
     `A TerraformAsset trying to zip archive '${src}' into ${dest} failed: ${error}`,
   );
 
+export const unknownProviderFeature = (feature: string) =>
+  new Error(
+    `Unknown provider-protocol feature "${feature}" passed to registerProviderFeatureUsage. This is an internal cdktn API intended to be called by generated provider bindings, not user code; if you did not call it directly, please file a bug report.`,
+  );
+
 export const terraformModuleHasChildren = (pathName: string) => {
   return new Error(
     `Trying to add children to a TerraformModule at '${pathName}'. TerraformModules cannot have children, if you want to group resources or constructs in general together please use the Constructs class instead. See https://cdktn.io/docs/concepts/constructs for more details.`,

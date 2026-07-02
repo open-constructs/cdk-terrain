@@ -29,12 +29,18 @@ import {
   RemoteExecProvisioner,
 } from "./terraform-provisioner";
 import { ValidateTerraformVersion } from "./validations/validate-terraform-version";
+import { ValidateFeatureTargetSupport } from "./validations/target-versions";
 import { TerraformStack } from "./terraform-stack";
+import {
+  providerFeatureConstraints,
+  providerFeatureLabels,
+} from "./provider-feature-constraints";
 import {
   movedToResourceOfDifferentType,
   resourceGivenTwoMoveOperationsById,
   resourceGivenTwoMoveOperationsByTarget,
   resourceGivenTwoMoveOperationsByTargetAndId,
+  unknownProviderFeature,
 } from "./errors";
 
 const TERRAFORM_RESOURCE_SYMBOL = Symbol.for("cdktf/TerraformResource");
@@ -151,6 +157,7 @@ export class TerraformResource
   private _movedByTarget?: TerraformResourceMoveByTarget;
   private _movedById?: TerraformResourceMoveById;
   private _hasMoved = false;
+  private readonly _registeredProviderFeatures = new Set<string>();
 
   constructor(scope: Construct, id: string, config: TerraformResourceConfig) {
     super(scope, id, config.terraformResourceType);
@@ -174,6 +181,42 @@ export class TerraformResource
   public static isTerraformResource(x: any): x is TerraformResource {
     return (
       x !== null && typeof x === "object" && TERRAFORM_RESOURCE_SYMBOL in x
+    );
+  }
+
+  /**
+   * Registers a synth-time validation that the project's declared
+   * targetVersions admit the given provider-protocol feature family.
+   * Called by generated provider bindings when a versioned feature is
+   * actually used (e.g. setting a write-only attribute); not intended
+   * to be called directly.
+   */
+  protected registerProviderFeatureUsage(feature: string): void {
+    if (this._registeredProviderFeatures.has(feature)) {
+      return;
+    }
+
+    const constraints = (
+      providerFeatureConstraints as Record<
+        string,
+        (typeof providerFeatureConstraints)[keyof typeof providerFeatureConstraints]
+      >
+    )[feature];
+    const label = (providerFeatureLabels as Record<string, string>)[feature];
+    if (!constraints || !label) {
+      throw unknownProviderFeature(feature);
+    }
+
+    this._registeredProviderFeatures.add(feature);
+
+    const hint = `${label.charAt(0).toUpperCase()}${label.slice(
+      1,
+    )} are available in ${Object.entries(constraints)
+      .map(([product, range]) => `${product} ${range}`)
+      .join(" and ")}.`;
+
+    this.node.addValidation(
+      new ValidateFeatureTargetSupport(this, label, constraints, hint),
     );
   }
 

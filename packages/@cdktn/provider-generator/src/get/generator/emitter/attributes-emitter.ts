@@ -16,7 +16,19 @@ function titleCase(value: string) {
 export class AttributesEmitter {
   constructor(private code: CodeMaker) {}
 
-  public emit(att: AttributeModel, escapeReset: boolean, escapeInput: boolean) {
+  /**
+   * @param registerWriteOnlyUsage Whether a write-only attribute's setter
+   * should emit a `registerProviderFeatureUsage` call. Only true for
+   * attributes emitted on classes that extend TerraformResource (managed
+   * resources); struct OutputReference classes have no construct node to
+   * register a validation against, so they only get the deprecated getter.
+   */
+  public emit(
+    att: AttributeModel,
+    escapeReset: boolean,
+    escapeInput: boolean,
+    registerWriteOnlyUsage = false,
+  ) {
     this.code.line();
     this.code.line(
       `// ${att.terraformName} - computed: ${att.computed}, optional: ${att.isOptional}, required: ${att.isRequired}`,
@@ -43,12 +55,14 @@ export class AttributesEmitter {
 
     switch (getterType._type) {
       case "plain":
+        this.emitWriteOnlyGetterDeprecationNotice(att);
         this.code.openBlock(`public get ${att.name}()`);
         this.code.line(`return ${this.determineGetAttCall(att)};`);
         this.code.closeBlock();
         break;
 
       case "args":
+        this.emitWriteOnlyGetterDeprecationNotice(att);
         this.code.openBlock(
           `public ${att.name}(${getterType.args})${
             getterType.returnType ? ": " + getterType.returnType : ""
@@ -59,6 +73,7 @@ export class AttributesEmitter {
         break;
 
       case "stored_class":
+        this.emitWriteOnlyGetterDeprecationNotice(att);
         this.code.openBlock(`public get ${att.name}()`);
         this.code.line(`return this.${att.storageName};`);
         this.code.closeBlock();
@@ -66,12 +81,18 @@ export class AttributesEmitter {
     }
 
     const setterType = att.setterType;
+    const emitWriteOnlyRegistration = att.isWriteOnly && registerWriteOnlyUsage;
 
     switch (setterType._type) {
       case "set":
         this.code.openBlock(
           `public set ${att.name}(value: ${setterType.type})`,
         );
+        if (emitWriteOnlyRegistration) {
+          this.code.line(
+            `this.registerProviderFeatureUsage("writeOnlyAttributes");`,
+          );
+        }
         this.code.line(`this.${att.storageName} = value;`);
         this.code.closeBlock();
         break;
@@ -80,6 +101,11 @@ export class AttributesEmitter {
         this.code.openBlock(
           `public put${titleCase(att.name)}(value: ${setterType.type})`,
         );
+        if (emitWriteOnlyRegistration) {
+          this.code.line(
+            `this.registerProviderFeatureUsage("writeOnlyAttributes");`,
+          );
+        }
         this.code.line(`this.${att.storageName} = value;`);
         this.code.closeBlock();
         break;
@@ -88,6 +114,11 @@ export class AttributesEmitter {
         this.code.openBlock(
           `public put${titleCase(att.name)}(value: ${setterType.type})`,
         );
+        if (emitWriteOnlyRegistration) {
+          this.code.line(
+            `this.registerProviderFeatureUsage("writeOnlyAttributes");`,
+          );
+        }
         this.code.line(`this.${att.storageName}.internalValue = value;`);
         this.code.closeBlock();
         break;
@@ -121,6 +152,21 @@ export class AttributesEmitter {
 
       this.code.closeBlock();
     }
+  }
+
+  // emits a @deprecated JSDoc block above a write-only attribute's getter:
+  // providers never persist/return write-only values, so the state-backed
+  // getter always reads back null by protocol contract
+  private emitWriteOnlyGetterDeprecationNotice(att: AttributeModel) {
+    if (!att.isWriteOnly) {
+      return;
+    }
+
+    const comment = sanitizedComment(this.code);
+    comment.line(
+      "@deprecated Write-only: the provider never returns this value; reading it always yields null by protocol contract. The getter remains for compatibility and will be removed in a future prebuilt-provider major.",
+    );
+    comment.end();
   }
 
   // returns an invocation of a stored class, e.g. 'new DeplotmentMetadataOutputReference(this, "metadata")'

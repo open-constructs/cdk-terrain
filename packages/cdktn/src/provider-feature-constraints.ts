@@ -18,3 +18,19 @@ export const providerFeatureConstraints = {
   writeOnlyAttributes: { terraform: ">=1.11.0", opentofu: ">=1.11.0" },
   resourceIdentity: { terraform: ">=1.12.0", opentofu: ">=1.12.0" },
 } as const satisfies Record<string, TerraformFeatureVersionConstraints>;
+
+/**
+ * Human-readable labels for each `providerFeatureConstraints` key, used as
+ * the `featureName` passed to `ValidateFeatureTargetSupport` so synth-time
+ * errors read naturally (e.g. "write-only attributes requires terraform
+ * >=1.11.0, ...").
+ */
+export const providerFeatureLabels: Record<
+  keyof typeof providerFeatureConstraints,
+  string
+> = {
+  providerFunctions: "provider functions",
+  ephemeralResources: "ephemeral resources",
+  writeOnlyAttributes: "write-only attributes",
+  resourceIdentity: "resource identity",
+};

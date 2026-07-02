@@ -1,0 +1,50 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/vault": {
+      "resource_schemas": {
+        "vault_alicloud_secret_backend": {
+          "version": 0,
+          "block": {
+            "attributes": {
+              "access_key": {
+                "type": "string",
+                "description": "The AliCloud Access Key ID to use when generating new credentials.",
+                "description_kind": "markdown",
+                "required": true,
+                "sensitive": true
+              },
+              "mount": {
+                "type": "string",
+                "description": "Path of the AliCloud secrets engine mount. Must match the `path` of a `vault_mount` resource with `type = \"alicloud\"`. Use `vault_mount.alicloud.path` here.",
+                "description_kind": "markdown",
+                "required": true
+              },
+              "namespace": {
+                "type": "string",
+                "description": "Target namespace. (requires Enterprise)",
+                "description_kind": "markdown",
+                "optional": true
+              },
+              "secret_key_wo": {
+                "type": "string",
+                "description": "Write-only AliCloud Secret Access Key. This value will never be read back from Vault.",
+                "description_kind": "markdown",
+                "required": true,
+                "sensitive": true,
+                "write_only": true
+              },
+              "secret_key_wo_version": {
+                "type": "number",
+                "description": "A version counter for the write-only `secret_key_wo` field. Incrementing this value will trigger an update to the secret key in Vault.",
+                "description_kind": "markdown",
+                "required": true
+              }
+            },
+            "description": "Configures the AliCloud secrets engine credentials. The mount itself must be created first using a `vault_mount` resource with `type = \"alicloud\"`. Use `vault_mount.alicloud.id` as `mount_id` on ephemeral resources to guarantee deferral.",
+            "description_kind": "markdown"
+          }
+        }
+      }
+    }
+  }
+}
