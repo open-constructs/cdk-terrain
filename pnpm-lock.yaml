@@ -1323,10 +1323,16 @@ importers:
       fs-extra:
         specifier: 11.3.4
         version: 11.3.4
+      semver:
+        specifier: 7.7.4
+        version: 7.7.4
     devDependencies:
       '@types/fs-extra':
         specifier: 11.0.4
         version: 11.0.4
+      '@types/semver':
+        specifier: 7.7.1
+        version: 7.7.1
       safe-stable-stringify:
         specifier: 2.5.0
         version: 2.5.0

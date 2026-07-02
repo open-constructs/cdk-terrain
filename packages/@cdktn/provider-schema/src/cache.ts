@@ -9,15 +9,22 @@ import * as path from "path";
 
 // We keep this very simple since the caching feature is experimental
 // we might need to do housekeeping / include terraform / cdktf version in the future
-function cacheKey(input: ConstructsMakerTarget): string {
-  return `${encodeURIComponent(input.fqn)}@${encodeURIComponent(
+//
+// keySuffix distinguishes cache entries fetched by different CLIs/versions
+// (e.g. "terraform-1.7") so a schema fetched by a CLI too old to emit newer
+// sections (functions, ephemeral resources, ...) isn't served up as if it
+// were a complete fetch. See read.ts.
+function cacheKey(input: ConstructsMakerTarget, keySuffix?: string): string {
+  const base = `${encodeURIComponent(input.fqn)}@${encodeURIComponent(
     input.version || "",
   )}`;
+  return keySuffix ? `${base}@${encodeURIComponent(keySuffix)}` : base;
 }
 
 export function cachedAccess<I extends ConstructsMakerTarget, O>(
   producer: (input: I) => Promise<O>,
   cacheDir?: string | null,
+  keySuffix?: string,
 ): (input: I) => Promise<O> {
   const cacheEnabled = typeof cacheDir === "string" && cacheDir.length > 0;
 
@@ -36,7 +43,7 @@ export function cachedAccess<I extends ConstructsMakerTarget, O>(
 
   logger.debug(`Provider Schema Cache enabled, caching at ${cacheDir}`);
   return async (input) => {
-    const key = cacheKey(input);
+    const key = cacheKey(input, keySuffix);
     const cachePath = path.join(cacheDir, `${key}.json`);
     if (fs.existsSync(cachePath)) {
       logger.debug(`Cache hit for ${key}`);

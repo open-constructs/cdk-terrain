@@ -19,6 +19,10 @@ import {
 
 function sanitizeJson(value: any) {
   value["format_version"] = "STUBBED VERSION";
+  // cli_name/cli_version stamp whatever binary fetched the schema and vary
+  // by environment
+  if ("cli_name" in value) value["cli_name"] = "STUBBED CLI";
+  if ("cli_version" in value) value["cli_version"] = "STUBBED VERSION";
   return stableStringify(value, null, 2);
 }
 
@@ -171,6 +175,22 @@ describe("sanitizeProviderSchema", () => {
             },
           },
           data_source_schemas: {},
+          ephemeral_resource_schemas: {
+            null_ephemeral: {
+              version: 0,
+              block: {
+                attributes: {
+                  correct: {
+                    type: ["list", "string"],
+                  },
+                  incorrect: {
+                    type: ["list", "string", "list", "string"] as any,
+                  },
+                },
+                block_types: {},
+              },
+            },
+          },
         },
       },
     };

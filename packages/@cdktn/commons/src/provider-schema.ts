@@ -13,12 +13,61 @@ export interface ProviderSchema {
   format_version?: "0.1" | "0.2";
   provider_schemas?: { [fqpn: string]: Provider };
   provider_versions?: { [fqpn: string]: string };
+  /**
+   * Name of the CLI (terraform/opentofu) that fetched this schema, stamped
+   * by readProviderSchema. Used to reason about which newer-protocol
+   * sections (functions, ephemeral resources, ...) this particular fetch
+   * could possibly have emitted.
+   */
+  cli_name?: string;
+  /**
+   * Version of the CLI that fetched this schema, e.g. "1.7.5".
+   */
+  cli_version?: string;
 }
 
 export interface Provider {
   provider: Schema;
   resource_schemas: { [type: string]: Schema };
   data_source_schemas: { [type: string]: Schema };
+  // List/action/state-store sections are deliberately not typed - YAGNI,
+  // they pass through untouched.
+  ephemeral_resource_schemas?: { [type: string]: Schema };
+  functions?: { [name: string]: FunctionSignature };
+  resource_identity_schemas?: { [type: string]: ResourceIdentitySchema };
+}
+
+/**
+ * A single parameter (or the variadic parameter) of a provider function.
+ * The providers-schema JSON may carry additional fields (`allow_null_value`,
+ * `allow_unknown_values`) which we don't consume yet - kept out on purpose.
+ */
+export interface FunctionParameter {
+  name?: string;
+  type: AttributeType;
+  description?: string;
+  description_kind?: string;
+}
+
+export interface FunctionSignature {
+  description?: string;
+  summary?: string;
+  description_kind?: string;
+  return_type: AttributeType;
+  parameters?: FunctionParameter[];
+  variadic_parameter?: FunctionParameter;
+}
+
+export interface IdentityAttribute {
+  type?: AttributeType;
+  description?: string;
+  required_for_import?: boolean;
+  optional_for_import?: boolean;
+}
+
+export interface ResourceIdentitySchema {
+  version: number;
+  attributes: { [name: string]: IdentityAttribute };
 }
 
 export interface Schema {
@@ -58,6 +107,7 @@ interface BaseAttribute {
   optional?: boolean;
   computed?: boolean;
   sensitive?: boolean;
+  write_only?: boolean;
 }
 
 interface NestedTypeAttribute extends BaseAttribute {

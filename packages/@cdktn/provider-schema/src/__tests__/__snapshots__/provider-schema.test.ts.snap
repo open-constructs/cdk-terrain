@@ -675,6 +675,8 @@ exports[`readSchema generates a single module schema 1`] = `
 
 exports[`readSchema generates a single provider schema 1`] = `
 "{
+  "cli_name": "STUBBED CLI",
+  "cli_version": "STUBBED VERSION",
   "format_version": "STUBBED VERSION",
   "provider_schemas": {
     "registry.terraform.io/hashicorp/null": {
@@ -774,6 +776,28 @@ exports[`sanitizeProviderSchema sanitizes a provider schema 1`] = `
   "provider_schemas": {
     "registry.terraform.io/hashicorp/null": {
       "data_source_schemas": {},
+      "ephemeral_resource_schemas": {
+        "null_ephemeral": {
+          "block": {
+            "attributes": {
+              "correct": {
+                "type": [
+                  "list",
+                  "string",
+                ],
+              },
+              "incorrect": {
+                "type": [
+                  "list",
+                  "string",
+                ],
+              },
+            },
+            "block_types": {},
+          },
+          "version": 0,
+        },
+      },
       "provider": {
         "block": {
           "attributes": {

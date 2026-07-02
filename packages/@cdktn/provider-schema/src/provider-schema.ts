@@ -14,14 +14,44 @@ import {
   ModuleIndex,
   ModuleSchema,
   ProviderSchema,
+  TerraformCliVersion,
   TerraformModuleConstraint,
+  TerraformTargetVersions,
   VersionSchema,
   exec,
   isNestedTypeAttribute,
+  logger,
+  parseTerraformCliVersion,
   withTempDir,
 } from "@cdktn/commons";
+import {
+  SCHEMA_EMISSION_FAMILY_LABELS,
+  checkSchemaEmissionGapFamilies,
+  suggestedEmittingCliVersions,
+} from "./emission-check";
 
 const terraformBinaryName = process.env.TERRAFORM_BINARY_NAME || "terraform";
+
+let fetchingCliVersionPromise: Promise<TerraformCliVersion> | undefined;
+
+/**
+ * Determines the version of the fetching CLI (`terraform`/`tofu` binary
+ * resolved via `TERRAFORM_BINARY_NAME`) once per process, memoized.
+ *
+ * Used both to stamp fetched provider schemas (`cli_name`/`cli_version`)
+ * and as the cache key suffix in read.ts, since schema emission is fixed
+ * per CLI minor version.
+ *
+ * @internal exposed for testing like terraformInitWithRetry
+ */
+export function getFetchingCliVersion(): Promise<TerraformCliVersion> {
+  if (!fetchingCliVersionPromise) {
+    fetchingCliVersionPromise = exec(terraformBinaryName, ["version"], {
+      cwd: process.cwd(),
+    }).then(parseTerraformCliVersion);
+  }
+  return fetchingCliVersionPromise;
+}
 
 // Provider binaries are downloaded from GitHub release CDNs during
 // `terraform init`, which intermittently returns 5xx. Retry on those
@@ -233,6 +263,11 @@ const harvestModuleSchema = async (
   return result;
 };
 
+function joinWithAnd(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
 export interface TerraformConfig {
   provider?: { [name: string]: Record<string, any> };
   terraform: {
@@ -245,6 +280,7 @@ export interface TerraformConfig {
 
 export async function readProviderSchema(
   target: ConstructsMakerProviderTarget,
+  targetVersions?: TerraformTargetVersions,
 ) {
   const config: TerraformConfig = {
     provider: {},
@@ -282,6 +318,32 @@ export async function readProviderSchema(
     providerSchema.provider_versions = versionSchema.provider_selections;
   });
 
+  // Stamp the fetching CLI's identity so downstream consumers can reason
+  // about which newer-protocol sections this fetch could possibly have
+  // emitted. Never fail the fetch over this - it's best-effort metadata.
+  try {
+    const cli = await getFetchingCliVersion();
+    providerSchema.cli_name = cli.name;
+    providerSchema.cli_version = cli.version;
+
+    if (targetVersions) {
+      const gapFamilies = checkSchemaEmissionGapFamilies(cli, targetVersions);
+      if (gapFamilies.length > 0 && cli.version) {
+        logger.warn(
+          `provider schema fetched with ${cli.name} ${cli.version} — ${joinWithAnd(
+            gapFamilies.map((family) => SCHEMA_EMISSION_FAMILY_LABELS[family]),
+          )} will not be generated; run cdktn get with ${suggestedEmittingCliVersions(
+            gapFamilies,
+          )}`,
+        );
+      }
+    }
+  } catch (error) {
+    logger.debug(
+      `Could not determine fetching CLI version to stamp provider schema: ${error}`,
+    );
+  }
+
   return sanitizeProviderSchema(providerSchema);
 }
 
@@ -317,6 +379,7 @@ export function sanitizeProviderSchema(schema: ProviderSchema): ProviderSchema {
       provider.provider,
       ...Object.values(provider.resource_schemas || {}),
       ...Object.values(provider.data_source_schemas || {}),
+      ...Object.values(provider.ephemeral_resource_schemas || {}),
     ];
 
     entities.forEach((entity) => {

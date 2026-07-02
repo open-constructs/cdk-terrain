@@ -14,10 +14,16 @@ import {
   LANGUAGES,
   ConstructsMakerProviderTarget,
   ConstructsMakerModuleTarget,
+  TerraformTargetVersions,
   Errors,
+  logger,
 } from "@cdktn/commons";
 import deepmerge from "deepmerge";
-import { readModuleSchema, readProviderSchema } from "./provider-schema";
+import {
+  getFetchingCliVersion,
+  readModuleSchema,
+  readProviderSchema,
+} from "./provider-schema";
 import { cachedAccess } from "./cache";
 
 export type Schema = {
@@ -25,11 +31,44 @@ export type Schema = {
   moduleSchema?: Awaited<ReturnType<typeof readModuleSchema>>;
 };
 
+// Schema emission is fixed per CLI product+minor version, so that's enough
+// granularity for the cache key - no need for the full patch version.
+async function resolveCacheKeySuffix(
+  cacheDir?: string,
+): Promise<string | undefined> {
+  if (!cacheDir) return undefined;
+
+  try {
+    const cli = await getFetchingCliVersion();
+    if (cli.name === "unknown" || !cli.version) {
+      logger.debug(
+        "Could not determine fetching CLI name/version for the schema cache key, falling back to 'unknown-cli'",
+      );
+      return "unknown-cli";
+    }
+
+    const [major, minor] = cli.version.split(".");
+    return `${cli.name}-${major}.${minor}`;
+  } catch (error) {
+    logger.debug(
+      `Could not determine fetching CLI version for the schema cache key: ${error}`,
+    );
+    return "unknown-cli";
+  }
+}
+
 export async function readSchema(
   constraints: TerraformDependencyConstraint[],
   cacheDir?: string,
+  targetVersions?: TerraformTargetVersions,
 ): Promise<Schema> {
-  const cachedReadProviderSchema = cachedAccess(readProviderSchema, cacheDir);
+  const keySuffix = await resolveCacheKeySuffix(cacheDir);
+  const cachedReadProviderSchema = cachedAccess(
+    (target: ConstructsMakerProviderTarget) =>
+      readProviderSchema(target, targetVersions),
+    cacheDir,
+    keySuffix,
+  );
   const targets = constraints.map((constraint) =>
     ConstructsMakerProviderTarget.from(constraint, LANGUAGES[0]),
   );
