@@ -75,6 +75,14 @@ describe("checkSchemaEmissionGaps", () => {
 
     expect(gaps).toEqual([]);
   });
+
+  it("does not throw and skips the product when targetVersions has a malformed range", () => {
+    const gaps = checkSchemaEmissionGaps(cli("terraform", "1.7.5"), {
+      terraform: "not-a-range",
+    });
+
+    expect(gaps).toEqual([]);
+  });
 });
 
 describe("suggestedEmittingCliVersions", () => {

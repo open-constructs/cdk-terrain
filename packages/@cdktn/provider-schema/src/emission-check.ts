@@ -95,8 +95,13 @@ export function checkSchemaEmissionGapFamilies(
     const wanted = TARGET_PRODUCTS.some((product) => {
       const targetRange = targets[product];
       if (!targetRange) return false;
+      if (semver.validRange(targetRange) === null) return false;
       const supportedRange = `>=${boundaries[product]}`;
-      return semver.intersects(targetRange, supportedRange);
+      try {
+        return semver.intersects(targetRange, supportedRange);
+      } catch {
+        return false;
+      }
     });
 
     if (wanted) gaps.push(family);
