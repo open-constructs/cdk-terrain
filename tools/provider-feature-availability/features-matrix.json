@@ -1,0 +1,856 @@
+{
+ "generated_note": "provider-protocol feature availability from `providers schema -json` sweeps (observed) merged with source-verified CLI serializer history (documented); see PROPOSAL.md for citations",
+ "versions": {
+  "terraform": [
+   "1.5.7",
+   "1.6.6",
+   "1.7.0",
+   "1.8.0",
+   "1.9.0",
+   "1.10.0",
+   "1.11.0",
+   "1.12.0",
+   "1.13.0",
+   "1.14.0",
+   "1.15.0",
+   "1.15.6"
+  ],
+  "opentofu": [
+   "1.6.0",
+   "1.7.0",
+   "1.8.0",
+   "1.9.0",
+   "1.10.0",
+   "1.11.0",
+   "1.12.0",
+   "1.12.1"
+  ]
+ },
+ "fixture_provider_selections": {
+  "terraform": {
+   "hashicorp/aws": "6.14.1",
+   "hashicorp/local": "2.8.0",
+   "hashicorp/random": "3.9.0",
+   "hashicorp/time": "0.13.0",
+   "hashicorp/tls": "4.2.0",
+   "hashicorp/vault": "5.9.0"
+  },
+  "opentofu": {
+   "hashicorp/aws": "6.14.1",
+   "hashicorp/local": "2.8.0",
+   "hashicorp/random": "3.9.0",
+   "hashicorp/time": "0.13.0",
+   "hashicorp/tls": "4.2.0",
+   "hashicorp/vault": "5.9.0"
+  }
+ },
+ "features": {
+  "provider_functions": {
+   "title": "Provider-defined functions",
+   "schema_key": "functions",
+   "protocol": "5.5 / 6.5",
+   "plugin_go": "v0.20.0 (2023-12)",
+   "notes": "OpenTofu shipped provider::ns::fn() language support in 1.7.0 (before Terraform 1.8), but `tofu providers schema -json` only emits the `functions` key from 1.8.0.",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.8.0",
+     "documented_ga": "1.8.0",
+     "observed_introduced": "1.8.0",
+     "observed_versions": [
+      "1.8.0",
+      "1.9.0",
+      "1.10.0",
+      "1.11.0",
+      "1.12.0",
+      "1.13.0",
+      "1.14.0",
+      "1.15.0",
+      "1.15.6"
+     ]
+    },
+    "opentofu": {
+     "documented_emitted_from": "1.8.0",
+     "documented_ga": "1.7.0",
+     "observed_introduced": "1.8.0",
+     "observed_versions": [
+      "1.8.0",
+      "1.9.0",
+      "1.10.0",
+      "1.11.0",
+      "1.12.0",
+      "1.12.1"
+     ]
+    }
+   },
+   "evidence": {
+    "terraform": {
+     "version": "1.15.6",
+     "providers": {
+      "hashicorp/aws": [
+       "arn_build",
+       "arn_parse",
+       "trim_iam_role_path"
+      ],
+      "hashicorp/local": [
+       "direxists"
+      ],
+      "hashicorp/time": [
+       "duration_parse",
+       "rfc3339_parse",
+       "unix_timestamp_parse"
+      ]
+     }
+    },
+    "opentofu": {
+     "version": "1.12.1",
+     "providers": {
+      "hashicorp/aws": [
+       "arn_build",
+       "arn_parse",
+       "trim_iam_role_path"
+      ],
+      "hashicorp/local": [
+       "direxists"
+      ],
+      "hashicorp/time": [
+       "duration_parse",
+       "rfc3339_parse",
+       "unix_timestamp_parse"
+      ]
+     }
+    }
+   }
+  },
+  "ephemeral_resources": {
+   "title": "Ephemeral resources",
+   "schema_key": "ephemeral_resource_schemas",
+   "protocol": "5.7 / 6.7",
+   "plugin_go": "v0.25.0 (2024-10)",
+   "notes": "Same Schema shape as resource_schemas. OpenTofu 1.12 fixed ephemeral resources leaking into the plan file.",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.10.0",
+     "documented_ga": "1.10.0",
+     "observed_introduced": "1.10.0",
+     "observed_versions": [
+      "1.10.0",
+      "1.11.0",
+      "1.12.0",
+      "1.13.0",
+      "1.14.0",
+      "1.15.0",
+      "1.15.6"
+     ]
+    },
+    "opentofu": {
+     "documented_emitted_from": "1.11.0",
+     "documented_ga": "1.11.0",
+     "observed_introduced": "1.11.0",
+     "observed_versions": [
+      "1.11.0",
+      "1.12.0",
+      "1.12.1"
+     ]
+    }
+   },
+   "evidence": {
+    "terraform": {
+     "version": "1.15.6",
+     "providers": {
+      "hashicorp/aws": [
+       "aws_cognito_identity_openid_token_for_developer_identity",
+       "aws_eks_cluster_auth",
+       "aws_kms_secrets",
+       "aws_lambda_invocation",
+       "aws_secretsmanager_random_password",
+       "aws_secretsmanager_secret_version",
+       "aws_ssm_parameter"
+      ],
+      "hashicorp/local": [
+       "local_command"
+      ],
+      "hashicorp/random": [
+       "random_bytes",
+       "random_password"
+      ],
+      "hashicorp/tls": [
+       "tls_private_key",
+       "tls_public_key"
+      ],
+      "hashicorp/vault": [
+       "vault_alicloud_access_credentials",
+       "vault_approle_auth_backend_role_secret_id",
+       "vault_aws_access_credentials",
+       "vault_aws_static_access_credentials",
+       "vault_azure_access_credentials",
+       "vault_azure_static_credentials",
+       "vault_cf_auth_login",
+       "vault_database_secret",
+       "vault_gcp_oauth2_access_token",
+       "vault_gcp_service_account_key",
+       "vault_generic_endpoint",
+       "vault_generic_secret",
+       "vault_kubernetes_service_account_token",
+       "vault_kv_secret_v2",
+       "vault_spiffe_secret_backend_mintjwt",
+       "vault_terraform_token"
+      ]
+     }
+    },
+    "opentofu": {
+     "version": "1.12.1",
+     "providers": {
+      "hashicorp/aws": [
+       "aws_cognito_identity_openid_token_for_developer_identity",
+       "aws_eks_cluster_auth",
+       "aws_kms_secrets",
+       "aws_lambda_invocation",
+       "aws_secretsmanager_random_password",
+       "aws_secretsmanager_secret_version",
+       "aws_ssm_parameter"
+      ],
+      "hashicorp/local": [
+       "local_command"
+      ],
+      "hashicorp/random": [
+       "random_bytes",
+       "random_password"
+      ],
+      "hashicorp/tls": [
+       "tls_private_key",
+       "tls_public_key"
+      ],
+      "hashicorp/vault": [
+       "vault_alicloud_access_credentials",
+       "vault_approle_auth_backend_role_secret_id",
+       "vault_aws_access_credentials",
+       "vault_aws_static_access_credentials",
+       "vault_azure_access_credentials",
+       "vault_azure_static_credentials",
+       "vault_cf_auth_login",
+       "vault_database_secret",
+       "vault_gcp_oauth2_access_token",
+       "vault_gcp_service_account_key",
+       "vault_generic_endpoint",
+       "vault_generic_secret",
+       "vault_kubernetes_service_account_token",
+       "vault_kv_secret_v2",
+       "vault_spiffe_secret_backend_mintjwt",
+       "vault_terraform_token"
+      ]
+     }
+    }
+   }
+  },
+  "write_only_attributes": {
+   "title": "Write-only attributes",
+   "schema_key": "attribute flag \"write_only\"",
+   "protocol": "5.8 / 6.8",
+   "plugin_go": "v0.26.0 (2025-01)",
+   "notes": "Attribute-level boolean (omitempty) on managed resource schemas only; must be paired with optional or required. Conventionally named *_wo with a *_wo_version companion.",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.11.0",
+     "documented_ga": "1.11.0",
+     "observed_introduced": "1.11.0",
+     "observed_versions": [
+      "1.11.0",
+      "1.12.0",
+      "1.13.0",
+      "1.14.0",
+      "1.15.0",
+      "1.15.6"
+     ]
+    },
+    "opentofu": {
+     "documented_emitted_from": "1.11.0",
+     "documented_ga": "1.11.0",
+     "observed_introduced": "1.11.0",
+     "observed_versions": [
+      "1.11.0",
+      "1.12.0",
+      "1.12.1"
+     ]
+    }
+   },
+   "evidence": {
+    "terraform": {
+     "version": "1.15.6",
+     "providers": {
+      "hashicorp/aws": {
+       "aws_db_instance": [
+        "password_wo"
+       ],
+       "aws_docdb_cluster": [
+        "master_password_wo"
+       ],
+       "aws_rds_cluster": [
+        "master_password_wo"
+       ],
+       "aws_redshift_cluster": [
+        "master_password_wo"
+       ],
+       "aws_redshiftserverless_namespace": [
+        "admin_user_password_wo"
+       ],
+       "aws_secretsmanager_secret_version": [
+        "secret_string_wo"
+       ],
+       "aws_ssm_parameter": [
+        "value_wo"
+       ]
+      },
+      "hashicorp/vault": {
+       "vault_alicloud_secret_backend": [
+        "secret_key_wo"
+       ],
+       "vault_approle_auth_backend_login": [
+        "secret_id_wo"
+       ],
+       "vault_aws_auth_backend_client": [
+        "secret_key_wo"
+       ],
+       "vault_aws_secret_backend": [
+        "secret_key_wo"
+       ],
+       "vault_azure_auth_backend_config": [
+        "client_secret_wo"
+       ],
+       "vault_azure_secret_backend": [
+        "client_secret_wo"
+       ],
+       "vault_azure_secret_backend_static_role": [
+        "client_secret"
+       ],
+       "vault_cf_auth_backend_config": [
+        "cf_password_wo"
+       ],
+       "vault_consul_secret_backend": [
+        "client_key_wo",
+        "token_wo"
+       ],
+       "vault_database_secret_backend_connection": [
+        "hana.password_wo",
+        "mongodb.password_wo",
+        "mssql.password_wo",
+        "mysql.password_wo",
+        "mysql_aurora.password_wo",
+        "mysql_legacy.password_wo",
+        "mysql_rds.password_wo",
+        "oracle.password_wo",
+        "postgresql.password_wo",
+        "redshift.password_wo",
+        "snowflake.password_wo",
+        "snowflake.private_key_wo"
+       ],
+       "vault_database_secret_backend_static_role": [
+        "password_wo"
+       ],
+       "vault_database_secrets_mount": [
+        "hana.password_wo",
+        "mongodb.password_wo",
+        "mssql.password_wo",
+        "mysql.password_wo",
+        "mysql_aurora.password_wo",
+        "mysql_legacy.password_wo",
+        "mysql_rds.password_wo",
+        "oracle.password_wo",
+        "postgresql.password_wo",
+        "redshift.password_wo",
+        "snowflake.password_wo",
+        "snowflake.private_key_wo"
+       ],
+       "vault_gcp_auth_backend": [
+        "credentials_wo"
+       ],
+       "vault_gcp_secret_backend": [
+        "credentials_wo"
+       ],
+       "vault_jwt_auth_backend": [
+        "oidc_client_secret_wo"
+       ],
+       "vault_keymgmt_aws_kms": [
+        "credentials_wo"
+       ],
+       "vault_keymgmt_azure_kms": [
+        "credentials_wo"
+       ],
+       "vault_keymgmt_gcp_kms": [
+        "credentials_wo"
+       ],
+       "vault_kubernetes_auth_backend_config": [
+        "token_reviewer_jwt_wo"
+       ],
+       "vault_kubernetes_secret_backend": [
+        "service_account_jwt_wo"
+       ],
+       "vault_kv_secret_v2": [
+        "data_json_wo"
+       ],
+       "vault_ldap_auth_backend": [
+        "bindpass_wo"
+       ],
+       "vault_ldap_secret_backend": [
+        "bindpass_wo"
+       ],
+       "vault_ldap_secret_backend_static_role": [
+        "password_wo"
+       ],
+       "vault_mongodbatlas_secret_backend": [
+        "private_key_wo"
+       ],
+       "vault_nomad_secret_backend": [
+        "client_key_wo",
+        "token_wo"
+       ],
+       "vault_okta_auth_backend": [
+        "api_token_wo"
+       ],
+       "vault_os_secret_backend_account": [
+        "password_wo"
+       ],
+       "vault_pki_external_ca_secret_backend_acme_account": [
+        "eab_key",
+        "eab_kid"
+       ],
+       "vault_rabbitmq_secret_backend": [
+        "password_wo"
+       ],
+       "vault_secrets_sync_aws_destination": [
+        "identity_token_audience_wo",
+        "identity_token_key_wo"
+       ],
+       "vault_secrets_sync_azure_destination": [
+        "identity_token_audience_wo",
+        "identity_token_key_wo"
+       ],
+       "vault_secrets_sync_gcp_destination": [
+        "identity_token_audience_wo",
+        "identity_token_key_wo"
+       ],
+       "vault_spiffe_auth_backend_config": [
+        "defer_bundle_fetch"
+       ],
+       "vault_terraform_cloud_secret_backend": [
+        "token_wo"
+       ]
+      }
+     }
+    },
+    "opentofu": {
+     "version": "1.12.1",
+     "providers": {
+      "hashicorp/aws": {
+       "aws_db_instance": [
+        "password_wo"
+       ],
+       "aws_docdb_cluster": [
+        "master_password_wo"
+       ],
+       "aws_rds_cluster": [
+        "master_password_wo"
+       ],
+       "aws_redshift_cluster": [
+        "master_password_wo"
+       ],
+       "aws_redshiftserverless_namespace": [
+        "admin_user_password_wo"
+       ],
+       "aws_secretsmanager_secret_version": [
+        "secret_string_wo"
+       ],
+       "aws_ssm_parameter": [
+        "value_wo"
+       ]
+      },
+      "hashicorp/vault": {
+       "vault_alicloud_secret_backend": [
+        "secret_key_wo"
+       ],
+       "vault_approle_auth_backend_login": [
+        "secret_id_wo"
+       ],
+       "vault_aws_auth_backend_client": [
+        "secret_key_wo"
+       ],
+       "vault_aws_secret_backend": [
+        "secret_key_wo"
+       ],
+       "vault_azure_auth_backend_config": [
+        "client_secret_wo"
+       ],
+       "vault_azure_secret_backend": [
+        "client_secret_wo"
+       ],
+       "vault_azure_secret_backend_static_role": [
+        "client_secret"
+       ],
+       "vault_cf_auth_backend_config": [
+        "cf_password_wo"
+       ],
+       "vault_consul_secret_backend": [
+        "client_key_wo",
+        "token_wo"
+       ],
+       "vault_database_secret_backend_connection": [
+        "hana.password_wo",
+        "mongodb.password_wo",
+        "mssql.password_wo",
+        "mysql.password_wo",
+        "mysql_aurora.password_wo",
+        "mysql_legacy.password_wo",
+        "mysql_rds.password_wo",
+        "oracle.password_wo",
+        "postgresql.password_wo",
+        "redshift.password_wo",
+        "snowflake.password_wo",
+        "snowflake.private_key_wo"
+       ],
+       "vault_database_secret_backend_static_role": [
+        "password_wo"
+       ],
+       "vault_database_secrets_mount": [
+        "hana.password_wo",
+        "mongodb.password_wo",
+        "mssql.password_wo",
+        "mysql.password_wo",
+        "mysql_aurora.password_wo",
+        "mysql_legacy.password_wo",
+        "mysql_rds.password_wo",
+        "oracle.password_wo",
+        "postgresql.password_wo",
+        "redshift.password_wo",
+        "snowflake.password_wo",
+        "snowflake.private_key_wo"
+       ],
+       "vault_gcp_auth_backend": [
+        "credentials_wo"
+       ],
+       "vault_gcp_secret_backend": [
+        "credentials_wo"
+       ],
+       "vault_jwt_auth_backend": [
+        "oidc_client_secret_wo"
+       ],
+       "vault_keymgmt_aws_kms": [
+        "credentials_wo"
+       ],
+       "vault_keymgmt_azure_kms": [
+        "credentials_wo"
+       ],
+       "vault_keymgmt_gcp_kms": [
+        "credentials_wo"
+       ],
+       "vault_kubernetes_auth_backend_config": [
+        "token_reviewer_jwt_wo"
+       ],
+       "vault_kubernetes_secret_backend": [
+        "service_account_jwt_wo"
+       ],
+       "vault_kv_secret_v2": [
+        "data_json_wo"
+       ],
+       "vault_ldap_auth_backend": [
+        "bindpass_wo"
+       ],
+       "vault_ldap_secret_backend": [
+        "bindpass_wo"
+       ],
+       "vault_ldap_secret_backend_static_role": [
+        "password_wo"
+       ],
+       "vault_mongodbatlas_secret_backend": [
+        "private_key_wo"
+       ],
+       "vault_nomad_secret_backend": [
+        "client_key_wo",
+        "token_wo"
+       ],
+       "vault_okta_auth_backend": [
+        "api_token_wo"
+       ],
+       "vault_os_secret_backend_account": [
+        "password_wo"
+       ],
+       "vault_pki_external_ca_secret_backend_acme_account": [
+        "eab_key",
+        "eab_kid"
+       ],
+       "vault_rabbitmq_secret_backend": [
+        "password_wo"
+       ],
+       "vault_secrets_sync_aws_destination": [
+        "identity_token_audience_wo",
+        "identity_token_key_wo"
+       ],
+       "vault_secrets_sync_azure_destination": [
+        "identity_token_audience_wo",
+        "identity_token_key_wo"
+       ],
+       "vault_secrets_sync_gcp_destination": [
+        "identity_token_audience_wo",
+        "identity_token_key_wo"
+       ],
+       "vault_spiffe_auth_backend_config": [
+        "defer_bundle_fetch"
+       ],
+       "vault_terraform_cloud_secret_backend": [
+        "token_wo"
+       ]
+      }
+     }
+    }
+   }
+  },
+  "resource_identity": {
+   "title": "Resource identity",
+   "schema_key": "resource_identity_schemas",
+   "protocol": "5.9 / 6.9",
+   "plugin_go": "v0.27.0 (2025-05)",
+   "notes": "Top-level map (resource type -> identity schema), not nested in the resource schema. No HashiCorp utility provider implements it (June 2026) \u2014 observed via the aws fixture instead: aws 6.14.1 ships identity on 475 resources, emitted identically by both products.",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.12.0",
+     "documented_ga": "1.12.0",
+     "observed_introduced": "1.12.0",
+     "observed_versions": [
+      "1.12.0",
+      "1.13.0",
+      "1.14.0",
+      "1.15.0",
+      "1.15.6"
+     ]
+    },
+    "opentofu": {
+     "documented_emitted_from": "1.12.0",
+     "documented_ga": "1.12.0",
+     "observed_introduced": "1.12.0",
+     "observed_versions": [
+      "1.12.0",
+      "1.12.1"
+     ]
+    }
+   },
+   "evidence": {
+    "terraform": {
+     "version": "1.15.6",
+     "providers": {
+      "hashicorp/aws": [
+       "aws_acm_certificate",
+       "aws_acmpca_certificate",
+       "aws_acmpca_certificate_authority",
+       "aws_acmpca_certificate_authority_certificate",
+       "aws_acmpca_policy",
+       "aws_alb",
+       "aws_alb_listener",
+       "aws_alb_listener_rule",
+       "aws_alb_target_group",
+       "aws_api_gateway_account",
+       "aws_api_gateway_domain_name_access_association",
+       "aws_api_gateway_rest_api_put",
+       "aws_appconfig_environment",
+       "aws_appfabric_app_authorization",
+       "aws_appfabric_app_authorization_connection",
+       "aws_appfabric_app_bundle",
+       "aws_appfabric_ingestion",
+       "aws_appfabric_ingestion_destination",
+       "aws_appflow_connector_profile",
+       "aws_appflow_flow",
+       "aws_apprunner_auto_scaling_configuration_version",
+       "aws_apprunner_default_auto_scaling_configuration_version",
+       "aws_apprunner_deployment",
+       "aws_apprunner_observability_configuration",
+       "aws_apprunner_service",
+       "aws_apprunner_vpc_connector",
+       "aws_apprunner_vpc_ingress_connection",
+       "aws_appsync_api",
+       "aws_appsync_channel_namespace",
+       "aws_appsync_source_api_association",
+       "aws_athena_capacity_reservation",
+       "aws_auditmanager_account_registration",
+       "aws_auditmanager_assessment",
+       "aws_auditmanager_assessment_delegation",
+       "aws_auditmanager_assessment_report",
+       "aws_auditmanager_control",
+       "aws_auditmanager_framework",
+       "aws_auditmanager_framework_share",
+       "aws_auditmanager_organization_admin_account_registration",
+       "aws_backup_logically_air_gapped_vault",
+       "aws_backup_region_settings",
+       "aws_backup_restore_testing_plan",
+       "aws_backup_restore_testing_selection",
+       "aws_batch_job_definition",
+       "aws_batch_job_queue",
+       "aws_bcmdataexports_export",
+       "aws_bedrock_custom_model",
+       "aws_bedrock_guardrail",
+       "aws_bedrock_guardrail_version",
+       "aws_bedrock_inference_profile",
+       "... (+425 more)"
+      ]
+     }
+    },
+    "opentofu": {
+     "version": "1.12.1",
+     "providers": {
+      "hashicorp/aws": [
+       "aws_acm_certificate",
+       "aws_acmpca_certificate",
+       "aws_acmpca_certificate_authority",
+       "aws_acmpca_certificate_authority_certificate",
+       "aws_acmpca_policy",
+       "aws_alb",
+       "aws_alb_listener",
+       "aws_alb_listener_rule",
+       "aws_alb_target_group",
+       "aws_api_gateway_account",
+       "aws_api_gateway_domain_name_access_association",
+       "aws_api_gateway_rest_api_put",
+       "aws_appconfig_environment",
+       "aws_appfabric_app_authorization",
+       "aws_appfabric_app_authorization_connection",
+       "aws_appfabric_app_bundle",
+       "aws_appfabric_ingestion",
+       "aws_appfabric_ingestion_destination",
+       "aws_appflow_connector_profile",
+       "aws_appflow_flow",
+       "aws_apprunner_auto_scaling_configuration_version",
+       "aws_apprunner_default_auto_scaling_configuration_version",
+       "aws_apprunner_deployment",
+       "aws_apprunner_observability_configuration",
+       "aws_apprunner_service",
+       "aws_apprunner_vpc_connector",
+       "aws_apprunner_vpc_ingress_connection",
+       "aws_appsync_api",
+       "aws_appsync_channel_namespace",
+       "aws_appsync_source_api_association",
+       "aws_athena_capacity_reservation",
+       "aws_auditmanager_account_registration",
+       "aws_auditmanager_assessment",
+       "aws_auditmanager_assessment_delegation",
+       "aws_auditmanager_assessment_report",
+       "aws_auditmanager_control",
+       "aws_auditmanager_framework",
+       "aws_auditmanager_framework_share",
+       "aws_auditmanager_organization_admin_account_registration",
+       "aws_backup_logically_air_gapped_vault",
+       "aws_backup_region_settings",
+       "aws_backup_restore_testing_plan",
+       "aws_backup_restore_testing_selection",
+       "aws_batch_job_definition",
+       "aws_batch_job_queue",
+       "aws_bcmdataexports_export",
+       "aws_bedrock_custom_model",
+       "aws_bedrock_guardrail",
+       "aws_bedrock_guardrail_version",
+       "aws_bedrock_inference_profile",
+       "... (+425 more)"
+      ]
+     }
+    }
+   }
+  },
+  "list_resources": {
+   "title": "List resources / query",
+   "schema_key": "list_resource_schemas",
+   "protocol": "5.10 / 6.10",
+   "plugin_go": "v0.29.0 (2025-09)",
+   "notes": "Terraform-only (`terraform query`, *.tfquery.hcl). OpenTofu: open feature request opentofu/opentofu#3787, no milestone. Requires resource identity; observed via the aws fixture (4 list resources in aws 6.14.1); no small provider ships one yet (tfcoremock v0.6.0 unreleased).",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.14.0",
+     "documented_ga": "1.14.0",
+     "observed_introduced": "1.14.0",
+     "observed_versions": [
+      "1.14.0",
+      "1.15.0",
+      "1.15.6"
+     ]
+    },
+    "opentofu": {
+     "documented_emitted_from": null,
+     "documented_ga": null,
+     "observed_introduced": null,
+     "observed_versions": []
+    }
+   },
+   "evidence": {
+    "terraform": {
+     "version": "1.15.6",
+     "providers": {
+      "hashicorp/aws": [
+       "aws_batch_job_queue",
+       "aws_cloudwatch_log_group",
+       "aws_iam_role",
+       "aws_instance"
+      ]
+     }
+    }
+   }
+  },
+  "actions": {
+   "title": "Actions",
+   "schema_key": "action_schemas",
+   "protocol": "5.10 / 6.10",
+   "plugin_go": "v0.29.0 (2025-09)",
+   "notes": "Terraform-only `action` blocks (lifecycle-triggered or `terraform apply -invoke`). Fixture evidence: hashicorp/local >= 2.6.0 ships action local_command; aws 6.14.1 ships 5 actions (incl. aws_lambda_invoke, aws_cloudfront_create_invalidation).",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.14.0",
+     "documented_ga": "1.14.0",
+     "observed_introduced": "1.14.0",
+     "observed_versions": [
+      "1.14.0",
+      "1.15.0",
+      "1.15.6"
+     ]
+    },
+    "opentofu": {
+     "documented_emitted_from": null,
+     "documented_ga": null,
+     "observed_introduced": null,
+     "observed_versions": []
+    }
+   },
+   "evidence": {
+    "terraform": {
+     "version": "1.15.6",
+     "providers": {
+      "hashicorp/aws": [
+       "aws_cloudfront_create_invalidation",
+       "aws_ec2_stop_instance",
+       "aws_lambda_invoke",
+       "aws_ses_send_email",
+       "aws_sns_publish"
+      ],
+      "hashicorp/local": [
+       "local_command"
+      ]
+     }
+    }
+   }
+  },
+  "state_stores": {
+   "title": "Pluggable state stores",
+   "schema_key": "state_store_schemas",
+   "protocol": "6.11 only",
+   "plugin_go": "v0.30.0 (2026-02)",
+   "notes": "Protocol 6 only (no tfplugin5 counterpart). Terraform CLI serializer has the key from 1.15.0 but `state_store` is not GA in core through 1.15.x. OpenTofu has no equivalent (its differentiator is built-in state encryption, OpenTofu >= 1.7).",
+   "products": {
+    "terraform": {
+     "documented_emitted_from": "1.15.0",
+     "documented_ga": null,
+     "observed_introduced": null,
+     "observed_versions": []
+    },
+    "opentofu": {
+     "documented_emitted_from": null,
+     "documented_ga": null,
+     "observed_introduced": null,
+     "observed_versions": []
+    }
+   },
+   "evidence": {}
+  }
+ }
+}
