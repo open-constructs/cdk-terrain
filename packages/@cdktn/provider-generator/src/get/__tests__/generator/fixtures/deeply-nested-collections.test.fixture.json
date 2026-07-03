@@ -1,0 +1,129 @@
+{
+  "format_version": "1.0",
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/test": {
+      "data_source_schemas": {
+        "deeply_nested_collections": {
+          "version": 0,
+          "block": {
+            "attributes": {
+              "map_map_list_string": {
+                "type": [
+                  "map",
+                  [
+                    "map",
+                    [
+                      "list",
+                      "string"
+                    ]
+                  ]
+                ],
+                "description": "map(map(list(string))) - unsupported triple nesting, reproduces open-constructs/cdk-terrain#11.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "list_map_map_string": {
+                "type": [
+                  "list",
+                  [
+                    "map",
+                    [
+                      "map",
+                      "string"
+                    ]
+                  ]
+                ],
+                "description": "list(map(map(string))) - unsupported triple nesting.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "set_map_list_number": {
+                "type": [
+                  "set",
+                  [
+                    "map",
+                    [
+                      "list",
+                      "number"
+                    ]
+                  ]
+                ],
+                "description": "set(map(list(number))) - unsupported triple nesting.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "map_list_string": {
+                "type": [
+                  "map",
+                  [
+                    "list",
+                    "string"
+                  ]
+                ],
+                "description": "map(list(string)) - supported double nesting, must still emit cdktn.StringListMap.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "map_map_number": {
+                "type": [
+                  "map",
+                  [
+                    "map",
+                    "number"
+                  ]
+                ],
+                "description": "map(map(number)) - now directly supported via cdktn.NumberMapMap.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "map_map_bool": {
+                "type": [
+                  "map",
+                  [
+                    "map",
+                    "bool"
+                  ]
+                ],
+                "description": "map(map(bool)) - now directly supported via cdktn.BooleanMapMap.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "map_map_string": {
+                "type": [
+                  "map",
+                  [
+                    "map",
+                    "string"
+                  ]
+                ],
+                "description": "map(map(string)) - pre-existing support via cdktn.StringMapMap, unchanged.",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "map_map_map_list_string": {
+                "type": [
+                  "map",
+                  [
+                    "map",
+                    [
+                      "map",
+                      [
+                        "list",
+                        "string"
+                      ]
+                    ]
+                  ]
+                ],
+                "description": "map(map(map(list(string)))) - unsupported quadruple nesting, collapses to cdktn.AnyMapMap.",
+                "description_kind": "plain",
+                "computed": true
+              }
+            },
+            "description": "Data source used to verify deeply nested collection attribute types are handled without generating references to non-existent cdktn classes.",
+            "description_kind": "plain"
+          }
+        }
+      }
+    }
+  }
+}

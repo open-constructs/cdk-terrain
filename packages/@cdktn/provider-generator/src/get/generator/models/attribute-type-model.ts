@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { Struct } from "./struct";
 import { uppercaseFirst, downcaseFirst } from "../../../util";
+import { resolveStoredClassName } from "./supported-stored-classes";
 
 export interface AttributeTypeModel {
   readonly struct?: Struct; // complex object type contained within the type
@@ -15,6 +16,37 @@ export interface AttributeTypeModel {
   readonly typeModelType: string; // so we don't need to use instanceof
   readonly hasReferenceClass: boolean; // used to determine if a stored_class getter should be used
   readonly isTokenizable: boolean; // can the type be represented by a token type
+  readonly isStoredClassUnavailable: boolean; // true when no "cdktn.<Name>" stored class (not even a collapsed nearest-Any wrapper) is available for this type
+}
+
+// Describes the Terraform type of an attribute as its `list(...)`/`set(...)`/`map(...)`
+// composed notation (matching how Terraform itself describes nested collection types),
+// for use in generated JSDoc. Used only for collapsed/fallback getters (see
+// AttributesEmitter) so it never needs to be exhaustive/perfectly stable for every shape.
+export function describeTerraformType(model: AttributeTypeModel): string {
+  switch (model.typeModelType) {
+    case "list":
+      return `list(${describeTerraformType(
+        (model as CollectionAttributeTypeModel).elementType,
+      )})`;
+    case "set":
+      return `set(${describeTerraformType(
+        (model as CollectionAttributeTypeModel).elementType,
+      )})`;
+    case "map":
+      return `map(${describeTerraformType(
+        (model as CollectionAttributeTypeModel).elementType,
+      )})`;
+    case "struct":
+      return "object";
+    default:
+      // Covers both SimpleAttributeTypeModel (storedClassType is the Terraform primitive
+      // name, e.g. "string" | "number" | "boolean" | "any") and SkippedAttributeTypeModel
+      // (storedClassType is always "any").
+      return model.storedClassType === "boolean"
+        ? "bool"
+        : model.storedClassType;
+  }
 }
 
 export class SkippedAttributeTypeModel implements AttributeTypeModel {
@@ -62,6 +94,10 @@ export class SkippedAttributeTypeModel implements AttributeTypeModel {
   }
 
   get isTokenizable() {
+    return false;
+  }
+
+  get isStoredClassUnavailable() {
     return false;
   }
 }
@@ -117,6 +153,10 @@ export class SimpleAttributeTypeModel implements AttributeTypeModel {
   get isTokenizable() {
     return true;
   }
+
+  get isStoredClassUnavailable() {
+    return false;
+  }
 }
 
 export class StructAttributeTypeModel implements AttributeTypeModel {
@@ -162,10 +202,21 @@ export class StructAttributeTypeModel implements AttributeTypeModel {
   get isTokenizable() {
     return false;
   }
+
+  get isStoredClassUnavailable() {
+    return false;
+  }
 }
 
 export interface CollectionAttributeTypeModel extends AttributeTypeModel {
   elementType: AttributeTypeModel;
+  // Resolves the "cdktn.<name>" stored class to instantiate for this (non-complex)
+  // collection type, and whether that resolution collapsed a deeper, unsupported nesting
+  // into the nearest typed "Any"-wrapper. undefined only defensively - see
+  // resolveStoredClassName in supported-stored-classes.ts.
+  readonly resolvedStoredClass:
+    | { name: string; collapsed: boolean }
+    | undefined;
 }
 
 export class ListAttributeTypeModel implements CollectionAttributeTypeModel {
@@ -198,15 +249,20 @@ export class ListAttributeTypeModel implements CollectionAttributeTypeModel {
       if (this.isComplex) {
         return `new ${this.storedClassType}(this, "${name}", false)`;
       } else {
-        return `new cdktn.${uppercaseFirst(
-          this.storedClassType,
-        )}(this, "${name}", false)`;
+        return `new cdktn.${this.resolvedStoredClass!.name}(this, "${name}", false)`;
       }
     }
   }
 
   get storedClassType() {
     return `${this.elementType.storedClassType}List`;
+  }
+
+  get resolvedStoredClass() {
+    return resolveStoredClassName(
+      this.storedClassType,
+      this.elementType.typeModelType,
+    );
   }
 
   get inputTypeDefinition() {
@@ -263,6 +319,34 @@ export class ListAttributeTypeModel implements CollectionAttributeTypeModel {
         return false;
     }
   }
+
+  // Complex (struct) elements generate their own class in the provider output, so they
+  // are always fine. Otherwise a stored class is only emitted if resolvedStoredClass
+  // finds one - see getStoredClassInitializer above. Note: hasReferenceClass (which
+  // triggers a stored_class getter) is only ever true here when isSingleItem or isComplex
+  // is true, and isSingleItem is only set for struct/block nesting (which is also
+  // isComplex), so this check only needs to guard the non-complex, non-single-item case.
+  //
+  // storedClassType is itself built up recursively (elementType.storedClassType is
+  // composed the same way for nested collections), so it already fully encodes the
+  // entire nested chain in one string (e.g. map(map(list(string))) composes all the way
+  // up to "stringListMapMap"). resolvedStoredClass first checks this type's own composed
+  // name (e.g. "StringListMapMap") against the fixed set of hand-written core classes; if
+  // that name doesn't exist, it falls back to the nearest typed "Any"-wrapper that still
+  // encodes this type's own layer and its element's layer (e.g. "AnyMapMap"), collapsing
+  // only the unsupported inner shape while preserving typed navigation for the outer
+  // layers; only if neither exists does it fall through to the plain, untyped getter (see
+  // AttributeModel.getterType). It must NOT also OR in
+  // elementType.isStoredClassUnavailable, since an inner element's un-composed name (e.g.
+  // "StringList" for a plain list(string) nested inside a map) is never separately
+  // instantiated and is irrelevant on its own; ORing it in would produce false positives
+  // that regress supported nestings such as map(list(string)) => cdktn.StringListMap.
+  get isStoredClassUnavailable() {
+    if (this.isComplex) {
+      return false;
+    }
+    return this.resolvedStoredClass === undefined;
+  }
 }
 
 export class SetAttributeTypeModel implements CollectionAttributeTypeModel {
@@ -295,15 +379,20 @@ export class SetAttributeTypeModel implements CollectionAttributeTypeModel {
       if (this.isComplex) {
         return `new ${this.storedClassType}(this, "${name}", true)`;
       } else {
-        return `new cdktn.${uppercaseFirst(
-          this.storedClassType,
-        )}(this, "${name}", true)`;
+        return `new cdktn.${this.resolvedStoredClass!.name}(this, "${name}", true)`;
       }
     }
   }
 
   get storedClassType() {
     return `${this.elementType.storedClassType}List`;
+  }
+
+  get resolvedStoredClass() {
+    return resolveStoredClassName(
+      this.storedClassType,
+      this.elementType.typeModelType,
+    );
   }
 
   get inputTypeDefinition() {
@@ -365,6 +454,15 @@ export class SetAttributeTypeModel implements CollectionAttributeTypeModel {
         return false;
     }
   }
+
+  // See comment on ListAttributeTypeModel.isStoredClassUnavailable above - same
+  // reasoning applies here.
+  get isStoredClassUnavailable() {
+    if (this.isComplex) {
+      return false;
+    }
+    return this.resolvedStoredClass === undefined;
+  }
 }
 
 export class MapAttributeTypeModel implements CollectionAttributeTypeModel {
@@ -386,14 +484,19 @@ export class MapAttributeTypeModel implements CollectionAttributeTypeModel {
     if (this.isComplex) {
       return `new ${this.storedClassType}(this, "${name}")`;
     } else {
-      return `new cdktn.${uppercaseFirst(
-        this.storedClassType,
-      )}(this, "${name}")`;
+      return `new cdktn.${this.resolvedStoredClass!.name}(this, "${name}")`;
     }
   }
 
   get storedClassType() {
     return `${this.elementType.storedClassType}Map`;
+  }
+
+  get resolvedStoredClass() {
+    return resolveStoredClassName(
+      this.storedClassType,
+      this.elementType.typeModelType,
+    );
   }
 
   get inputTypeDefinition() {
@@ -444,5 +547,14 @@ export class MapAttributeTypeModel implements CollectionAttributeTypeModel {
       default:
         return false;
     }
+  }
+
+  // See comment on ListAttributeTypeModel.isStoredClassUnavailable above - same
+  // reasoning applies here (MapAttributeTypeModel.hasReferenceClass is just isComplex).
+  get isStoredClassUnavailable() {
+    if (this.isComplex) {
+      return false;
+    }
+    return this.resolvedStoredClass === undefined;
   }
 }

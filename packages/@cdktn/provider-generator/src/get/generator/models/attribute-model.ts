@@ -1,6 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { AttributeTypeModel } from "./attribute-type-model";
+import { logger } from "@cdktn/commons";
+import {
+  AttributeTypeModel,
+  CollectionAttributeTypeModel,
+} from "./attribute-type-model";
 
 export type GetterType =
   | { _type: "plain" }
@@ -69,6 +73,7 @@ export class AttributeModel {
   public provider: boolean;
   public required: boolean;
   public forcePlainGetterType?: boolean;
+  private loggedStoredClassUnavailable = false;
 
   constructor(options: AttributeModelOptions) {
     this.storageName = options.storageName;
@@ -125,12 +130,61 @@ export class AttributeModel {
       !this.isAssignable &&
       (!this.type.isTokenizable || this.type.typeModelType === "map")
     ) {
-      getterType = {
-        _type: "stored_class",
-      };
+      if (this.type.isStoredClassUnavailable) {
+        // Defensive fallback: neither the composed stored class name (e.g.
+        // "StringListMapMap") nor a collapsed nearest-Any wrapper (e.g. "AnyMapMap")
+        // exists in the core cdktn package for this type. This should be rare - see
+        // resolveStoredClassName in supported-stored-classes.ts - so log it loudly to
+        // make regressions in the collapse logic visible.
+        if (!this.loggedStoredClassUnavailable) {
+          this.loggedStoredClassUnavailable = true;
+          logger.debug(
+            `No stored class (not even a collapsed nearest-Any wrapper) is available for computed attribute "${this.terraformFullName}" (composed storedClassType: "${this.type.storedClassType}"). Falling back to a plain, untyped getter.`,
+          );
+        }
+      } else {
+        getterType = {
+          _type: "stored_class",
+        };
+      }
     }
 
     return getterType;
+  }
+
+  // Reports whether this attribute's getter sits at a "stored class boundary" that is
+  // worth documenting: "collapsed" when a deeper, unsupported nesting was collapsed into
+  // the nearest typed "Any"-wrapper (e.g. "AnyMapMap"), or "fallback" when no stored class
+  // at all is available and a plain, untyped getter is emitted instead. Mirrors the same
+  // condition tree as getterType above, so it only ever reports a boundary for attributes
+  // that actually went through that computed-collection branch - plain getters for
+  // ordinary tokenizable types (e.g. list(string)) are never flagged.
+  public get storedClassBoundaryKind(): "collapsed" | "fallback" | undefined {
+    if (this.forcePlainGetterType || this.isProvider) {
+      return undefined;
+    }
+
+    if (this.type.hasReferenceClass) {
+      return undefined;
+    }
+
+    if (
+      this.computed &&
+      !this.isAssignable &&
+      (!this.type.isTokenizable || this.type.typeModelType === "map")
+    ) {
+      if (this.type.isStoredClassUnavailable) {
+        return "fallback";
+      }
+
+      const resolvedStoredClass = (this.type as CollectionAttributeTypeModel)
+        .resolvedStoredClass;
+      if (resolvedStoredClass?.collapsed) {
+        return "collapsed";
+      }
+    }
+
+    return undefined;
   }
 
   public get isStored(): boolean {

@@ -2172,6 +2172,155 @@ export class ComputedOptionalComplex extends cdktn.TerraformResource {
 "
 `;
 
+exports[`deeply nested (unsupported) collection attribute types 1`] = `
+"// https://registry.terraform.io/providers/hashicorp/test/latest/docs/data-sources/deeply_nested_collections
+// generated from terraform resource schema
+
+import { Construct } from 'constructs';
+import * as cdktn from 'cdktn';
+
+// Configuration
+
+export interface DataDeeplyNestedCollectionsConfig extends cdktn.TerraformMetaArguments {
+}
+
+/**
+* Represents a {@link https://registry.terraform.io/providers/hashicorp/test/latest/docs/data-sources/deeply_nested_collections deeply_nested_collections}
+*/
+export class DataDeeplyNestedCollections extends cdktn.TerraformDataSource {
+
+  // =================
+  // STATIC PROPERTIES
+  // =================
+  public static readonly tfResourceType = "deeply_nested_collections";
+
+  // ==============
+  // STATIC Methods
+  // ==============
+  /**
+  * Generates CDKTN code for importing a DataDeeplyNestedCollections resource upon running "cdktn plan <stack-name>"
+  * @param scope The scope in which to define this construct
+  * @param importToId The construct id used in the generated config for the DataDeeplyNestedCollections to import
+  * @param importFromId The id of the existing DataDeeplyNestedCollections that should be imported. Refer to the {@link https://registry.terraform.io/providers/hashicorp/test/latest/docs/data-sources/deeply_nested_collections#import import section} in the documentation of this resource for the id to use
+  * @param provider? Optional instance of the provider where the DataDeeplyNestedCollections to import is found
+  */
+  public static generateConfigForImport(scope: Construct, importToId: string, importFromId: string, provider?: cdktn.TerraformProvider) {
+        return new cdktn.ImportableResource(scope, importToId, { terraformResourceType: "deeply_nested_collections", importId: importFromId, provider });
+      }
+
+  // ===========
+  // INITIALIZER
+  // ===========
+
+  /**
+  * Create a new {@link https://registry.terraform.io/providers/hashicorp/test/latest/docs/data-sources/deeply_nested_collections deeply_nested_collections} Data Source
+  *
+  * @param scope The scope in which to define this construct
+  * @param id The scoped construct ID. Must be unique amongst siblings in the same scope
+  * @param options DataDeeplyNestedCollectionsConfig = {}
+  */
+  public constructor(scope: Construct, id: string, config: DataDeeplyNestedCollectionsConfig = {}) {
+    super(scope, id, {
+      terraformResourceType: 'deeply_nested_collections',
+      terraformGeneratorMetadata: {
+        providerName: 'test'
+      },
+      provider: config.provider,
+      dependsOn: config.dependsOn,
+      count: config.count,
+      lifecycle: config.lifecycle,
+      provisioners: config.provisioners,
+      connection: config.connection,
+      forEach: config.forEach
+    });
+  }
+
+  // ==========
+  // ATTRIBUTES
+  // ==========
+
+  // map_map_list_string - computed: true, optional: false, required: false
+  private _mapMapListString = new cdktn.AnyMapMap(this, "map_map_list_string");
+  /**
+  * Terraform type: \`map(map(list(string)))\`.
+  * This nesting is deeper than the typed wrapper classes in the core cdktn package; it is exposed as \`AnyMapMap\` and values below that boundary are untyped tokens.
+  */
+  public get mapMapListString() {
+    return this._mapMapListString;
+  }
+
+  // list_map_map_string - computed: true, optional: false, required: false
+  private _listMapMapString = new cdktn.AnyMapList(this, "list_map_map_string", false);
+  /**
+  * Terraform type: \`list(map(map(string)))\`.
+  * This nesting is deeper than the typed wrapper classes in the core cdktn package; it is exposed as \`AnyMapList\` and values below that boundary are untyped tokens.
+  */
+  public get listMapMapString() {
+    return this._listMapMapString;
+  }
+
+  // set_map_list_number - computed: true, optional: false, required: false
+  private _setMapListNumber = new cdktn.AnyMapList(this, "set_map_list_number", true);
+  /**
+  * Terraform type: \`set(map(list(number)))\`.
+  * This nesting is deeper than the typed wrapper classes in the core cdktn package; it is exposed as \`AnyMapList\` and values below that boundary are untyped tokens.
+  */
+  public get setMapListNumber() {
+    return this._setMapListNumber;
+  }
+
+  // map_list_string - computed: true, optional: false, required: false
+  private _mapListString = new cdktn.StringListMap(this, "map_list_string");
+  public get mapListString() {
+    return this._mapListString;
+  }
+
+  // map_map_number - computed: true, optional: false, required: false
+  private _mapMapNumber = new cdktn.NumberMapMap(this, "map_map_number");
+  public get mapMapNumber() {
+    return this._mapMapNumber;
+  }
+
+  // map_map_bool - computed: true, optional: false, required: false
+  private _mapMapBool = new cdktn.BooleanMapMap(this, "map_map_bool");
+  public get mapMapBool() {
+    return this._mapMapBool;
+  }
+
+  // map_map_string - computed: true, optional: false, required: false
+  private _mapMapString = new cdktn.StringMapMap(this, "map_map_string");
+  public get mapMapString() {
+    return this._mapMapString;
+  }
+
+  // map_map_map_list_string - computed: true, optional: false, required: false
+  private _mapMapMapListString = new cdktn.AnyMapMap(this, "map_map_map_list_string");
+  /**
+  * Terraform type: \`map(map(map(list(string))))\`.
+  * This nesting is deeper than the typed wrapper classes in the core cdktn package; it is exposed as \`AnyMapMap\` and values below that boundary are untyped tokens.
+  */
+  public get mapMapMapListString() {
+    return this._mapMapMapListString;
+  }
+
+  // =========
+  // SYNTHESIS
+  // =========
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {
+    };
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    const attrs = {
+    };
+    return attrs;
+  }
+}
+"
+`;
+
 exports[`deeply nested block types 1`] = `
 "// https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/deeply_nested_block_types
 // generated from terraform resource schema

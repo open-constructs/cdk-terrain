@@ -609,3 +609,78 @@ test("case-insensitive base name collision", async () => {
     expect(output).toMatchSnapshot(file);
   }
 });
+
+test("deeply nested (unsupported) collection attribute types", async () => {
+  // Regression test for https://github.com/open-constructs/cdk-terrain/issues/11:
+  // computed attributes whose type nests list/set/map more than two levels deep (e.g.
+  // map(map(list(string)))) must not generate a reference to a "cdktn.*" stored class
+  // that doesn't exist (e.g. "StringListMapMap"). Instead of falling straight back to a
+  // plain, untyped getter, the generator collapses these into the nearest typed
+  // "Any"-wrapper that does exist (e.g. "AnyMapMap"), preserving typed navigation for the
+  // outer layers. Only shapes with no available stored class at all fall back to a plain
+  // getter.
+  const code = new CodeMaker();
+  const workdir = tmp("deeply-nested-collections.test");
+  const spec = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        __dirname,
+        "fixtures",
+        "deeply-nested-collections.test.fixture.json",
+      ),
+      "utf-8",
+    ),
+  );
+  new TerraformProviderGenerator(code, spec).generateAll();
+  await code.save(workdir);
+
+  const output = fs.readFileSync(
+    path.join(
+      workdir,
+      "providers/test/data-deeply-nested-collections/index.ts",
+    ),
+    "utf-8",
+  );
+  expect(output).toMatchSnapshot();
+
+  // None of the unsupported nested attributes should reference a non-existent "cdktn.*"
+  // wrapper class.
+  expect(output).not.toContain("StringListMapMap");
+  expect(output).not.toContain("StringMapMapList");
+  expect(output).not.toContain("NumberListMapList");
+  expect(output).not.toContain("StringListMapMapMap");
+
+  // Unsupported triple nestings collapse to the nearest typed "Any"-wrapper instead of
+  // falling back to a plain getter.
+  expect(output).toContain('new cdktn.AnyMapMap(this, "map_map_list_string")');
+  expect(output).toContain(
+    'new cdktn.AnyMapList(this, "list_map_map_string", false)',
+  );
+  expect(output).toContain(
+    'new cdktn.AnyMapList(this, "set_map_list_number", true)',
+  );
+  expect(output).toContain(
+    'new cdktn.AnyMapMap(this, "map_map_map_list_string")',
+  );
+
+  // A supported double nesting (map(list(string))) must still emit its stored class.
+  expect(output).toContain('new cdktn.StringListMap(this, "map_list_string")');
+
+  // map(map(number)) / map(map(bool)) are now directly supported by new core classes.
+  expect(output).toContain('new cdktn.NumberMapMap(this, "map_map_number")');
+  expect(output).toContain('new cdktn.BooleanMapMap(this, "map_map_bool")');
+
+  // map(map(string)) is pre-existing, unchanged support.
+  expect(output).toContain('new cdktn.StringMapMap(this, "map_map_string")');
+
+  // Collapsed getters get a JSDoc documenting the Terraform type and the collapse
+  // boundary.
+  expect(output).toContain("Terraform type: `map(map(list(string)))`");
+  expect(output).toContain(
+    "it is exposed as `AnyMapMap` and values below that boundary are untyped tokens",
+  );
+
+  // Supported, non-collapsed attributes must NOT get this JSDoc (avoids snapshot churn).
+  expect(output).not.toContain("Terraform type: `map(list(string))`");
+  expect(output).not.toContain("Terraform type: `map(map(string))`");
+});

@@ -1,8 +1,13 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { CodeMaker } from "codemaker";
-import { AttributeModel } from "../models";
+import {
+  AttributeModel,
+  CollectionAttributeTypeModel,
+  describeTerraformType,
+} from "../models";
 import { CUSTOM_DEFAULTS } from "../custom-defaults";
+import { sanitizedComment } from "../sanitized-comments";
 
 function titleCase(value: string) {
   return value[0].toUpperCase() + value.slice(1);
@@ -33,6 +38,8 @@ export class AttributesEmitter {
         `private ${att.storageName}?: ${att.type.inputTypeDefinition}; `,
       );
     }
+
+    this.emitStoredClassBoundaryDoc(att);
 
     switch (getterType._type) {
       case "plain":
@@ -119,6 +126,35 @@ export class AttributesEmitter {
   // returns an invocation of a stored class, e.g. 'new DeplotmentMetadataOutputReference(this, "metadata")'
   private storedClassInit(att: AttributeModel) {
     return att.type.getStoredClassInitializer(att.terraformName);
+  }
+
+  // Emits a JSDoc block documenting the Terraform type immediately before getters whose
+  // stored class either collapsed a deeper, unsupported nesting into the nearest typed
+  // "Any"-wrapper, or fell all the way back to a plain, untyped getter because no stored
+  // class (not even a collapsed one) is available. Normal, fully-supported getters get no
+  // such doc, to limit snapshot churn.
+  private emitStoredClassBoundaryDoc(att: AttributeModel) {
+    const boundaryKind = att.storedClassBoundaryKind;
+    if (!boundaryKind) {
+      return;
+    }
+
+    const comment = sanitizedComment(this.code);
+    comment.line(`Terraform type: \`${describeTerraformType(att.type)}\`.`);
+
+    if (boundaryKind === "collapsed") {
+      const collapsedName = (att.type as CollectionAttributeTypeModel)
+        .resolvedStoredClass!.name;
+      comment.line(
+        `This nesting is deeper than the typed wrapper classes in the core cdktn package; it is exposed as \`${collapsedName}\` and values below that boundary are untyped tokens.`,
+      );
+    } else {
+      comment.line(
+        `No typed wrapper class for this shape exists in the core cdktn package; the value is returned as an untyped token (IResolvable).`,
+      );
+    }
+
+    comment.end();
   }
 
   public determineGetAttCall(att: AttributeModel): string {
