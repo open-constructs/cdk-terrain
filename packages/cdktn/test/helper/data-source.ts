@@ -7,8 +7,11 @@ import {
   StringMap,
   StringMapMap,
   NumberMap,
+  NumberMapMap,
   BooleanMap,
+  BooleanMapMap,
   AnyMap,
+  AnyMapMap,
   ComplexObject,
   ComplexList,
   IResolvable,
@@ -65,6 +68,18 @@ export class TestDataSource extends TerraformDataSource {
 
   public get stringMapMap() {
     return new StringMapMap(this, "string_map_map");
+  }
+
+  public get numberMapMap() {
+    return new NumberMapMap(this, "number_map_map");
+  }
+
+  public get booleanMapMap() {
+    return new BooleanMapMap(this, "boolean_map_map");
+  }
+
+  public get anyMapMap() {
+    return new AnyMapMap(this, "any_map_map");
   }
 
   public get listValue() {

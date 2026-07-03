@@ -89,6 +89,68 @@ exports[`with any map 1`] = `
 }"
 `;
 
+exports[`with any map map - lookup returns AnyMap reference 1`] = `
+"{
+  "data": {
+    "test_data_source": {
+      "test": {
+        "name": "foo"
+      }
+    }
+  },
+  "provider": {
+    "test": [
+      {}
+    ]
+  },
+  "resource": {
+    "test_resource": {
+      "test-resource": {
+        "name": "\${data.test_data_source.test.any_map_map[\\"outer_key\\"]}"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "test": {
+        "version": "~> 2.0"
+      }
+    }
+  }
+}"
+`;
+
+exports[`with any map map - nested lookup produces correct reference 1`] = `
+"{
+  "data": {
+    "test_data_source": {
+      "test": {
+        "name": "foo"
+      }
+    }
+  },
+  "provider": {
+    "test": [
+      {}
+    ]
+  },
+  "resource": {
+    "test_resource": {
+      "test-resource": {
+        "name": "\${data.test_data_source.test.any_map_map[\\"outer_key\\"][\\"inner_key\\"]}"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "test": {
+        "version": "~> 2.0"
+      }
+    }
+  }
+}"
+`;
+
 exports[`with boolean map 1`] = `
 "{
   "data": {
@@ -107,6 +169,68 @@ exports[`with boolean map 1`] = `
     "test_resource": {
       "test-resource": {
         "name": "\${data.test_data_source.test.boolean_map[\\"id\\"]}"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "test": {
+        "version": "~> 2.0"
+      }
+    }
+  }
+}"
+`;
+
+exports[`with boolean map map - lookup returns BooleanMap reference 1`] = `
+"{
+  "data": {
+    "test_data_source": {
+      "test": {
+        "name": "foo"
+      }
+    }
+  },
+  "provider": {
+    "test": [
+      {}
+    ]
+  },
+  "resource": {
+    "test_resource": {
+      "test-resource": {
+        "name": "\${data.test_data_source.test.boolean_map_map[\\"outer_key\\"]}"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "test": {
+        "version": "~> 2.0"
+      }
+    }
+  }
+}"
+`;
+
+exports[`with boolean map map - nested lookup produces correct reference 1`] = `
+"{
+  "data": {
+    "test_data_source": {
+      "test": {
+        "name": "foo"
+      }
+    }
+  },
+  "provider": {
+    "test": [
+      {}
+    ]
+  },
+  "resource": {
+    "test_resource": {
+      "test-resource": {
+        "name": "\${data.test_data_source.test.boolean_map_map[\\"outer_key\\"][\\"inner_key\\"]}"
       }
     }
   },
@@ -169,6 +293,68 @@ exports[`with number map 1`] = `
     "test_resource": {
       "test-resource": {
         "name": "\${data.test_data_source.test.number_map[\\"id\\"]}"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "test": {
+        "version": "~> 2.0"
+      }
+    }
+  }
+}"
+`;
+
+exports[`with number map map - lookup returns NumberMap reference 1`] = `
+"{
+  "data": {
+    "test_data_source": {
+      "test": {
+        "name": "foo"
+      }
+    }
+  },
+  "provider": {
+    "test": [
+      {}
+    ]
+  },
+  "resource": {
+    "test_resource": {
+      "test-resource": {
+        "name": "\${data.test_data_source.test.number_map_map[\\"outer_key\\"]}"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "test": {
+        "version": "~> 2.0"
+      }
+    }
+  }
+}"
+`;
+
+exports[`with number map map - nested lookup produces correct reference 1`] = `
+"{
+  "data": {
+    "test_data_source": {
+      "test": {
+        "name": "foo"
+      }
+    }
+  },
+  "provider": {
+    "test": [
+      {}
+    ]
+  },
+  "resource": {
+    "test_resource": {
+      "test-resource": {
+        "name": "\${data.test_data_source.test.number_map_map[\\"outer_key\\"][\\"inner_key\\"]}"
       }
     }
   },

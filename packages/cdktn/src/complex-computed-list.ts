@@ -237,6 +237,84 @@ export class StringMapMap
   }
 }
 
+// eslint-disable-next-line jsdoc/require-jsdoc
+export class NumberMapMap
+  extends ComplexResolvable
+  implements ITerraformAddressable
+{
+  constructor(
+    protected terraformResource: IInterpolatingParent,
+    protected terraformAttribute: string,
+  ) {
+    super(terraformResource, terraformAttribute);
+  }
+
+  public lookup(key: string): NumberMap {
+    return new NumberMap(
+      this.terraformResource,
+      `${this.terraformAttribute}["${key}"]`,
+    );
+  }
+
+  computeFqn(): string {
+    return Token.asString(
+      this.terraformResource.interpolationForAttribute(this.terraformAttribute),
+    );
+  }
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+export class BooleanMapMap
+  extends ComplexResolvable
+  implements ITerraformAddressable
+{
+  constructor(
+    protected terraformResource: IInterpolatingParent,
+    protected terraformAttribute: string,
+  ) {
+    super(terraformResource, terraformAttribute);
+  }
+
+  public lookup(key: string): BooleanMap {
+    return new BooleanMap(
+      this.terraformResource,
+      `${this.terraformAttribute}["${key}"]`,
+    );
+  }
+
+  computeFqn(): string {
+    return Token.asString(
+      this.terraformResource.interpolationForAttribute(this.terraformAttribute),
+    );
+  }
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+export class AnyMapMap
+  extends ComplexResolvable
+  implements ITerraformAddressable
+{
+  constructor(
+    protected terraformResource: IInterpolatingParent,
+    protected terraformAttribute: string,
+  ) {
+    super(terraformResource, terraformAttribute);
+  }
+
+  public lookup(key: string): AnyMap {
+    return new AnyMap(
+      this.terraformResource,
+      `${this.terraformAttribute}["${key}"]`,
+    );
+  }
+
+  computeFqn(): string {
+    return Token.asString(
+      this.terraformResource.interpolationForAttribute(this.terraformAttribute),
+    );
+  }
+}
+
 /**
  * @deprecated Going to be replaced by Array of ComplexListItem
  * and will be removed in the future

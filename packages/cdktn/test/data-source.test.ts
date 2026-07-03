@@ -121,6 +121,102 @@ test("with string map map - nested lookup produces correct reference", () => {
   ).toMatchSnapshot();
 });
 
+test("with number map map - lookup returns NumberMap reference", () => {
+  expect(
+    Testing.synthScope((stack) => {
+      new TestProvider(stack, "provider", {});
+
+      const dataSource = new TestDataSource(stack, "test", {
+        name: "foo",
+      });
+      new TestResource(stack, "test-resource", {
+        name: Token.asString(dataSource.numberMapMap.lookup("outer_key")),
+      });
+    }),
+  ).toMatchSnapshot();
+});
+
+test("with number map map - nested lookup produces correct reference", () => {
+  expect(
+    Testing.synthScope((stack) => {
+      new TestProvider(stack, "provider", {});
+
+      const dataSource = new TestDataSource(stack, "test", {
+        name: "foo",
+      });
+      new TestResource(stack, "test-resource", {
+        name: Token.asString(
+          dataSource.numberMapMap.lookup("outer_key").lookup("inner_key"),
+        ),
+      });
+    }),
+  ).toMatchSnapshot();
+});
+
+test("with boolean map map - lookup returns BooleanMap reference", () => {
+  expect(
+    Testing.synthScope((stack) => {
+      new TestProvider(stack, "provider", {});
+
+      const dataSource = new TestDataSource(stack, "test", {
+        name: "foo",
+      });
+      new TestResource(stack, "test-resource", {
+        name: Token.asString(dataSource.booleanMapMap.lookup("outer_key")),
+      });
+    }),
+  ).toMatchSnapshot();
+});
+
+test("with boolean map map - nested lookup produces correct reference", () => {
+  expect(
+    Testing.synthScope((stack) => {
+      new TestProvider(stack, "provider", {});
+
+      const dataSource = new TestDataSource(stack, "test", {
+        name: "foo",
+      });
+      new TestResource(stack, "test-resource", {
+        name: Token.asString(
+          dataSource.booleanMapMap.lookup("outer_key").lookup("inner_key"),
+        ),
+      });
+    }),
+  ).toMatchSnapshot();
+});
+
+test("with any map map - lookup returns AnyMap reference", () => {
+  expect(
+    Testing.synthScope((stack) => {
+      new TestProvider(stack, "provider", {});
+
+      const dataSource = new TestDataSource(stack, "test", {
+        name: "foo",
+      });
+      new TestResource(stack, "test-resource", {
+        name: Token.asString(dataSource.anyMapMap.lookup("outer_key")),
+      });
+    }),
+  ).toMatchSnapshot();
+});
+
+test("with any map map - nested lookup produces correct reference", () => {
+  expect(
+    Testing.synthScope((stack) => {
+      new TestProvider(stack, "provider", {});
+
+      const dataSource = new TestDataSource(stack, "test", {
+        name: "foo",
+      });
+      new TestResource(stack, "test-resource", {
+        name: Token.asString(
+          dataSource.anyMapMap.lookup("outer_key").lookup("inner_key"),
+        ),
+      });
+    }),
+  ).toMatchSnapshot();
+});
+
 test("dependent data source", () => {
   expect(
     Testing.synthScope((stack) => {
