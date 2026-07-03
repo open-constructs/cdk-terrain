@@ -135,9 +135,13 @@ async function getNpmNodeModuleVersion(
   let output;
 
   try {
-    output = await exec("npm", ["list", packageName, "--json"], {
-      env: { ...process.env },
-    });
+    output = await exec(
+      "npm",
+      ["list", packageName, "--json", "--include=dev"],
+      {
+        env: { ...process.env },
+      },
+    );
   } catch (e) {
     logger.debug(`Unable to run 'npm list ${packageName} --json': ${e}`);
     return undefined;
