@@ -35,8 +35,7 @@ class Command extends BaseCommand {
         desc: "Use local state storage for generated Terraform.",
         default: false,
       })
-      .option("cdktf-version", {
-        // TODO: requires update to runInit cdktfVersion field
+      .option("cdktn-version", {
         type: "string",
         desc: "The cdktn version to use while creating a new project.",
         default: pkg.version,

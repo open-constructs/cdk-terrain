@@ -24,7 +24,11 @@ import {
   ConstructsMakerProviderTarget,
 } from "@cdktn/commons";
 
-import { checkForEmptyDirectory, runInit } from "./helper/init";
+import {
+  checkForEmptyDirectory,
+  runInit,
+  type RunInitOptions,
+} from "./helper/init";
 import { renderInk } from "./helper/render-ink";
 import { terraformCheck } from "./helper/terraform-check";
 import * as terraformCloudClient from "./helper/terraform-cloud-client";
@@ -150,14 +154,14 @@ export async function convert({
       enableCrashReporting: false,
       fromTerraformProject: "no",
       dist: pkg.version === "0.0.0" ? dist : undefined,
-      cdktfVersion: pkg.version,
+      cdktnVersion: pkg.version,
       silent: true,
       nonInteractive: true,
     });
     logger.useDefaultLevel();
   }
 
-  let output;
+  let output: string | undefined;
   try {
     const { all, stats } = await hcl2cdkConvert(input, {
       language,
@@ -359,12 +363,15 @@ export async function get(argv: {
   }
 }
 
-export async function init(argv: any) {
+export async function init(argv: RunInitOptions) {
   await terraformCheck();
   await displayVersionMessage();
   await checkEnvironment();
 
-  if (["", ".", process.cwd()].includes(argv.fromTerraformProject)) {
+  if (
+    argv.fromTerraformProject &&
+    [".", process.cwd()].includes(argv.fromTerraformProject)
+  ) {
     throw Errors.Usage(
       "--from-terraform-project requires a path to an existing Terraform project to be set, e.g. --from-terraform-project=../my-tf-codebase This folder can not be the same as the current working directory since cdktn init will initialize the new project in that folder.",
     );
