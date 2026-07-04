@@ -354,6 +354,7 @@ jobs:
         # PR's label from "autorelease: pending" to "autorelease: tagged" itself.
         # Without this, release-please permanently refuses to open the next
         # release PR ("There are untagged, merged release PRs outstanding").
+        # The "autorelease: tagged" label itself is created once, repo-wide.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -362,8 +363,6 @@ jobs:
             echo "No pull request associated with ${{ github.sha }}, skipping relabel"
             exit 0
           fi
-          gh label create "autorelease: tagged" --color 0E8A16 \
-            --description "This PR represents a release that has been tagged and published" 2>/dev/null || true
           gh pr edit "${pr}" --remove-label "autorelease: pending" --add-label "autorelease: tagged"
 
   publish_release:
