@@ -7,7 +7,7 @@
     },
     "dependencies": {
         "cdktn": "link:../../packages/cdktn",
-        "constructs": "10.3.0"
+        "constructs": "10.6.0"
     },
     "devDependencies": {
         "jsii-docgen": "^10.4.20",
