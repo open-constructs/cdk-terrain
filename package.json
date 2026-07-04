@@ -44,7 +44,7 @@
         "prepare-next-release": "standard-version --prerelease pre --release-as minor --skip.changelog=true --skip.commit=true",
         "prepare-release": "tools/prepare-release.sh",
         "release": "standard-version",
-        "generate-docs:api": "pnpm install && pnpm run build && mkdir -p website/docs/cdktn/api-reference && cd tools/documentation-generation && pnpm install --ignore-workspace && pnpm run docs && pnpm exec prettier --write ../../website/docs/cdktn/api-reference/**",
+        "generate-docs:api": "pnpm install && pnpm run build && mkdir -p website/docs/cdktn/api-reference && pnpm --filter @tools/documentation-generation run docs && pnpm exec prettier --write website/docs/cdktn/api-reference/**",
         "generate-docs": "pnpm run generate-docs:api",
         "generate-function-bindings": "pnpm --filter generate-function-bindings run fetch-metadata && pnpm --filter generate-function-bindings run generate && pnpm --filter generate-function-bindings run generate-function-availability"
     },

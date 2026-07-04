@@ -3,6 +3,7 @@ packages:
   - 'packages/@cdktn/*'
   - 'examples/**'
   - 'tools/generate-function-bindings'
+  - 'tools/documentation-generation'
 
 allowBuilds:
   '@swc/core': true

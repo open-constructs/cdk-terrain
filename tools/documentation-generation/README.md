@@ -8,8 +8,8 @@ Generates API reference docs from the `cdktn` JSII assembly using [`jsii-docgen`
 # From repo root (builds all packages first):
 pnpm generate-docs:api
 
-# Or from this directory (assumes packages are already built):
-pnpm install && pnpm docs
+# Or, if packages/cdktn is already built:
+pnpm --filter @tools/documentation-generation run docs
 ```
 
 Output: `website/docs/cdktn/api-reference/<language>/<topic>.mdx` (25 files total).
@@ -107,4 +107,4 @@ All sanitization is done at the AST level via a single `visit()` pass. The key a
 
 ## Package Notes
 
-This package is excluded from workspace hoisting because it needs a locally installed copy of `cdktn` and `constructs` in its own `node_modules/` for jsii-docgen to resolve the JSII assembly.
+This is a regular pnpm workspace member (see `pnpm-workspace.yaml`). `cdktn` is a `workspace:*` dependency, resolved to the local `packages/cdktn` build via pnpm's symlinked `node_modules`; `jsii-docgen` reads the `.jsii` assembly through `assembliesDir`, which points at this package's own `node_modules`. Keeping this in the workspace (rather than excluded, as it used to be) means its `constructs` pin is picked up by the same `upgradeJSII` CI automation that keeps `constructs`/`jsii`/`jsii-docgen` versions in lockstep across the rest of the monorepo — it previously drifted silently because `lerna exec`-based tooling couldn't see a package outside the workspace.
