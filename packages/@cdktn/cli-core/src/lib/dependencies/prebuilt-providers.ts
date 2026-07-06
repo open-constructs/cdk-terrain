@@ -1,18 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 
-import { HttpsProxyAgent } from "https-proxy-agent";
-import fetch from "node-fetch";
+import { fetch, ProxyAgent } from "undici";
 import * as semver from "semver";
 import { logger } from "@cdktn/commons";
 import { ProviderConstraint } from "./dependency-manager";
 import { versionMatchesConstraint } from "./version-constraints";
 
 const proxy = process.env.http_proxy || process.env.HTTP_PROXY;
-let agent: HttpsProxyAgent | undefined;
-if (proxy) {
-  agent = new HttpsProxyAgent(proxy);
-}
+const dispatcher: ProxyAgent | undefined = proxy
+  ? new ProxyAgent(proxy)
+  : undefined;
 
 // uses https://github.com/hashicorp/cdktf-repository-manager/blob/main/provider.json
 // However, it got cleared out. We'll need to host the existing list somewhere
@@ -44,7 +42,7 @@ async function fetchWrapped<T>(url: string): Promise<T> {
   let response;
   try {
     response = await fetch(url, {
-      agent,
+      dispatcher,
       headers: { "User-Agent": "OpenConstructs/cdktn-cli" },
     });
   } catch {

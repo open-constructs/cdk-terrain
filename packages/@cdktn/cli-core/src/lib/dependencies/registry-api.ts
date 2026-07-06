@@ -1,7 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import fetch from "node-fetch";
-import { HttpsProxyAgent } from "https-proxy-agent";
+import { fetch, ProxyAgent } from "undici";
 import { ProviderConstraint } from "./dependency-manager";
 import * as semver from "semver";
 import { Errors } from "@cdktn/commons";
@@ -19,14 +18,11 @@ async function fetchVersions(
   constraint: ProviderConstraint,
 ): Promise<VersionsReturnType["versions"] | null> {
   const proxy = process.env.http_proxy || process.env.HTTP_PROXY;
-  let agent;
-  if (proxy) {
-    agent = new HttpsProxyAgent(proxy);
-  }
+  const dispatcher = proxy ? new ProxyAgent(proxy) : undefined;
   const url = `https://registry.terraform.io/v1/providers/${constraint.namespace}/${constraint.name}/versions`;
 
   const result = await fetch(url, {
-    agent,
+    dispatcher,
     headers: { "User-Agent": "OpenConstructs/cdktn-cli" },
   });
   if (!result.ok) {

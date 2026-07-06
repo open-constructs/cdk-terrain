@@ -3,7 +3,12 @@
 import { mkdtempSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import nock from "nock";
+import {
+  MockAgent,
+  setGlobalDispatcher,
+  getGlobalDispatcher,
+  Dispatcher,
+} from "undici";
 import { Language } from "@cdktn/commons";
 import { PackageManager } from "../../../lib/dependencies/package-manager";
 
@@ -13,18 +18,19 @@ const PYPI_HOST = "https://pypi.org";
 const NUGET_HOST = "https://azuresearch-usnc.nuget.org";
 
 describe("package-manager", () => {
-  beforeAll(() => {
-    nock.disableNetConnect();
-  });
+  let originalDispatcher: Dispatcher;
+  let mockAgent: MockAgent;
 
-  afterAll(() => {
-    nock.cleanAll();
-    nock.enableNetConnect();
+  beforeEach(() => {
+    originalDispatcher = getGlobalDispatcher();
+    mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+    setGlobalDispatcher(mockAgent);
   });
 
   afterEach(() => {
-    expect(nock.pendingMocks()).toEqual([]);
-    nock.cleanAll();
+    mockAgent.assertNoPendingInterceptors();
+    setGlobalDispatcher(originalDispatcher);
   });
 
   describe("JavaPackageManager.isNpmVersionAvailable", () => {
@@ -43,7 +49,10 @@ describe("package-manager", () => {
     });
 
     it("returns true when the .pom exists on Maven Central (HTTP 200)", async () => {
-      nock(MAVEN_HOST).get(pomPath("0.2.64")).reply(200);
+      mockAgent
+        .get(MAVEN_HOST)
+        .intercept({ path: pomPath("0.2.64"), method: "GET" })
+        .reply(200, "");
 
       await expect(
         manager.isNpmVersionAvailable(
@@ -54,7 +63,10 @@ describe("package-manager", () => {
     });
 
     it("returns false when the .pom is absent on Maven Central (HTTP 404)", async () => {
-      nock(MAVEN_HOST).get(pomPath("0.2.64")).reply(404);
+      mockAgent
+        .get(MAVEN_HOST)
+        .intercept({ path: pomPath("0.2.64"), method: "GET" })
+        .reply(404, "");
 
       await expect(
         manager.isNpmVersionAvailable(
@@ -66,7 +78,11 @@ describe("package-manager", () => {
 
     it("throws (rather than reporting absent) when Maven Central stays unreachable", async () => {
       // A transient 5xx is retried; after all attempts fail we must abort, not report the version as missing.
-      nock(MAVEN_HOST).get(pomPath("0.2.64")).times(3).reply(503);
+      mockAgent
+        .get(MAVEN_HOST)
+        .intercept({ path: pomPath("0.2.64"), method: "GET" })
+        .reply(503, "")
+        .times(3);
 
       await expect(
         manager.isNpmVersionAvailable(
@@ -92,8 +108,9 @@ describe("package-manager", () => {
     });
 
     it("returns true when GitHub returns the tag ref (HTTP 200)", async () => {
-      nock(GITHUB_HOST)
-        .get(refPath("0.2.64"))
+      mockAgent
+        .get(GITHUB_HOST)
+        .intercept({ path: refPath("0.2.64"), method: "GET" })
         .reply(200, { ref: "refs/tags/random/v0.2.64" });
 
       await expect(manager.isNpmVersionAvailable(pkg, "0.2.64")).resolves.toBe(
@@ -102,8 +119,9 @@ describe("package-manager", () => {
     });
 
     it("returns false when GitHub reports the tag missing (HTTP 404)", async () => {
-      nock(GITHUB_HOST)
-        .get(refPath("0.2.64"))
+      mockAgent
+        .get(GITHUB_HOST)
+        .intercept({ path: refPath("0.2.64"), method: "GET" })
         .reply(404, { message: "Not Found" });
 
       await expect(manager.isNpmVersionAvailable(pkg, "0.2.64")).resolves.toBe(
@@ -114,10 +132,11 @@ describe("package-manager", () => {
     it("throws on a rate-limit response instead of reading it as absent", async () => {
       // GitHub returns a JSON body on rate-limit, so the old missing-`ref` check mistook a 429 for "tag absent".
       // A 429 is transient: retried, then aborts.
-      nock(GITHUB_HOST)
-        .get(refPath("0.2.64"))
-        .times(3)
-        .reply(429, { message: "API rate limit exceeded" });
+      mockAgent
+        .get(GITHUB_HOST)
+        .intercept({ path: refPath("0.2.64"), method: "GET" })
+        .reply(429, { message: "API rate limit exceeded" })
+        .times(3);
 
       await expect(
         manager.isNpmVersionAvailable(pkg, "0.2.64"),
@@ -139,8 +158,9 @@ describe("package-manager", () => {
     });
 
     it("returns true when PyPI has the version (info present)", async () => {
-      nock(PYPI_HOST)
-        .get(jsonPath("0.2.64"))
+      mockAgent
+        .get(PYPI_HOST)
+        .intercept({ path: jsonPath("0.2.64"), method: "GET" })
         .reply(200, { info: { version: "0.2.64" } });
 
       await expect(manager.isNpmVersionAvailable(pkg, "0.2.64")).resolves.toBe(
@@ -149,7 +169,10 @@ describe("package-manager", () => {
     });
 
     it("returns false when PyPI reports the version missing (HTTP 404)", async () => {
-      nock(PYPI_HOST).get(jsonPath("0.2.64")).reply(404, {});
+      mockAgent
+        .get(PYPI_HOST)
+        .intercept({ path: jsonPath("0.2.64"), method: "GET" })
+        .reply(404, {});
 
       await expect(manager.isNpmVersionAvailable(pkg, "0.2.64")).resolves.toBe(
         false,
@@ -157,7 +180,11 @@ describe("package-manager", () => {
     });
 
     it("throws when PyPI stays unreachable rather than reporting absent", async () => {
-      nock(PYPI_HOST).get(jsonPath("0.2.64")).times(3).reply(502);
+      mockAgent
+        .get(PYPI_HOST)
+        .intercept({ path: jsonPath("0.2.64"), method: "GET" })
+        .reply(502, "")
+        .times(3);
 
       await expect(
         manager.isNpmVersionAvailable(pkg, "0.2.64"),
@@ -180,9 +207,9 @@ describe("package-manager", () => {
     });
 
     it("returns true when NuGet lists the version", async () => {
-      nock(NUGET_HOST)
-        .get("/query")
-        .query(query)
+      mockAgent
+        .get(NUGET_HOST)
+        .intercept({ path: "/query", method: "GET", query })
         .reply(200, {
           data: [{ id: pkg, versions: [{ version: "0.2.64" }] }],
         });
@@ -193,7 +220,10 @@ describe("package-manager", () => {
     });
 
     it("returns false when NuGet returns no matching package", async () => {
-      nock(NUGET_HOST).get("/query").query(query).reply(200, { data: [] });
+      mockAgent
+        .get(NUGET_HOST)
+        .intercept({ path: "/query", method: "GET", query })
+        .reply(200, { data: [] });
 
       await expect(manager.isNpmVersionAvailable(pkg, "0.2.64")).resolves.toBe(
         false,
@@ -201,7 +231,11 @@ describe("package-manager", () => {
     });
 
     it("throws when NuGet stays unreachable rather than reporting absent", async () => {
-      nock(NUGET_HOST).get("/query").query(query).times(3).reply(500);
+      mockAgent
+        .get(NUGET_HOST)
+        .intercept({ path: "/query", method: "GET", query })
+        .reply(500, "")
+        .times(3);
 
       await expect(
         manager.isNpmVersionAvailable(pkg, "0.2.64"),

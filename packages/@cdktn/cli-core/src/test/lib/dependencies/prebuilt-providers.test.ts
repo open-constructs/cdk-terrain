@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import nock from "nock";
+import {
+  MockAgent,
+  setGlobalDispatcher,
+  getGlobalDispatcher,
+  Dispatcher,
+} from "undici";
 import { ProviderConstraint } from "../../../lib/dependencies/dependency-manager";
 import {
   getNpmPackageName,
@@ -44,27 +49,35 @@ function buildNpmResponse(
 
 describe("prebuilt-providers", () => {
   const initialLogLevel = process.env.CDKTF_LOG_LEVEL;
+  let originalDispatcher: Dispatcher;
+  let mockAgent: MockAgent;
+
   beforeAll(() => {
     // Prevent logging outputs from polluting the test results
     process.env.CDKTF_LOG_LEVEL = "error";
-    nock.disableNetConnect();
   });
 
   afterAll(() => {
     process.env.CDKTF_LOG_LEVEL = initialLogLevel;
-    nock.cleanAll();
-    nock.enableNetConnect();
+  });
+
+  beforeEach(() => {
+    originalDispatcher = getGlobalDispatcher();
+    mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+    setGlobalDispatcher(mockAgent);
   });
 
   afterEach(() => {
     resetFetchCache();
-    nock.cleanAll();
+    setGlobalDispatcher(originalDispatcher);
   });
 
   describe("getPrebuiltProviderRepositoryName", () => {
     it("reads the repository field", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(200, buildNpmResponse("2.3.0", "test1"));
 
       await expect(
@@ -75,9 +88,12 @@ describe("prebuilt-providers", () => {
 
   describe("getPrebuiltProviderVersions", () => {
     it("fails when connection error", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
-        .replyWithError({ code: "ETIMEDOUT" });
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
+        .replyWithError(Object.assign(new Error("connection error"), {
+          code: "ETIMEDOUT",
+        }));
 
       await expect(
         getAllPrebuiltProviderVersions("@cdktf/test"),
@@ -85,8 +101,9 @@ describe("prebuilt-providers", () => {
     });
 
     it("fails when npm responds with 5xx", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(502, "Gateway error");
 
       await expect(
@@ -95,8 +112,9 @@ describe("prebuilt-providers", () => {
     });
 
     it("fails when package doesn't exist", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(404, "Not found");
 
       await expect(
@@ -105,8 +123,9 @@ describe("prebuilt-providers", () => {
     });
 
     it("succeeds when package found", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(200, buildNpmResponse("2.3.0"));
 
       await expect(
@@ -121,8 +140,9 @@ describe("prebuilt-providers", () => {
     });
 
     it("returns using cache the second time", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(200, buildNpmResponse("2.4.2", "cachey"));
 
       await expect(
@@ -135,10 +155,13 @@ describe("prebuilt-providers", () => {
         ]),
       );
 
-      // Since we're expecting the cache to respond, the actual URL can fail
-      const scope = nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
-        .reply(500);
+      // Since we're expecting the cache to respond, the actual URL can fail.
+      // This interceptor must stay unconsumed — if it were hit, the reply(500)
+      // would surface instead of the cached value.
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
+        .reply(500, "");
 
       await expect(
         getAllPrebuiltProviderVersions("@cdktf/cachey"),
@@ -150,14 +173,14 @@ describe("prebuilt-providers", () => {
         ]),
       );
 
-      // ensure we never made the request
-      expect(scope.isDone()).toBeFalsy();
-      nock.cleanAll();
+      // ensure we never made the request: the reply(500) interceptor is still pending
+      expect(mockAgent.pendingInterceptors().length).toBeGreaterThan(0);
     });
 
     it("succeeds when package cdktn found", async () => {
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktn/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktn/.*"), method: "GET" })
         .reply(200, buildNpmResponse("2.3.0", "test", "^0.12.2", true, true));
 
       await expect(
@@ -175,9 +198,15 @@ describe("prebuilt-providers", () => {
   // TODO rebuild these tests when final url is known
   describe.skip("getNpmPackageName", () => {
     it("fails when connection error", async () => {
-      nock("https://www.cdk.tf/")
-        .get("/.well-known/prebuilt-providers.json")
-        .replyWithError({ code: "ETIMEDOUT" });
+      mockAgent
+        .get("https://www.cdk.tf")
+        .intercept({
+          path: "/.well-known/prebuilt-providers.json",
+          method: "GET",
+        })
+        .replyWithError(Object.assign(new Error("connection error"), {
+          code: "ETIMEDOUT",
+        }));
 
       await expect(
         getNpmPackageName(ProviderConstraint.fromConfigEntry("test"), false),
@@ -185,15 +214,25 @@ describe("prebuilt-providers", () => {
     });
 
     it("succeeds when cdk.tf redirect and Github work", async () => {
-      nock("https://www.cdk.tf/")
-        .get("/.well-known/prebuilt-providers.json")
+      mockAgent
+        .get("https://www.cdk.tf")
+        .intercept({
+          path: "/.well-known/prebuilt-providers.json",
+          method: "GET",
+        })
         .reply(307, undefined, {
-          Location:
-            "https://raw.githubusercontent.com/cdktf/cdktf-repository-manager/main/provider.json",
+          headers: {
+            Location:
+              "https://raw.githubusercontent.com/cdktf/cdktf-repository-manager/main/provider.json",
+          },
         });
 
-      nock("https://raw.githubusercontent.com/")
-        .get("/cdktf/cdktf-repository-manager/main/provider.json")
+      mockAgent
+        .get("https://raw.githubusercontent.com")
+        .intercept({
+          path: "/cdktf/cdktf-repository-manager/main/provider.json",
+          method: "GET",
+        })
         .reply(200, {
           test: "hashicorp/test@~> 0.3.3",
         });
@@ -204,8 +243,12 @@ describe("prebuilt-providers", () => {
     });
 
     it("succeeds when cdk.tf directly returns result", async () => {
-      nock("https://www.cdk.tf/")
-        .get("/.well-known/prebuilt-providers.json")
+      mockAgent
+        .get("https://www.cdk.tf")
+        .intercept({
+          path: "/.well-known/prebuilt-providers.json",
+          method: "GET",
+        })
         .reply(200, {
           test: "hashicorp/test@~> 0.3.3",
         });
@@ -218,9 +261,15 @@ describe("prebuilt-providers", () => {
 
   describe.skip("getPrebuiltProviderVersion", () => {
     it("returns null on connection error with github", async () => {
-      nock("https://www.cdk.tf/")
-        .get("/.well-known/prebuilt-providers.json")
-        .replyWithError({ code: "ETIMEDOUT" });
+      mockAgent
+        .get("https://www.cdk.tf")
+        .intercept({
+          path: "/.well-known/prebuilt-providers.json",
+          method: "GET",
+        })
+        .replyWithError(Object.assign(new Error("connection error"), {
+          code: "ETIMEDOUT",
+        }));
 
       await expect(
         getPrebuiltProviderVersions(
@@ -231,15 +280,22 @@ describe("prebuilt-providers", () => {
     });
 
     it("returns null on connection error with npm", async () => {
-      nock("https://www.cdk.tf/")
-        .get("/.well-known/prebuilt-providers.json")
+      mockAgent
+        .get("https://www.cdk.tf")
+        .intercept({
+          path: "/.well-known/prebuilt-providers.json",
+          method: "GET",
+        })
         .reply(200, {
           test: "hashicorp/test@~> 0.3.3",
         });
 
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
-        .replyWithError({ code: "ETIMEDOUT" });
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
+        .replyWithError(Object.assign(new Error("connection error"), {
+          code: "ETIMEDOUT",
+        }));
 
       await expect(
         getPrebuiltProviderVersions(
@@ -250,13 +306,18 @@ describe("prebuilt-providers", () => {
     });
 
     it("succeeds when both cdk.tf and npm work", async () => {
-      nock("https://www.cdk.tf/")
-        .get("/.well-known/prebuilt-providers.json")
+      mockAgent
+        .get("https://www.cdk.tf")
+        .intercept({
+          path: "/.well-known/prebuilt-providers.json",
+          method: "GET",
+        })
         .reply(200, {
           test: "hashicorp/test@~> 0.3.3",
         });
-      nock("https://registry.npmjs.org/")
-        .get(new RegExp("/@cdktf/.*"))
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(200, buildNpmResponse("2.3.0"));
 
       await expect(

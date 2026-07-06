@@ -14,8 +14,13 @@ import path from "path";
 import { xml2js, js2xml, Element } from "xml-js";
 import * as fs from "fs-extra";
 import * as semver from "semver";
-import fetch, { RequestInit, Response } from "node-fetch";
+import { fetch, ProxyAgent, RequestInit, Response } from "undici";
 import * as z from "zod";
+
+const proxy = process.env.http_proxy || process.env.HTTP_PROXY;
+const dispatcher: ProxyAgent | undefined = proxy
+  ? new ProxyAgent(proxy)
+  : undefined;
 
 /**
  * Number of attempts (initial try + retries) for a registry probe before we give up and treat the registry as
@@ -90,7 +95,7 @@ async function fetchWithRetry(
 
   for (let attempt = 1; attempt <= REGISTRY_PROBE_ATTEMPTS; attempt++) {
     try {
-      const response = await fetch(url, init);
+      const response = await fetch(url, { ...init, dispatcher });
       if (!isTransientStatus(response.status)) {
         return response;
       }
