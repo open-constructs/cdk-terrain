@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { IResolvable } from "../tokens/resolvable";
-import { anyValue, terraformFunction, variadic } from "./helpers";
+import { anyValue, terraformFunction } from "./helpers";
 import { recordProviderFunctionUsage } from "./usage-registry";
 
 /**
@@ -25,7 +25,12 @@ export class TerraformProviderFunction {
    * name — aliases do not change the namespace, local names do)
    * @param functionName the provider-defined function name (snake_case, as
    * published in the provider schema)
-   * @param args the function arguments, in declared order
+   * @param args the function arguments, positional (in declared order). Each
+   * entry in `args` maps 1:1 to a positional slot in the rendered call — a
+   * `null` or `undefined` entry keeps its slot and renders as the Terraform
+   * `null` keyword, it is not dropped. Callers that flatten a genuinely
+   * variadic trailing parameter (`[a, ...values]`) get one positional slot
+   * per flattened element, which is the desired behavior.
    */
   public static invoke(
     providerLocalName: string,
@@ -38,7 +43,20 @@ export class TerraformProviderFunction {
     // registry (usedFunctions); this is harmless since
     // ValidateFunctionVersionSupport only checks names present in its own
     // functionVersionConstraints map, which provider functions never are.
-    return terraformFunction(fullName, [variadic(anyValue)])(args);
+    //
+    // Note: intentionally NOT `[variadic(anyValue)]` - variadic()/listOf()
+    // filters out null/undefined ENTRIES of the array, which is correct for
+    // a genuinely variadic list but wrong here: `args` is a fixed-arity,
+    // positional argument list where a `null`/`undefined` entry is a
+    // meaningful value (e.g. Terraform's `condition_if(cond, null, "b")`),
+    // not a hole to be squeezed out. Validating per-position with a plain
+    // `anyValue` per slot (one validator per `args` element, by
+    // construction the same length) preserves every slot, including
+    // null/undefined ones.
+    return terraformFunction(
+      fullName,
+      args.map(() => anyValue),
+    )(...args);
   }
 
   private constructor() {}

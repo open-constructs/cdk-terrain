@@ -1,9 +1,16 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App, Testing, TerraformOutput, TerraformStack } from "../src";
+import {
+  App,
+  Testing,
+  Tokenization,
+  TerraformOutput,
+  TerraformStack,
+} from "../src";
 import { TerraformProviderFunction } from "../src/functions/provider-function";
 import { resetProviderFunctionUsageRegistry } from "../src/functions/usage-registry";
 import { createTmpHelper } from "./helper/tmp";
+import { TestProvider, TestResource } from "./helper";
 
 const tmp = createTmpHelper();
 
@@ -30,6 +37,85 @@ test("invoke() renders provider::<name>::<function>(...) in synthesized output",
       }
     }"
   `);
+});
+
+// Bug 1 regression: dynamic/object/map-typed generated wrappers used to
+// force-coerce the invoke() result through `cdktn.Token.asString(...)`,
+// which produces a value `Tokenization.isResolvable()` does not recognize -
+// silently dropping the attribute wherever a generated struct setter
+// (OutputReference internalValue) inspects the value's keys. The raw
+// invoke() result must stay a recognizable `IResolvable`.
+test("invoke() result is recognized as an IResolvable (not force-coerced through Token.asString)", () => {
+  const result = TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+    "2023-01-01T00:00:00Z",
+  ]);
+
+  expect(Tokenization.isResolvable(result)).toBe(true);
+});
+
+test("invoke() result passed as a resource attribute survives synth as a provider::... expression", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TestProvider(stack, "provider", {});
+  new TestResource(stack, "test", {
+    name: "foo",
+    anyMap: {
+      parsed: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+        "2023-01-01T00:00:00Z",
+      ]),
+    },
+  });
+
+  const { any_map: anyMap } = JSON.parse(Testing.synth(stack)).resource
+    .test_resource.test;
+  expect(anyMap.parsed).toBe(
+    '${provider::time::rfc3339_parse("2023-01-01T00:00:00Z")}',
+  );
+});
+
+// Bug 2 regression: invoke() used to flatten/validate args through
+// variadic(anyValue), whose underlying listOf() filters out null/undefined
+// ENTRIES - correct for a genuinely variadic trailing list, wrong for a
+// fixed-arity positional call, where a literal `null` in the middle is a
+// meaningful argument (Terraform errors "Missing value for value_if_false"
+// when it silently disappears).
+describe("invoke() preserves null/undefined positional arguments", () => {
+  test("a literal null in the second position renders as three comma-separated arguments with a literal null", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("cfncompat", "condition_if", [
+        true,
+        null,
+        { a: 1 },
+      ]),
+    });
+
+    const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
+    expect(value).toMatch(
+      /provider::cfncompat::condition_if\(true, null, \{"a" = 1\}\)/,
+    );
+  });
+
+  test("an undefined value in the second position also renders as a literal null", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("cfncompat", "condition_if", [
+        true,
+        undefined,
+        { a: 1 },
+      ]),
+    });
+
+    const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
+    expect(value).toMatch(
+      /provider::cfncompat::condition_if\(true, null, \{"a" = 1\}\)/,
+    );
+  });
 });
 
 describe("ValidateProviderFunctionTargetSupport", () => {

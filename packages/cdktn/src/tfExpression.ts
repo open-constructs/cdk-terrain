@@ -29,6 +29,16 @@ class TFExpression extends Intrinsic implements IResolvable {
         .join(", ")}}`;
     }
 
+    // A literal `null`/`undefined` argument (e.g. a fixed-arity provider
+    // function positional slot the caller intentionally left empty) must be
+    // rendered as the Terraform `null` keyword. Without this, `resolvedArg`
+    // stays `null`/`undefined` and Array.prototype.join() (used by callers
+    // like FunctionCall.resolve()) silently collapses it to an empty string,
+    // shifting/dropping the argument instead of rendering `null`.
+    if (resolvedArg === null || resolvedArg === undefined) {
+      return "null";
+    }
+
     return resolvedArg;
   }
 
