@@ -11,6 +11,18 @@ import * as cdktn from 'cdktn';
 export class ExampleProviderFunctions {
 
   /**
+  * Returns true_value if condition is true, otherwise returns false_value. The dynamic return type allows either branch to be a value of any type.
+  * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
+  * @param condition
+  * @param trueValue
+  * @param falseValue
+  * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
+  */
+  public static conditionIf(condition: any, trueValue: any, falseValue: any, providerLocalName?: string): any {
+    return cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "example", "condition_if", [condition, trueValue, falseValue]);
+  }
+
+  /**
   * Joins the given strings together using the provided separator.
   * Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).
   * @param separator
@@ -92,7 +104,7 @@ export class TimeProviderFunctions {
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
   public static durationParse(duration: string, providerLocalName?: string): any {
-    return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "time", "duration_parse", [duration])) as any;
+    return cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "time", "duration_parse", [duration]);
   }
 
   /**
@@ -102,7 +114,7 @@ export class TimeProviderFunctions {
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
   public static rfc3339Parse(timestamp: string, providerLocalName?: string): any {
-    return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "time", "rfc3339_parse", [timestamp])) as any;
+    return cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "time", "rfc3339_parse", [timestamp]);
   }
 
   /**
@@ -112,7 +124,7 @@ export class TimeProviderFunctions {
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
   public static unixTimestampParse(unixTimestamp: number, providerLocalName?: string): any {
-    return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "time", "unix_timestamp_parse", [unixTimestamp])) as any;
+    return cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "time", "unix_timestamp_parse", [unixTimestamp]);
   }
 }
 "

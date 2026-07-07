@@ -113,9 +113,16 @@ function buildParameterModel(
  * functions frequently return objects (e.g. every function in the `time`
  * provider), so - unlike built-in `Fn.*` functions - the object case is a
  * primary path, not an error: it is treated the same as `dynamic`/`map`,
- * returning `any` wrapped via `cdktn.Token.asString(...) as any` (mirroring
- * `helpers.ts` `asAny`, which wraps as a string because jsii can't represent
- * an unresolved value any other way).
+ * declared `any` and returned as the RAW `invoke()` result (an
+ * `IResolvable`), unwrapped. Unlike `helpers.ts` `asAny`, this must NOT go
+ * through `cdktn.Token.asString(...)`: `Token.asString()` produces an
+ * encoded string token that `Tokenization.isResolvable()` does not
+ * recognize, so generated struct setters (e.g. an `OutputReference`
+ * `internalValue`) treat it as a plain object with no known keys and the
+ * attribute silently vanishes from synth output. The raw `IResolvable` from
+ * `invoke()` IS recognized by `Tokenization.isResolvable()` and resolves
+ * correctly; jsii can still hand it back as `any` without a cast because
+ * `IResolvable` is assignable to `any`.
  */
 function mapReturnType(returnType: AttributeType): {
   tsType: string;
@@ -151,10 +158,15 @@ function mapReturnType(returnType: AttributeType): {
     };
   }
   // dynamic, map, object: no structural typing for arbitrary provider
-  // function results - declared as `any`.
+  // function results - declared as `any`, but returned as the raw
+  // `IResolvable` from invoke() (NOT wrapped in `cdktn.Token.asString(...)`,
+  // which would make the result unrecognizable to
+  // `Tokenization.isResolvable()` downstream - see the mapReturnType
+  // docstring above). `IResolvable` is assignable to `any`, so no cast is
+  // needed either.
   return {
     tsType: "any",
-    wrapReturn: (expr) => `cdktn.Token.asString(${expr}) as any`,
+    wrapReturn: (expr) => expr,
   };
 }
 

@@ -22,6 +22,16 @@
           "summary": "List prefixed names",
           "return_type": ["list", "string"],
           "parameters": [{ "name": "prefix", "type": "string" }]
+        },
+        "condition_if": {
+          "description": "Returns true_value if condition is true, otherwise returns false_value. The dynamic return type allows either branch to be a value of any type.",
+          "summary": "Dynamic conditional",
+          "return_type": "dynamic",
+          "parameters": [
+            { "name": "condition", "type": "bool" },
+            { "name": "true_value", "type": "dynamic" },
+            { "name": "false_value", "type": "dynamic" }
+          ]
         }
       }
     }
