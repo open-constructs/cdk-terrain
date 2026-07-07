@@ -23,6 +23,7 @@ import {
   getFetchingCliVersion,
   readModuleSchema,
   readProviderSchema,
+  warnIfSchemaEmissionGaps,
 } from "./provider-schema";
 import { cachedAccess } from "./cache";
 
@@ -64,8 +65,7 @@ export async function readSchema(
 ): Promise<Schema> {
   const keySuffix = await resolveCacheKeySuffix(cacheDir);
   const cachedReadProviderSchema = cachedAccess(
-    (target: ConstructsMakerProviderTarget) =>
-      readProviderSchema(target, targetVersions),
+    readProviderSchema,
     cacheDir,
     keySuffix,
   );
@@ -81,9 +81,14 @@ export async function readSchema(
         ? readModuleSchema(t as any).then(
             (s) => ({ moduleSchema: s }) as Schema,
           )
-        : cachedReadProviderSchema(t as any).then(
-            (s) => ({ providerSchema: s }) as Schema,
-          ),
+        : cachedReadProviderSchema(t as any).then(async (s) => {
+            // Runs on both cache hits and misses: cached schemas carry the
+            // same cli_name/cli_version stamps a fresh fetch would have
+            // written, so the emission-gap warning is just as relevant on
+            // a hit as on a miss.
+            await warnIfSchemaEmissionGaps(s, targetVersions);
+            return { providerSchema: s } as Schema;
+          }),
     ),
   );
 

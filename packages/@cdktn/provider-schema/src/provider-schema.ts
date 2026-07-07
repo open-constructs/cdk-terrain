@@ -280,7 +280,6 @@ export interface TerraformConfig {
 
 export async function readProviderSchema(
   target: ConstructsMakerProviderTarget,
-  targetVersions?: TerraformTargetVersions,
 ) {
   const config: TerraformConfig = {
     provider: {},
@@ -325,19 +324,6 @@ export async function readProviderSchema(
     const cli = await getFetchingCliVersion();
     providerSchema.cli_name = cli.name;
     providerSchema.cli_version = cli.version;
-
-    if (targetVersions) {
-      const gapFamilies = checkSchemaEmissionGapFamilies(cli, targetVersions);
-      if (gapFamilies.length > 0 && cli.version) {
-        logger.warn(
-          `provider schema fetched with ${cli.name} ${cli.version} — ${joinWithAnd(
-            gapFamilies.map((family) => SCHEMA_EMISSION_FAMILY_LABELS[family]),
-          )} will not be generated; run cdktn get with ${suggestedEmittingCliVersions(
-            gapFamilies,
-          )}`,
-        );
-      }
-    }
   } catch (error) {
     logger.debug(
       `Could not determine fetching CLI version to stamp provider schema: ${error}`,
@@ -345,6 +331,61 @@ export async function readProviderSchema(
   }
 
   return sanitizeProviderSchema(providerSchema);
+}
+
+/**
+ * Warns when the CLI that produced a given provider schema predates one or
+ * more schema-emission boundaries the project's declared `targetVersions`
+ * care about (see emission-check.ts) - i.e. some newer-protocol sections
+ * (functions, ephemeral resources, ...) may be missing from the generated
+ * bindings even though the schema fetch itself succeeded.
+ *
+ * Deliberately decoupled from the fetch path (readProviderSchema) so it
+ * also runs for schemas served from the on-disk cache: cached JSON carries
+ * the same `cli_name`/`cli_version` stamps a fresh fetch would have
+ * written (the cache key already segments by CLI product+minor), so the gap
+ * check is just as meaningful on a cache hit as on a miss.
+ *
+ * No-op without `targetVersions` - there is nothing to compare the CLI
+ * against. Falls back to the current process's fetching CLI version when
+ * the schema itself isn't stamped (e.g. older cache entries written before
+ * stamping existed).
+ *
+ * @internal exposed for testing
+ */
+export async function warnIfSchemaEmissionGaps(
+  schema: ProviderSchema,
+  targetVersions?: TerraformTargetVersions,
+): Promise<void> {
+  if (!targetVersions) return;
+
+  let cli: TerraformCliVersion;
+  if (schema.cli_name && schema.cli_version) {
+    if (schema.cli_name !== "terraform" && schema.cli_name !== "opentofu") {
+      return;
+    }
+    cli = { name: schema.cli_name, version: schema.cli_version };
+  } else {
+    try {
+      cli = await getFetchingCliVersion();
+    } catch (error) {
+      logger.debug(
+        `Could not determine fetching CLI version to check for schema emission gaps: ${error}`,
+      );
+      return;
+    }
+  }
+
+  const gapFamilies = checkSchemaEmissionGapFamilies(cli, targetVersions);
+  if (gapFamilies.length > 0 && cli.version) {
+    logger.warn(
+      `provider schema fetched with ${cli.name} ${cli.version} — ${joinWithAnd(
+        gapFamilies.map((family) => SCHEMA_EMISSION_FAMILY_LABELS[family]),
+      )} will not be generated; run cdktn get with ${suggestedEmittingCliVersions(
+        gapFamilies,
+      )}`,
+    );
+  }
 }
 
 // The providers have some potential bugs that we want to pro-actively
