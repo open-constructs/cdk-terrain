@@ -7,8 +7,6 @@
 !test.js
 *.d.ts
 node_modules
-!tools/build-example.js
-!tools/lint-examples.js
 
 # CDK asset staging directory
 .cdk.staging

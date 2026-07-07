@@ -11,7 +11,6 @@ on:
 # We special-case @types/fs-extra because the current major (9.x) is broken with @types/node >= 10
 # We special-case typescript because it's not semantically versioned
 # We special-case constructs because we want to stay in control of the minimum compatible version
-# We special-case lerna because we have a patch on it that stops applying if Lerna upgrades. Remove this once https://github.com/lerna/lerna/pull/2874 releases.
 # We special-case graphology-types because the newer version has type definitions that are not compatible with our typescript version.
 # We special-case @types/prettier because the underlying TS types aren't supported by our TS version anymore since prettier v2.6.1
 
@@ -41,20 +40,23 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install lerna npm-check-updates@^9.0.0
+          npm -g install npm-check-updates@^9.0.0
+      # Install first so `nx` is available for the package listing below.
+      - name: Run "pnpm install"
+        run: pnpm install --prefer-offline
       - name: List Mono-Repo Packages
         id: list-packages
         # These need to be ignored from the `ncu` runs!
         run: |-
-          echo "list=$(node -p "$(lerna ls --all --json 2>/dev/null).map(item => item.name).join(',')")" >> $GITHUB_OUTPUT
+          echo "list=$(pnpm exec nx show projects --json | jq -r 'join(",")')" >> $GITHUB_OUTPUT
       - name: Run "ncu -u"
         run: |-
           # Upgrade dependencies at repository root
           ncu --upgrade --filter=@types/fs-extra --target=minor
           ncu --upgrade --filter=typescript --target=patch
-          ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,lerna,@types/prettier --target=minor
+          ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor
 
-      # This will ensure the current lockfile is up-to-date with the dependency specifications (necessary for "pnpm update" to run)
+      # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
 
@@ -163,19 +165,22 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install lerna npm-check-updates@^9.0.0
+          npm -g install npm-check-updates@^9.0.0
+      # Install first so `nx` is available for the package listing below.
+      - name: Run "pnpm install"
+        run: pnpm install --prefer-offline
       - name: List Mono-Repo Packages
         id: list-packages
         # These need to be ignored from the `ncu` runs!
         run: |-
-          echo "list=$(node -p "$(lerna ls --all --json 2>/dev/null).map(item => item.name).join(',')")" >> $GITHUB_OUTPUT
+          echo "list=$(pnpm exec nx show projects --json | jq -r 'join(",")')" >> $GITHUB_OUTPUT
       - name: Run "ncu -u"
         run: |-
           # Upgrade all the packages
-          lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --filter=@types/fs-extra --target=minor
-          lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --filter=typescript --target=patch
-          lerna exec --scope='{${{ join(matrix.pr.packages, ',') }}}' ncu -- --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor
-      # This will ensure the current lockfile is up-to-date with the dependency specifications (necessary for "pnpm update" to run)
+          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=@types/fs-extra --target=minor
+          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=typescript --target=patch
+          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor
+      # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
 
@@ -227,17 +232,20 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install lerna npm-check-updates@^9.0.0
+          npm -g install npm-check-updates@^9.0.0
+      # Install first so `nx` is available for the package listing below.
+      - name: Run "pnpm install"
+        run: pnpm install --prefer-offline
       - name: List Mono-Repo Packages
         id: list-packages
         # These need to be ignored from the `ncu` runs!
         run: |-
-          echo "list=$(node -p "$(lerna ls --all --json 2>/dev/null).map(item => item.name).join(',')")" >> $GITHUB_OUTPUT
+          echo "list=$(pnpm exec nx show projects --json | jq -r 'join(",")')" >> $GITHUB_OUTPUT
       - name: Run "ncu -u"
         run: |-
           # Upgrade all the packages
-          lerna exec ncu -- --upgrade --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' --target=minor
-      # This will ensure the current lockfile is up-to-date with the dependency specifications (necessary for "pnpm update" to run)
+          pnpm exec nx exec -- ncu --upgrade --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' --target=minor
+      # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
 

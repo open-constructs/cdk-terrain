@@ -64,7 +64,7 @@ jobs:
         run: |
           pnpm ci
       - name: align versions
-        run: tools/align-version.sh
+        run: node tools/align-version.mjs
       - name: package (when testing @cdktn/hcl2cdk)
         # hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which reads
         # jsii tarballs from the workspace-root dist/ directory.

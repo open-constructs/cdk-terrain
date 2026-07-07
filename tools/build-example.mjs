@@ -3,11 +3,15 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-// Builds a single example, passed  as the first argument.
+// Builds a single example, passed as the first argument.
 
-const path = require("path");
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+import { promisify } from "node:util";
+import { exec as execCb } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const exec = promisify(execCb);
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 async function run(command) {
   console.log(`Running: ${command}`);
@@ -17,7 +21,7 @@ async function run(command) {
       CI: "true", // Disable spinner even when we have a TTY
     },
     maxBuffer: 256 * 1024 * 1024, // ~270 MB; Nodejs default is 1024 * 1024 (bytes) which is ~1 MiB
-    cwd: path.resolve(__dirname, ".."),
+    cwd: repoRoot,
   });
   process.stdout.write(stdout);
   process.stderr.write(stderr);
@@ -33,7 +37,7 @@ if (!exampleToBuild) {
 async function runInExample(command) {
   try {
     return await run(
-      `pnpm exec lerna run --scope='${exampleToBuild}' ${command}`,
+      `pnpm exec nx run-many -t ${command} -p '${exampleToBuild}'`,
     );
   } catch (e) {
     const err = new Error(
@@ -54,7 +58,7 @@ async function runInExample(command) {
  * (30s, 60s, 90s, ...). Used to ride out transient 5xx responses when terraform
  * downloads providers during `cdktn get`.
  *
- * @param {string} command The lerna script to run in the example.
+ * @param {string} command The command to run in the example.
  * @param {number} [attempts=5] Maximum number of attempts before giving up.
  * @param {number} [backoffSeconds=30] Base delay in seconds; multiplied by
  *   the attempt number for linear backoff.

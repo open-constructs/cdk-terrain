@@ -324,7 +324,7 @@ If you get this error message when trying to use a local build of `cdktn`:
 Run:
 
 ```
-./tools/align-version.sh -dev.111212112 && pnpm build && pnpm package
+node tools/align-version.mjs -dev.111212112 && pnpm build && pnpm package
 ```
 
 This builds a package with a development version which skips the tamper check in Python. (We once accidentally released `cdktn 0.0.0` which is the reason why Python knows some valid hashes for that `0.0.0` version and will fail as they won't match.)

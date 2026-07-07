@@ -15,7 +15,7 @@ untouched and keys off `package.json` as it always has.
 
 This is a **locked-version JSII monorepo**: every package ships at the single
 root version. In git the sub-package `package.json`s stay at `0.0.0` and are
-aligned at build time by `tools/align-version.sh` (`lerna version`). Therefore
+aligned at build time by `tools/align-version.mjs` (`nx release version`). Therefore
 release-please manages a **single root release** (the `"."` package in
 `release-please-config.json`) — not independent per-package versions.
 

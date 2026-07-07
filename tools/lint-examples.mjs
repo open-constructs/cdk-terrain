@@ -97,14 +97,13 @@ const exampleProjects = collectCdktfOrExampleProjectDirs(
 ).map((p) => p.replace(REPO_ROOT + "/", ""));
 
 /**
- * Output of `lerna list --all --json` — every workspace package lerna can see, with `name`, `location`,
- * `version`, and `private` fields. Used to cross-check that each example directory is registered as a lerna
- * package.
+ * Output of `nx show projects --json` — the name of every workspace project nx can see. Used to cross-check
+ * that each example directory is registered as a workspace package.
  *
- * @type {Array<{ name: string, location: string, version: string, private: boolean }>}
+ * @type {string[]}
  */
-const knownToLerna = JSON.parse(
-  execSync("npx lerna list --all --json").toString(),
+const knownProjects = JSON.parse(
+  execSync("pnpm exec nx show projects --json").toString(),
 );
 
 let failedCheck = false;
@@ -133,12 +132,10 @@ for (const example of exampleProjects) {
     continue;
   }
 
-  const lernaEntry = knownToLerna.find((e) => e.name === expectedPackageName);
-
-  if (!lernaEntry) {
+  if (!knownProjects.includes(expectedPackageName)) {
     reportError(
       join(example, "package.json"),
-      `Example has a package.json with the right name but "npx lerna list --all" does not recognize "${expectedPackageName}".`,
+      `Example has a package.json with the right name but "nx show projects" does not recognize "${expectedPackageName}".`,
     );
     failedCheck = true;
     continue;

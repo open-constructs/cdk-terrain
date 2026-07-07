@@ -59,5 +59,13 @@
         "^build"
       ]
     }
-  }
+  },
+  "release": {
+    "projects": ["cdktn", "cdktn-cli", "@cdktn/*"],
+    "projectsRelationship": "fixed",
+    "version": {
+      "manifestRootsToUpdate": ["{projectRoot}"]
+    }
+  },
+  "analytics": false
 }

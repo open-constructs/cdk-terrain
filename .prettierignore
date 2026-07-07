@@ -23,9 +23,6 @@ dist
 packages/@cdktn/provider-generator/edge-provider-bindings
 test/edge-provider-bindings
 !tools/documentation-generation/generate-documentation.js
-!tools/build-example.js
-!tools/lint-examples.js
-!tools/update-github-project-board/index.ts
 **/go.mod
 **/go.sum
 **/pnpm-lock.yaml

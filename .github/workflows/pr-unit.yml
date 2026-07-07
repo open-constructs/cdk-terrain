@@ -67,7 +67,7 @@ jobs:
         # @cdktn/hcl2cdk's globalSetup.ts spawns `cdktn init --dist=...` which
         # reads jsii tarballs from the workspace-root dist/ directory; that
         # output isn't produced by an Nx target chain, only by `pnpm run package`
-        # + tools/collect-dist.sh. Run it conditionally so unrelated PRs
+        # + tools/collect-dist.mjs. Run it conditionally so unrelated PRs
         # don't pay the multi-language packaging cost.
         run: |
           if pnpm exec nx show projects --affected --base="$NX_BASE" --head="$NX_HEAD" | grep -qx '@cdktn/hcl2cdk'; then

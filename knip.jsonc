@@ -6,6 +6,9 @@
   "treatConfigHintsAsErrors": true,
   "workspaces": {
     ".": {
+      // The loose scripts under tools/ are invoked from package.json/CI, not imported;
+      // list them as entries so knip traces their dependencies
+      "entry": ["tools/*.mjs"],
       "ignoreDependencies": [
         // Required by the tools/extract-changelog script (run from tools/release-github.sh).
         "changelog-parser",

@@ -68,7 +68,7 @@ jobs:
         if: steps.get_release_status.outputs.release == 'unreleased'
         run: |
           pnpm ci
-          tools/align-version.sh
+          node tools/align-version.mjs
           pnpm run build
           pnpm run package
         env:
@@ -134,7 +134,7 @@ jobs:
       - name: Bump prerelease version
         run: |
           pnpm prepare-next-release
-          tools/align-version.sh
+          node tools/align-version.mjs
       - name: version
         id: get_version
         run: |
