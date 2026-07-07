@@ -24,6 +24,19 @@ export type SchemaEmissionFamily =
 const TARGET_PRODUCTS = ["terraform", "opentofu"] as const;
 type TargetProduct = (typeof TARGET_PRODUCTS)[number];
 
+/**
+ * Hand-maintained from `tools/provider-feature-availability/features-matrix.json`
+ * — specifically each feature's `documented_emitted_from` /
+ * `observed_introduced` fields per product (see that directory's README for
+ * how the dataset itself is produced/regenerated, and its "In-repo
+ * consumers" section for how this map and `providerFeatureConstraints` in
+ * `packages/cdktn/src/provider-feature-constraints.ts` relate to the
+ * matrix and to each other).
+ *
+ * There is no automated check that this map stays in sync with the matrix;
+ * updates must be applied by hand when the matrix changes. An automated
+ * drift check is tracked in #309.
+ */
 export const SCHEMA_EMISSION_BOUNDARIES: Record<
   SchemaEmissionFamily,
   Record<TargetProduct, string>

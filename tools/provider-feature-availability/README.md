@@ -17,6 +17,27 @@ Note the provider-functions asymmetry: OpenTofu supports the
 validation uses the language boundary, schema acquisition the emission
 boundary.
 
+## In-repo consumers
+
+Two hand-maintained maps are derived from this matrix and must be kept in
+sync with it by hand:
+
+- `packages/cdktn/src/provider-feature-constraints.ts` —
+  `providerFeatureConstraints`, the _usage_ boundaries (language support) per
+  feature family, keyed off each feature's `documented_ga`/language-support
+  version here. This is where the deliberate OpenTofu `providerFunctions`
+  exception lives: 1.7.0 (language support) rather than 1.8.0 (schema
+  emission).
+- `packages/@cdktn/provider-schema/src/emission-check.ts` —
+  `SCHEMA_EMISSION_BOUNDARIES`, the _schema-emission_ boundaries (when
+  `providers schema -json` starts including the family's key) per feature
+  family, keyed off each feature's `documented_emitted_from` /
+  `observed_introduced` fields here.
+
+There is no automated check today that these two maps agree with
+`features-matrix.json` — updates must be applied by hand when the matrix
+changes. An automated drift check is tracked in #309.
+
 ## Regenerating
 
 Only the matrix JSON is vendored in this repo. The baseline data sweep that

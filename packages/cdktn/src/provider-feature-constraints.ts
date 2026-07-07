@@ -5,7 +5,23 @@ import { TerraformFeatureVersionConstraints } from "./validations/validate-terra
 /**
  * Minimum CLI version per product required for a provider-protocol feature
  * family, hand-maintained from `tools/provider-feature-availability/features-matrix.json`
- * (see that directory's README for how the dataset is produced/regenerated).
+ * (see that directory's README for how the dataset is produced/regenerated,
+ * and its "In-repo consumers" section for how this map relates to the
+ * matrix and to the sibling `SCHEMA_EMISSION_BOUNDARIES` map in
+ * `packages/@cdktn/provider-schema/src/emission-check.ts`).
+ *
+ * These are *usage* (language-support) boundaries, not schema-emission
+ * boundaries — the two can differ per feature. In particular,
+ * `providerFunctions.opentofu` is deliberately pinned to `>=1.7.0`, the
+ * version where OpenTofu's HCL parser started accepting
+ * `provider::ns::fn()`, even though `tofu providers schema -json` only
+ * starts emitting the `functions` key from 1.8.0 (see
+ * `SCHEMA_EMISSION_BOUNDARIES.functions.opentofu`). Do not "fix" this
+ * mismatch without checking the matrix and the emission-check module first.
+ *
+ * There is no automated check that this map stays in sync with the matrix;
+ * updates must be applied by hand when the matrix changes. An automated
+ * drift check is tracked in #309.
  *
  * Used by synth-time `ValidateFeatureTargetSupport` checks against a
  * project's declared `targetVersions`. Deliberately not exported from
