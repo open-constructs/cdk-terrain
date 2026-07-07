@@ -11,6 +11,13 @@
  * stacks, so reliable per-stack attribution is impossible anyway. Functions
  * used through raw escape hatches (overrides, hand-built expression strings)
  * are not recorded.
+ *
+ * Because the registry is process-global, `App`'s constructor resets it: a
+ * new `App` marks a new synthesis session, so usage recorded while
+ * synthesizing one App must not leak into validations for a later,
+ * unrelated App constructed in the same Node process (e.g. sequential apps
+ * in one test file). Within a single App, sharing this registry across all
+ * of its stacks is by design (see the validation classes that consume it).
  */
 const usedFunctions = new Set<string>();
 
@@ -42,6 +49,11 @@ export function resetFunctionUsageRegistry(): void {
  * language-support constraint for the whole feature family), not against the
  * per-function `functionVersionConstraints` map used for built-in `Fn.*`
  * functions.
+ *
+ * Just like `usedFunctions`, this is process-global and is reset in `App`'s
+ * constructor for the same reason: a new App starts a new synthesis
+ * session, and usage must not leak across unrelated Apps in the same
+ * process.
  */
 const usedProviderFunctions = new Set<string>();
 

@@ -77,4 +77,44 @@ describe("ValidateProviderFunctionTargetSupport", () => {
     const { app } = appWithStack();
     expect(() => app.synth()).not.toThrow();
   });
+
+  test("does not leak provider function usage from one App into a later, unrelated App in the same process", () => {
+    // Deliberately does NOT rely on the top-level beforeEach reset running
+    // between app1 and app2: both apps are constructed within this single
+    // test, so the only thing preventing app1's usage from leaking into
+    // app2's validation is the reset that happens in App's own constructor.
+    const { app: app1, stack: stack1 } = appWithStack({
+      targetVersions: { terraform: ">=1.8.0", opentofu: ">=1.7.0" },
+    });
+    new TerraformOutput(stack1, "test-output", {
+      value: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+        "2023-01-01T00:00:00Z",
+      ]),
+    });
+    expect(() => app1.synth()).not.toThrow();
+
+    // app2 targets the default baseline (which does NOT support
+    // provider-defined functions) but never invokes one itself.
+    const { app: app2 } = appWithStack();
+    expect(() => app2.synth()).not.toThrow();
+  });
+
+  test("app2 does not report provider-defined function errors carried over from app1's usage", () => {
+    const { app: app1, stack: stack1 } = appWithStack({
+      targetVersions: { terraform: ">=1.8.0", opentofu: ">=1.7.0" },
+    });
+    new TerraformOutput(stack1, "test-output", {
+      value: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+        "2023-01-01T00:00:00Z",
+      ]),
+    });
+    expect(() => app1.synth()).not.toThrow();
+
+    const { app: app2 } = appWithStack();
+    try {
+      app2.synth();
+    } catch (e: any) {
+      expect(e.message).not.toContain("provider-defined functions");
+    }
+  });
 });

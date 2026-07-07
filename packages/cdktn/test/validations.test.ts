@@ -553,4 +553,32 @@ describe("ValidateFunctionVersionSupport", () => {
     // does not fail synth
     expect(() => app.synth()).not.toThrow();
   });
+
+  test("does not leak Fn usage from one App into a later, unrelated App in the same process", () => {
+    // Deliberately does NOT rely on the top-level beforeEach reset running
+    // between app1 and app2: both apps are constructed within this single
+    // test, so the only thing preventing app1's usage from leaking into
+    // app2's validation is the reset that happens in App's own constructor.
+    const { app: app1, testResource: testResource1 } = appWithStack({
+      [VALIDATE_FUNCTION_VERSIONS]: "true",
+      targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
+    });
+    testResource1.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource1),
+    );
+    new TestResource(testResource1, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+    expect(() => app1.synth()).not.toThrow();
+
+    // app2 targets the default baseline (which does NOT support
+    // templatestring) but never calls Fn.templatestring itself.
+    const { app: app2, testResource: testResource2 } = appWithStack({
+      [VALIDATE_FUNCTION_VERSIONS]: "true",
+    });
+    testResource2.node.addValidation(
+      new ValidateFunctionVersionSupport(testResource2),
+    );
+    expect(() => app2.synth()).not.toThrow();
+  });
 });

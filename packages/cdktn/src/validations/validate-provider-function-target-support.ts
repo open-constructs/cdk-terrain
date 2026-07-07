@@ -22,7 +22,9 @@ import { getUsedProviderFunctions } from "../functions/usage-registry";
  * used function so the error is actionable.
  *
  * Registered unconditionally (no feature flag): this is new API surface, and
- * the check only ever fires when a provider function is actually used.
+ * the check only ever fires when a provider function is actually used
+ * during the current synthesis session (i.e. since the enclosing `App` was
+ * constructed — see the usage-registry reset in `App`'s constructor).
  */
 export class ValidateProviderFunctionTargetSupport implements IValidation {
   constructor(protected scope: IConstruct) {}
