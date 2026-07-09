@@ -58,7 +58,7 @@ jobs:
 
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
-        run: pnpm install --prefer-offline
+        run: pnpm install --prefer-offline --no-frozen-lockfile
 
       # Next, create and upload the changes as a patch file. This will later be downloaded to create a pull request
       # Creating a pull request requires write permissions and it's best to keep write privileges isolated.
@@ -182,7 +182,7 @@ jobs:
           pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
-        run: pnpm install --prefer-offline
+        run: pnpm install --prefer-offline --no-frozen-lockfile
 
       - name: Set git identity
         run: |-
@@ -247,7 +247,7 @@ jobs:
           pnpm exec nx exec -- ncu --upgrade --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' --target=minor
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
-        run: pnpm install --prefer-offline
+        run: pnpm install --prefer-offline --no-frozen-lockfile
 
       - name: Set git identity
         run: |-
