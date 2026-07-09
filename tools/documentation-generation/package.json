@@ -6,8 +6,10 @@
         "docs": "node ./generate-documentation.js ../../"
     },
     "dependencies": {
-        "cdktn": "workspace:*",
-        "constructs": "10.6.0"
+        "cdktn": "workspace:*"
+    },
+    "peerDependencies": {
+        "constructs": "^10.6.0"
     },
     "devDependencies": {
         "jsii-docgen": "^10.4.20",
