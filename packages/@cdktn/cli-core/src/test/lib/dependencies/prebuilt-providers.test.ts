@@ -91,9 +91,11 @@ describe("prebuilt-providers", () => {
       mockAgent
         .get("https://registry.npmjs.org")
         .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
-        .replyWithError(Object.assign(new Error("connection error"), {
-          code: "ETIMEDOUT",
-        }));
+        .replyWithError(
+          Object.assign(new Error("connection error"), {
+            code: "ETIMEDOUT",
+          }),
+        );
 
       await expect(
         getAllPrebuiltProviderVersions("@cdktf/test"),
@@ -204,9 +206,11 @@ describe("prebuilt-providers", () => {
           path: "/.well-known/prebuilt-providers.json",
           method: "GET",
         })
-        .replyWithError(Object.assign(new Error("connection error"), {
-          code: "ETIMEDOUT",
-        }));
+        .replyWithError(
+          Object.assign(new Error("connection error"), {
+            code: "ETIMEDOUT",
+          }),
+        );
 
       await expect(
         getNpmPackageName(ProviderConstraint.fromConfigEntry("test"), false),
@@ -267,9 +271,11 @@ describe("prebuilt-providers", () => {
           path: "/.well-known/prebuilt-providers.json",
           method: "GET",
         })
-        .replyWithError(Object.assign(new Error("connection error"), {
-          code: "ETIMEDOUT",
-        }));
+        .replyWithError(
+          Object.assign(new Error("connection error"), {
+            code: "ETIMEDOUT",
+          }),
+        );
 
       await expect(
         getPrebuiltProviderVersions(
@@ -293,9 +299,11 @@ describe("prebuilt-providers", () => {
       mockAgent
         .get("https://registry.npmjs.org")
         .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
-        .replyWithError(Object.assign(new Error("connection error"), {
-          code: "ETIMEDOUT",
-        }));
+        .replyWithError(
+          Object.assign(new Error("connection error"), {
+            code: "ETIMEDOUT",
+          }),
+        );
 
       await expect(
         getPrebuiltProviderVersions(
