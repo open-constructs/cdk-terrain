@@ -9,7 +9,7 @@ import * as os from "os";
 import * as fs from "fs";
 import { TerraformStack } from "./terraform-stack";
 import { AssetType, TerraformAsset } from "./terraform-asset";
-import { hashPath } from "./private/fs";
+import { copySync, hashPath } from "./private/fs";
 
 const TERRAFORM_MODULE_ASSET_SYMBOL = Symbol.for("cdktf.TerraformModuleAsset");
 
@@ -126,20 +126,4 @@ export function findLowestCommonPath(paths: string[]): string | undefined {
 
   const relativePath = path.relative(process.cwd(), absolutePathPrefix);
   return relativePath === "" ? "." : relativePath;
-}
-
-/**
- * Copies a file or directory recursively
- * @param from
- * @param to
- */
-function copySync(from: string, to: string) {
-  if (fs.lstatSync(from).isDirectory()) {
-    fs.mkdirSync(to, { recursive: true });
-    for (const file of fs.readdirSync(from)) {
-      copySync(path.join(from, file), path.join(to, file));
-    }
-  } else {
-    fs.copyFileSync(from, to);
-  }
 }

@@ -117,37 +117,56 @@ export function archiveSync(src: string, dest: string) {
 
 /**
  * Compute a stable MD5 hash of a file or directory's contents.
- * Directories are hashed by recursively folding each file's contents into
- * the same digest, in directory-listing order.
+ * File contents fold into one digest in directory-listing order, exactly as
+ * earlier releases did, so trees without symlinks keep their historical
+ * hashes. Symlinks are hashed by their metadata (path + target) instead of
+ * being followed, so shared targets are not double-counted and cycles cannot
+ * recurse; that metadata goes into a second digest, and only when symlinks
+ * exist are the two combined under a tagged outer hash — the tag keeps
+ * symlink metadata in a separate domain from file bytes, so a file
+ * containing `foo` can never collide with a symlink targeting `foo`.
  * @param src - path to a file or directory to hash
  * @returns uppercased hex digest, truncated to HASH_LEN characters
  */
 export function hashPath(src: string): string {
-  const hash = crypto.createHash("md5");
+  const content = crypto.createHash("md5");
+  const links = crypto.createHash("md5");
+  let linkCount = 0;
 
   /**
-   * Walk `p`, feeding any file contents into the enclosing hash accumulator.
-   * Symlinks are hashed by their target path instead of being followed, so
-   * shared targets are not double-counted and cycles cannot recurse.
+   * Walk `p`, feeding file contents and symlink metadata into the enclosing
+   * accumulators.
    * @param p - path to walk
+   * @param relPath - path of `p` relative to the walk root, `/`-separated
    * @param isRoot - follow a symlink only at the root, matching how the
    * asset's own path is resolved when it is read
    */
-  function hashRecursion(p: string, isRoot = false) {
+  function hashRecursion(p: string, relPath: string, isRoot = false) {
     const stat = isRoot ? fs.statSync(p) : fs.lstatSync(p);
     if (stat.isSymbolicLink()) {
-      hash.update(fs.readlinkSync(p));
+      links.update(`${relPath}\0${fs.readlinkSync(p)}\0`);
+      linkCount++;
     } else if (stat.isFile()) {
-      hash.update(fs.readFileSync(p));
+      content.update(fs.readFileSync(p));
     } else if (stat.isDirectory()) {
       fs.readdirSync(p).forEach((filename) =>
-        hashRecursion(path.resolve(p, filename)),
+        hashRecursion(
+          path.resolve(p, filename),
+          relPath ? `${relPath}/${filename}` : filename,
+        ),
       );
     }
   }
 
-  hashRecursion(src, true);
-  return hash.digest("hex").slice(0, HASH_LEN).toUpperCase();
+  hashRecursion(src, "", true);
+  if (linkCount === 0) {
+    return content.digest("hex").slice(0, HASH_LEN).toUpperCase();
+  }
+  const outer = crypto.createHash("md5");
+  outer.update("cdktn/asset-hash/symlinks/v1\0");
+  outer.update(content.digest("hex"));
+  outer.update(links.digest("hex"));
+  return outer.digest("hex").slice(0, HASH_LEN).toUpperCase();
 }
 
 /**

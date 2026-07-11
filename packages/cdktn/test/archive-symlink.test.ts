@@ -141,6 +141,33 @@ describe("hashPath symlink handling (#320)", () => {
 
     expect(before).not.toBe(after);
   });
+
+  test("a regular file and a symlink with the same payload hash differently", () => {
+    // both trees contain a `current` entry whose payload bytes are `a.txt`
+    const asFile = createTempDir();
+    fs.writeFileSync(path.join(asFile, "current"), "a.txt");
+    const asLink = createTempDir();
+    fs.symlinkSync("a.txt", path.join(asLink, "current"));
+
+    expect(hashPath(asFile)).not.toBe(hashPath(asLink));
+
+    fs.rmSync(asFile, { recursive: true, force: true });
+    fs.rmSync(asLink, { recursive: true, force: true });
+  });
+
+  test("trees without symlinks keep their legacy hash byte-for-byte", () => {
+    fs.mkdirSync(path.join(srcDir, "sub"));
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "aaa");
+    fs.writeFileSync(path.join(srcDir, "sub", "b.txt"), "bbb");
+
+    // the historical scheme: file contents folded into one md5 in
+    // directory-listing order, uppercased
+    const legacy = crypto.createHash("md5");
+    legacy.update("aaa");
+    legacy.update("bbb");
+
+    expect(hashPath(srcDir)).toBe(legacy.digest("hex").toUpperCase());
+  });
 });
 
 describe("copySync symlink handling (#320)", () => {
