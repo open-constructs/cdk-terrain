@@ -9,6 +9,7 @@ import {
   hashPath,
   findFileAboveCwd,
 } from "./private/fs";
+import { CANONICAL_ASSET_HASHES } from "./features";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
 import { TerraformStack } from "./terraform-stack";
@@ -78,7 +79,11 @@ export class TerraformAsset extends Construct {
     const stat = fs.statSync(this.sourcePath);
     const inferredType = stat.isFile() ? AssetType.FILE : AssetType.DIRECTORY;
     this.type = config.type ?? inferredType;
-    this.assetHash = config.assetHash || hashPath(this.sourcePath);
+    this.assetHash =
+      config.assetHash ||
+      hashPath(this.sourcePath, {
+        canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
+      });
 
     if (stat.isFile() && this.type !== AssetType.FILE) {
       throw assetExpectsDirectory(id, config.path);

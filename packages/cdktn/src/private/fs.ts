@@ -115,20 +115,43 @@ export function archiveSync(src: string, dest: string) {
   }
 }
 
+export interface HashPathOptions {
+  /**
+   * Use the canonical entry-framed hash instead of the legacy
+   * content-concatenation hash. Enabled through the `canonicalAssetHashes`
+   * feature flag.
+   */
+  readonly canonical?: boolean;
+}
+
 /**
  * Compute a stable MD5 hash of a file or directory's contents.
- * File contents fold into one digest in directory-listing order, exactly as
- * earlier releases did, so trees without symlinks keep their historical
- * hashes. Symlinks are hashed by their metadata (path + target) instead of
- * being followed, so shared targets are not double-counted and cycles cannot
- * recurse; that metadata goes into a second digest, and only when symlinks
- * exist are the two combined under a tagged outer hash — the tag keeps
- * symlink metadata in a separate domain from file bytes, so a file
- * containing `foo` can never collide with a symlink targeting `foo`.
+ * In both schemes symlinks are hashed by their metadata (path + target)
+ * instead of being followed, so shared targets are not double-counted and
+ * cycles cannot recurse; a symlink at the root itself is followed, matching
+ * how the asset source path is opened when the artifact is emitted.
  * @param src - path to a file or directory to hash
+ * @param options - hash scheme selection, see {@link HashPathOptions}
  * @returns uppercased hex digest, truncated to HASH_LEN characters
  */
-export function hashPath(src: string): string {
+export function hashPath(src: string, options: HashPathOptions = {}): string {
+  const digest = options.canonical
+    ? canonicalHashPath(src)
+    : legacyHashPath(src);
+  return digest.slice(0, HASH_LEN).toUpperCase();
+}
+
+/**
+ * Legacy-compatible hash: file contents fold into one digest in
+ * directory-listing order, exactly as earlier releases did, so trees without
+ * symlinks keep their historical hashes. Symlink metadata goes into a second
+ * digest, and only when symlinks exist are the two combined under a tagged
+ * outer hash — the tag keeps symlink metadata in a separate domain from file
+ * bytes, so a file containing `foo` can never collide with a symlink
+ * targeting `foo`.
+ * @param src - path to a file or directory to hash
+ */
+function legacyHashPath(src: string): string {
   const content = crypto.createHash("md5");
   const links = crypto.createHash("md5");
   let linkCount = 0;
@@ -160,13 +183,68 @@ export function hashPath(src: string): string {
 
   hashRecursion(src, "", true);
   if (linkCount === 0) {
-    return content.digest("hex").slice(0, HASH_LEN).toUpperCase();
+    return content.digest("hex");
   }
   const outer = crypto.createHash("md5");
   outer.update("cdktn/asset-hash/symlinks/v1\0");
   outer.update(content.digest("hex"));
   outer.update(links.digest("hex"));
-  return outer.digest("hex").slice(0, HASH_LEN).toUpperCase();
+  return outer.digest("hex");
+}
+
+/**
+ * Canonical hash, modeled on git trees and Nix NAR: every entry is framed
+ * with everything that affects the emitted artifact —
+ *
+ * - files:      `F <mode> <relPath>\0<size>\0` + content, where `<mode>` is
+ *               the octal permission mask (`0o7777` bits) that archiveSync
+ *               preserves in zip external attributes,
+ * - symlinks:   `L <mode> <relPath>\0<target byte length>\0` + target,
+ * - directories (including empty ones, which copySync materializes):
+ *               `D <relPath>\0`, with no mode — neither archiveSync nor
+ *               copySync preserves directory permissions,
+ *
+ * in sorted directory order with `/`-separated relative paths, so renames,
+ * entry-boundary shifts, permission changes, empty-directory changes, and
+ * file-vs-symlink swaps all change the digest.
+ * @param src - path to a file or directory to hash
+ */
+function canonicalHashPath(src: string): string {
+  const hash = crypto.createHash("md5");
+
+  /**
+   * Walk `p`, framing each entry into the enclosing hash accumulator.
+   * @param p - path to walk
+   * @param relPath - path of `p` relative to the walk root, `/`-separated
+   * @param isRoot - follow a symlink only at the root, matching how the
+   * asset's own path is resolved when the artifact is emitted
+   */
+  function hashRecursion(p: string, relPath: string, isRoot = false) {
+    const stat = isRoot ? fs.statSync(p) : fs.lstatSync(p);
+    const mode = (stat.mode & PERM_MASK).toString(8);
+    if (stat.isSymbolicLink()) {
+      const target = fs.readlinkSync(p);
+      hash.update(`L ${mode} ${relPath}\0${Buffer.byteLength(target)}\0`);
+      hash.update(target);
+    } else if (stat.isFile()) {
+      const data = fs.readFileSync(p);
+      hash.update(`F ${mode} ${relPath}\0${data.length}\0`);
+      hash.update(data);
+    } else if (stat.isDirectory()) {
+      if (relPath) {
+        hash.update(`D ${relPath}\0`);
+      }
+      for (const filename of fs.readdirSync(p).sort()) {
+        hashRecursion(
+          path.resolve(p, filename),
+          relPath ? `${relPath}/${filename}` : filename,
+        );
+      }
+    }
+  }
+
+  hashRecursion(src, "", true);
+  return hash.digest("hex");
 }
 
 /**
