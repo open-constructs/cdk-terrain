@@ -38,7 +38,26 @@ export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
  */
 export const VALIDATE_FUNCTION_VERSIONS = "validateFunctionVersions";
 
+/**
+ * When enabled, TerraformAsset and TerraformModuleAsset compute asset hashes
+ * with a canonical entry-framed scheme modeled on git trees and Nix NAR:
+ * every entry contributes its type, permission mask (for files and
+ * symlinks — the bits archiveSync preserves in zip external attributes),
+ * relative path, payload size, and payload, in sorted order, and
+ * directories — including empty ones — contribute explicit records. Renames,
+ * entry-boundary shifts, mode changes, empty-directory changes, and
+ * file-vs-symlink swaps all change the hash.
+ *
+ * When disabled, the legacy content-concatenation hash is kept for
+ * compatibility: trees without symlinks hash byte-identically to earlier
+ * releases, and only symlink-bearing trees (whose hashes had to change when
+ * symlink following was fixed) get a tagged hash that separates symlink
+ * metadata from file content.
+ */
+export const CANONICAL_ASSET_HASHES = "canonicalAssetHashes";
+
 export const FUTURE_FLAGS = {
   [FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS]: "true",
   [VALIDATE_FUNCTION_VERSIONS]: "true",
+  [CANONICAL_ASSET_HASHES]: "true",
 };

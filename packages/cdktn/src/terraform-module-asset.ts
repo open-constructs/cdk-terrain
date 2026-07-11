@@ -10,6 +10,7 @@ import * as fs from "fs";
 import { TerraformStack } from "./terraform-stack";
 import { AssetType, TerraformAsset } from "./terraform-asset";
 import { copySync, hashPath } from "./private/fs";
+import { CANONICAL_ASSET_HASHES } from "./features";
 
 const TERRAFORM_MODULE_ASSET_SYMBOL = Symbol.for("cdktf.TerraformModuleAsset");
 
@@ -69,7 +70,11 @@ export class TerraformModuleAsset extends Construct {
     this.asset = new TerraformAsset(this, "asset", {
       path: tmpDir,
       type: AssetType.DIRECTORY,
-      assetHash: staticModuleAssetHash ?? hashPath(relativeAssetPath),
+      assetHash:
+        staticModuleAssetHash ??
+        hashPath(relativeAssetPath, {
+          canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
+        }),
     });
   }
 
