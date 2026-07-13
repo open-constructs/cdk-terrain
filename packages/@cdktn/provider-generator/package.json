@@ -42,13 +42,13 @@
     "cdktn": "workspace:*",
     "codemaker": "1.128.0",
     "constructs": "10.6.0",
-    "fs-extra": "8.1.0",
+    "fs-extra": "11.3.6",
     "glob": "13.0.6",
     "jsii": "~5.9.0",
     "jsii-pacmak": "1.128.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "8.1.5",
+    "@types/fs-extra": "11.0.4",
     "@types/node": "20.19.37",
     "typescript": "^5.0.0"
   }
