@@ -1,6 +1,12 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App, TerraformResource, TerraformStack, Testing } from "../src";
+import {
+  App,
+  ProviderFeature,
+  TerraformResource,
+  TerraformStack,
+  Testing,
+} from "../src";
 import { Construct } from "constructs";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
@@ -21,12 +27,12 @@ class TestWriteOnlyResource extends TerraformResource {
     });
     this._secretKeyWo = config.secretKeyWo;
     if (config.secretKeyWo !== undefined) {
-      this.registerProviderFeatureUsage("writeOnlyAttributes");
+      this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
     }
   }
 
   public set secretKeyWo(value: string) {
-    this.registerProviderFeatureUsage("writeOnlyAttributes");
+    this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
     this._secretKeyWo = value;
   }
 
@@ -34,7 +40,11 @@ class TestWriteOnlyResource extends TerraformResource {
     return this._secretKeyWo as string;
   }
 
-  /** Exposes the protected hook directly, for the "unknown feature" test. */
+  /**
+   * Exposes the protected hook directly, for the "unknown feature" test.
+   * Models what a plain-JS or non-TypeScript jsii caller could pass despite
+   * the ProviderFeature enum in the signature.
+   */
   public callWithUnknownFeature() {
     (this as any).registerProviderFeatureUsage("notARealFeature");
   }

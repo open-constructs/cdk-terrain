@@ -32,6 +32,7 @@ import { ValidateTerraformVersion } from "./validations/validate-terraform-versi
 import { ValidateFeatureTargetSupport } from "./validations/target-versions";
 import { TerraformStack } from "./terraform-stack";
 import {
+  ProviderFeature,
   providerFeatureConstraints,
   providerFeatureLabels,
 } from "./provider-feature-constraints";
@@ -188,10 +189,10 @@ export class TerraformResource
    * Registers a synth-time validation that the project's declared
    * targetVersions admit the given provider-protocol feature family.
    * Called by generated provider bindings when a versioned feature is
-   * actually used (e.g. setting a write-only attribute); not intended
-   * to be called directly.
+   * actually used (e.g. `ProviderFeature.WRITE_ONLY_ATTRIBUTES` when a
+   * write-only attribute is set); not intended to be called directly.
    */
-  protected registerProviderFeatureUsage(feature: string): void {
+  protected registerProviderFeatureUsage(feature: ProviderFeature): void {
     if (this._registeredProviderFeatures.has(feature)) {
       return;
     }

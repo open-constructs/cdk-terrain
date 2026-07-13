@@ -32,11 +32,11 @@ test("generate a vault_alicloud_secret_backend resource with a write-only attrib
   );
   // ... its setter registers the usage of the write-only-attributes feature ...
   expect(output).toMatch(
-    /public set secretKeyWo\(value: string\) \{\n\s*this\.registerProviderFeatureUsage\("writeOnlyAttributes"\);/,
+    /public set secretKeyWo\(value: string\) \{\n\s*this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\);/,
   );
   // ... and so does the constructor-assigned config value.
   expect(output).toMatch(
-    /if \(config\.secretKeyWo !== undefined\) \{ this\.registerProviderFeatureUsage\("writeOnlyAttributes"\); \}/,
+    /if \(config\.secretKeyWo !== undefined\) \{ this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\); \}/,
   );
 
   // The non-write-only sibling attribute is untouched: its getter is

@@ -200,7 +200,7 @@ export class ResourceEmitter {
       // AttributesEmitter for the corresponding property-set path).
       if (att.isWriteOnly && canRegisterProviderFeatureUsage) {
         this.code.line(
-          `if (config.${att.name} !== undefined) { this.registerProviderFeatureUsage("writeOnlyAttributes"); }`,
+          `if (config.${att.name} !== undefined) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
         );
       }
     }

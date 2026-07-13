@@ -22,7 +22,11 @@ import { IInterpolatingParent } from "./terraform-addressable";
 import { ITerraformIterator } from "./terraform-iterator";
 import { TerraformCount } from "./terraform-count";
 import { ValidateFeatureTargetSupport } from "./validations/target-versions";
-import { providerFeatureConstraints } from "./provider-feature-constraints";
+import {
+  ProviderFeature,
+  providerFeatureConstraints,
+  providerFeatureLabels,
+} from "./provider-feature-constraints";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import assert = require("assert");
 
@@ -35,7 +39,7 @@ const TERRAFORM_EPHEMERAL_RESOURCE_SYMBOL = Symbol.for(
  * their declared targetVersions.
  */
 const EPHEMERAL_RESOURCES_HINT = `Ephemeral resources are available in ${Object.entries(
-  providerFeatureConstraints.ephemeralResources,
+  providerFeatureConstraints[ProviderFeature.EPHEMERAL_RESOURCES],
 )
   .map(([product, range]) => `${product} ${range}`)
   .join(" and ")}.`;
@@ -127,8 +131,8 @@ export class TerraformEphemeralResource
     this.node.addValidation(
       new ValidateFeatureTargetSupport(
         this,
-        "ephemeral resources",
-        providerFeatureConstraints.ephemeralResources,
+        providerFeatureLabels[ProviderFeature.EPHEMERAL_RESOURCES],
+        providerFeatureConstraints[ProviderFeature.EPHEMERAL_RESOURCES],
         EPHEMERAL_RESOURCES_HINT,
       ),
     );
