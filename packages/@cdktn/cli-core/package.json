@@ -44,7 +44,7 @@
     "cdktn": "workspace:*",
     "chalk": "4.1.2",
     "chokidar": "3.6.0",
-    "ci-info": "3.9.0",
+    "ci-info": "4.4.0",
     "codemaker": "1.128.0",
     "constructs": "10.6.0",
     "cross-spawn": "7.0.6",
