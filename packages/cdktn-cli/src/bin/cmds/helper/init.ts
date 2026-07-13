@@ -324,9 +324,7 @@ function copyLocalModules(
   modules
     .filter((m) => isLocalModule(m))
     .map((m) =>
-      fs.copySync(path.resolve(sourcePath, m), path.resolve(destination, m), {
-        recursive: true,
-      }),
+      fs.copySync(path.resolve(sourcePath, m), path.resolve(destination, m)),
     );
 }
 
