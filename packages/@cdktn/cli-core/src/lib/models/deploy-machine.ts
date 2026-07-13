@@ -4,13 +4,13 @@
  */
 
 import {
-  createMachine,
-  send,
-  interpret,
-  EventObject,
+  setup,
+  createActor,
+  sendTo,
+  fromCallback,
   assign,
-  Sender,
-  Receiver,
+  EventObject,
+  InspectionEvent,
 } from "xstate";
 import { Errors, logger } from "@cdktn/commons";
 import { missingVariable } from "../errors";
@@ -53,40 +53,6 @@ export function isDeployEvent<DeployEventType extends DeployEvent["type"]>(
 ): event is DeployEvent & { type: DeployEventType } {
   return event.type === type;
 }
-
-export type DeployState =
-  | {
-      value: "idle";
-      context: DeployContext;
-    }
-  | {
-      value: "running";
-      context: DeployContext;
-    }
-  | {
-      value: { running: "processing" };
-      context: DeployContext;
-    }
-  | {
-      value: { running: "awaiting_approval" };
-      context: DeployContext;
-    }
-  | {
-      value: { running: "awaiting_sentinel_override" };
-      context: DeployContext;
-    }
-  | {
-      value: { running: "stopping" };
-      context: DeployContext;
-    }
-  | {
-      value: "exited";
-      context: DeployContext & { exitCode: number };
-    }
-  | {
-      value: "stopped";
-      context: DeployContext;
-    };
 
 /**
  * Terraform's interactive prompt for a missing variable looks like:
@@ -211,186 +177,195 @@ export function handleLineReceived(send: (event: DeployEvent) => void) {
   };
 }
 
-export const deployMachine = createMachine<
-  DeployContext,
-  DeployEvent,
-  DeployState
->(
-  {
-    predictableActionArguments: true,
-    context: {},
-    initial: "idle",
-    id: "root",
-    states: {
-      idle: {
-        on: {
-          START: { target: "running" },
-        },
-      },
-      running: {
-        invoke: {
-          id: "pty",
-          src: "runTerraformInPty",
-        },
-        on: {
-          EXITED: "exited",
-          STOP: ".stopping", // wait for terraform to exit, don't stop immediately (see the "stopping" state)
-        },
-        initial: "processing",
-        states: {
-          // TODO: what else might TF CLI be asking? Can we detect any question from the TF CLI to show a good error?
-          processing: {
-            on: {
-              REQUEST_APPROVAL: "awaiting_approval",
-              REQUEST_SENTINEL_OVERRIDE: "awaiting_sentinel_override",
-              VARIABLE_MISSING: {
-                actions: send({ type: "EXITED", exitCode: 1 }),
-              },
-            },
-          },
-          awaiting_approval: {
-            on: {
-              APPROVED_EXTERNALLY: "processing",
-              REJECTED_EXTERNALLY: {
-                target: "#root.exited",
-                actions: assign<
-                  DeployContext,
-                  DeployEvent & { type: "REJECTED_EXTERNALLY" }
-                >({ cancelled: true }),
-              },
-              APPROVE: {
-                target: "processing",
-                actions: send(
-                  { type: "SEND_LINE", input: "yes" },
-                  { to: "pty" },
-                ),
-              },
-              REJECT: {
-                target: "processing",
-                actions: [
-                  send({ type: "SEND_LINE", input: "no" }, { to: "pty" }),
-                  assign<DeployContext, DeployEvent & { type: "REJECT" }>({
-                    cancelled: true,
-                  }),
-                ],
-              },
-            },
-          },
-          awaiting_sentinel_override: {
-            on: {
-              OVERRIDDEN_EXTERNALLY: "processing",
-              OVERRIDE_REJECTED_EXTERNALLY: {
-                target: "#root.exited",
-                actions: assign<
-                  DeployContext,
-                  DeployEvent & { type: "OVERRIDE_REJECTED_EXTERNALLY" }
-                >({ cancelled: true }),
-              },
-              // This is a bit of a hack, because the external discard message
-              // posted by Terraform UI is the same as during apply. So, we capture that
-              // and emit our own event to make it more specific.
-              REJECTED_EXTERNALLY: {
-                actions: send({ type: "OVERRIDE_REJECTED_EXTERNALLY" }),
-              },
-              OVERRIDE: {
-                target: "processing",
-                actions: send(
-                  { type: "SEND_LINE", input: "override" },
-                  { to: "pty" },
-                ),
-              },
-              REJECT_OVERRIDE: {
-                target: "processing",
-                actions: [
-                  send({ type: "SEND_LINE", input: "no" }, { to: "pty" }),
-                  assign<
-                    DeployContext,
-                    DeployEvent & { type: "REJECT_OVERRIDE" }
-                  >({
-                    cancelled: true,
-                  }),
-                ],
-              },
-            },
-          },
-          // On STOP, wait for terraform's own EXITED before reaching the final "stopped" state, so the run only
-          // resolves once it has exited and released its lock. Don't re-signal it — it already got the interrupt via
-          // the process group, and a second signal aborts its graceful shutdown.
-          stopping: {
-            entry: assign<DeployContext, DeployEvent>({ cancelled: true }),
-            on: {
-              EXITED: "#root.stopped",
-            },
-          },
-        },
-      },
-      exited: { type: "final" },
-      stopped: { type: "final" },
-    },
-  },
-  {
-    services: {
-      runTerraformInPty: (context, event) =>
-        terraformPtyService(context, event, spawnInteractive),
-    },
-  },
-);
-
-export function terraformPtyService(
-  _context: DeployContext,
-  event: DeployEvent,
-  spawn = spawnInteractive,
-): (send: Sender<DeployEvent>, onReceive: Receiver<DeployEvent>) => void {
-  return (send: Sender<DeployEvent>, onReceive: Receiver<DeployEvent>) => {
-    if (event.type !== "START") {
-      throw Errors.Internal(
-        `Terraform CLI invocation state machine: Unexpected event caused transition to the running state: ${event.type}`,
-      );
-    }
-
-    // Communication from the pty to the caller
-    const receiver = bufferUnterminatedLines(handleLineReceived(send));
-    const { exitCode, actions } = spawn(event.pty, (data) => {
-      receiver(data);
-    });
-
-    // Communication from the caller to the pty
-    onReceive((event: DeployEvent) => {
-      if (event.type === "SEND_LINE") {
-        actions.writeLine(event.input);
-      }
-    });
-
-    exitCode.then((exitCode) => {
-      const lastBuffer = receiver.getBuffer();
-      if (lastBuffer.length > 0) {
-        logger.debug(
-          `Terraform CLI exited but the last outputted line was not terminated with a newline and hence is still in the buffer and wasn't printed: "${lastBuffer}"`,
-        );
-      }
-
-      send({ type: "EXITED", exitCode });
-    });
-
-    return () => {
-      logger.trace("Terraform CLI state machine: cleaning up pty");
-      actions.stop();
-    };
-  };
+/**
+ * Input passed to the invoked pty actor, carrying the spawn config from the START event.
+ */
+export interface PtyActorInput {
+  pty: InteractiveSpawnConfig;
 }
 
-export function createAndStartDeployService(options: {
-  refreshOnly?: boolean;
-  parallelism: number;
-  extraOptions: string[];
-  terraformBinaryName: string;
-  autoApprove?: boolean;
-  noColor?: boolean;
-  workdir: string;
-  vars?: string[];
-  varFiles?: string[];
-}) {
-  const service = interpret(deployMachine);
+/**
+ * Builds the invoked actor that runs terraform in a pty. It relays completed lines back to the parent machine via
+ * `sendBack` and forwards SEND_LINE events from the parent to the pty via `receive`. The `spawn` function is a
+ * parameter so tests can inject a mock pty.
+ */
+export function makeTerraformPtyService(spawn = spawnInteractive) {
+  return fromCallback<DeployEvent, PtyActorInput>(
+    ({ sendBack, receive, input }) => {
+      const { pty } = input;
+
+      // Communication from the pty to the caller
+      const receiver = bufferUnterminatedLines(handleLineReceived(sendBack));
+      const { exitCode, actions } = spawn(pty, (data) => {
+        receiver(data);
+      });
+
+      // Communication from the caller to the pty
+      receive((event) => {
+        if (event.type === "SEND_LINE") {
+          actions.writeLine(event.input);
+        }
+      });
+
+      exitCode.then((exitCode) => {
+        const lastBuffer = receiver.getBuffer();
+        if (lastBuffer.length > 0) {
+          logger.debug(
+            `Terraform CLI exited but the last outputted line was not terminated with a newline and hence is still in the buffer and wasn't printed: "${lastBuffer}"`,
+          );
+        }
+
+        sendBack({ type: "EXITED", exitCode });
+      });
+
+      return () => {
+        logger.trace("Terraform CLI state machine: cleaning up pty");
+        actions.stop();
+      };
+    },
+  );
+}
+
+export const terraformPtyService = makeTerraformPtyService();
+
+export const deployMachine = setup({
+  types: {
+    context: {} as DeployContext,
+    events: {} as DeployEvent,
+  },
+  actors: {
+    runTerraformInPty: terraformPtyService,
+  },
+}).createMachine({
+  context: {},
+  initial: "idle",
+  id: "root",
+  states: {
+    idle: {
+      on: {
+        START: { target: "running" },
+      },
+    },
+    running: {
+      invoke: {
+        id: "pty",
+        src: "runTerraformInPty",
+        input: ({ event }) => {
+          if (event.type !== "START") {
+            throw Errors.Internal(
+              `Terraform CLI invocation state machine: Unexpected event caused transition to the running state: ${event.type}`,
+            );
+          }
+          return { pty: event.pty };
+        },
+      },
+      on: {
+        EXITED: "exited",
+        STOP: ".stopping", // wait for terraform to exit, don't stop immediately (see the "stopping" state)
+      },
+      initial: "processing",
+      states: {
+        // TODO: what else might TF CLI be asking? Can we detect any question from the TF CLI to show a good error?
+        processing: {
+          on: {
+            REQUEST_APPROVAL: "awaiting_approval",
+            REQUEST_SENTINEL_OVERRIDE: "awaiting_sentinel_override",
+            VARIABLE_MISSING: {
+              // Send to self rather than raise() so consumers observing the actor via inspection still see this event.
+              actions: sendTo(({ self }) => self, {
+                type: "EXITED",
+                exitCode: 1,
+              }),
+            },
+          },
+        },
+        awaiting_approval: {
+          on: {
+            APPROVED_EXTERNALLY: "processing",
+            REJECTED_EXTERNALLY: {
+              target: "#root.exited",
+              actions: assign({ cancelled: true }),
+            },
+            APPROVE: {
+              target: "processing",
+              actions: sendTo("pty", { type: "SEND_LINE", input: "yes" }),
+            },
+            REJECT: {
+              target: "processing",
+              actions: [
+                sendTo("pty", { type: "SEND_LINE", input: "no" }),
+                assign({ cancelled: true }),
+              ],
+            },
+          },
+        },
+        awaiting_sentinel_override: {
+          on: {
+            OVERRIDDEN_EXTERNALLY: "processing",
+            OVERRIDE_REJECTED_EXTERNALLY: {
+              target: "#root.exited",
+              actions: assign({ cancelled: true }),
+            },
+            // The external discard message posted by the Terraform UI is the same as during apply, so we capture it
+            // and re-send a more specific event. Sent to self rather than raise() so consumers observing the actor
+            // via inspection still see it.
+            REJECTED_EXTERNALLY: {
+              actions: sendTo(({ self }) => self, {
+                type: "OVERRIDE_REJECTED_EXTERNALLY",
+              }),
+            },
+            OVERRIDE: {
+              target: "processing",
+              actions: sendTo("pty", { type: "SEND_LINE", input: "override" }),
+            },
+            REJECT_OVERRIDE: {
+              target: "processing",
+              actions: [
+                sendTo("pty", { type: "SEND_LINE", input: "no" }),
+                assign({ cancelled: true }),
+              ],
+            },
+          },
+        },
+        // On STOP, wait for terraform's own EXITED before reaching the final "stopped" state, so the run only
+        // resolves once it has exited and released its lock. Don't re-signal it — it already got the interrupt via
+        // the process group, and a second signal aborts its graceful shutdown.
+        stopping: {
+          entry: assign({ cancelled: true }),
+          on: {
+            EXITED: "#root.stopped",
+          },
+        },
+      },
+    },
+    exited: { type: "final" },
+    stopped: { type: "final" },
+  },
+});
+
+/**
+ * Callback invoked for every inspection event on the deploy actor. Consumers use it to observe both the events
+ * flowing through the machine and each resulting snapshot.
+ */
+export type DeployInspectionHandler = (
+  inspectionEvent: InspectionEvent,
+) => void;
+
+export function createAndStartDeployService(
+  options: {
+    refreshOnly?: boolean;
+    parallelism: number;
+    extraOptions: string[];
+    terraformBinaryName: string;
+    autoApprove?: boolean;
+    noColor?: boolean;
+    workdir: string;
+    vars?: string[];
+    varFiles?: string[];
+  },
+  inspect?: DeployInspectionHandler,
+) {
+  const service = createActor(deployMachine, { inspect });
   const args = [
     "apply",
     ...(options.autoApprove ? ["-auto-approve"] : []),
@@ -427,22 +402,26 @@ export function createAndStartDeployService(options: {
     },
   };
 
+  service.start();
   service.send({ type: "START", pty: config });
 
   return service;
 }
 
-export function createAndStartDestroyService(options: {
-  parallelism: number;
-  extraOptions: string[];
-  terraformBinaryName: string;
-  autoApprove?: boolean;
-  noColor?: boolean;
-  workdir: string;
-  vars?: string[];
-  varFiles?: string[];
-}) {
-  const service = interpret(deployMachine);
+export function createAndStartDestroyService(
+  options: {
+    parallelism: number;
+    extraOptions: string[];
+    terraformBinaryName: string;
+    autoApprove?: boolean;
+    noColor?: boolean;
+    workdir: string;
+    vars?: string[];
+    varFiles?: string[];
+  },
+  inspect?: DeployInspectionHandler,
+) {
+  const service = createActor(deployMachine, { inspect });
 
   const args = [
     "destroy",
@@ -479,6 +458,7 @@ export function createAndStartDestroyService(options: {
     },
   };
 
+  service.start();
   service.send({ type: "START", pty: config });
 
   return service;

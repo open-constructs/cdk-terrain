@@ -57,7 +57,7 @@
     "strip-ansi": "6.0.1",
     "undici": "8.7.0",
     "xml-js": "1.6.11",
-    "xstate": "4.38.3",
+    "xstate": "5.32.4",
     "zod": "4.4.3"
   },
   "lint-staged": {

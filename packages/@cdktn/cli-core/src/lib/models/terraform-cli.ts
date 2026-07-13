@@ -19,10 +19,10 @@ import { SynthesizedStack } from "../synth-stack";
 import {
   createAndStartDeployService,
   createAndStartDestroyService,
-  DeployState,
+  DeployInspectionHandler,
   isDeployEvent,
 } from "./deploy-machine";
-import { waitFor } from "xstate/lib/waitFor";
+import { waitFor } from "xstate";
 import { missingVariable } from "../errors";
 import { terraformJsonSchema } from "../terraform-json";
 import { spawnInteractive } from "./interactive-process";
@@ -298,18 +298,22 @@ export class TerraformCli implements Terraform {
     callback: (state: TerraformDeployState) => void,
   ): Promise<{ cancelled: boolean }> {
     await this.setUserAgent();
-    const service = createAndStartDeployService({
-      terraformBinaryName,
-      workdir: this.workdir,
-      refreshOnly,
-      noColor,
-      autoApprove,
-      parallelism,
-      extraOptions,
-      vars,
-      varFiles,
-    });
-    return this.handleService("deploy", service, callback);
+    return this.handleService("deploy", callback, (inspect) =>
+      createAndStartDeployService(
+        {
+          terraformBinaryName,
+          workdir: this.workdir,
+          refreshOnly,
+          noColor,
+          autoApprove,
+          parallelism,
+          extraOptions,
+          vars,
+          varFiles,
+        },
+        inspect,
+      ),
+    );
   }
 
   public async destroy(
@@ -324,41 +328,54 @@ export class TerraformCli implements Terraform {
     callback: (state: TerraformDeployState) => void,
   ): Promise<{ cancelled: boolean }> {
     await this.setUserAgent();
-    const service = createAndStartDestroyService({
-      terraformBinaryName,
-      workdir: this.workdir,
-      autoApprove,
-      parallelism,
-      noColor,
-      extraOptions,
-      vars,
-      varFiles,
-    });
-    return this.handleService("destroy", service, callback);
+    return this.handleService("destroy", callback, (inspect) =>
+      createAndStartDestroyService(
+        {
+          terraformBinaryName,
+          workdir: this.workdir,
+          autoApprove,
+          parallelism,
+          noColor,
+          extraOptions,
+          vars,
+          varFiles,
+        },
+        inspect,
+      ),
+    );
   }
 
   private async handleService(
     type: "deploy" | "destroy",
-    service:
+    callback: (state: TerraformDeployState) => void,
+    createService: (
+      inspect: DeployInspectionHandler,
+    ) =>
       | ReturnType<typeof createAndStartDeployService>
       | ReturnType<typeof createAndStartDestroyService>,
-    callback: (state: TerraformDeployState) => void,
   ): Promise<{ cancelled: boolean }> {
-    // stop terraform apply if signaled as such from the outside (e.g. via ctrl+c)
-    this.abortSignal.addEventListener(
-      "abort",
-      () => {
-        service.send("STOP");
-      },
-      { once: true },
-    );
+    // Snapshots don't carry the triggering event, so remember the last EXITED exit code (seen via inspection) to
+    // decide whether the run failed once the machine reaches a final state.
+    let exitCode: number | undefined;
 
-    // relay logs to stdout
-    service.onEvent((event) => {
+    // Events reach us through inspection, which fires for the whole actor tree. Filter to the root deploy actor
+    // (its sessionId equals the tree's rootId) so we don't react to the invoked pty child's own events. Comparing
+    // sessionId rather than the actor ref keeps this self-contained: inspection fires during startup, before the
+    // `service` binding below is initialized.
+    const inspect: DeployInspectionHandler = (inspectionEvent) => {
+      if (
+        inspectionEvent.type !== "@xstate.event" ||
+        inspectionEvent.actorRef.sessionId !== inspectionEvent.rootId
+      ) {
+        return;
+      }
+
+      const event = inspectionEvent.event;
       logger.trace(
         `Terraform CLI state machine event: ${JSON.stringify(event)}`,
       );
-      if (isDeployEvent(event, "OUTPUT_RECEIVED"))
+      if (isDeployEvent(event, "EXITED")) exitCode = event.exitCode;
+      else if (isDeployEvent(event, "OUTPUT_RECEIVED"))
         this.onStdout(type)(event.output);
       else if (isDeployEvent(event, "APPROVED_EXTERNALLY"))
         callback({ type: "external approval reply", approved: true });
@@ -374,62 +391,75 @@ export class TerraformCli implements Terraform {
           type: "external sentinel override reply",
           overridden: false,
         });
-    });
+    };
 
-    let previousState: DeployState["value"] = "idle";
+    const service = createService(inspect);
 
-    service.onTransition((state) => {
-      // only send updates on actual state change
-      // onTransition is called even if the state didn't change but only an event happened
-      if (state.matches(previousState as DeployState["value"])) return;
+    // Transitions come from the actor's own subscription, which yields typed snapshots for the root actor only.
+    let previousState: ReturnType<typeof service.getSnapshot>["value"] = "idle";
+    service.subscribe((snapshot) => {
+      // Only send updates on actual state change; a snapshot is emitted even when only an event happened.
+      if (snapshot.matches(previousState)) return;
 
       logger.trace(
         `Terraform CLI state machine state transition: ${JSON.stringify(
           previousState,
-        )} => ${JSON.stringify(state.value)}`,
+        )} => ${JSON.stringify(snapshot.value)}`,
       );
 
-      if (state.matches({ running: "awaiting_approval" })) {
+      if (snapshot.matches({ running: "awaiting_approval" })) {
         callback({
           type: "waiting for approval",
-          approve: () => service.send("APPROVE"),
-          reject: () => service.send("REJECT"),
+          approve: () => service.send({ type: "APPROVE" }),
+          reject: () => service.send({ type: "REJECT" }),
         });
-      } else if (state.matches({ running: "awaiting_sentinel_override" })) {
+      } else if (snapshot.matches({ running: "awaiting_sentinel_override" })) {
         callback({
           type: "waiting for sentinel override",
-          override: () => service.send("OVERRIDE"),
-          reject: () => service.send("REJECT_OVERRIDE"),
+          override: () => service.send({ type: "OVERRIDE" }),
+          reject: () => service.send({ type: "REJECT_OVERRIDE" }),
         });
-      } else if (state.matches({ running: "processing" })) {
+      } else if (snapshot.matches({ running: "processing" })) {
         callback({
           type: "running",
-          cancelled: Boolean(state.context.cancelled),
+          cancelled: Boolean(snapshot.context.cancelled),
         });
       }
-      previousState = state.value as DeployState["value"];
-    });
-    service.start();
-    const state = await waitFor(service, (state) => !!state.done, {
-      timeout: Infinity,
+      previousState = snapshot.value;
     });
 
-    logger.trace(
-      `Invoking Terraform CLI for ${type} done (state machine reached final state). Last event: ${JSON.stringify(
-        state.event,
-      )}. Context: ${JSON.stringify(state.context)}`,
+    // stop terraform apply if signaled as such from the outside (e.g. via ctrl+c)
+    this.abortSignal.addEventListener(
+      "abort",
+      () => {
+        service.send({ type: "STOP" });
+      },
+      { once: true },
     );
 
-    // example events: { type: 'EXITED', exitCode: 0 }, { type: 'EXTERNAL_REJECT' }
+    const snapshot = await waitFor(
+      service,
+      (snapshot) => snapshot.status === "done",
+      {
+        timeout: Infinity,
+      },
+    );
+
+    logger.trace(
+      `Invoking Terraform CLI for ${type} done (state machine reached final state). Last exit code: ${JSON.stringify(
+        exitCode,
+      )}. Context: ${JSON.stringify(snapshot.context)}`,
+    );
+
     if (
-      state.event.type === "EXITED" &&
-      state.event.exitCode !== 0 &&
-      !state.context.cancelled // don't fail if we cancelled the run
+      exitCode !== undefined &&
+      exitCode !== 0 &&
+      !snapshot.context.cancelled // don't fail if we cancelled the run
     ) {
-      throw `Invoking Terraform CLI failed with exit code ${state.event.exitCode}`;
+      throw `Invoking Terraform CLI failed with exit code ${exitCode}`;
     }
 
-    return { cancelled: Boolean(state.context.cancelled) };
+    return { cancelled: Boolean(snapshot.context.cancelled) };
   }
 
   public async version(): Promise<string> {

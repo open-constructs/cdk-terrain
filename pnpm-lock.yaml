@@ -1048,8 +1048,8 @@ importers:
         specifier: 1.6.11
         version: 1.6.11
       xstate:
-        specifier: 4.38.3
-        version: 4.38.3
+        specifier: 5.32.4
+        version: 5.32.4
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -7692,8 +7692,8 @@ packages:
     resolution: {integrity: sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==}
     engines: {node: '>=8.0'}
 
-  xstate@4.38.3:
-    resolution: {integrity: sha512-SH7nAaaPQx57dx6qvfcIgqKRXIh4L0A1iYEqim4s1u7c9VoCgzZc+63FY90AKU4ZzOC2cfJzTnpO4zK7fCUzzw==}
+  xstate@5.32.4:
+    resolution: {integrity: sha512-E5WtDB8DBs2ZWliz2Ry9XfbSZTbBRcK/cwefBot04qQ/L5SLP16xpnTDU4/ZFXuXFhNxi7JP2RhuoGwBnM+S4A==}
 
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
@@ -15338,7 +15338,7 @@ snapshots:
 
   xmlbuilder@15.1.1: {}
 
-  xstate@4.38.3: {}
+  xstate@5.32.4: {}
 
   xtend@4.0.2: {}
 

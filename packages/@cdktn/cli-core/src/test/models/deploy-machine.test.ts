@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { interpret } from "xstate";
+import { createActor, fromCallback, getNextSnapshot } from "xstate";
 import { spawnInteractive } from "../../lib/models/interactive-process";
 import {
   deployMachine,
+  DeployEvent,
+  PtyActorInput,
   extractVariableNameFromPrompt,
-  terraformPtyService,
+  makeTerraformPtyService,
   handleLineReceived,
   bufferUnterminatedLines,
 } from "../../lib/models/deploy-machine";
@@ -46,30 +48,52 @@ describe("extractVariableNameFromPrompt", () => {
 
 describe("transitions", () => {
   it("reaches the running state after initial", async () => {
-    const actualState = deployMachine.transition("idle", "START");
+    const initialSnapshot = deployMachine.resolveState({
+      value: "idle",
+      context: {},
+    });
+    const actualState = getNextSnapshot(deployMachine, initialSnapshot, {
+      type: "START",
+      pty: { file: "", args: [], options: { cwd: "" } },
+    });
 
     expect(actualState.matches("running")).toBe(true);
   });
 
   it("transitions to processing upon external approval", (done) => {
-    const mockDeployMachine = deployMachine.withConfig({
-      services: {
-        runTerraformInPty: () => (send) => {
-          setTimeout(() => {
-            send({ type: "REQUEST_APPROVAL" });
-
+    const mockDeployMachine = deployMachine.provide({
+      actors: {
+        runTerraformInPty: fromCallback<DeployEvent, PtyActorInput>(
+          ({ sendBack }) => {
             setTimeout(() => {
-              send({ type: "APPROVED_EXTERNALLY" });
+              sendBack({ type: "REQUEST_APPROVAL" });
+
+              setTimeout(() => {
+                sendBack({ type: "APPROVED_EXTERNALLY" });
+              }, 100);
             }, 100);
-          }, 100);
-        },
+          },
+        ),
       },
     });
 
-    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
+    // Observe events via inspection to assert the transition was caused by APPROVED_EXTERNALLY.
+    let lastEvent: string | undefined;
+    const ptyService = createActor(mockDeployMachine, {
+      inspect: (inspectionEvent) => {
+        if (
+          inspectionEvent.type === "@xstate.event" &&
+          inspectionEvent.actorRef === ptyService
+        ) {
+          lastEvent = inspectionEvent.event.type;
+        }
+      },
+    });
+
+    ptyService.subscribe((state) => {
       if (
         state.matches({ running: "processing" }) &&
-        state.event?.type === "APPROVED_EXTERNALLY"
+        lastEvent === "APPROVED_EXTERNALLY"
       ) {
         done();
       }
@@ -121,18 +145,16 @@ function mockPty(ptyEvents: string[]): typeof spawnInteractive {
 describe("pty events", () => {
   it("transitions when pty receives an approval question", (done) => {
     let isDone = false;
-    const mockDeployMachine = deployMachine.withConfig({
-      services: {
-        runTerraformInPty: (context, event) =>
-          terraformPtyService(
-            context,
-            event,
-            mockPty([`Do you want to perform these actions\nEnter a value:`]),
-          ),
+    const mockDeployMachine = deployMachine.provide({
+      actors: {
+        runTerraformInPty: makeTerraformPtyService(
+          mockPty([`Do you want to perform these actions\nEnter a value:`]),
+        ),
       },
     });
 
-    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
+    const ptyService = createActor(mockDeployMachine);
+    ptyService.subscribe((state) => {
       if (state.matches({ running: "awaiting_approval" }) && !isDone) {
         isDone = true;
         done();
@@ -155,21 +177,16 @@ describe("pty events", () => {
 
   it("transitions when pty receives an approval question that is split across two buffers", (done) => {
     let isDone = false;
-    const mockDeployMachine = deployMachine.withConfig({
-      services: {
-        runTerraformInPty: (context, event) =>
-          terraformPtyService(
-            context,
-            event,
-            mockPty([
-              `Do you want to per`,
-              `form these actions\nEnter a value:`,
-            ]),
-          ),
+    const mockDeployMachine = deployMachine.provide({
+      actors: {
+        runTerraformInPty: makeTerraformPtyService(
+          mockPty([`Do you want to per`, `form these actions\nEnter a value:`]),
+        ),
       },
     });
 
-    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
+    const ptyService = createActor(mockDeployMachine);
+    ptyService.subscribe((state) => {
       if (state.matches({ running: "awaiting_approval" }) && !isDone) {
         isDone = true;
         done();
@@ -191,23 +208,21 @@ describe("pty events", () => {
   });
 
   it("transitions when pty receives an override question", (done) => {
-    const mockDeployMachine = deployMachine.withConfig({
-      services: {
-        runTerraformInPty: (context, event) =>
-          terraformPtyService(
-            context,
-            event,
-            mockPty([
-              `Do you want to override the soft failed policy check?
+    const mockDeployMachine = deployMachine.provide({
+      actors: {
+        runTerraformInPty: makeTerraformPtyService(
+          mockPty([
+            `Do you want to override the soft failed policy check?
           Only 'override' will be accepted to override.
-          
+
           Enter a value:`,
-            ]),
-          ),
+          ]),
+        ),
       },
     });
 
-    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
+    const ptyService = createActor(mockDeployMachine);
+    ptyService.subscribe((state) => {
       if (state.matches({ running: "awaiting_sentinel_override" })) {
         done();
       }
@@ -239,15 +254,15 @@ describe("pty events", () => {
       }),
     });
 
-    const mockDeployMachine = deployMachine.withConfig({
-      services: {
-        runTerraformInPty: (context, event) =>
-          terraformPtyService(context, event, controllablePty),
+    const mockDeployMachine = deployMachine.provide({
+      actors: {
+        runTerraformInPty: makeTerraformPtyService(controllablePty),
       },
     });
 
     let interrupted = false;
-    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
+    const ptyService = createActor(mockDeployMachine);
+    ptyService.subscribe((state) => {
       if (state.matches({ running: "stopping" }) && !interrupted) {
         interrupted = true;
         // We are waiting for terraform to exit, not yet at the final "stopped" state, and we have not re-signalled it.
@@ -274,28 +289,35 @@ describe("pty events", () => {
   });
 
   it("transitions to rejected state when done externally", (done) => {
-    const mockDeployMachine = deployMachine.withConfig({
-      services: {
-        runTerraformInPty: (context, event) =>
-          terraformPtyService(
-            context,
-            event,
-            mockPty([
-              `Do you want to override the soft failed policy check?
+    const mockDeployMachine = deployMachine.provide({
+      actors: {
+        runTerraformInPty: makeTerraformPtyService(
+          mockPty([
+            `Do you want to override the soft failed policy check?
           Only 'override' will be accepted to override.
-          
+
           Enter a value:`,
-              `discarded using the UI or API\n`,
-            ]),
-          ),
+            `discarded using the UI or API\n`,
+          ]),
+        ),
       },
     });
 
+    // Record events seen by the machine via inspection.
     let enteredAwaiting = false;
     const states: string[] = [];
-    const ptyService = interpret(mockDeployMachine).onTransition((state) => {
-      if (state.event?.type) states.push(state.event.type);
+    const ptyService = createActor(mockDeployMachine, {
+      inspect: (inspectionEvent) => {
+        if (
+          inspectionEvent.type === "@xstate.event" &&
+          inspectionEvent.actorRef === ptyService
+        ) {
+          states.push(inspectionEvent.event.type);
+        }
+      },
+    });
 
+    ptyService.subscribe((state) => {
       if (enteredAwaiting && state.matches("exited")) {
         expect(states).toEqual(
           expect.arrayContaining(["OVERRIDE_REJECTED_EXTERNALLY"]),
