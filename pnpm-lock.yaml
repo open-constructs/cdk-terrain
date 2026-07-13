@@ -1039,8 +1039,8 @@ importers:
         specifier: 7.7.4
         version: 7.7.4
       sscaff:
-        specifier: 1.2.274
-        version: 1.2.274
+        specifier: 2.0.388
+        version: 2.0.388
       strip-ansi:
         specifier: 6.0.1
         version: 6.0.1
@@ -7047,9 +7047,8 @@ packages:
   sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
-  sscaff@1.2.274:
-    resolution: {integrity: sha512-sztRa50SL1LVxZnF1au6QT1SC2z0S1oEOyi2Kpnlg6urDns93aL32YxiJcNkLcY+VHFtVqm/SRv4cb+6LeoBQA==}
-    engines: {node: '>= 12.13.0'}
+  sscaff@2.0.388:
+    resolution: {integrity: sha512-rt47eYRwZSSwTiawj2C5Eh2I7+DBRCFrjw5med2H1G1x6EnkfoYjKnmCkI4xMoYjdkC4HWPDl8SLSoMVV+iAzA==}
 
   sshpk@1.18.0:
     resolution: {integrity: sha512-2p2KJZTSqQ/I3+HX42EpYOa2l3f8Erv8MWKsy2I9uf4wA7yFIkXRffYdsx86y6z4vHtV8u7g+pPlr8/4ouAxsQ==}
@@ -14652,7 +14651,7 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  sscaff@1.2.274: {}
+  sscaff@2.0.388: {}
 
   sshpk@1.18.0:
     dependencies:
