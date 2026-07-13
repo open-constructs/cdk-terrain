@@ -76,7 +76,7 @@ export async function getParsedHcl(hcl: string) {
   } catch (err) {
     throw new Error(`Error: HCL-JSON does not conform to schema. This is not expected, please file a bug under https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2C+new%2C+feature%2Fconvert&template=bug-report.yml&title=
 Please include this information:
-${JSON.stringify((err as z.ZodError).errors)}`);
+${JSON.stringify((err as z.ZodError).issues)}`);
   }
 
   return plan;

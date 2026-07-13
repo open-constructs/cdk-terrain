@@ -28,13 +28,13 @@ const variableConfig = tfObject({
 });
 export type Variable = z.infer<typeof variableConfig>;
 
-const providerConfig = z.array(z.record(z.any()));
+const providerConfig = z.array(z.record(z.string(), z.any()));
 export type Provider = z.infer<typeof providerConfig>;
 
-const moduleConfig = z.array(z.object({ source: z.string() }).nonstrict());
+const moduleConfig = z.array(z.object({ source: z.string() }).loose());
 export type Module = z.infer<typeof moduleConfig>;
 
-const resourceConfig = z.array(z.record(z.any()));
+const resourceConfig = z.array(z.record(z.string(), z.any()));
 export type Resource = z.infer<typeof resourceConfig>;
 export type Data = Resource;
 
@@ -53,22 +53,22 @@ const providerSpecification = z.union([
 const terraformConfig = z
   .object({
     required_version: z.string(),
-    required_providers: z.array(z.record(providerSpecification)),
-    backend: z.record(z.array(z.record(z.any()))),
+    required_providers: z.array(z.record(z.string(), providerSpecification)),
+    backend: z.record(z.string(), z.array(z.record(z.string(), z.any()))),
   })
   .partial();
 export type TerraformConfig = z.infer<typeof terraformConfig>;
 
 export const schema = z
   .object({
-    data: z.record(z.record(resourceConfig)),
+    data: z.record(z.string(), z.record(z.string(), resourceConfig)),
     import: z.array(importConfig),
-    locals: z.array(z.record(z.any())),
-    module: z.record(moduleConfig),
-    output: z.record(outputConfig),
-    provider: z.record(providerConfig),
-    resource: z.record(z.record(resourceConfig)),
+    locals: z.array(z.record(z.string(), z.any())),
+    module: z.record(z.string(), moduleConfig),
+    output: z.record(z.string(), outputConfig),
+    provider: z.record(z.string(), providerConfig),
+    resource: z.record(z.string(), z.record(z.string(), resourceConfig)),
     terraform: z.array(terraformConfig),
-    variable: z.record(variableConfig),
+    variable: z.record(z.string(), variableConfig),
   })
   .partial();

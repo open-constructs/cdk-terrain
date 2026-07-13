@@ -58,7 +58,7 @@
     "undici": "8.6.0",
     "xml-js": "1.6.11",
     "xstate": "4.38.3",
-    "zod": "3.25.76"
+    "zod": "4.4.3"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": "tsc-files ambient.d.ts --noEmit"

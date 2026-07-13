@@ -9,7 +9,7 @@ import * as z from "zod";
 
 const constraintsType = z.object({
   cdktf: z.string(),
-  providers: z.record(z.string()),
+  providers: z.record(z.string(), z.string()),
 });
 
 export type Constraints = z.infer<typeof constraintsType>;

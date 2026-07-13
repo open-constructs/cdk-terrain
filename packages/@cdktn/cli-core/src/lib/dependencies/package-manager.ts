@@ -139,15 +139,16 @@ const { GITHUB_API_TOKEN_CDKTF } = process.env;
 const npmListSchema = z
   .object({
     dependencies: z.record(
+      z.string(),
       z
         .object({
           version: z.string(),
         })
-        .nonstrict(),
+        .loose(),
     ),
   })
-  .deepPartial()
-  .nonstrict();
+  .partial()
+  .loose();
 
 // {
 //   "type": "tree",
@@ -173,13 +174,15 @@ const yarnListSchema = z
             .object({
               name: z.string(),
             })
-            .nonstrict(),
+            .partial()
+            .loose(),
         ),
       })
-      .nonstrict(),
+      .partial()
+      .loose(),
   })
-  .deepPartial()
-  .nonstrict();
+  .partial()
+  .loose();
 
 // [
 //   {
@@ -188,7 +191,7 @@ const yarnListSchema = z
 //   },
 //   {
 const pipPackageSchema = z.array(
-  z.object({ name: z.string(), version: z.string() }).nonstrict(),
+  z.object({ name: z.string(), version: z.string() }).loose(),
 );
 
 /**

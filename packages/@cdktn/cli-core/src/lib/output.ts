@@ -95,7 +95,7 @@ const parseJsonOutputLine = (
     if (err instanceof z.ZodError) {
       logger.trace(
         `Error parsing line into schema: ${JSON.stringify(
-          err.errors,
+          err.issues,
         )} => ${line}`,
       );
     }

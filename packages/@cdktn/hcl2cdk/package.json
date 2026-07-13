@@ -51,7 +51,7 @@
     "jsii-rosetta": "~5.9.0",
     "prettier": "2.8.8",
     "reserved-words": "0.1.2",
-    "zod": "3.25.76"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/babel__generator": "7.27.0",

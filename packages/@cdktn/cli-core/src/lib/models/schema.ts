@@ -19,7 +19,7 @@ const baseMessage = z
     "@module": z.string(),
     "@timestamp": z.string(),
   })
-  .nonstrict();
+  .loose();
 
 const action = z.enum(["noop", "create", "read", "update", "delete"]);
 const change = z.object({
@@ -52,6 +52,7 @@ const changeSummary = baseMessage.extend({
 const outputs = baseMessage.extend({
   type: z.literal("outputs"),
   outputs: z.record(
+    z.string(),
     z.object({
       sensitive: z.boolean(),
       type: z.string(),
