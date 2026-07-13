@@ -1030,8 +1030,8 @@ importers:
         specifier: 4.0.0
         version: 4.0.0
       minimatch:
-        specifier: 5.1.9
-        version: 5.1.9
+        specifier: 10.2.5
+        version: 10.2.5
       pkg-up:
         specifier: 3.1.0
         version: 3.1.0
@@ -1066,9 +1066,6 @@ importers:
       '@types/fs-extra':
         specifier: 8.1.5
         version: 8.1.5
-      '@types/minimatch':
-        specifier: 5.1.2
-        version: 5.1.2
       '@types/node':
         specifier: 20.19.1
         version: 20.19.1
@@ -3555,9 +3552,6 @@ packages:
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
-
-  '@types/minimatch@5.1.2':
-    resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
 
   '@types/minimist@1.2.5':
     resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
@@ -6222,10 +6216,6 @@ packages:
 
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
-
-  minimatch@5.1.9:
-    resolution: {integrity: sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw==}
-    engines: {node: '>=10'}
 
   minimatch@7.4.6:
     resolution: {integrity: sha512-sBz8G/YjVniEz6lKPNpKxXwazJe4c19fEfV2GDMX6AjFz+MX9uDWIZW8XreVhkFW3fkIdTv/gxWr/Kks5FFAVw==}
@@ -10116,8 +10106,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
-  '@types/minimatch@5.1.2': {}
-
   '@types/minimist@1.2.5': {}
 
   '@types/ms@2.1.0': {}
@@ -13632,10 +13620,6 @@ snapshots:
   minimatch@3.1.5:
     dependencies:
       brace-expansion: 1.1.11
-
-  minimatch@5.1.9:
-    dependencies:
-      brace-expansion: 2.0.3
 
   minimatch@7.4.6:
     dependencies:

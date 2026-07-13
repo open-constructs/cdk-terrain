@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { ensureAllSettledBeforeThrowing, Errors, logger } from "@cdktn/commons";
-import minimatch from "minimatch";
+import { minimatch } from "minimatch";
 import { CdktfStack } from "../cdktf-stack";
 import { SynthesizedStack } from "../synth-stack";
 
