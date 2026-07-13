@@ -240,6 +240,16 @@ describe("resolveTargetVersions", () => {
       "must declare at least one product",
     );
   });
+
+  test("accepts a pinned single version as a valid range", () => {
+    const stack = stackWithContext({
+      targetVersions: { terraform: "1.11.0" },
+    });
+    expect(resolveTargetVersions(stack)).toEqual({
+      targets: { terraform: "1.11.0" },
+      errors: [],
+    });
+  });
 });
 
 describe("checkFeatureSupportedByTargets", () => {
@@ -308,6 +318,78 @@ describe("checkFeatureSupportedByTargets", () => {
         { terraform: "1.8.x || 1.9.x" },
       ),
     ).toEqual([]);
+  });
+
+  test("passes when the declared floor is exactly the feature's minimum", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.8.0" },
+        { terraform: ">=1.8.0" },
+      ),
+    ).toEqual([]);
+  });
+
+  test("passes when the project pins exactly the feature's minimum version", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.11.0" },
+        { terraform: "1.11.0" },
+      ),
+    ).toEqual([]);
+  });
+
+  test("fails when the project pins a version below the minimum", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.11.0" },
+        { terraform: "1.10.5" },
+      ),
+    ).toEqual([
+      "some feature requires terraform >=1.11.0, but the project targets terraform 1.10.5.",
+    ]);
+  });
+
+  test("fails when the declared floor is one patch below the minimum", () => {
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.10.0" },
+        { terraform: ">=1.9.9" },
+      ),
+    ).toEqual([
+      "some feature requires terraform >=1.10.0, but the project targets terraform >=1.9.9.",
+    ]);
+  });
+
+  test("returns no errors for an empty targets object", () => {
+    // Callers always resolve targets via resolveTargetVersions first, which
+    // rejects {} with a "must declare at least one product" error - this
+    // documents that the comparator itself just has nothing to check.
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.8.0" },
+        {},
+      ),
+    ).toEqual([]);
+  });
+
+  test("treats a prerelease floor as below the minimum", () => {
+    // Inherent npm-semver subset semantics: ">=1.11.0-beta1" admits
+    // prerelease versions that ">=1.11.0" does not, so it is not a subset.
+    // Documented here as current (intentional-if-surprising) behavior.
+    expect(
+      checkFeatureSupportedByTargets(
+        "some feature",
+        { terraform: ">=1.11.0" },
+        { terraform: ">=1.11.0-beta1" },
+      ),
+    ).toEqual([
+      "some feature requires terraform >=1.11.0, but the project targets terraform >=1.11.0-beta1.",
+    ]);
   });
 });
 

@@ -83,6 +83,54 @@ describe("checkSchemaEmissionGaps", () => {
 
     expect(gaps).toEqual([]);
   });
+
+  it("reports no gap for families whose boundary the fetching CLI exactly meets", () => {
+    // terraform 1.11.0 sits exactly on the write-only boundary (and above
+    // the functions/ephemeral ones); only the 1.12.0 identity boundary is
+    // still ahead of it.
+    const gaps = checkSchemaEmissionGaps(
+      cli("terraform", "1.11.0"),
+      DEFAULT_TARGET_VERSIONS,
+    );
+
+    expect(gaps).toEqual(["resource identity"]);
+  });
+
+  it("reports no gaps when the fetching CLI is exactly at the newest boundary", () => {
+    const gaps = checkSchemaEmissionGaps(
+      cli("terraform", "1.12.0"),
+      DEFAULT_TARGET_VERSIONS,
+    );
+
+    expect(gaps).toEqual([]);
+  });
+
+  it("returns no gaps when the fetching CLI has no version metadata", () => {
+    const gaps = checkSchemaEmissionGaps(
+      { name: "terraform" },
+      DEFAULT_TARGET_VERSIONS,
+    );
+
+    expect(gaps).toEqual([]);
+  });
+
+  it("still admits a family whose boundary the target pins exactly", () => {
+    // A project pinned to exactly 1.11.0 intersects ">=1.11.0" (write-only)
+    // but not ">=1.12.0" (identity), so an old fetching CLI is a gap for the
+    // first three families only.
+    const gaps = checkSchemaEmissionGaps(cli("terraform", "1.7.5"), {
+      terraform: "1.11.0",
+    });
+
+    expect(gaps).toEqual(
+      expect.arrayContaining([
+        "provider functions",
+        "ephemeral resources",
+        "write-only attributes",
+      ]),
+    );
+    expect(gaps).not.toContain("resource identity");
+  });
 });
 
 describe("suggestedEmittingCliVersions", () => {

@@ -127,4 +127,80 @@ describe("targetVersions threading through 'cdktn get'", () => {
     const toGenerate = await maker2.filterAlreadyGenerated([constraint]);
     expect(toGenerate).toEqual([]);
   });
+
+  it("threads a partial targetVersions (single product) through unchanged and stamps it verbatim", async () => {
+    const workdir = tmp("target-versions-partial.test");
+    const targetVersions: TerraformTargetVersions = { opentofu: ">=1.11.0" };
+    const options: GetOptions = {
+      codeMakerOutput: workdir,
+      targetLanguage: Language.TYPESCRIPT,
+      targetVersions,
+    };
+
+    const maker = new ConstructsMaker(options);
+    await maker.generate([constraint]);
+
+    expect(mockReadSchema).toHaveBeenCalledWith(
+      [constraint],
+      undefined,
+      targetVersions,
+    );
+
+    // The stamp records exactly what the project declared - no terraform
+    // default is injected at get-time (defaulting for the undeclared
+    // product happens only at synth-time, in resolveTargetVersions).
+    const constraintsFile = JSON.parse(
+      await fs.readFile(path.join(workdir, "constraints.json"), "utf8"),
+    );
+    expect(constraintsFile.targetVersions).toEqual({ opentofu: ">=1.11.0" });
+  });
+
+  it("omits the cli stamp when the fetched schema carries no CLI version metadata", async () => {
+    const workdir = tmp("target-versions-no-cli.test");
+    const {
+      cli_name: _cliName,
+      cli_version: _cliVersion,
+      ...schemaWithoutCli
+    } = fakeSchema.providerSchema;
+    mockReadSchema.mockResolvedValue({ providerSchema: schemaWithoutCli });
+
+    const targetVersions: TerraformTargetVersions = { terraform: ">=1.5.7" };
+    const options: GetOptions = {
+      codeMakerOutput: workdir,
+      targetLanguage: Language.TYPESCRIPT,
+      targetVersions,
+    };
+
+    const maker = new ConstructsMaker(options);
+    await maker.generate([constraint]);
+
+    const constraintsFile = JSON.parse(
+      await fs.readFile(path.join(workdir, "constraints.json"), "utf8"),
+    );
+    expect(constraintsFile.cli).toBeUndefined();
+    expect(constraintsFile.targetVersions).toEqual(targetVersions);
+  });
+
+  it("does not force regeneration when targetVersions change between runs", async () => {
+    // The stamp is diagnostic-only: per the GetOptions.targetVersions doc,
+    // targetVersions never filters codegen (the full schema surface is
+    // always generated), so freshness only compares the providers map and
+    // the cdktf version.
+    const workdir = tmp("target-versions-change.test");
+    const options: GetOptions = {
+      codeMakerOutput: workdir,
+      targetLanguage: Language.TYPESCRIPT,
+      targetVersions: { terraform: ">=1.5.7" },
+    };
+
+    const maker = new ConstructsMaker(options);
+    await maker.generate([constraint]);
+
+    const maker2 = new ConstructsMaker({
+      ...options,
+      targetVersions: { terraform: ">=1.11.0" },
+    });
+    const toGenerate = await maker2.filterAlreadyGenerated([constraint]);
+    expect(toGenerate).toEqual([]);
+  });
 });
