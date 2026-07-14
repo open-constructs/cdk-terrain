@@ -1030,8 +1030,8 @@ importers:
         specifier: 4.0.0
         version: 4.0.0
       minimatch:
-        specifier: 5.1.9
-        version: 5.1.9
+        specifier: 10.2.5
+        version: 10.2.5
       pkg-up:
         specifier: 3.1.0
         version: 3.1.0
@@ -1039,8 +1039,8 @@ importers:
         specifier: 7.7.4
         version: 7.7.4
       sscaff:
-        specifier: 1.2.274
-        version: 1.2.274
+        specifier: 2.0.388
+        version: 2.0.388
       strip-ansi:
         specifier: 6.0.1
         version: 6.0.1
@@ -1066,9 +1066,6 @@ importers:
       '@types/fs-extra':
         specifier: 8.1.5
         version: 8.1.5
-      '@types/minimatch':
-        specifier: 5.1.2
-        version: 5.1.2
       '@types/node':
         specifier: 20.19.1
         version: 20.19.1
@@ -3555,9 +3552,6 @@ packages:
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
-
-  '@types/minimatch@5.1.2':
-    resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
 
   '@types/minimist@1.2.5':
     resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
@@ -6223,10 +6217,6 @@ packages:
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
 
-  minimatch@5.1.9:
-    resolution: {integrity: sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw==}
-    engines: {node: '>=10'}
-
   minimatch@7.4.6:
     resolution: {integrity: sha512-sBz8G/YjVniEz6lKPNpKxXwazJe4c19fEfV2GDMX6AjFz+MX9uDWIZW8XreVhkFW3fkIdTv/gxWr/Kks5FFAVw==}
     engines: {node: '>=10'}
@@ -7047,9 +7037,8 @@ packages:
   sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
-  sscaff@1.2.274:
-    resolution: {integrity: sha512-sztRa50SL1LVxZnF1au6QT1SC2z0S1oEOyi2Kpnlg6urDns93aL32YxiJcNkLcY+VHFtVqm/SRv4cb+6LeoBQA==}
-    engines: {node: '>= 12.13.0'}
+  sscaff@2.0.388:
+    resolution: {integrity: sha512-rt47eYRwZSSwTiawj2C5Eh2I7+DBRCFrjw5med2H1G1x6EnkfoYjKnmCkI4xMoYjdkC4HWPDl8SLSoMVV+iAzA==}
 
   sshpk@1.18.0:
     resolution: {integrity: sha512-2p2KJZTSqQ/I3+HX42EpYOa2l3f8Erv8MWKsy2I9uf4wA7yFIkXRffYdsx86y6z4vHtV8u7g+pPlr8/4ouAxsQ==}
@@ -10115,8 +10104,6 @@ snapshots:
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
-
-  '@types/minimatch@5.1.2': {}
 
   '@types/minimist@1.2.5': {}
 
@@ -13633,10 +13620,6 @@ snapshots:
     dependencies:
       brace-expansion: 1.1.11
 
-  minimatch@5.1.9:
-    dependencies:
-      brace-expansion: 2.0.3
-
   minimatch@7.4.6:
     dependencies:
       brace-expansion: 2.0.3
@@ -14652,7 +14635,7 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  sscaff@1.2.274: {}
+  sscaff@2.0.388: {}
 
   sshpk@1.18.0:
     dependencies:
