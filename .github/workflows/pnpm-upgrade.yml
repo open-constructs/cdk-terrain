@@ -52,9 +52,9 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade dependencies at repository root
-          ncu --upgrade --filter=@types/fs-extra --target=minor
-          ncu --upgrade --filter=typescript --target=patch
-          ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor
+          ncu --upgrade --filter=@types/fs-extra --target=minor --packageManager pnpm
+          ncu --upgrade --filter=typescript --target=patch --packageManager pnpm
+          ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor --packageManager pnpm
 
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
@@ -177,9 +177,9 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade all the packages
-          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=@types/fs-extra --target=minor
-          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=typescript --target=patch
-          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor
+          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=@types/fs-extra --target=minor --packageManager pnpm
+          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=typescript --target=patch --packageManager pnpm
+          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor --packageManager pnpm
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline --no-frozen-lockfile
@@ -244,7 +244,7 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade all the packages
-          pnpm exec nx exec -- ncu --upgrade --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' --target=minor
+          pnpm exec nx exec -- ncu --upgrade --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' --target=minor --packageManager pnpm
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline --no-frozen-lockfile
