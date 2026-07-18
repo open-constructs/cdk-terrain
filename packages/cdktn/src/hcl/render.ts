@@ -616,6 +616,46 @@ export function renderSimpleAttributes(attributes: any): string {
     .join("\n");
 }
 /**
+ * Detects a resolved-but-emptied attribute descriptor: an object shaped like
+ * what `AttributesEmitter#emitToHclTerraform` always emits for HCL synthesis
+ * - `{ value, isBlock, type, storageClassType }` - that has lost its `value`
+ * key.
+ *
+ * The only way a descriptor loses `value` here is that it resolved to
+ * `undefined`: `resolve()` (see `tokens/private/resolve.ts`) deep-resolves
+ * every key of a plain object and silently drops any key whose resolved
+ * value is `undefined`, but only `value` can ever do that - `isBlock`,
+ * `type`, and `storageClassType` are emitted as literal strings/booleans by
+ * the generator, never as tokens. So an object carrying exactly this
+ * metadata combination, with `value` and `dynamic` both absent, is always
+ * the leftover shell of a descriptor whose value vanished, never a genuine
+ * user-supplied map (those don't happen to also carry `isBlock` +
+ * `storageClassType`).
+ *
+ * This is intentionally not specific to write-only attributes: a write-only
+ * attribute wrapped by `markWriteOnlyAttribute()` around a `Lazy`/token
+ * producer that resolves to `undefined` is simply one example (it survives
+ * the generated "remove undefined attributes" pre-filter in
+ * `synthesizeHclAttributes()` because that filter only sees the still-
+ * unresolved token, not what it later resolves to) - but ANY attribute
+ * descriptor whose token resolves to `undefined` in HCL mode hits this same
+ * path (see the #313 HCL-defects family).
+ */
+function isOrphanedAttributeDescriptor(v: unknown): v is Record<string, any> {
+  if (typeof v !== "object" || v === null) {
+    return false;
+  }
+  const hasOwn = (key: string) => Object.prototype.hasOwnProperty.call(v, key);
+  return (
+    !hasOwn("value") &&
+    !hasOwn("dynamic") &&
+    hasOwn("isBlock") &&
+    hasOwn("type") &&
+    hasOwn("storageClassType")
+  );
+}
+
+/**
  *
  */
 export function renderAttributes(attributes: any): string {
@@ -647,6 +687,14 @@ export function renderAttributes(attributes: any): string {
         // eslint-disable-next-line no-prototype-builtins
         !v.hasOwnProperty("dynamic")
       ) {
+        // An orphaned attribute descriptor (its 'value' resolved to
+        // `undefined`) carries only internal metadata at this point - omit
+        // the attribute entirely, exactly as if it had never been set,
+        // instead of leaking that metadata into the HCL output via
+        // renderFuzzyJsonExpression(). See isOrphanedAttributeDescriptor().
+        if (isOrphanedAttributeDescriptor(v)) {
+          return undefined;
+        }
         if (metaBlocks.includes(name)) {
           return `${name} {
 ${renderSimpleAttributes(v)}
