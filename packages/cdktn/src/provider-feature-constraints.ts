@@ -93,3 +93,19 @@ export const providerFeatureLabels: Record<ProviderFeature, string> = {
   [ProviderFeature.WRITE_ONLY_ATTRIBUTES]: "write-only attributes",
   [ProviderFeature.RESOURCE_IDENTITY]: "resource identity",
 };
+
+/**
+ * Sentence-cased lead-in for each `providerFeatureConstraints` key, used to
+ * build the "where this feature IS available" hint appended to synth-time
+ * errors (e.g. "Write-only attributes are available in terraform >=1.11.0
+ * and opentofu >=1.11.0."). Kept as its own hand-maintained map (rather than
+ * derived from `providerFeatureLabels` at runtime) so each feature's display
+ * text is a single, deliberate source of truth, same as its siblings above -
+ * see `tools/provider-feature-availability/features-matrix.json`.
+ */
+export const providerFeatureHints: Record<ProviderFeature, string> = {
+  [ProviderFeature.PROVIDER_FUNCTIONS]: "Provider functions",
+  [ProviderFeature.EPHEMERAL_RESOURCES]: "Ephemeral resources",
+  [ProviderFeature.WRITE_ONLY_ATTRIBUTES]: "Write-only attributes",
+  [ProviderFeature.RESOURCE_IDENTITY]: "Resource identity",
+};

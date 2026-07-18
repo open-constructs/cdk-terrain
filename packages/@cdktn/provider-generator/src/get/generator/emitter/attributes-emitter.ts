@@ -90,7 +90,7 @@ export class AttributesEmitter {
         );
         if (emitWriteOnlyRegistration) {
           this.code.line(
-            `this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES);`,
+            `if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
           );
         }
         this.code.line(`this.${att.storageName} = value;`);
@@ -103,7 +103,7 @@ export class AttributesEmitter {
         );
         if (emitWriteOnlyRegistration) {
           this.code.line(
-            `this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES);`,
+            `if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
           );
         }
         this.code.line(`this.${att.storageName} = value;`);
@@ -116,7 +116,7 @@ export class AttributesEmitter {
         );
         if (emitWriteOnlyRegistration) {
           this.code.line(
-            `this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES);`,
+            `if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
           );
         }
         this.code.line(`this.${att.storageName}.internalValue = value;`);

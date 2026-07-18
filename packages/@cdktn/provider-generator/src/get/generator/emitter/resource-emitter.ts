@@ -174,14 +174,14 @@ export class ResourceEmitter {
   }
 
   private emitResourceAttributes(resource: ResourceModel) {
-    // Only managed resources extend TerraformResource (and therefore have
-    // registerProviderFeatureUsage available); data sources, providers, and
-    // ephemeral resources do not, so their write-only attributes (if any)
+    // registerProviderFeatureUsage lives on TerraformElement, so every
+    // generated class could call it - but only managed resources register
+    // write-only usage; data sources, providers, and ephemeral resources
     // only get the deprecated getter.
     //
     // write-only is fundamentally a state concept - the value is passed to
     // the provider but never persisted to state - so gating this on
-    // TerraformResource is more than an implementation detail: ephemeral
+    // TerraformResource is a semantic choice, not a capability one: ephemeral
     // resources have no state at all, and, consistent with that, no
     // provider schema in the RFC-04 sweep (including vault's 16 ephemeral
     // resources) marks an ephemeral attribute write_only. So ephemeral
@@ -251,7 +251,7 @@ export class ResourceEmitter {
       // AttributesEmitter for the corresponding property-set path).
       if (att.isWriteOnly && canRegisterProviderFeatureUsage) {
         this.code.line(
-          `if (config.${att.name} !== undefined) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
+          `if (config.${att.name} != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
         );
       }
     }

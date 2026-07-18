@@ -16,23 +16,33 @@ const tmp = createTmpHelper();
 /**
  * Stand-in for a generated resource binding that has a write-only attribute.
  * Mirrors what the provider-generator emits: the setter registers usage of
- * the "writeOnlyAttributes" provider-protocol feature family.
+ * the "writeOnlyAttributes" provider-protocol feature family, but only when
+ * the assigned value is neither `null` nor `undefined` - setting an
+ * attribute to `null` is equivalent to omitting it in Terraform, and a
+ * non-TypeScript jsii caller (Python `None`, Go `nil`, ...) can pass `null`
+ * through even though the TypeScript setter signature itself is non-null.
  */
 class TestWriteOnlyResource extends TerraformResource {
   private _secretKeyWo?: string;
 
-  constructor(scope: Construct, id: string, config: { secretKeyWo?: string }) {
+  constructor(
+    scope: Construct,
+    id: string,
+    config: { secretKeyWo?: string | null },
+  ) {
     super(scope, id, {
       terraformResourceType: "test_write_only_resource",
     });
-    this._secretKeyWo = config.secretKeyWo;
-    if (config.secretKeyWo !== undefined) {
+    this._secretKeyWo = config.secretKeyWo ?? undefined;
+    if (config.secretKeyWo != null) {
       this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
     }
   }
 
   public set secretKeyWo(value: string) {
-    this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
+    if (value != null) {
+      this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
+    }
     this._secretKeyWo = value;
   }
 
@@ -115,6 +125,43 @@ describe("registerProviderFeatureUsage", () => {
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
     `);
+  });
+
+  test("constructor: explicit null is treated as omission, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {
+      secretKeyWo: null,
+    });
+
+    expect(() => app.synth()).not.toThrow();
+    expect(resource.secretKeyWo).toBeUndefined();
+  });
+
+  test("constructor: a real value registers usage, synth fails", () => {
+    const { app, stack } = appWithStack();
+    new TestWriteOnlyResource(stack, "testResource", {
+      secretKeyWo: "shh",
+    });
+
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
+  });
+
+  test("setter: assigning null is treated as omission, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+
+    resource.secretKeyWo = null as unknown as string;
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("setter: assigning a real value registers usage, synth fails", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+
+    resource.secretKeyWo = "shh";
+
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
   });
 
   test("unknown feature key throws", () => {

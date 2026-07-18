@@ -95,7 +95,7 @@ export class AlicloudSecretBackend extends cdktn.TerraformResource {
     this._mount = config.mount;
     this._namespace = config.namespace;
     this._secretKeyWo = config.secretKeyWo;
-    if (config.secretKeyWo !== undefined) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }
+    if (config.secretKeyWo != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }
     this._secretKeyWoVersion = config.secretKeyWoVersion;
   }
 
@@ -154,7 +154,7 @@ export class AlicloudSecretBackend extends cdktn.TerraformResource {
     return this.getStringAttribute('secret_key_wo');
   }
   public set secretKeyWo(value: string) {
-    this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES);
+    if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }
     this._secretKeyWo = value;
   }
   // Temporarily expose input value. Use with caution.

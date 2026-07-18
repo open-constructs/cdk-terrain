@@ -5,7 +5,14 @@ import { Construct } from "constructs";
 import { Token } from "./tokens";
 import { TerraformStack } from "./terraform-stack";
 import { ref } from "./tfExpression";
-import { unresolvedTokenInConstructId } from "./errors";
+import { unresolvedTokenInConstructId, unknownProviderFeature } from "./errors";
+import { ValidateFeatureTargetSupport } from "./validations/target-versions";
+import {
+  ProviderFeature,
+  providerFeatureConstraints,
+  providerFeatureHints,
+  providerFeatureLabels,
+} from "./provider-feature-constraints";
 
 const TERRAFORM_ELEMENT_SYMBOL = Symbol.for("cdktf/TerraformElement");
 
@@ -32,6 +39,14 @@ export class TerraformElement extends Construct {
    */
   private readonly _elementType?: string;
 
+  /**
+   * Provider-protocol feature families (see `ProviderFeature`) already
+   * registered via `registerProviderFeatureUsage` on this element, so
+   * repeated usage (e.g. a setter called multiple times) doesn't stack
+   * duplicate synth-time validations.
+   */
+  private readonly _registeredProviderFeatures = new Set<ProviderFeature>();
+
   constructor(scope: Construct, id: string, elementType?: string) {
     super(scope, id);
     Object.defineProperty(this, TERRAFORM_ELEMENT_SYMBOL, { value: true });
@@ -50,6 +65,45 @@ export class TerraformElement extends Construct {
 
   public static isTerraformElement(x: any): x is TerraformElement {
     return x !== null && typeof x === "object" && TERRAFORM_ELEMENT_SYMBOL in x;
+  }
+
+  /**
+   * Registers a synth-time validation that the project's declared
+   * targetVersions admit the given provider-protocol feature family.
+   * Called by generated provider bindings when a versioned feature is
+   * actually used (e.g. `ProviderFeature.WRITE_ONLY_ATTRIBUTES` when a
+   * write-only attribute is set); not intended to be called directly. Lives
+   * on `TerraformElement` (rather than `TerraformResource`) so it covers any
+   * element subclass that needs it, e.g. `TerraformEphemeralResource`.
+   */
+  protected registerProviderFeatureUsage(feature: ProviderFeature): void {
+    if (this._registeredProviderFeatures.has(feature)) {
+      return;
+    }
+
+    if (
+      !Object.prototype.hasOwnProperty.call(providerFeatureConstraints, feature)
+    ) {
+      throw unknownProviderFeature(feature);
+    }
+
+    this._registeredProviderFeatures.add(feature);
+
+    const constraints = providerFeatureConstraints[feature];
+    const hint = `${providerFeatureHints[feature]} are available in ${Object.entries(
+      constraints,
+    )
+      .map(([product, range]) => `${product} ${range}`)
+      .join(" and ")}.`;
+
+    this.node.addValidation(
+      new ValidateFeatureTargetSupport(
+        this,
+        providerFeatureLabels[feature],
+        constraints,
+        hint,
+      ),
+    );
   }
 
   public toTerraform(): any {

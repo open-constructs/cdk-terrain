@@ -30,13 +30,16 @@ test("generate a vault_alicloud_secret_backend resource with a write-only attrib
   expect(output).toMatch(
     /@deprecated Write-only: the provider never returns this value[\s\S]*?public get secretKeyWo\(\)/,
   );
-  // ... its setter registers the usage of the write-only-attributes feature ...
+  // ... its setter registers the usage of the write-only-attributes feature,
+  // but only when the assigned value isn't null/undefined (setting an
+  // attribute to null is equivalent to omitting it in Terraform) ...
   expect(output).toMatch(
-    /public set secretKeyWo\(value: string\) \{\n\s*this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\);/,
+    /public set secretKeyWo\(value: string\) \{\n\s*if \(value != null\) \{ this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\); \}/,
   );
-  // ... and so does the constructor-assigned config value.
+  // ... and so does the constructor-assigned config value, with the same
+  // null-or-undefined-means-omitted guard.
   expect(output).toMatch(
-    /if \(config\.secretKeyWo !== undefined\) \{ this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\); \}/,
+    /if \(config\.secretKeyWo != null\) \{ this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\); \}/,
   );
 
   // The non-write-only sibling attribute is untouched: its getter is

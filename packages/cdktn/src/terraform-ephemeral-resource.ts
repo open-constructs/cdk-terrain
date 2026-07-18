@@ -21,28 +21,13 @@ import { IResolvable } from "./tokens/resolvable";
 import { IInterpolatingParent } from "./terraform-addressable";
 import { ITerraformIterator } from "./terraform-iterator";
 import { TerraformCount } from "./terraform-count";
-import { ValidateFeatureTargetSupport } from "./validations/target-versions";
-import {
-  ProviderFeature,
-  providerFeatureConstraints,
-  providerFeatureLabels,
-} from "./provider-feature-constraints";
+import { ProviderFeature } from "./provider-feature-constraints";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import assert = require("assert");
 
 const TERRAFORM_EPHEMERAL_RESOURCE_SYMBOL = Symbol.for(
   "cdktf/TerraformEphemeralResource",
 );
-
-/**
- * Tells the user where ephemeral resources ARE available, so they can adjust
- * their declared targetVersions.
- */
-const EPHEMERAL_RESOURCES_HINT = `Ephemeral resources are available in ${Object.entries(
-  providerFeatureConstraints[ProviderFeature.EPHEMERAL_RESOURCES],
-)
-  .map(([product, range]) => `${product} ${range}`)
-  .join(" and ")}.`;
 
 /**
  * Lifecycle options supported by Terraform ephemeral blocks. Unlike managed
@@ -128,14 +113,13 @@ export class TerraformEphemeralResource
     this.lifecycle = config.lifecycle;
     this.forEach = config.forEach;
 
-    this.node.addValidation(
-      new ValidateFeatureTargetSupport(
-        this,
-        providerFeatureLabels[ProviderFeature.EPHEMERAL_RESOURCES],
-        providerFeatureConstraints[ProviderFeature.EPHEMERAL_RESOURCES],
-        EPHEMERAL_RESOURCES_HINT,
-      ),
-    );
+    // Every ephemeral resource unconditionally uses the ephemeral-resources
+    // provider-protocol feature family (unlike e.g. write-only attributes,
+    // which are opt-in per attribute), so this is registered once here
+    // rather than by generated bindings. Goes through the same
+    // `registerProviderFeatureUsage` hook (inherited from `TerraformElement`)
+    // that generated bindings use, for identical message/dedup behavior.
+    this.registerProviderFeatureUsage(ProviderFeature.EPHEMERAL_RESOURCES);
   }
 
   public static isTerraformEphemeralResource(
