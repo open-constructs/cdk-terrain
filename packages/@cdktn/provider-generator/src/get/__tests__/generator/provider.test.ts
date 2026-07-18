@@ -25,6 +25,10 @@ test("generate provider", async () => {
     "utf-8",
   );
   expect(output).toMatchSnapshot();
+  // aws has no provider-defined functions in this fixture - no getter, no
+  // cross-directory import should be emitted.
+  expect(output).not.toContain("public get functions()");
+  expect(output).not.toContain("provider-functions");
 });
 
 test("generate provider with only block_types", async () => {
@@ -48,4 +52,8 @@ test("generate provider with only block_types", async () => {
     "utf-8",
   );
   expect(output).toMatchSnapshot();
+  // elasticstack has no provider-defined functions in this fixture - no
+  // getter, no cross-directory import should be emitted.
+  expect(output).not.toContain("public get functions()");
+  expect(output).not.toContain("provider-functions");
 });

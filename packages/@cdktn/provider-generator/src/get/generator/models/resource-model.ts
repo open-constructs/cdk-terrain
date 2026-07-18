@@ -6,6 +6,7 @@ import { FQPN, parseFQPN, ProviderName } from "@cdktn/provider-schema";
 import { AttributeModel } from "./attribute-model";
 import { Struct, ConfigStruct } from "./struct";
 import { Schema } from "@cdktn/commons";
+import { ProviderFunctionsModel } from "./provider-function-model";
 
 // Limit is 1200 to prevent stack size error.
 // Could increase now that calculation is more accurate;
@@ -42,6 +43,13 @@ export class ResourceModel {
    * to be able to use two providers with the same name
    */
   public terraformProviderName: string;
+  /*
+   * Only set (by provider-generator.ts) when isProvider is true and the
+   * provider schema declares provider-defined functions - drives whether
+   * ResourceEmitter emits the memoized `functions` getter and its
+   * cross-directory import of the sibling provider-functions/index.ts file.
+   */
+  public providerFunctionsModel?: ProviderFunctionsModel;
   public fileName: string;
   public attributes: AttributeModel[];
   public schema: Schema;

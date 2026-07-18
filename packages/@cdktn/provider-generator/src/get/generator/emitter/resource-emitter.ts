@@ -8,12 +8,26 @@ import { sanitizedComment } from "../sanitized-comments";
 export class ResourceEmitter {
   attributesEmitter: AttributesEmitter;
 
-  constructor(private readonly code: CodeMaker) {
+  constructor(
+    private readonly code: CodeMaker,
+    private readonly importExtension: string,
+  ) {
     this.attributesEmitter = new AttributesEmitter(this.code);
   }
 
   public emit(resource: ResourceModel) {
     this.code.line();
+
+    if (resource.isProvider && resource.providerFunctionsModel) {
+      // Sibling-directory import: providers/<provider>/provider/index.ts
+      // (the emitted file) and providers/<provider>/provider-functions/
+      // index.ts are siblings under providers/<provider>/, so unlike the
+      // child-folder struct imports this one has to step up a level.
+      this.code.line(
+        `import { ${resource.providerFunctionsModel.className} } from '../provider-functions${this.importExtension}';`,
+      );
+    }
+
     const comment = sanitizedComment(this.code);
     comment.line(
       `Represents a {@link ${resource.linkToDocs} ${resource.terraformResourceType}}`,
@@ -37,12 +51,49 @@ export class ResourceEmitter {
     this.emitHeader("ATTRIBUTES");
     this.emitResourceAttributes(resource);
 
+    if (resource.isProvider && resource.providerFunctionsModel) {
+      this.emitHeader("PROVIDER-DEFINED FUNCTIONS");
+      this.emitFunctionsGetter(resource.providerFunctionsModel);
+    }
+
     // synthesis
     this.emitHeader("SYNTHESIS");
     this.emitResourceSynthesis(resource);
     this.emitHclResourceSynthesis(resource);
 
     this.code.closeBlock(); // construct
+  }
+
+  // Emits a memoized `functions` getter on a provider class that declares
+  // provider-defined functions. The local name to invoke functions under is
+  // derived from `this.terraformResourceType`, not baked in as the schema
+  // name constant: terraform-provider.ts keys both `required_providers` and
+  // the `provider` block directly off `terraformResourceType`, so whatever
+  // this instance's `terraformResourceType` is IS its correct
+  // required_providers local name (it already accounts for a `name`
+  // override in the cdktf.json provider constraint, see
+  // ConstructsMakerProviderTarget/TerraformProviderConstraint) - the
+  // instance always knows its own correct local name, so there is no need
+  // for a providerLocalName override parameter here.
+  private emitFunctionsGetter(
+    model: NonNullable<ResourceModel["providerFunctionsModel"]>,
+  ) {
+    this.code.line(`private _functions?: ${model.className};`);
+    this.code.line();
+
+    const comment = sanitizedComment(this.code);
+    comment.line(
+      `Provider-defined functions of the ${model.providerName} provider.`,
+    );
+    comment.end();
+    this.code.openBlock(`public get functions(): ${model.className}`);
+    this.code.openBlock(`if (!this._functions)`);
+    this.code.line(
+      `this._functions = new ${model.className}(this.terraformResourceType);`,
+    );
+    this.code.closeBlock();
+    this.code.line(`return this._functions;`);
+    this.code.closeBlock();
   }
 
   private emitHeader(title: string) {

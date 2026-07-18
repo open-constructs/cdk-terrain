@@ -13,6 +13,7 @@ import { FQPN, parseFQPN, ProviderName } from "@cdktn/provider-schema";
 import {
   ProviderFunctionsModel,
   ResourceModel,
+  assertNoFunctionsGetterCollision,
   buildProviderFunctionsModel,
 } from "./models";
 import { ResourceParser } from "./resource-parser";
@@ -120,7 +121,7 @@ export class TerraformProviderGenerator {
   ) {
     this.code.indentation = 2;
     this.importExtension = options.importExtension ?? "";
-    this.resourceEmitter = new ResourceEmitter(this.code);
+    this.resourceEmitter = new ResourceEmitter(this.code, this.importExtension);
     this.structEmitter = new StructEmitter(this.code, this.importExtension);
     this.providerFunctionsEmitter = new ProviderFunctionsEmitter(this.code);
   }
@@ -254,6 +255,16 @@ export class TerraformProviderGenerator {
       this.emitResourceReadme(resourceModel);
     });
 
+    // Built before the provider class is emitted (rather than after, as
+    // resources/data sources/ephemeral resources above already are) so that
+    // the model can be attached to providerResource and picked up by
+    // ResourceEmitter while it still emits the provider class file below -
+    // see the engineering brief for why this ordering matters.
+    const providerFunctionsModel = buildProviderFunctionsModel(
+      name,
+      provider.functions,
+    );
+
     if (provider.provider) {
       const providerResource = this.resourceParser.parse(
         fqpn,
@@ -268,14 +279,19 @@ export class TerraformProviderGenerator {
         providerResource.terraformProviderName = constraint.name;
       }
       providerResource.providerVersion = providerVersion;
+
+      if (providerFunctionsModel) {
+        assertNoFunctionsGetterCollision(
+          name,
+          providerResource.attributes.map((att) => att.name),
+        );
+        providerResource.providerFunctionsModel = providerFunctionsModel;
+      }
+
       files.push(this.emitResource(providerResource));
       this.emitResourceReadme(providerResource);
     }
 
-    const providerFunctionsModel = buildProviderFunctionsModel(
-      name,
-      provider.functions,
-    );
     if (providerFunctionsModel) {
       files.push(this.emitProviderFunctions(name, providerFunctionsModel));
     }

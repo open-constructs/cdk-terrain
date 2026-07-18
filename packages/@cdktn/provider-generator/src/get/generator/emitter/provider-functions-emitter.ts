@@ -10,9 +10,6 @@ import { sanitizedComment } from "../sanitized-comments";
 const PROVIDER_LOCAL_NAME_JSDOC =
   "The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.";
 
-const SELF_REFERENCE_CYCLE_JSDOC =
-  "Note: provider-defined functions are evaluated by the provider itself — do not call this inside the configuration of the same provider (Terraform reports a self-referential cycle).";
-
 export class ProviderFunctionsEmitter {
   constructor(private readonly code: CodeMaker) {}
 
@@ -30,14 +27,26 @@ export class ProviderFunctionsEmitter {
     comment.end();
     this.code.openBlock(`export class ${model.className}`);
 
+    this.emitConstructor();
+
     for (const fn of model.functions) {
-      this.emitMethod(model.providerName, fn);
+      this.emitMethod(fn);
     }
 
     this.code.closeBlock();
   }
 
-  private emitMethod(providerName: string, fn: ProviderFunctionModel) {
+  private emitConstructor() {
+    const comment = sanitizedComment(this.code);
+    comment.line(`@param providerLocalName ${PROVIDER_LOCAL_NAME_JSDOC}`);
+    comment.end();
+    this.code.openBlock(
+      `constructor(private readonly providerLocalName: string)`,
+    );
+    this.code.closeBlock();
+  }
+
+  private emitMethod(fn: ProviderFunctionModel) {
     this.code.line();
 
     const comment = sanitizedComment(this.code);
@@ -46,7 +55,6 @@ export class ProviderFunctionsEmitter {
     if (fn.deprecationMessage) {
       comment.line(`@deprecated ${fn.deprecationMessage}`);
     }
-    comment.line(SELF_REFERENCE_CYCLE_JSDOC);
     for (const param of fn.parameters) {
       comment.line(
         `@param {${param.docstringType}} ${param.name} ${param.description ?? ""}`.trimEnd(),
@@ -58,7 +66,6 @@ export class ProviderFunctionsEmitter {
         `@param {Array<${param.docstringType}>} ${param.name} ${param.description ?? ""}`.trimEnd(),
       );
     }
-    comment.line(`@param providerLocalName ${PROVIDER_LOCAL_NAME_JSDOC}`);
     comment.end();
 
     const methodParams = [
@@ -68,7 +75,6 @@ export class ProviderFunctionsEmitter {
       ...(fn.variadicParameter
         ? [`${fn.variadicParameter.name}: ${fn.variadicParameter.tsType}[]`]
         : []),
-      `providerLocalName?: string`,
     ];
 
     const invokeArgs = [
@@ -76,10 +82,10 @@ export class ProviderFunctionsEmitter {
       ...(fn.variadicParameter ? [`...${fn.variadicParameter.name}`] : []),
     ];
 
-    const invokeExpression = `cdktn.TerraformProviderFunction.invoke(providerLocalName ?? "${providerName}", "${fn.terraformName}", [${invokeArgs.join(", ")}])`;
+    const invokeExpression = `cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "${fn.terraformName}", [${invokeArgs.join(", ")}])`;
 
     this.code.openBlock(
-      `public static ${fn.methodName}(${methodParams.join(", ")}): ${fn.returnTsType}`,
+      `public ${fn.methodName}(${methodParams.join(", ")}): ${fn.returnTsType}`,
     );
     this.code.line(`return ${fn.wrapReturn(invokeExpression)};`);
     this.code.closeBlock();

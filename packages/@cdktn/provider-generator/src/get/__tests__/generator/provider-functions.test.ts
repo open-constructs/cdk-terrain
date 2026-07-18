@@ -3,7 +3,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
-import { buildProviderFunctionsModel } from "../../generator/models/provider-function-model";
+import {
+  assertNoFunctionsGetterCollision,
+  buildProviderFunctionsModel,
+} from "../../generator/models/provider-function-model";
 import { CodeMaker } from "codemaker";
 import { createTmpHelper } from "../util";
 
@@ -26,6 +29,12 @@ test("generate provider functions for the time provider (real terraform 1.15.6 s
     "utf-8",
   );
   expect(providerFunctionsOutput).toMatchSnapshot("time-provider-functions");
+
+  const providerOutput = fs.readFileSync(
+    path.join(workdir, "providers/time/provider/index.ts"),
+    "utf-8",
+  );
+  expect(providerOutput).toMatchSnapshot("time-provider");
 
   const providerIndex = fs.readFileSync(
     path.join(workdir, "providers/time/index.ts"),
@@ -113,4 +122,33 @@ test("buildProviderFunctionsModel throws when two parameter names collapse withi
       },
     }),
   ).toThrow(/some__value/);
+});
+
+test("assertNoFunctionsGetterCollision throws when the provider's own config schema would generate a 'functions' property", () => {
+  expect(() =>
+    assertNoFunctionsGetterCollision("example", ["alias", "functions"]),
+  ).toThrow(/"functions"/);
+});
+
+test("assertNoFunctionsGetterCollision does not throw when there is no colliding attribute", () => {
+  expect(() =>
+    assertNoFunctionsGetterCollision("example", ["alias"]),
+  ).not.toThrow();
+});
+
+test("generation throws when a provider's config attribute collides with the generated 'functions' getter", async () => {
+  const code = new CodeMaker();
+  const spec = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        __dirname,
+        "fixtures",
+        "provider-functions-collision.test.fixture.json",
+      ),
+      "utf-8",
+    ),
+  );
+  expect(() =>
+    new TerraformProviderGenerator(code, spec).generateAll(),
+  ).toThrow(/"functions"/);
 });

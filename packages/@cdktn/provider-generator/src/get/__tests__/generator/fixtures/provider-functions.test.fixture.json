@@ -1,6 +1,13 @@
 {
   "provider_schemas": {
     "registry.terraform.io/hashicorp/time": {
+      "provider": {
+        "version": 0,
+        "block": {
+          "description": "Use Terraform to trigger actions and generate time based data. Currently supports outputting time or ranges of time from a supplied timestamp, as well as basic date manipulation, encoding into RFC3339, and describing durations.\n\nThis provider is intended to be used in Terraform configurations that require basic date/time functionality where existing time-related data does not exist. Since this provider does not use any external APIs, it does not require any configuration and is used to fill in gaps where the Terraform configuration language itself does not yet support certain functionality.",
+          "description_kind": "markdown"
+        }
+      },
       "resource_schemas": {
         "time_static": {
           "version": 0,

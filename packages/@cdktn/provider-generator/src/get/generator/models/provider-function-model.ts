@@ -447,6 +447,33 @@ function assertNoParameterNameCollisions(
 }
 
 /**
+ * Throws if the provider's own config schema declares an attribute whose
+ * generated property name (see `AttributeModel.name` /
+ * `escapeAttributeName`) is exactly "functions", while the provider also
+ * declares provider-defined functions. That combination would collide with
+ * the memoized `functions` getter `ResourceEmitter` emits on the provider
+ * class (see `resource-emitter.ts`'s `emitFunctionsGetter`) - one would
+ * silently shadow the other. Same loud-failure convention as
+ * `assertNoMethodNameCollisions`/`assertNoParameterNameCollisions` above:
+ * generation is aborted rather than silently picking a winner.
+ */
+export function assertNoFunctionsGetterCollision(
+  providerName: string,
+  attributeNames: string[],
+): void {
+  if (attributeNames.includes("functions")) {
+    throw new Error(
+      `Provider "${providerName}" declares provider-defined functions and its ` +
+        `own config schema also has an attribute that generates the property ` +
+        `name "functions" on the provider class. This collides with the ` +
+        `generated "functions" getter used to invoke provider-defined ` +
+        `functions. Generation aborted to avoid silently shadowing one with ` +
+        `the other - please report this as an issue.`,
+    );
+  }
+}
+
+/**
  * Builds the model for a provider's `provider-functions/index.ts` file from
  * its provider schema `functions` map. Returns `undefined` when the provider
  * declares no functions - callers should skip emitting the file entirely.

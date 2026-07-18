@@ -1,0 +1,31 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/example": {
+      "provider": {
+        "version": 0,
+        "block": {
+          "attributes": {
+            "functions": {
+              "type": "string",
+              "description": "A config attribute that happens to be named the same as the generated functions getter.",
+              "description_kind": "plain",
+              "optional": true
+            }
+          }
+        }
+      },
+      "functions": {
+        "greet": {
+          "description": "Greets the given name.",
+          "return_type": "string",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
