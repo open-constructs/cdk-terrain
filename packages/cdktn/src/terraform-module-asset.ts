@@ -67,14 +67,19 @@ export class TerraformModuleAsset extends Construct {
     }
 
     // Create asset based on tmp dir
+    const canonical = !!this.node.tryGetContext(CANONICAL_ASSET_HASHES);
     this.asset = new TerraformAsset(this, "asset", {
       path: tmpDir,
       type: AssetType.DIRECTORY,
+      // The emitted asset is only the module sources copied into tmpDir, so
+      // the canonical scheme hashes that exact tree — unrelated siblings
+      // under the sources' common ancestor cannot churn the hash. Legacy
+      // keeps hashing the ancestor to preserve historical hashes.
       assetHash:
         staticModuleAssetHash ??
-        hashPath(relativeAssetPath, {
-          canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
-        }),
+        (canonical
+          ? hashPath(tmpDir, { canonical: true })
+          : hashPath(relativeAssetPath)),
     });
   }
 

@@ -122,6 +122,14 @@ export interface HashPathOptions {
    * feature flag.
    */
   readonly canonical?: boolean;
+  /**
+   * Frame for an archive artifact: archiveSync never emits ZIP directory
+   * entries, so canonical hashing omits directory records and the hash
+   * tracks the emitted archive bytes exactly. Non-empty directories stay
+   * visible through the relative paths of their contents. Has no effect on
+   * the legacy scheme, which never records directories.
+   */
+  readonly archive?: boolean;
 }
 
 /**
@@ -136,7 +144,7 @@ export interface HashPathOptions {
  */
 export function hashPath(src: string, options: HashPathOptions = {}): string {
   const digest = options.canonical
-    ? canonicalHashPath(src)
+    ? canonicalHashPath(src, !options.archive)
     : legacyHashPath(src);
   return digest.slice(0, HASH_LEN).toUpperCase();
 }
@@ -208,8 +216,10 @@ function legacyHashPath(src: string): string {
  * entry-boundary shifts, permission changes, empty-directory changes, and
  * file-vs-symlink swaps all change the digest.
  * @param src - path to a file or directory to hash
+ * @param includeDirectories - record directory entries; false for archive
+ * artifacts, where the emitted zip has no directory entries
  */
-function canonicalHashPath(src: string): string {
+function canonicalHashPath(src: string, includeDirectories: boolean): string {
   const hash = crypto.createHash("md5");
 
   /**
@@ -231,7 +241,7 @@ function canonicalHashPath(src: string): string {
       hash.update(`F ${mode} ${relPath}\0${data.length}\0`);
       hash.update(data);
     } else if (stat.isDirectory()) {
-      if (relPath) {
+      if (relPath && includeDirectories) {
         hash.update(`D ${relPath}\0`);
       }
       for (const filename of fs.readdirSync(p).sort()) {

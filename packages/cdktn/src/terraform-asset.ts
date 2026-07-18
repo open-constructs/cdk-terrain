@@ -83,6 +83,7 @@ export class TerraformAsset extends Construct {
       config.assetHash ||
       hashPath(this.sourcePath, {
         canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
+        archive: this.type === AssetType.ARCHIVE,
       });
 
     if (stat.isFile() && this.type !== AssetType.FILE) {
