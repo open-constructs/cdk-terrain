@@ -7,9 +7,17 @@ describe("provider upgrade command", () => {
     let driver: TestDriver;
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTN_OVERRIDE_VERSION: "0.23.1",
-      }); // fake cdktn version for consistent provider version checks
+        DISABLE_VERSION_CHECK: "true",
+      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-cli
       await driver.setupCsharpProject();
+
+      await driver.exec("dotnet", [
+        "add",
+        "package",
+        "Io.Cdktn",
+        "--version",
+        "0.23.1",
+      ]);
     }, 500_000);
 
     onPosix(

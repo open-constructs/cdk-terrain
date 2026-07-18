@@ -8,9 +8,10 @@ describe("provider add command", () => {
   describe("pre-built", () => {
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTN_OVERRIDE_VERSION: "0.23.1",
-      }); // fake cdktn version for consistent provider version checks
+        DISABLE_VERSION_CHECK: "true",
+      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-cli
       await driver.setupJavaProject();
+      await driver.addGradleDependency("io.cdktn:cdktn:0.23.1");
     });
 
     it("detects correct cdktn version", async () => {

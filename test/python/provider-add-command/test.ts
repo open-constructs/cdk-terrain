@@ -8,6 +8,9 @@ import { TestDriver } from "../../test-helper";
  */
 const CDKTN_VERSION = "0.22.1";
 
+/** PyPI version pin built from {@link CDKTN_VERSION}. */
+const CDKTN_PIN = `cdktn~=${CDKTN_VERSION}`;
+
 /**
  * Provider source + Terraform version passed to `cdktn provider add`. Picks
  * Terraform local 2.7.0 so the resolver chooses cdktn-provider-local 12.0.0.
@@ -24,9 +27,13 @@ describe("provider add command", () => {
     describe("pipenv", () => {
       beforeAll(async () => {
         driver = new TestDriver(__dirname, {
-          CDKTN_OVERRIDE_VERSION: CDKTN_VERSION,
+          // disable version check: locally-installed cdktn-cli is 0.0.0 (from dist),
+          // project pins a published cdktn version
+          DISABLE_VERSION_CHECK: "true",
         });
         await driver.setupPythonProject();
+
+        await driver.exec("pipenv", ["install", CDKTN_PIN]);
       });
 
       it("detects correct cdktn version", async () => {
@@ -57,7 +64,9 @@ describe("provider add command", () => {
     describe("pip", () => {
       beforeAll(async () => {
         driver = new TestDriver(__dirname, {
-          CDKTN_OVERRIDE_VERSION: CDKTN_VERSION,
+          // disable version check: locally-installed cdktn-cli is 0.0.0 (from dist),
+          // project pins a published cdktn version
+          DISABLE_VERSION_CHECK: "true",
         });
         await driver.setupPythonProject();
         // Supress warning that Pipenv is running within a virtual environment

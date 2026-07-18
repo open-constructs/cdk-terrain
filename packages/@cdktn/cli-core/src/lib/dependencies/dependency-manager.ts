@@ -141,10 +141,6 @@ export class DependencyManager {
     private cdktfVersion: string,
     private readonly projectDirectory: string,
   ) {
-    if (process.env.CDKTN_OVERRIDE_VERSION) {
-      this.cdktfVersion = process.env.CDKTN_OVERRIDE_VERSION;
-    }
-
     this.packageManager = PackageManager.forLanguage(
       targetLanguage,
       this.projectDirectory,

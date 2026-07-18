@@ -2,11 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 import { TestDriver } from "../../test-helper";
 
-/**
- * Specific cdktn library version installed into the test project. Asserted in
- * `cdktn debug` output, so it is kept separate from the PyPI pin string.
- */
-const CDKTN_VERSION = "0.22.1";
+/** PyPI version pin for the cdktn library installed into the test project. */
+const CDKTN_PIN = "cdktn~=0.22.1";
 
 /**
  * Starting state: cdktn-provider-local 12.0.0 wraps Terraform local 2.7.0
@@ -36,9 +33,13 @@ describe("provider upgrade command", () => {
     describe("pipenv", () => {
       beforeAll(async () => {
         driver = new TestDriver(__dirname, {
-          CDKTN_OVERRIDE_VERSION: CDKTN_VERSION,
+          // disable version check: locally-installed cdktn-cli is 0.0.0 (from dist),
+          // project pins a published cdktn version
+          DISABLE_VERSION_CHECK: "true",
         });
         await driver.setupPythonProject();
+
+        await driver.exec("pipenv", ["install", CDKTN_PIN]);
       });
 
       test("updates pre-built provider using pipenv", async () => {
@@ -57,7 +58,9 @@ describe("provider upgrade command", () => {
     describe("pip", () => {
       beforeAll(async () => {
         driver = new TestDriver(__dirname, {
-          CDKTN_OVERRIDE_VERSION: CDKTN_VERSION,
+          // disable version check: locally-installed cdktn-cli is 0.0.0 (from dist),
+          // project pins a published cdktn version
+          DISABLE_VERSION_CHECK: "true",
         });
         await driver.setupPythonProject();
         // Supress warning that Pipenv is running within a virtual environment

@@ -12,15 +12,18 @@ describe("provider add command", () => {
     let driver: TestDriver;
     beforeEach(async () => {
       driver = new TestDriver(__dirname, {
-        CDKTN_OVERRIDE_VERSION: "0.23.1",
-      }); // fake cdktn version for consistent provider version checks
+        DISABLE_VERSION_CHECK: "true",
+      }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
       await driver.setupCsharpProject();
-    }, 500_000);
 
-    it("detects correct cdktn version", async () => {
-      const res = await driver.exec("cdktn", ["debug"]);
-      expect(res.stdout).toContain("cdktn: 0.23.1");
-    });
+      await driver.exec("dotnet", [
+        "add",
+        "package",
+        "Io.Cdktn",
+        "--version",
+        "0.23.1",
+      ]);
+    }, 500_000);
 
     onPosix(
       "installs pre-built provider using nuget",
