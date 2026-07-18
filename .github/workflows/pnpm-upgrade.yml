@@ -201,15 +201,15 @@ jobs:
           for workspace in "${workspaces[@]}"; do
             workspace_args+=(--workspace "$workspace")
           done
-          
+
           ncu --upgrade "${workspace_args[@]}" --no-root \
             --filter=@types/fs-extra --target=minor \
             --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
-          
+
           ncu --upgrade "${workspace_args[@]}" --no-root \
             --filter=typescript --target=patch \
             --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
-          
+
           ncu --upgrade "${workspace_args[@]}" --no-root \
             --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}' \
             --target=minor \
