@@ -85,6 +85,24 @@ function sanitizeMethodName(name: string): string {
   return toCamelCase(name);
 }
 
+// Members that `ProviderFunctionsEmitter` (see `emitter/provider-functions-emitter.ts`)
+// itself puts on every generated `<Provider>ProviderFunctions` wrapper class,
+// regardless of which functions a provider declares:
+//   - "constructor": the class's own constructor, which takes the provider's
+//     `providerLocalName`. A provider-defined function named "constructor"
+//     would sanitize to a *second* `constructor` member on the class, which
+//     is invalid TypeScript.
+//   - "providerLocalName": the `private readonly providerLocalName: string`
+//     field the constructor assigns (see the emitter's `emitClassHeader`/
+//     constructor emission). A provider-defined function sanitizing to this
+//     name would collide with that field.
+// If `ProviderFunctionsEmitter` ever grows more members on the wrapper class,
+// add them here too.
+const RESERVED_WRAPPER_MEMBER_NAMES = new Set([
+  "constructor",
+  "providerLocalName",
+]);
+
 /**
  * Maps a provider function parameter's declared Terraform type to a
  * jsii-safe TypeScript parameter type, recursively for collection types.
@@ -418,6 +436,41 @@ function assertNoMethodNameCollisions(
 }
 
 /**
+ * Throws if a function's sanitized `methodName` lands on a member name
+ * `ProviderFunctionsEmitter` already puts on every wrapper class (see
+ * `RESERVED_WRAPPER_MEMBER_NAMES`). Unlike `assertNoMethodNameCollisions`,
+ * which only catches two *functions* colliding with each other, this catches
+ * a single function colliding with the wrapper class itself - e.g. a
+ * Terraform function literally named "constructor", or "provider_local_name"
+ * camelCasing to "providerLocalName".
+ *
+ * This intentionally does NOT also check sanitized *parameter* names against
+ * "providerLocalName": parameters are declared in the generated method's own
+ * scope, not the class's, so a parameter named `providerLocalName` shadows
+ * the class field within that method body without colliding with it (valid,
+ * if confusing, TypeScript) - there is nothing to abort generation over.
+ */
+function assertNoReservedWrapperMemberCollisions(
+  providerName: string,
+  functions: ProviderFunctionModel[],
+): void {
+  for (const fn of functions) {
+    if (RESERVED_WRAPPER_MEMBER_NAMES.has(fn.methodName)) {
+      throw new Error(
+        `Provider "${providerName}" declares a provider-defined function ` +
+          `"${fn.terraformName}" that sanitizes to the generated method name ` +
+          `"${fn.methodName}", which collides with a member that ` +
+          `ProviderFunctionsEmitter already puts on every ` +
+          `"<Provider>ProviderFunctions" wrapper class (the class ` +
+          `constructor, or its "providerLocalName" field). Generation ` +
+          `aborted to avoid emitting invalid TypeScript or silently ` +
+          `shadowing that member - please report this as an issue.`,
+      );
+    }
+  }
+}
+
+/**
  * Throws if two parameters of the same function (including the variadic
  * parameter) sanitize to the same generated parameter name, for the same
  * reason as `assertNoMethodNameCollisions` above but at the parameter level.
@@ -490,6 +543,7 @@ export function buildProviderFunctionsModel(
     .map(([name, signature]) => buildFunctionModel(name, signature));
 
   assertNoMethodNameCollisions(providerName, mappedFunctions);
+  assertNoReservedWrapperMemberCollisions(providerName, mappedFunctions);
   for (const fn of mappedFunctions) {
     assertNoParameterNameCollisions(providerName, fn);
   }

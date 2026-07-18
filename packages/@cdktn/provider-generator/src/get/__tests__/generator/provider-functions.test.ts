@@ -8,6 +8,7 @@ import {
   buildProviderFunctionsModel,
 } from "../../generator/models/provider-function-model";
 import { CodeMaker } from "codemaker";
+import { FunctionSignature } from "@cdktn/commons";
 import { createTmpHelper } from "../util";
 
 const tmp = createTmpHelper();
@@ -122,6 +123,46 @@ test("buildProviderFunctionsModel throws when two parameter names collapse withi
       },
     }),
   ).toThrow(/some__value/);
+});
+
+// Both of these assert the model-level throw happens before any file is
+// generated: buildProviderFunctionsModel is called directly, with no
+// CodeMaker/generator involved, so there is no emission step to reach.
+test("buildProviderFunctionsModel throws when a function name sanitizes to 'constructor'", () => {
+  // The nested signature literal is cast to `FunctionSignature` (rather than
+  // relying on contextual typing from the surrounding index signature)
+  // because TypeScript special-cases a property literally named
+  // "constructor" - contextually typing it against `Function` (from
+  // `Object.prototype`) instead of the index signature's `FunctionSignature`,
+  // and spuriously flagging `return_type: "string"` as an error. See
+  // https://github.com/microsoft/TypeScript/issues/40776.
+  const signature: FunctionSignature = {
+    return_type: "string",
+    parameters: [],
+  };
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      constructor: signature,
+    }),
+  ).toThrow(/constructor/);
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      constructor: signature,
+    }),
+  ).toThrow(/example/);
+});
+
+test("buildProviderFunctionsModel throws when a function name sanitizes to 'providerLocalName'", () => {
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      provider_local_name: { return_type: "string", parameters: [] },
+    }),
+  ).toThrow(/provider_local_name/);
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      provider_local_name: { return_type: "string", parameters: [] },
+    }),
+  ).toThrow(/providerLocalName/);
 });
 
 test("assertNoFunctionsGetterCollision throws when the provider's own config schema would generate a 'functions' property", () => {
