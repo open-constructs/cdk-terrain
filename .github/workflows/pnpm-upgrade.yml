@@ -76,6 +76,8 @@ jobs:
   prRoot:
     name: Create Pull Request Root
     needs: upgradeRoot
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Check Out
@@ -99,6 +101,9 @@ jobs:
         with:
           app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
           private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+          permission-contents: write # is needed to create/update the automation branch.
+          permission-pull-requests: write # covers creating/updating the PR, labels, and review requests.
+          permission-members: read # limits organization access to the team lookup already being requested for cdktn-maintainers.
 
       - name: Get GitHub App User ID
         id: get_user_id
@@ -226,6 +231,9 @@ jobs:
         with:
           app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
           private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+          permission-contents: write # is needed to create/update the automation branch.
+          permission-pull-requests: write # covers creating/updating the PR, labels, and review requests.
+          permission-members: read # limits organization access to the team lookup already being requested for cdktn-maintainers.
 
       - name: Get GitHub App User ID
         id: get_user_id
@@ -304,6 +312,9 @@ jobs:
         with:
           app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
           private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+          permission-contents: write # is needed to create/update the automation branch.
+          permission-pull-requests: write # covers creating/updating the PR, labels, and review requests.
+          permission-members: read # limits organization access to the team lookup already being requested for cdktn-maintainers.
 
       - name: Get GitHub App User ID
         id: get_user_id
