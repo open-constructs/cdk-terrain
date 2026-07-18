@@ -8,15 +8,10 @@ import {
   TerraformStack,
 } from "../src";
 import { TerraformProviderFunction } from "../src/functions/provider-function";
-import { resetProviderFunctionUsageRegistry } from "../src/functions/usage-registry";
 import { createTmpHelper } from "./helper/tmp";
 import { TestProvider, TestResource } from "./helper";
 
 const tmp = createTmpHelper();
-
-beforeEach(() => {
-  resetProviderFunctionUsageRegistry();
-});
 
 test("invoke() renders provider::<name>::<function>(...) in synthesized output", () => {
   const app = Testing.app();
@@ -165,10 +160,10 @@ describe("ValidateProviderFunctionTargetSupport", () => {
   });
 
   test("does not leak provider function usage from one App into a later, unrelated App in the same process", () => {
-    // Deliberately does NOT rely on the top-level beforeEach reset running
-    // between app1 and app2: both apps are constructed within this single
-    // test, so the only thing preventing app1's usage from leaking into
-    // app2's validation is the reset that happens in App's own constructor.
+    // Usage is recorded per-App-root (the resolving stack's `node.root`)
+    // rather than in a single process-global registry, so isolation between
+    // App trees is structural, not something that depends on a reset
+    // running between tests.
     const { app: app1, stack: stack1 } = appWithStack({
       targetVersions: { terraform: ">=1.8.0", opentofu: ">=1.7.0" },
     });
@@ -202,5 +197,35 @@ describe("ValidateProviderFunctionTargetSupport", () => {
     } catch (e: any) {
       expect(e.message).not.toContain("provider-defined functions");
     }
+  });
+
+  test("still fires when a second, unrelated App is constructed between usage and synth of the first (interleaved Apps)", () => {
+    // Regression test: with call-time recording into a single process-global
+    // registry, App B's constructor used to reset that registry, silently
+    // wiping out the usage App A had already recorded for
+    // TerraformProviderFunction.invoke() before App A ever got to synth() -
+    // a false negative that skipped target-version validation entirely.
+    // Recording at token-RESOLVE time, keyed by the resolving root, fixes
+    // this: App A's usage is only ever recorded (during App A's own
+    // prepareStack pass) and read back from App A's own root.
+    const { app: app1, stack: stack1 } = appWithStack();
+    new TerraformOutput(stack1, "test-output", {
+      value: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+        "2023-01-01T00:00:00Z",
+      ]),
+    });
+
+    // App B is constructed here, strictly between App A's usage and App
+    // A's synth() call - the interleaving that used to trigger the bug.
+    appWithStack();
+
+    expect(() => app1.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack] provider-defined functions (provider::time::rfc3339_parse) requires terraform >=1.8.0, but the project targets terraform >=1.5.7. Provider-defined functions are available in terraform >=1.8.0 and opentofu >=1.7.0.
+        [MyStack] provider-defined functions (provider::time::rfc3339_parse) requires opentofu >=1.7.0, but the project targets opentofu >=1.6.0. Provider-defined functions are available in terraform >=1.8.0 and opentofu >=1.7.0.
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
   });
 });

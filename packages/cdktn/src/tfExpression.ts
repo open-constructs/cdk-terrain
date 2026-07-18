@@ -7,6 +7,10 @@ import { App } from "./app";
 import { TerraformStack } from "./terraform-stack";
 import { ITerraformDependable } from "./terraform-dependable";
 import { Construct } from "constructs";
+import {
+  recordFunctionUsage,
+  recordProviderFunctionUsage,
+} from "./functions/usage-registry";
 
 const TERRAFORM_IDENTIFIER_REGEX = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
 
@@ -372,6 +376,20 @@ class FunctionCall extends TFExpression {
   }
 
   public resolve(context: IResolveContext): string {
+    // Recording here, at resolve time, is deliberate: a `Fn.*()`/
+    // `TerraformProviderFunction.invoke()` call only produces a token: this
+    // is the point where that token actually lands in a rendered stack, so
+    // usage is attributed to the App whose synthesis is doing the
+    // rendering (`context.scope` is always the enclosing `TerraformStack`;
+    // its root is the owning `App`). See usage-registry.ts for the full
+    // rationale.
+    const root = context.scope.node.root;
+    if (this.name.startsWith("provider::")) {
+      recordProviderFunctionUsage(root, this.name);
+    } else {
+      recordFunctionUsage(root, this.name);
+    }
+
     const suppressBraces = context.suppressBraces;
     const originalIgnoreEscapes = context.ignoreEscapes;
     const originalWarnEscapes = context.warnEscapes;

@@ -22,15 +22,18 @@ import { getUsedProviderFunctions } from "../functions/usage-registry";
  * used function so the error is actionable.
  *
  * Registered unconditionally (no feature flag): this is new API surface, and
- * the check only ever fires when a provider function is actually used
- * during the current synthesis session (i.e. since the enclosing `App` was
- * constructed — see the usage-registry reset in `App`'s constructor).
+ * the check only ever fires when a provider function is actually used —
+ * i.e. its token was resolved while rendering a stack owned by the same
+ * App as this validation's scope (usage is recorded per-App-root at
+ * token-resolve time; see `../functions/usage-registry.ts`).
  */
 export class ValidateProviderFunctionTargetSupport implements IValidation {
   constructor(protected scope: IConstruct) {}
 
   public validate() {
-    const usedProviderFunctions = getUsedProviderFunctions().sort();
+    const usedProviderFunctions = getUsedProviderFunctions(
+      this.scope.node.root,
+    ).sort();
 
     // no provider-defined functions in use: nothing to validate
     if (usedProviderFunctions.length === 0) {

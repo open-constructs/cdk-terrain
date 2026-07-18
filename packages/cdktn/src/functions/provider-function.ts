@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import { IResolvable } from "../tokens/resolvable";
 import { anyValue, terraformFunction } from "./helpers";
-import { recordProviderFunctionUsage } from "./usage-registry";
 
 /**
  * Runtime entry point invoked by generated provider function bindings
@@ -38,11 +37,10 @@ export class TerraformProviderFunction {
     args: any[],
   ): IResolvable {
     const fullName = `provider::${providerLocalName}::${functionName}`;
-    recordProviderFunctionUsage(fullName);
-    // terraformFunction() also records `fullName` into the `Fn` usage
-    // registry (usedFunctions); this is harmless since
-    // ValidateFunctionVersionSupport only checks names present in its own
-    // functionVersionConstraints map, which provider functions never are.
+    // Usage is recorded at token-resolve time (see FunctionCall.resolve() in
+    // tfExpression.ts and usage-registry.ts), not here at call time: this
+    // just builds the token that resolve() later records when it actually
+    // renders into a stack.
     //
     // Note: intentionally NOT `[variadic(anyValue)]` - variadic()/listOf()
     // filters out null/undefined ENTRIES of the array, which is correct for

@@ -30,7 +30,7 @@ export class ValidateFunctionVersionSupport implements IValidation {
   constructor(protected scope: IConstruct) {}
 
   public validate() {
-    const constrainedFunctions = getUsedFunctions()
+    const constrainedFunctions = getUsedFunctions(this.scope.node.root)
       .filter((name) => name in functionVersionConstraints)
       .sort();
 

@@ -13,10 +13,6 @@ import {
   noAppFound,
 } from "./errors";
 import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "./features";
-import {
-  resetFunctionUsageRegistry,
-  resetProviderFunctionUsageRegistry,
-} from "./functions/usage-registry";
 
 const APP_SYMBOL = Symbol.for("cdktf/App");
 export const CONTEXT_ENV = "CDKTF_CONTEXT_JSON";
@@ -101,25 +97,6 @@ export class App extends Construct {
   constructor(config: AppConfig = {}) {
     super(undefined as any, "");
     Object.defineProperty(this, APP_SYMBOL, { value: true });
-
-    // A new App marks the start of a new synthesis session. The `Fn` and
-    // provider-function usage registries are process-global (tokens are
-    // scope-free, so usage can't be attributed to a stack or app reliably),
-    // so without a reset a usage recorded while synthesizing one App would
-    // leak into validations run for a later, unrelated App constructed in
-    // the same Node process (e.g. sequential apps within one test file).
-    // Resetting here scopes "global" usage to "global within this App",
-    // which is by design: every stack in an App resolves the same
-    // targetVersions from App context, so a validation firing on a sibling
-    // stack reports the same error the using stack would.
-    //
-    // Known limitation, intentionally not solved: if two Apps are
-    // constructed up front and then populated/synthesized interleaved, they
-    // still share the same global registries between their construction and
-    // synth calls. This is a pathological usage pattern; the common cases
-    // (one App per test, or sequential Apps in one process) are handled.
-    resetFunctionUsageRegistry();
-    resetProviderFunctionUsageRegistry();
 
     this.outdir = config.outdir ?? process.env.CDKTF_OUTDIR ?? "cdktf.out";
     const envHclOutput = process.env.SYNTH_HCL_OUTPUT;
