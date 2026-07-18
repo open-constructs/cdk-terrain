@@ -20,31 +20,35 @@ describe("provider upgrade command", () => {
   }, 500_000);
 
   describe("pre-built", () => {
-    it("can update within the same cdktn version to a specific version", async () => {
-      await driver.exec("cdktn", ["provider", "add", "random@=3.7.2"]);
+    beforeEach(async () => {
+      await driver.exec("cdktn", [
+        "provider",
+        "add",
+        "random@=3.8.1",
+      ]);
+    });
 
+    it("can update withing the same cdktn version to a specific version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "12.1.0"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.0.0"),
       );
 
-      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.8.1"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.9.0"]);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "12.1.1"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.1.0"),
       );
     });
 
     it("can update within the same cdktn version to the latest version", async () => {
-      await driver.exec("cdktn", ["provider", "add", "random@=3.7.2"]);
-
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "12.1.0"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.0.0"),
       );
 
       await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-random", "12.1.1"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.1.0"),
       );
     });
 
@@ -53,18 +57,18 @@ describe("provider upgrade command", () => {
       await driver.exec("npm", [
         "install",
         "--save-exact",
-        "@cdktn/provider-acme@13.0.0",
+        "@cdktn/provider-random@12.1.0",
       ]);
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-acme", "13.0.0"),
+        packageJsonWithDependency("@cdktn/provider-random", "12.1.0"),
       );
       await driver.exec("rm", ["-rf", "node_modules"]);
       await driver.exec("rm", ["package-lock.json"]);
       await driver.exec("npm", ["install"]); // npm install to update the lockfile
-      await driver.exec("cdktn", ["provider", "upgrade", "acme"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktn/provider-acme", "13.3.1"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.1.0"),
       );
     });
   });
