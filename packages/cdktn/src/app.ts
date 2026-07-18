@@ -13,6 +13,7 @@ import {
   noAppFound,
 } from "./errors";
 import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "./features";
+import { resetUsageForRoot } from "./functions/usage-registry";
 
 const APP_SYMBOL = Symbol.for("cdktf/App");
 export const CONTEXT_ENV = "CDKTF_CONTEXT_JSON";
@@ -152,10 +153,20 @@ export class App extends Construct {
    * Synthesizes all resources to the output directory
    */
   public synth(): void {
+    // Terraform-function usage (Fn.* / provider::...) represents the
+    // CURRENT synthesis pass only, not this App's whole lifetime - an App
+    // can be synth()'d more than once (e.g. in tests). Clear it once, here,
+    // before any stack's resolve rediscovers this pass's usage. This must
+    // NOT live in prepareStack(): stacks below are prepared one at a time,
+    // and a per-stack clear would erase sibling stacks' usage already
+    // recorded earlier in this same loop.
+    resetUsageForRoot(this);
+
     const session: ISynthesisSession = {
       outdir: this.outdir,
       skipValidation: this.skipValidation,
       manifest: this.manifest,
+      stacksPrepared: true,
     };
 
     const stacks = this.node

@@ -271,3 +271,218 @@ describe("registerProviderFeatureUsage (write-only attributes)", () => {
     );
   });
 });
+
+// Round 6, Finding 2: markWriteOnlyAttribute's registration is only ever
+// discovered by a prepare step (TerraformStack._runPreparingResolve). Every
+// validation-enabled entry point must run that prepare step itself before
+// validating, not just App.synth() - otherwise a write-only value that
+// violates the declared targets silently renders without ever being
+// flagged. Round 6, Finding 3: because the registration this discovers
+// represents only the CURRENT synthesis pass, repeat synthesis of the same
+// App/stack must neither leak a stale registration into a pass where the
+// value is no longer present, nor stack up duplicate validations across
+// passes.
+describe("resolve-discovered write-only usage: entry points and synthesis epochs", () => {
+  test("Testing.synth(stack, true) surfaces an old-target write-only failure", () => {
+    const { stack } = appWithStack();
+    new TestWriteOnlyResource(stack, "testResource", { secretKeyWo: "shh" });
+
+    expect(() => Testing.synth(stack, true)).toThrow(
+      /write-only attributes requires/,
+    );
+  });
+
+  test("Testing.synthHcl(stack, true) surfaces an old-target write-only failure", () => {
+    const { stack } = appWithStack();
+    new TestWriteOnlyResource(stack, "testResource", { secretKeyWo: "shh" });
+
+    expect(() => Testing.synthHcl(stack, true)).toThrow(
+      /write-only attributes requires/,
+    );
+  });
+
+  test("direct StackSynthesizer/stack synthesis without App.synth() surfaces an old-target write-only failure", () => {
+    const { stack } = appWithStack();
+    new TestWriteOnlyResource(stack, "testResource", { secretKeyWo: "shh" });
+
+    // Testing.fullSynth() drives stack.synthesizer.synthesize() directly
+    // with a bare session that never sets `stacksPrepared` - the same shape
+    // any hand-rolled IStackSynthesizer caller (not going through
+    // App.synth()) would build.
+    expect(() => Testing.fullSynth(stack)).toThrow(
+      /write-only attributes requires/,
+    );
+  });
+
+  test("repeat synthesis of the same App: clearing the write-only value between synths lets the second pass succeed", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {
+      secretKeyWo: "shh",
+    });
+
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
+
+    resource.resetSecretKeyWo();
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("repeat synthesis of the same App: a Lazy producer returning a value on the first synth and undefined on the second - second synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    let produceValue = true;
+    resource.secretKeyWo = Lazy.stringValue({
+      produce: () => (produceValue ? "lazy-shh" : undefined),
+    });
+
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
+
+    produceValue = false;
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("re-activating the same registration across repeated synthesis passes still yields exactly one error line per targeted product, not a growing stack of duplicates", () => {
+    const { app, stack } = appWithStack();
+    new TestWriteOnlyResource(stack, "testResource", { secretKeyWo: "shh" });
+
+    for (let i = 0; i < 3; i++) {
+      let message = "";
+      try {
+        app.synth();
+      } catch (e: any) {
+        message = e.message as string;
+      }
+      const errorLines = message
+        .split("\n")
+        .filter((line) => line.includes("write-only attributes requires"));
+      // one line per targeted product (terraform + opentofu) - never more,
+      // no matter how many prior passes re-activated this same element's
+      // registration.
+      expect(errorLines).toHaveLength(2);
+    }
+  });
+});
+
+/**
+ * Mirrors what generated `synthesizeHclAttributes()` emits for HCL
+ * synthesis: a per-attribute descriptor `{ value, isBlock, type,
+ * storageClassType }` (see `AttributesEmitter#emitToHclTerraform`), gated
+ * by the generator's own "remove undefined attributes" pre-filter -
+ * `value !== undefined && value.value !== undefined` - which only inspects
+ * the *unresolved* value. A token (write-only-wrapped or not) is never
+ * itself `undefined`, so it survives that pre-filter even when it will go
+ * on to *resolve* to `undefined`.
+ *
+ * When that happens, generic `resolve()` (tokens/private/resolve.ts) deep-
+ * resolves the descriptor object and silently drops just the `value` key
+ * (the one key whose resolution can legitimately come back `undefined`),
+ * leaving a bare `{ isBlock, type, storageClassType }` shell for
+ * `renderAttributes()` (hcl/render.ts) to deal with. Previously it fell
+ * through to `renderFuzzyJsonExpression()` and rendered that leftover
+ * metadata as a bogus assignment; it must now omit the attribute entirely
+ * instead, exactly as if it had never been set.
+ */
+class TestHclDescriptorResource extends TerraformResource {
+  public secretKeyWo?: any;
+  public plainAttr?: any;
+
+  constructor(
+    scope: Construct,
+    id: string,
+    config: { secretKeyWo?: any; plainAttr?: any },
+  ) {
+    super(scope, id, {
+      terraformResourceType: "test_hcl_descriptor_resource",
+    });
+    this.secretKeyWo = config.secretKeyWo;
+    this.plainAttr = config.plainAttr;
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    return Object.fromEntries(
+      Object.entries({
+        // write-only: value wrapped in markWriteOnlyAttribute(), exactly
+        // as generated bindings do.
+        secret_key_wo: {
+          value: this.markWriteOnlyAttribute(this.secretKeyWo),
+          isBlock: false,
+          type: "simple",
+          storageClassType: "string",
+        },
+        // not write-only at all - pins that the fix is general, per the
+        // #313 HCL-defects family, not specific to the write-only marker.
+        plain_attr: {
+          value: this.plainAttr,
+          isBlock: false,
+          type: "simple",
+          storageClassType: "string",
+        },
+      }).filter(
+        ([_, value]) => value !== undefined && value.value !== undefined,
+      ),
+    );
+  }
+}
+
+function hclForDescriptorResource(config: {
+  secretKeyWo?: any;
+  plainAttr?: any;
+}): string {
+  const { stack } = appWithStack();
+  new TestHclDescriptorResource(stack, "testResource", config);
+  return Testing.synthHcl(stack);
+}
+
+describe("renderAttributes (HCL synthesis): a descriptor whose value resolves to undefined", () => {
+  test("write-only attribute wrapped by markWriteOnlyAttribute: Lazy resolving to undefined - attribute entirely absent, no leaked metadata", () => {
+    const hcl = hclForDescriptorResource({
+      secretKeyWo: Lazy.stringValue({ produce: () => undefined }),
+    });
+
+    expect(hcl).not.toMatch(/secret_key_wo/);
+    expect(hcl).not.toMatch(/isBlock/);
+    expect(hcl).not.toMatch(/storageClassType/);
+    // the storage type name itself must not leak either (pre-fix, this
+    // rendered as `storageClassType = "string"` via renderFuzzyJsonObject)
+    expect(hcl).not.toMatch(/storageClassType\s*=\s*"string"/);
+  });
+
+  test("write-only attribute: Lazy resolving to a real string still renders normally", () => {
+    const hcl = hclForDescriptorResource({
+      secretKeyWo: Lazy.stringValue({ produce: () => "shh" }),
+    });
+
+    expect(hcl).toMatch(/secret_key_wo\s*=\s*"shh"/);
+  });
+
+  // Requirement 2: only the *absent*-value case is omitted - an explicit
+  // `null` must keep rendering as an explicit null assignment.
+  test("write-only attribute: explicit null still renders as an explicit null, not omitted", () => {
+    const hcl = hclForDescriptorResource({ secretKeyWo: null });
+
+    expect(hcl).toMatch(/secret_key_wo\s*=\s*null/);
+  });
+
+  // General case (not write-only specific): any attribute descriptor whose
+  // value is a plain (unwrapped) token resolving to undefined must also be
+  // omitted, with no leaked descriptor metadata.
+  test("plain (non-write-only) attribute: token resolving to undefined - attribute entirely absent, no leaked metadata", () => {
+    const hcl = hclForDescriptorResource({
+      plainAttr: Lazy.anyValue({ produce: () => undefined }),
+    });
+
+    expect(hcl).not.toMatch(/plain_attr/);
+    expect(hcl).not.toMatch(/isBlock/);
+    expect(hcl).not.toMatch(/storageClassType/);
+    expect(hcl).not.toMatch(/storageClassType\s*=\s*"string"/);
+  });
+
+  test("plain (non-write-only) attribute: token resolving to a real value still renders normally", () => {
+    const hcl = hclForDescriptorResource({
+      plainAttr: Lazy.anyValue({ produce: () => "value" }),
+    });
+
+    expect(hcl).toMatch(/plain_attr\s*=\s*"value"/);
+  });
+});

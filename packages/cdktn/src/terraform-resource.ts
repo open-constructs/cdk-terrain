@@ -280,13 +280,20 @@ export class TerraformResource
    * leaves anything behind in the synthesized attribute - the omission
    * behaves exactly as if the attribute had never been set.
    *
-   * This mirrors the resolve-time function-usage registry (see
-   * `FunctionCall.resolve()` in `tfExpression.ts`): only usage that
-   * actually reaches synthesized configuration is validated, and
-   * `App.synth()`'s ordering guarantee - prepareStack's preparing
-   * resolve of every element's `toTerraform()`, for ALL stacks, runs
-   * before ANY stack's validations - means the registration this
-   * produces is always visible to the validation that reads it.
+   * Registration goes through `_registerResolveDiscoveredProviderFeatureUsage`
+   * rather than `registerProviderFeatureUsage`: usage here is only known at
+   * resolve time, and a given element can be resolved across many
+   * synthesis passes over its lifetime (repeated `app.synth()` calls,
+   * tests reusing a construct tree), so it must represent only the CURRENT
+   * pass rather than accumulate forever. Every validation-enabled entry
+   * point (`App.synth`; `Testing.synth`/`synthHcl` with validations;
+   * `StackSynthesizer.synthesize`) runs a prepare step that deactivates any
+   * stale registration and then resolves every element's `toTerraform()`
+   * before that same entry point's validations run - see
+   * `TerraformStack._runPreparingResolve` - so whatever this closure
+   * (re-)registers during that prepare step is always visible to the
+   * validation that reads it afterwards, and nothing left over from an
+   * earlier pass leaks into the current one.
    */
   protected markWriteOnlyAttribute(value: any): any {
     if (value === undefined || value === null) {
@@ -299,7 +306,7 @@ export class TerraformResource
       resolve(context: IResolveContext): any {
         const resolved = context.resolve(value);
         if (resolved != null) {
-          resource.registerProviderFeatureUsage(
+          resource._registerResolveDiscoveredProviderFeatureUsage(
             ProviderFeature.WRITE_ONLY_ATTRIBUTES,
           );
         }

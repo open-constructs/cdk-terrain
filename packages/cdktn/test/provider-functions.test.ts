@@ -229,3 +229,88 @@ describe("ValidateProviderFunctionTargetSupport", () => {
     `);
   });
 });
+
+// Round 6, Findings 2 and 3 for the function-usage registry: the identical
+// entry-point gap that existed for write-only attributes existed here too -
+// usage is only ever discovered by a prepare step that resolves every
+// element's toTerraform(), and only App.synth() ran that step. And because
+// usage represents only the CURRENT synthesis pass, repeat synthesis of the
+// same App must not let a function rendered in an earlier pass keep failing
+// a later pass where it no longer appears.
+describe("resolve-discovered provider-function usage: entry points and synthesis epochs", () => {
+  function appWithStack(context?: Record<string, any>) {
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir, context }),
+    );
+    const stack = new TerraformStack(app, "MyStack");
+    return { app, stack };
+  }
+
+  function addGatedProviderFunctionOutput(stack: TerraformStack) {
+    return new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+        "2023-01-01T00:00:00Z",
+      ]),
+    });
+  }
+
+  test("Testing.synth(stack, true) surfaces the target failure for a gated provider function", () => {
+    const { stack } = appWithStack();
+    addGatedProviderFunctionOutput(stack);
+
+    expect(() => Testing.synth(stack, true)).toThrow(
+      /provider-defined functions/,
+    );
+  });
+
+  test("Testing.synthHcl(stack, true) surfaces the target failure for a gated provider function", () => {
+    const { stack } = appWithStack();
+    addGatedProviderFunctionOutput(stack);
+
+    expect(() => Testing.synthHcl(stack, true)).toThrow(
+      /provider-defined functions/,
+    );
+  });
+
+  test("direct StackSynthesizer/stack synthesis without App.synth() surfaces the target failure for a gated provider function", () => {
+    const { stack } = appWithStack();
+    addGatedProviderFunctionOutput(stack);
+
+    // Testing.fullSynth() drives stack.synthesizer.synthesize() directly
+    // with a bare session that never sets `stacksPrepared`.
+    expect(() => Testing.fullSynth(stack)).toThrow(
+      /provider-defined functions/,
+    );
+  });
+
+  test("removing the gated output and re-synthesizing the same App passes (function-usage epoch)", () => {
+    const { app, stack } = appWithStack();
+    const output = addGatedProviderFunctionOutput(stack);
+
+    expect(() => app.synth()).toThrow(/provider-defined functions/);
+
+    stack.node.tryRemoveChild(output.node.id);
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("multi-stack App.synth(): preparing stack2 does not erase provider-function usage stack1 already recorded", () => {
+    // The function-usage registry reset (resetUsageForRoot) runs exactly
+    // once, at the very start of App.synth(), keyed by the App root shared
+    // by every stack - deliberately NOT inside prepareStack(), because
+    // App.synth() prepares stacks one at a time and a per-stack reset there
+    // would wipe out a sibling stack's usage already recorded earlier in
+    // that same loop. stack1 is prepared (and its usage recorded) before
+    // stack2 is prepared here.
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
+    const stack1 = new TerraformStack(app, "Stack1");
+    const stack2 = new TerraformStack(app, "Stack2");
+
+    addGatedProviderFunctionOutput(stack1);
+    new TerraformOutput(stack2, "unrelated-output", { value: "just a stack" });
+
+    expect(() => app.synth()).toThrow(/provider-defined functions/);
+  });
+});

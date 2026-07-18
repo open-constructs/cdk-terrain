@@ -160,7 +160,34 @@ export class TerraformStack extends Construct {
   public prepareStack() {
     // Ensure we have a backend configured
     this.ensureBackendExists();
-    // A preparing resolve run might add new resources to the stack, e.g. for cross stack references.
+    this._runPreparingResolve();
+  }
+
+  /**
+   * The resolve-discovery half of `prepareStack()`, split out so entry
+   * points that must NOT inject a backend (`Testing.synth`/`synthHcl` -
+   * doing so would add an implicit local backend to snapshots that never
+   * asked for one) can still run the part that discovers current-pass
+   * provider-feature and Terraform-function usage.
+   *
+   * First deactivates every element's stale `resolve-discovered`
+   * provider-feature registrations (see
+   * `TerraformElement._resetResolveDiscoveredProviderFeatureUsage`) - so
+   * usage from an earlier synthesis pass over this same stack can't survive
+   * into this one - then resolves every element's `toTerraform()`, which is
+   * what re-discovers this pass's actual usage (both provider-feature usage
+   * via `markWriteOnlyAttribute`, and Terraform-function usage via
+   * `FunctionCall.resolve()`; the latter's own per-root reset is the
+   * caller's responsibility - see `functions/usage-registry.ts`). A
+   * preparing resolve run might also add new resources to the stack, e.g.
+   * for cross stack references.
+   *
+   * @internal
+   */
+  public _runPreparingResolve() {
+    terraformElements(this).forEach((e) =>
+      e._resetResolveDiscoveredProviderFeatureUsage(),
+    );
     terraformElements(this).forEach((e) =>
       resolve(this, e.toTerraform(), true),
     );

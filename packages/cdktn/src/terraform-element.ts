@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { ok } from "assert";
-import { Construct } from "constructs";
+import { Construct, IValidation } from "constructs";
 import { Token } from "./tokens";
 import { TerraformStack } from "./terraform-stack";
 import { ref } from "./tfExpression";
@@ -15,6 +15,47 @@ import {
 } from "./provider-feature-constraints";
 
 const TERRAFORM_ELEMENT_SYMBOL = Symbol.for("cdktf/TerraformElement");
+
+/**
+ * How a `ProviderFeature` registration on an element was armed:
+ *
+ * - `structural`: the element's mere existence is the usage (e.g. a
+ *   `TerraformEphemeralResource`'s constructor). There is no notion of the
+ *   feature going unused later in the same synthesis pass, so it is armed
+ *   once and never deactivated.
+ * - `resolve-discovered`: usage is only known once a value is resolved
+ *   during synthesis (e.g. a write-only attribute wrapped by
+ *   `markWriteOnlyAttribute`). Because the same element can be resolved
+ *   across many synthesis passes over its lifetime (tests reusing a
+ *   construct tree, repeated `app.synth()` calls against the same App),
+ *   this kind of registration must be reset at the start of each pass and
+ *   only re-armed if resolution actually rediscovers the usage during that
+ *   pass - see `_resetResolveDiscoveredProviderFeatureUsage`.
+ */
+type ProviderFeatureRegistrationMode = "structural" | "resolve-discovered";
+
+/**
+ * `constructs` has no `removeValidation`, so a validation installed via
+ * `node.addValidation` stays installed for the lifetime of the node. To let
+ * a resolve-discovered registration go quiet again (see
+ * `ProviderFeatureRegistrationMode`), the installed `IValidation` is this
+ * thin, mutable gate: while `active` is false it reports no errors at all,
+ * regardless of what the wrapped `ValidateFeatureTargetSupport` would say.
+ */
+class GatedFeatureValidation implements IValidation {
+  public active = true;
+
+  constructor(private readonly delegate: ValidateFeatureTargetSupport) {}
+
+  public validate(): string[] {
+    return this.active ? this.delegate.validate() : [];
+  }
+}
+
+interface ProviderFeatureRegistration {
+  readonly mode: ProviderFeatureRegistrationMode;
+  readonly validation: GatedFeatureValidation;
+}
 
 export interface TerraformElementMetadata {
   readonly path: string;
@@ -41,11 +82,18 @@ export class TerraformElement extends Construct {
 
   /**
    * Provider-protocol feature families (see `ProviderFeature`) already
-   * registered via `registerProviderFeatureUsage` on this element, so
-   * repeated usage (e.g. a setter called multiple times) doesn't stack
-   * duplicate synth-time validations.
+   * registered on this element via `registerProviderFeatureUsage` or
+   * `_registerResolveDiscoveredProviderFeatureUsage`, so repeated usage
+   * (e.g. a setter called multiple times, or the same value resolved more
+   * than once in a synthesis pass) doesn't stack duplicate synth-time
+   * validations - each feature installs at most one node validation for
+   * the lifetime of the element, gated on/off via the registration's
+   * `active` flag instead of being re-added or removed.
    */
-  private readonly _registeredProviderFeatures = new Set<ProviderFeature>();
+  private readonly _registeredProviderFeatures = new Map<
+    ProviderFeature,
+    ProviderFeatureRegistration
+  >();
 
   constructor(scope: Construct, id: string, elementType?: string) {
     super(scope, id);
@@ -71,13 +119,71 @@ export class TerraformElement extends Construct {
    * Registers a synth-time validation that the project's declared
    * targetVersions admit the given provider-protocol feature family.
    * Called by generated provider bindings when a versioned feature is
-   * actually used (e.g. `ProviderFeature.WRITE_ONLY_ATTRIBUTES` when a
-   * write-only attribute is set); not intended to be called directly. Lives
-   * on `TerraformElement` (rather than `TerraformResource`) so it covers any
-   * element subclass that needs it, e.g. `TerraformEphemeralResource`.
+   * structurally in use - the element's existence in the construct tree
+   * already implies the feature is used, e.g. constructing a
+   * `TerraformEphemeralResource` at all - so, unlike
+   * `_registerResolveDiscoveredProviderFeatureUsage`, this registration is
+   * never deactivated by `_resetResolveDiscoveredProviderFeatureUsage`. Not
+   * intended to be called directly by user code. Lives on `TerraformElement`
+   * (rather than `TerraformResource`) so it covers any element subclass
+   * that needs it.
    */
   protected registerProviderFeatureUsage(feature: ProviderFeature): void {
-    if (this._registeredProviderFeatures.has(feature)) {
+    this._registerProviderFeature(feature, "structural");
+  }
+
+  /**
+   * Registers (or re-arms) a synth-time validation for a provider-protocol
+   * feature family whose usage is only known once a value is resolved
+   * during synthesis - e.g. `markWriteOnlyAttribute`'s wrapper, which calls
+   * this from its `resolve()` closure only when the resolved value turns
+   * out to be a real, renderable value.
+   *
+   * Unlike `registerProviderFeatureUsage`, a registration made through this
+   * method represents usage discovered during the CURRENT synthesis pass
+   * only: `_resetResolveDiscoveredProviderFeatureUsage` deactivates it at
+   * the start of each pass, and calling this method again re-activates it
+   * without installing a second, duplicate node validation. Every
+   * validation-enabled entry point (`App.synth`, `Testing.synth`/
+   * `synthHcl` with validations, `StackSynthesizer.synthesize`) runs a
+   * prepare step that performs this reset-then-rediscover cycle before
+   * validations run, so what a validation sees always reflects only the
+   * pass that is about to be validated.
+   *
+   * @internal
+   */
+  public _registerResolveDiscoveredProviderFeatureUsage(
+    feature: ProviderFeature,
+  ): void {
+    this._registerProviderFeature(feature, "resolve-discovered");
+  }
+
+  /**
+   * Deactivates every `resolve-discovered` provider-feature registration on
+   * this element (structural registrations are left untouched - see
+   * `ProviderFeatureRegistrationMode`). Called once per synthesis pass,
+   * before that pass's preparing resolve re-discovers whatever usage
+   * actually renders during it - see `TerraformStack._runPreparingResolve`.
+   *
+   * @internal
+   */
+  public _resetResolveDiscoveredProviderFeatureUsage(): void {
+    for (const registration of this._registeredProviderFeatures.values()) {
+      if (registration.mode === "resolve-discovered") {
+        registration.validation.active = false;
+      }
+    }
+  }
+
+  private _registerProviderFeature(
+    feature: ProviderFeature,
+    mode: ProviderFeatureRegistrationMode,
+  ): void {
+    const existing = this._registeredProviderFeatures.get(feature);
+    if (existing) {
+      // Already installed on this element: (re-)activate it rather than
+      // stacking a second node validation for the same feature.
+      existing.validation.active = true;
       return;
     }
 
@@ -87,8 +193,6 @@ export class TerraformElement extends Construct {
       throw unknownProviderFeature(feature);
     }
 
-    this._registeredProviderFeatures.add(feature);
-
     const constraints = providerFeatureConstraints[feature];
     const hint = `${providerFeatureHints[feature]} are available in ${Object.entries(
       constraints,
@@ -96,7 +200,7 @@ export class TerraformElement extends Construct {
       .map(([product, range]) => `${product} ${range}`)
       .join(" and ")}.`;
 
-    this.node.addValidation(
+    const validation = new GatedFeatureValidation(
       new ValidateFeatureTargetSupport(
         this,
         providerFeatureLabels[feature],
@@ -104,6 +208,9 @@ export class TerraformElement extends Construct {
         hint,
       ),
     );
+
+    this._registeredProviderFeatures.set(feature, { mode, validation });
+    this.node.addValidation(validation);
   }
 
   public toTerraform(): any {

@@ -213,4 +213,20 @@ describe("ephemeral resource target version validation", () => {
 
     expect(() => app.synth()).not.toThrow();
   });
+
+  // Round 6, Finding 3: registrations made via the plain (structural)
+  // `registerProviderFeatureUsage` - the element's mere existence is the
+  // usage, as here in TestEphemeralResource's constructor - are never
+  // deactivated by the per-synthesis-pass reset that resolve-discovered
+  // registrations (e.g. markWriteOnlyAttribute) go through. So, unlike a
+  // write-only attribute that can be cleared between passes, an ephemeral
+  // resource must keep failing old targets on every single synth of the
+  // same App for as long as it exists in the construct tree.
+  test("structural registration survives synthesis epochs: still fails old targets on a second synth of the same App", () => {
+    const { app, stack } = appWithStack();
+    new TestEphemeralResource(stack, "testResource", { name: "foo" });
+
+    expect(() => app.synth()).toThrow(/ephemeral resources requires/);
+    expect(() => app.synth()).toThrow(/ephemeral resources requires/);
+  });
 });
