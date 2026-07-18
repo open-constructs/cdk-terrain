@@ -14,7 +14,7 @@ describe("provider upgrade command", () => {
 
       await driver.exec("go", [
         "get",
-        "github.com/open-constructs/cdk-terrain-go/cdktn@v0.23.1,
+        "github.com/open-constructs/cdk-terrain-go/cdktn@v0.23.1",
       ]);
     });
 
