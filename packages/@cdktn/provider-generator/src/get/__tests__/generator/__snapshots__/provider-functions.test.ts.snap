@@ -9,10 +9,13 @@ import * as cdktn from 'cdktn';
 * Provider-defined functions of the example provider.
 */
 export class ExampleProviderFunctions {
+  private readonly providerLocalName: string;
+
   /**
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
-  constructor(private readonly providerLocalName: string) {
+  constructor(providerLocalName: string) {
+    this.providerLocalName = providerLocalName;
   }
 
   /**
@@ -54,7 +57,7 @@ export class ExampleProviderFunctions {
   * @param {string} separator
   * @param {Array<string>} values
   */
-  public joinStrings(separator: string, values: string[]): string {
+  public joinStrings(separator: string, values: Array<string>): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "join_strings", [separator, ...values]));
   }
 
@@ -105,7 +108,7 @@ export class ExampleProviderFunctions {
   * @param {number} defaultValue
   * @param {Array<number>} addends
   */
-  public sum(defaultValue: number, addends: number[]): number {
+  public sum(defaultValue: number, addends: Array<number>): number {
     return cdktn.Token.asNumber(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "sum", [defaultValue, ...addends]));
   }
 
@@ -131,7 +134,7 @@ export class ExampleProviderFunctions {
   * @param {string} label
   * @param {Array<string | null>} items
   */
-  public variadicNullable(label: string, items: any[]): string {
+  public variadicNullable(label: string, items: Array<any>): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "variadic_nullable", [label, ...items]));
   }
 }
@@ -188,7 +191,7 @@ export interface TimeProviderConfig {
   readonly alias?: string;
 }
 
-import { TimeProviderFunctions } from '../provider-functions';
+import { TimeProviderFunctions } from '../provider-functions/index';
 /**
 * Represents a {@link https://registry.terraform.io/providers/hashicorp/time/latest/docs time}
 */
@@ -306,10 +309,13 @@ import * as cdktn from 'cdktn';
 * Provider-defined functions of the time provider.
 */
 export class TimeProviderFunctions {
+  private readonly providerLocalName: string;
+
   /**
   * @param providerLocalName The local name of the provider in required_providers; defaults to the registry short name. Override when the provider is declared under a different local name — aliases do not change the namespace, local names do.
   */
-  constructor(private readonly providerLocalName: string) {
+  constructor(providerLocalName: string) {
+    this.providerLocalName = providerLocalName;
   }
 
   /**

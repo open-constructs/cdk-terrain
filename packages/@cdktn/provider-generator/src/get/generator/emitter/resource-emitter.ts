@@ -24,7 +24,7 @@ export class ResourceEmitter {
       // index.ts are siblings under providers/<provider>/, so unlike the
       // child-folder struct imports this one has to step up a level.
       this.code.line(
-        `import { ${resource.providerFunctionsModel.className} } from '../provider-functions${this.importExtension}';`,
+        `import { ${resource.providerFunctionsModel.className} } from '../provider-functions/index${this.importExtension}';`,
       );
     }
 

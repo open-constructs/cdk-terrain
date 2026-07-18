@@ -37,12 +37,20 @@ export class ProviderFunctionsEmitter {
   }
 
   private emitConstructor() {
+    // A TypeScript parameter property (`constructor(private readonly x: T)`)
+    // requires the compiler to synthesize a `this.x = x;` assignment - that's
+    // a real transform, not a type-only erasure, so it isn't recognized by
+    // Node's native type-stripping (`node file.ts` with no bundler/transpiler,
+    // e.g. `--experimental-strip-types`), which throws
+    // `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` on sight of one. Declare the field
+    // and assign it in the constructor body instead, which strips cleanly.
+    this.code.line(`private readonly providerLocalName: string;`);
+    this.code.line();
     const comment = sanitizedComment(this.code);
     comment.line(`@param providerLocalName ${PROVIDER_LOCAL_NAME_JSDOC}`);
     comment.end();
-    this.code.openBlock(
-      `constructor(private readonly providerLocalName: string)`,
-    );
+    this.code.openBlock(`constructor(providerLocalName: string)`);
+    this.code.line(`this.providerLocalName = providerLocalName;`);
     this.code.closeBlock();
   }
 
@@ -73,7 +81,12 @@ export class ProviderFunctionsEmitter {
         (p) => `${p.name}${p.optional ? "?" : ""}: ${p.tsType}`,
       ),
       ...(fn.variadicParameter
-        ? [`${fn.variadicParameter.name}: ${fn.variadicParameter.tsType}[]`]
+        ? // `Array<T>` rather than `T[]`: for a union element type (e.g.
+          // `boolean | cdktn.IResolvable`), bare `T[]` binds as `boolean |
+          // (cdktn.IResolvable[])` instead of `(boolean | cdktn.IResolvable)[]`.
+          [
+            `${fn.variadicParameter.name}: Array<${fn.variadicParameter.tsType}>`,
+          ]
         : []),
     ];
 
