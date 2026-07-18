@@ -40,7 +40,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install npm-check-updates@^22.2.9
+          npm -g install npm-check-updates@22.2.9
       # Install first so `nx` is available for the package listing below.
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
@@ -182,7 +182,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install npm-check-updates@^22.2.9
+          npm -g install npm-check-updates@22.2.9
       # Install first so `nx` is available for the package listing below.
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
@@ -277,7 +277,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install npm-check-updates@^22.2.9
+          npm -g install npm-check-updates@22.2.9
       # Install first so `nx` is available for the package listing below.
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
