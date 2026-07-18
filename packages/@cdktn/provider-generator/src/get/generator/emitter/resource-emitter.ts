@@ -139,8 +139,13 @@ export class ResourceEmitter {
     );
     this.code.open(`const attrs = {`);
 
+    const registerWriteOnlyUsage = this.supportsWriteOnlyRegistration(resource);
     for (const att of resource.synthesizableAttributes) {
-      this.attributesEmitter.emitToHclTerraform(att, false);
+      this.attributesEmitter.emitToHclTerraform(
+        att,
+        false,
+        registerWriteOnlyUsage,
+      );
     }
 
     this.code.close(`};`);
@@ -165,37 +170,44 @@ export class ResourceEmitter {
     );
     this.code.open(`return {`);
 
+    const registerWriteOnlyUsage = this.supportsWriteOnlyRegistration(resource);
     for (const att of resource.synthesizableAttributes) {
-      this.attributesEmitter.emitToTerraform(att, false);
+      this.attributesEmitter.emitToTerraform(
+        att,
+        false,
+        registerWriteOnlyUsage,
+      );
     }
 
     this.code.close(`};`);
     this.code.closeBlock();
   }
 
-  private emitResourceAttributes(resource: ResourceModel) {
-    // registerProviderFeatureUsage lives on TerraformElement, so every
-    // generated class could call it - but only managed resources register
-    // write-only usage; data sources, providers, and ephemeral resources
-    // only get the deprecated getter.
-    //
-    // write-only is fundamentally a state concept - the value is passed to
-    // the provider but never persisted to state - so gating this on
-    // TerraformResource is a semantic choice, not a capability one: ephemeral
-    // resources have no state at all, and, consistent with that, no
-    // provider schema in the RFC-04 sweep (including vault's 16 ephemeral
-    // resources) marks an ephemeral attribute write_only. So ephemeral
-    // classes deliberately land in the same "getter only" bucket as data
-    // sources and providers.
-    const canRegisterProviderFeatureUsage =
-      resource.parentClassName === "TerraformResource";
+  // `markWriteOnlyAttribute` (called from generated `synthesizeAttributes()`/
+  // `synthesizeHclAttributes()` for write-only attributes, see
+  // AttributesEmitter#emitToTerraform/#emitToHclTerraform) lives on
+  // TerraformResource - so only managed resources can register write-only
+  // usage; data sources, providers, and ephemeral resources only get the
+  // deprecated getter.
+  //
+  // write-only is fundamentally a state concept - the value is passed to
+  // the provider but never persisted to state - so gating this on
+  // TerraformResource is a semantic choice, not a capability one: ephemeral
+  // resources have no state at all, and, consistent with that, no provider
+  // schema in the RFC-04 sweep (including vault's 16 ephemeral resources)
+  // marks an ephemeral attribute write_only. So ephemeral classes
+  // deliberately land in the same "getter only" bucket as data sources and
+  // providers.
+  private supportsWriteOnlyRegistration(resource: ResourceModel): boolean {
+    return resource.parentClassName === "TerraformResource";
+  }
 
+  private emitResourceAttributes(resource: ResourceModel) {
     for (const att of resource.attributes) {
       this.attributesEmitter.emit(
         att,
         this.attributesEmitter.needsResetEscape(att, resource.attributes),
         this.attributesEmitter.needsInputEscape(att, resource.attributes),
-        canRegisterProviderFeatureUsage,
       );
     }
   }
@@ -234,8 +246,13 @@ export class ResourceEmitter {
     }
 
     // initialize config properties
-    const canRegisterProviderFeatureUsage =
-      resource.parentClassName === "TerraformResource";
+    //
+    // Write-only usage is not registered here: registration now happens at
+    // resolve time from synthesizeAttributes()/synthesizeHclAttributes()
+    // (see AttributesEmitter#emitToTerraform/#emitToHclTerraform and
+    // TerraformResource#markWriteOnlyAttribute), not at mutation time, so
+    // there is no mutation-time guard to emit for constructor assignment
+    // either.
     for (const att of resource.configStruct.assignableAttributes) {
       if (att.setterType._type === "stored_class") {
         this.code.line(
@@ -243,16 +260,6 @@ export class ResourceEmitter {
         );
       } else {
         this.code.line(`this.${att.storageName} = config.${att.name};`);
-      }
-
-      // Constructor assignments bypass the setter above, so write-only
-      // usage must be registered here as well for the config value passed
-      // directly to the constructor (see the setter registration in
-      // AttributesEmitter for the corresponding property-set path).
-      if (att.isWriteOnly && canRegisterProviderFeatureUsage) {
-        this.code.line(
-          `if (config.${att.name} != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
-        );
       }
     }
 

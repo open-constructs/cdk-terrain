@@ -33,6 +33,14 @@
                 "sensitive": true,
                 "write_only": true
               },
+              "secondary_secret_key_wo": {
+                "type": "string",
+                "description": "Optional write-only secondary AliCloud Secret Access Key. This value will never be read back from Vault.",
+                "description_kind": "markdown",
+                "optional": true,
+                "sensitive": true,
+                "write_only": true
+              },
               "secret_key_wo_version": {
                 "type": "number",
                 "description": "A version counter for the write-only `secret_key_wo` field. Incrementing this value will trigger an update to the secret key in Vault.",

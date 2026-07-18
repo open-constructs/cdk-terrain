@@ -35,6 +35,12 @@ export interface AlicloudSecretBackendConfig extends cdktn.TerraformMetaArgument
   */
   readonly secretKeyWo: string;
   /**
+  * Optional write-only secondary AliCloud Secret Access Key. This value will never be read back from Vault.
+  *
+  * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/alicloud_secret_backend#secondary_secret_key_wo AlicloudSecretBackend#secondary_secret_key_wo}
+  */
+  readonly secondarySecretKeyWo?: string;
+  /**
   * A version counter for the write-only \`secret_key_wo\` field. Incrementing this value will trigger an update to the secret key in Vault.
   *
   * Docs at Terraform Registry: {@link https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/alicloud_secret_backend#secret_key_wo_version AlicloudSecretBackend#secret_key_wo_version}
@@ -95,7 +101,7 @@ export class AlicloudSecretBackend extends cdktn.TerraformResource {
     this._mount = config.mount;
     this._namespace = config.namespace;
     this._secretKeyWo = config.secretKeyWo;
-    if (config.secretKeyWo != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }
+    this._secondarySecretKeyWo = config.secondarySecretKeyWo;
     this._secretKeyWoVersion = config.secretKeyWoVersion;
   }
 
@@ -154,12 +160,30 @@ export class AlicloudSecretBackend extends cdktn.TerraformResource {
     return this.getStringAttribute('secret_key_wo');
   }
   public set secretKeyWo(value: string) {
-    if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }
     this._secretKeyWo = value;
   }
   // Temporarily expose input value. Use with caution.
   public get secretKeyWoInput() {
     return this._secretKeyWo;
+  }
+
+  // secondary_secret_key_wo - computed: false, optional: true, required: false
+  private _secondarySecretKeyWo?: string; 
+  /**
+  * @deprecated Write-only: the provider never returns this value; reading it always yields null by protocol contract. The getter remains for compatibility and will be removed in a future prebuilt-provider major.
+  */
+  public get secondarySecretKeyWo() {
+    return this.getStringAttribute('secondary_secret_key_wo');
+  }
+  public set secondarySecretKeyWo(value: string) {
+    this._secondarySecretKeyWo = value;
+  }
+  public resetSecondarySecretKeyWo() {
+    this._secondarySecretKeyWo = undefined;
+  }
+  // Temporarily expose input value. Use with caution.
+  public get secondarySecretKeyWoInput() {
+    return this._secondarySecretKeyWo;
   }
 
   // secret_key_wo_version - computed: false, optional: false, required: true
@@ -184,7 +208,8 @@ export class AlicloudSecretBackend extends cdktn.TerraformResource {
       access_key: cdktn.stringToTerraform(this._accessKey),
       mount: cdktn.stringToTerraform(this._mount),
       namespace: cdktn.stringToTerraform(this._namespace),
-      secret_key_wo: cdktn.stringToTerraform(this._secretKeyWo),
+      secret_key_wo: this.markWriteOnlyAttribute(cdktn.stringToTerraform(this._secretKeyWo)),
+      secondary_secret_key_wo: this.markWriteOnlyAttribute(cdktn.stringToTerraform(this._secondarySecretKeyWo)),
       secret_key_wo_version: cdktn.numberToTerraform(this._secretKeyWoVersion),
     };
   }
@@ -210,7 +235,13 @@ export class AlicloudSecretBackend extends cdktn.TerraformResource {
         storageClassType: "string",
       },
       secret_key_wo: {
-        value: cdktn.stringToHclTerraform(this._secretKeyWo),
+        value: this.markWriteOnlyAttribute(cdktn.stringToHclTerraform(this._secretKeyWo)),
+        isBlock: false,
+        type: "simple",
+        storageClassType: "string",
+      },
+      secondary_secret_key_wo: {
+        value: this.markWriteOnlyAttribute(cdktn.stringToHclTerraform(this._secondarySecretKeyWo)),
         isBlock: false,
         type: "simple",
         storageClassType: "string",

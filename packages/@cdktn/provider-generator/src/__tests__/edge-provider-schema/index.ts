@@ -12,9 +12,11 @@ const optional_attribute_resource = new S()
   .addAllPrimitiveTypes({ required: false, computed: false })
   .addAllPrimitiveListTypes({ required: false, computed: false })
   // Write-only attribute (RFC-04 / protocol v6): exercises the deprecated
-  // getter + `registerProviderFeatureUsage` setter/constructor guards on an
-  // existing managed resource. Left optional so no existing usage of
-  // OptionalAttributeResource across the edge test suite needs updating.
+  // getter + the resolve-time `markWriteOnlyAttribute` wrapping in
+  // synthesizeAttributes()/synthesizeHclAttributes() on an existing managed
+  // resource. Left optional so no existing usage of
+  // OptionalAttributeResource across the edge test suite needs updating
+  // (and so it also generates a reset method).
   .attribute({
     name: "secretWo",
     type: "string",

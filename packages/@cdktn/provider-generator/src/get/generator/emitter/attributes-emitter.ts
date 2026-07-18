@@ -16,19 +16,7 @@ function titleCase(value: string) {
 export class AttributesEmitter {
   constructor(private code: CodeMaker) {}
 
-  /**
-   * @param registerWriteOnlyUsage Whether a write-only attribute's setter
-   * should emit a `registerProviderFeatureUsage` call. Only true for
-   * attributes emitted on classes that extend TerraformResource (managed
-   * resources); struct OutputReference classes have no construct node to
-   * register a validation against, so they only get the deprecated getter.
-   */
-  public emit(
-    att: AttributeModel,
-    escapeReset: boolean,
-    escapeInput: boolean,
-    registerWriteOnlyUsage = false,
-  ) {
+  public emit(att: AttributeModel, escapeReset: boolean, escapeInput: boolean) {
     this.code.line();
     this.code.line(
       `// ${att.terraformName} - computed: ${att.computed}, optional: ${att.isOptional}, required: ${att.isRequired}`,
@@ -81,18 +69,16 @@ export class AttributesEmitter {
     }
 
     const setterType = att.setterType;
-    const emitWriteOnlyRegistration = att.isWriteOnly && registerWriteOnlyUsage;
 
+    // Write-only usage is registered at resolve time instead (see
+    // #emitToTerraform/#emitToHclTerraform and
+    // TerraformResource#markWriteOnlyAttribute), so setters intentionally
+    // emit no registration call here: they only store the value.
     switch (setterType._type) {
       case "set":
         this.code.openBlock(
           `public set ${att.name}(value: ${setterType.type})`,
         );
-        if (emitWriteOnlyRegistration) {
-          this.code.line(
-            `if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
-          );
-        }
         this.code.line(`this.${att.storageName} = value;`);
         this.code.closeBlock();
         break;
@@ -101,11 +87,6 @@ export class AttributesEmitter {
         this.code.openBlock(
           `public put${titleCase(att.name)}(value: ${setterType.type})`,
         );
-        if (emitWriteOnlyRegistration) {
-          this.code.line(
-            `if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
-          );
-        }
         this.code.line(`this.${att.storageName} = value;`);
         this.code.closeBlock();
         break;
@@ -114,11 +95,6 @@ export class AttributesEmitter {
         this.code.openBlock(
           `public put${titleCase(att.name)}(value: ${setterType.type})`,
         );
-        if (emitWriteOnlyRegistration) {
-          this.code.line(
-            `if (value != null) { this.registerProviderFeatureUsage(cdktn.ProviderFeature.WRITE_ONLY_ATTRIBUTES); }`,
-          );
-        }
         this.code.line(`this.${att.storageName}.internalValue = value;`);
         this.code.closeBlock();
         break;
@@ -250,7 +226,20 @@ export class AttributesEmitter {
     }
   }
 
-  public emitToHclTerraform(att: AttributeModel, isStruct: boolean) {
+  /**
+   * @param canRegisterProviderFeatureUsage Whether this attribute's mapped
+   * value should be wrapped in `this.markWriteOnlyAttribute(...)` when it is
+   * write-only. Only true for attributes emitted on classes that extend
+   * TerraformResource (managed resources) - struct-level `xToTerraform`/
+   * `xToHclTerraform` functions are standalone functions with no `this` of
+   * that type, so they never pass this (see ResourceEmitter's
+   * `supportsWriteOnlyRegistration`).
+   */
+  public emitToHclTerraform(
+    att: AttributeModel,
+    isStruct: boolean,
+    canRegisterProviderFeatureUsage = false,
+  ) {
     const type = att.type;
     const context = isStruct ? "struct!" : "this";
     const name = isStruct ? att.name : att.storageName;
@@ -269,7 +258,15 @@ export class AttributesEmitter {
         ? `${varReference} === undefined ? ${customDefault} : `
         : "";
 
-    const value = `${defaultCheck}${type.toHclTerraformFunction}(${varReference})`;
+    const mappedValue = `${defaultCheck}${type.toHclTerraformFunction}(${varReference})`;
+    // markWriteOnlyAttribute() passes `undefined`/`null` straight through
+    // unwrapped, so this keeps the "remove undefined attributes" filter in
+    // the caller (which checks `value.value !== undefined`) working exactly
+    // as before for unset/cleared write-only attributes.
+    const value =
+      att.isWriteOnly && canRegisterProviderFeatureUsage
+        ? `this.markWriteOnlyAttribute(${mappedValue})`
+        : mappedValue;
     const isBlock = att.type.isComplex;
     const tt = att.type.typeModelType;
 
@@ -281,7 +278,11 @@ export class AttributesEmitter {
     this.code.close("},");
   }
 
-  public emitToTerraform(att: AttributeModel, isStruct: boolean) {
+  public emitToTerraform(
+    att: AttributeModel,
+    isStruct: boolean,
+    canRegisterProviderFeatureUsage = false,
+  ) {
     const type = att.type;
     const context = isStruct ? "struct!" : "this";
     const name = isStruct ? att.name : att.storageName;
@@ -300,8 +301,16 @@ export class AttributesEmitter {
         ? `${varReference} === undefined ? ${customDefault} : `
         : "";
 
-    this.code.line(
-      `${att.terraformName}: ${defaultCheck}${type.toTerraformFunction}(${varReference}),`,
-    );
+    const mappedValue = `${defaultCheck}${type.toTerraformFunction}(${varReference})`;
+    // markWriteOnlyAttribute() passes `undefined`/`null` straight through
+    // unwrapped, so an unset/cleared write-only attribute still vanishes
+    // from the returned object exactly as before (see the "skip undefined"
+    // step in tokens/private/resolve.ts).
+    const value =
+      att.isWriteOnly && canRegisterProviderFeatureUsage
+        ? `this.markWriteOnlyAttribute(${mappedValue})`
+        : mappedValue;
+
+    this.code.line(`${att.terraformName}: ${value},`);
   }
 }

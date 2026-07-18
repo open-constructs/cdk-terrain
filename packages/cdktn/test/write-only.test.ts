@@ -1,12 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import {
-  App,
-  ProviderFeature,
-  TerraformResource,
-  TerraformStack,
-  Testing,
-} from "../src";
+import { App, Lazy, Testing, TerraformResource, TerraformStack } from "../src";
 import { Construct } from "constructs";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
@@ -15,12 +9,15 @@ const tmp = createTmpHelper();
 
 /**
  * Stand-in for a generated resource binding that has a write-only attribute.
- * Mirrors what the provider-generator emits: the setter registers usage of
- * the "writeOnlyAttributes" provider-protocol feature family, but only when
- * the assigned value is neither `null` nor `undefined` - setting an
- * attribute to `null` is equivalent to omitting it in Terraform, and a
- * non-TypeScript jsii caller (Python `None`, Go `nil`, ...) can pass `null`
- * through even though the TypeScript setter signature itself is non-null.
+ * Mirrors what the provider-generator now emits: mutation (setter/
+ * constructor/reset) is a plain, unguarded assignment - no
+ * `registerProviderFeatureUsage` call happens at mutation time at all.
+ * Registration instead happens at *resolve* time, from inside
+ * `synthesizeAttributes()`, by wrapping the mapped value in
+ * `this.markWriteOnlyAttribute(...)` (see AttributesEmitter#emitToTerraform
+ * and TerraformResource#markWriteOnlyAttribute). Validation therefore
+ * derives from what actually renders, not from whether a setter was ever
+ * called with a non-null value.
  */
 class TestWriteOnlyResource extends TerraformResource {
   private _secretKeyWo?: string;
@@ -34,20 +31,18 @@ class TestWriteOnlyResource extends TerraformResource {
       terraformResourceType: "test_write_only_resource",
     });
     this._secretKeyWo = config.secretKeyWo ?? undefined;
-    if (config.secretKeyWo != null) {
-      this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
-    }
   }
 
   public set secretKeyWo(value: string) {
-    if (value != null) {
-      this.registerProviderFeatureUsage(ProviderFeature.WRITE_ONLY_ATTRIBUTES);
-    }
     this._secretKeyWo = value;
   }
 
   public get secretKeyWo(): string {
     return this._secretKeyWo as string;
+  }
+
+  public resetSecretKeyWo() {
+    this._secretKeyWo = undefined;
   }
 
   /**
@@ -60,7 +55,9 @@ class TestWriteOnlyResource extends TerraformResource {
   }
 
   protected synthesizeAttributes(): { [name: string]: any } {
-    return { secret_key_wo: this._secretKeyWo };
+    return {
+      secret_key_wo: this.markWriteOnlyAttribute(this._secretKeyWo),
+    };
   }
 }
 
@@ -74,11 +71,24 @@ function appWithStack(context?: Record<string, any>) {
   return { app, stack };
 }
 
-describe("registerProviderFeatureUsage", () => {
+/**
+ * Reads back the write-only attribute of the single `testResource` from the
+ * fully resolved (but not validated) synthesized JSON - i.e. what actually
+ * renders, independent of whether target-version validation would pass or
+ * fail.
+ */
+function synthesizedSecretKeyWo(stack: TerraformStack): unknown {
+  const tfConfig = JSON.parse(Testing.synth(stack));
+  return tfConfig.resource?.test_write_only_resource?.testResource
+    ?.secret_key_wo;
+}
+
+describe("registerProviderFeatureUsage (write-only attributes)", () => {
   test("feature not used: synth passes", () => {
     const { app, stack } = appWithStack();
     new TestWriteOnlyResource(stack, "testResource", {});
 
+    expect(synthesizedSecretKeyWo(stack)).toBeUndefined();
     expect(() => app.synth()).not.toThrow();
   });
 
@@ -109,14 +119,19 @@ describe("registerProviderFeatureUsage", () => {
     expect(() => app.synth()).not.toThrow();
   });
 
-  test("repeated setter calls do not stack duplicate validations", () => {
+  test("a single app.synth() call (prepareStack's preparing resolve + the synthesizer's final resolve) does not stack duplicate validations", () => {
+    // App.synth() itself performs two resolve passes over every element's
+    // toTerraform() - prepareStack's preparing pass, then the synthesizer's
+    // final render - so even a single synth() call resolves (and so
+    // registers) markWriteOnlyAttribute's wrapper twice. The dedup Set on
+    // TerraformElement must collapse that into one validation, one error
+    // line.
     const { app, stack } = appWithStack({
       targetVersions: { terraform: ">=1.5.7" },
     });
-    const resource = new TestWriteOnlyResource(stack, "testResource", {});
-    resource.secretKeyWo = "one";
-    resource.secretKeyWo = "two";
-    resource.secretKeyWo = "three";
+    new TestWriteOnlyResource(stack, "testResource", {
+      secretKeyWo: "shh",
+    });
 
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
@@ -127,41 +142,122 @@ describe("registerProviderFeatureUsage", () => {
     `);
   });
 
-  test("constructor: explicit null is treated as omission, synth passes", () => {
+  // (a) non-null setter value then explicit null before synth. Assigning a
+  // literal `null` through the (raw-assignment) setter renders as an
+  // explicit JSON `null` - Terraform's own "omit this attribute" spelling,
+  // distinct from the key being absent entirely - but either way the
+  // resolved value is not-a-real-value, so it must not register/arm the
+  // validation.
+  test("setter: value then cleared with null before synth: attribute nulled out, synth passes", () => {
     const { app, stack } = appWithStack();
-    const resource = new TestWriteOnlyResource(stack, "testResource", {
-      secretKeyWo: null,
-    });
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = "shh";
+    resource.secretKeyWo = null as unknown as string;
 
+    expect(synthesizedSecretKeyWo(stack)).toBeNull();
     expect(() => app.synth()).not.toThrow();
-    expect(resource.secretKeyWo).toBeUndefined();
   });
 
-  test("constructor: a real value registers usage, synth fails", () => {
+  // (b) non-null setter value then reset before synth
+  test("setter: value then reset before synth: attribute omitted, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = "shh";
+    resource.resetSecretKeyWo();
+
+    expect(synthesizedSecretKeyWo(stack)).toBeUndefined();
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  // (c) non-null constructor value then reset before synth
+  test("constructor: value then reset before synth: attribute omitted, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {
+      secretKeyWo: "shh",
+    });
+    resource.resetSecretKeyWo();
+
+    expect(synthesizedSecretKeyWo(stack)).toBeUndefined();
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  // (d) value present at synth
+  test("setter: a real value present at synth: attribute renders, synth fails", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = "shh";
+
+    expect(synthesizedSecretKeyWo(stack)).toBe("shh");
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
+  });
+
+  test("constructor: a real value present at synth: attribute renders, synth fails", () => {
     const { app, stack } = appWithStack();
     new TestWriteOnlyResource(stack, "testResource", {
       secretKeyWo: "shh",
     });
 
+    expect(synthesizedSecretKeyWo(stack)).toBe("shh");
     expect(() => app.synth()).toThrow(/write-only attributes requires/);
   });
 
-  test("setter: assigning null is treated as omission, synth passes", () => {
+  // (e) re-set after clearing re-arms the validation
+  test("re-setting a value after clearing it fails again (re-arm)", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = "shh";
+    resource.secretKeyWo = null as unknown as string;
+    // If registration were still sticky/event-based, clearing above would
+    // have permanently armed the validation regardless of what happens
+    // next. It must not: only the FINAL, rendered value matters.
+    resource.secretKeyWo = "shh again";
+
+    expect(synthesizedSecretKeyWo(stack)).toBe("shh again");
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
+  });
+
+  // (f) a Lazy/IResolvable producer - the token case that motivated this
+  // design: at setter-call time, the value is always a non-null token
+  // string, so an event-based "value != null" guard cannot tell whether the
+  // producer will actually contribute anything until resolve time.
+  test("Lazy producer resolving to undefined: attribute omitted, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = Lazy.stringValue({ produce: () => undefined });
+
+    expect(synthesizedSecretKeyWo(stack)).toBeUndefined();
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("Lazy producer resolving to a string: attribute renders, synth fails", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = Lazy.stringValue({ produce: () => "lazy-shh" });
+
+    expect(synthesizedSecretKeyWo(stack)).toBe("lazy-shh");
+    expect(() => app.synth()).toThrow(/write-only attributes requires/);
+  });
+
+  // (g) explicit null from the start (previous round's semantics, preserved)
+  test("constructor: explicit null from the start is treated as omission, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {
+      secretKeyWo: null,
+    });
+
+    expect(resource.secretKeyWo).toBeUndefined();
+    expect(synthesizedSecretKeyWo(stack)).toBeUndefined();
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("setter: assigning null (never having set a real value) is treated as omission, synth passes", () => {
     const { app, stack } = appWithStack();
     const resource = new TestWriteOnlyResource(stack, "testResource", {});
 
     resource.secretKeyWo = null as unknown as string;
 
+    expect(synthesizedSecretKeyWo(stack)).toBeNull();
     expect(() => app.synth()).not.toThrow();
-  });
-
-  test("setter: assigning a real value registers usage, synth fails", () => {
-    const { app, stack } = appWithStack();
-    const resource = new TestWriteOnlyResource(stack, "testResource", {});
-
-    resource.secretKeyWo = "shh";
-
-    expect(() => app.synth()).toThrow(/write-only attributes requires/);
   });
 
   test("unknown feature key throws", () => {

@@ -30,25 +30,45 @@ test("generate a vault_alicloud_secret_backend resource with a write-only attrib
   expect(output).toMatch(
     /@deprecated Write-only: the provider never returns this value[\s\S]*?public get secretKeyWo\(\)/,
   );
-  // ... its setter registers the usage of the write-only-attributes feature,
-  // but only when the assigned value isn't null/undefined (setting an
-  // attribute to null is equivalent to omitting it in Terraform) ...
+  // ... its setter is a plain assignment - no registration happens at
+  // mutation time anymore ...
   expect(output).toMatch(
-    /public set secretKeyWo\(value: string\) \{\n\s*if \(value != null\) \{ this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\); \}/,
+    /public set secretKeyWo\(value: string\) \{\n\s*this\._secretKeyWo = value;\n\s*\}/,
   );
-  // ... and so does the constructor-assigned config value, with the same
-  // null-or-undefined-means-omitted guard.
+  // ... nor does the constructor-assigned config value register anything.
+  expect(output).not.toMatch(/registerProviderFeatureUsage/);
+  // Registration instead happens at resolve time, from inside
+  // synthesizeAttributes()/synthesizeHclAttributes(), by wrapping the
+  // mapped value in markWriteOnlyAttribute() ...
   expect(output).toMatch(
-    /if \(config\.secretKeyWo != null\) \{ this\.registerProviderFeatureUsage\(cdktn\.ProviderFeature\.WRITE_ONLY_ATTRIBUTES\); \}/,
+    /secret_key_wo: this\.markWriteOnlyAttribute\(cdktn\.stringToTerraform\(this\._secretKeyWo\)\),/,
+  );
+  expect(output).toMatch(
+    /value: this\.markWriteOnlyAttribute\(cdktn\.stringToHclTerraform\(this\._secretKeyWo\)\),/,
+  );
+
+  // The required write-only attribute gets no reset method (required
+  // attributes never do) ...
+  expect(output).not.toMatch(/resetSecretKeyWo\b/);
+  // ... but the OPTIONAL write-only sibling does, exercising the reset ->
+  // clear -> synth-passes path end to end at the generator level.
+  expect(output).toMatch(
+    /public resetSecondarySecretKeyWo\(\) \{\n\s*this\._secondarySecretKeyWo = undefined;\n\s*\}/,
+  );
+  expect(output).toMatch(
+    /secondary_secret_key_wo: this\.markWriteOnlyAttribute\(cdktn\.stringToTerraform\(this\._secondarySecretKeyWo\)\),/,
   );
 
   // The non-write-only sibling attribute is untouched: its getter is
-  // emitted directly (no @deprecated JSDoc immediately above), and its
-  // setter has no registration call.
+  // emitted directly (no @deprecated JSDoc immediately above), its setter
+  // has no registration call, and its synthesis isn't wrapped.
   expect(output).toMatch(
     /private _secretKeyWoVersion\?: number; \n\s*public get secretKeyWoVersion\(\)/,
   );
   expect(output).toMatch(
     /public set secretKeyWoVersion\(value: number\) \{\n\s*this\._secretKeyWoVersion = value;\n\s*\}/,
+  );
+  expect(output).toMatch(
+    /secret_key_wo_version: cdktn\.numberToTerraform\(this\._secretKeyWoVersion\),/,
   );
 });

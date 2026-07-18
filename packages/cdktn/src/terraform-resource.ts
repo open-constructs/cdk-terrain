@@ -12,7 +12,9 @@ import {
 } from "./util";
 import { ITerraformDependable } from "./terraform-dependable";
 import { ref, dependable } from "./tfExpression";
-import { IResolvable } from "./tokens/resolvable";
+import { IResolvable, IResolveContext } from "./tokens/resolvable";
+import { captureCreationStack } from "./tokens/private/stack-trace";
+import { ProviderFeature } from "./provider-feature-constraints";
 import { IInterpolatingParent } from "./terraform-addressable";
 import { ITerraformIterator } from "./terraform-iterator";
 import { Precondition, Postcondition } from "./terraform-conditions";
@@ -249,6 +251,64 @@ export class TerraformResource
   }
   protected synthesizeHclAttributes(): { [name: string]: any } {
     return {};
+  }
+
+  /**
+   * Wraps a write-only attribute's already-mapped value so that
+   * `ProviderFeature.WRITE_ONLY_ATTRIBUTES` usage is registered at
+   * *resolve* time instead of at mutation time (setter/constructor).
+   * Called by generated bindings from `synthesizeAttributes()` and
+   * `synthesizeHclAttributes()`, e.g.
+   * `secret_key_wo: this.markWriteOnlyAttribute(cdktn.stringToTerraform(this._secretKeyWo))`;
+   * not intended to be called directly.
+   *
+   * `undefined` passes through completely unchanged, so the existing
+   * undefined-filtering that omits unset attributes from synthesized
+   * output (see `resolve()` in `tokens/private/resolve.ts`, and the
+   * `value.value !== undefined` filter in generated
+   * `synthesizeHclAttributes()`) keeps working untouched. `null` is also
+   * passed through unchanged: it already renders as an explicit
+   * null-out and must not arm the validation either.
+   *
+   * Any other value - including one that will itself resolve to nothing
+   * (e.g. a `Lazy`/`IResolvable` producer with no value to contribute) -
+   * is wrapped in a token whose `resolve()` defers to the real resolver
+   * first and registers usage only if what comes back is not
+   * `null`/`undefined`; the resolved value is then returned unchanged,
+   * so what actually renders is untouched by this wrapper. A producer
+   * that resolves to `undefined` therefore neither registers usage nor
+   * leaves anything behind in the synthesized attribute - the omission
+   * behaves exactly as if the attribute had never been set.
+   *
+   * This mirrors the resolve-time function-usage registry (see
+   * `FunctionCall.resolve()` in `tfExpression.ts`): only usage that
+   * actually reaches synthesized configuration is validated, and
+   * `App.synth()`'s ordering guarantee - prepareStack's preparing
+   * resolve of every element's `toTerraform()`, for ALL stacks, runs
+   * before ANY stack's validations - means the registration this
+   * produces is always visible to the validation that reads it.
+   */
+  protected markWriteOnlyAttribute(value: any): any {
+    if (value === undefined || value === null) {
+      return value;
+    }
+
+    const resource = this;
+    return {
+      creationStack: captureCreationStack(),
+      resolve(context: IResolveContext): any {
+        const resolved = context.resolve(value);
+        if (resolved != null) {
+          resource.registerProviderFeatureUsage(
+            ProviderFeature.WRITE_ONLY_ATTRIBUTES,
+          );
+        }
+        return resolved;
+      },
+      toString(): string {
+        return Token.asString(this);
+      },
+    } as IResolvable;
   }
 
   /**
