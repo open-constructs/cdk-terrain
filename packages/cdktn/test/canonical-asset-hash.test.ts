@@ -166,6 +166,50 @@ describe("canonical archive hashing tracks the emitted ZIP", () => {
     expect(canonicalArchive(srcDir)).not.toBe(before.hash);
   });
 
+  test("equivalent trees with different creation histories emit identical archives", () => {
+    const build = (root: string, order: string[]) => {
+      fs.mkdirSync(path.join(root, "sub"));
+      for (const name of order) {
+        fs.writeFileSync(path.join(root, "sub", name), `content of ${name}`);
+      }
+      // perturb enumeration order on filesystems where it tracks history
+      fs.writeFileSync(path.join(root, "sub", "tmp"), "gone");
+      fs.rmSync(path.join(root, "sub", "tmp"));
+    };
+    const otherDir = createTempDir();
+    build(srcDir, ["a.txt", "b.txt", "c.txt"]);
+    build(otherDir, ["c.txt", "a.txt", "b.txt"]);
+
+    const zipOther = path.join(outDir, "other.zip");
+    archiveSync(otherDir, zipOther);
+
+    expect(zipBytes().equals(fs.readFileSync(zipOther))).toBe(true);
+    expect(canonicalArchive(srcDir)).toBe(canonicalArchive(otherDir));
+
+    fs.rmSync(otherDir, { recursive: true, force: true });
+  });
+
+  test("archive bytes do not depend on filesystem enumeration order", () => {
+    fs.mkdirSync(path.join(srcDir, "sub"));
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "a");
+    fs.writeFileSync(path.join(srcDir, "b.txt"), "b");
+    fs.writeFileSync(path.join(srcDir, "sub", "c.txt"), "c");
+    const before = { zip: zipBytes(), hash: canonicalArchive(srcDir) };
+
+    // simulate a filesystem that enumerates entries in a different order
+    const original = fs.readdirSync;
+    const spy = jest
+      .spyOn(fs, "readdirSync")
+      .mockImplementation(((p: any, o: any) =>
+        (original.call(fs, p, o) as any[]).slice().reverse()) as any);
+    try {
+      expect(zipBytes().equals(before.zip)).toBe(true);
+      expect(canonicalArchive(srcDir)).toBe(before.hash);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   test("files inside non-empty directories stay visible to the archive hash", () => {
     fs.mkdirSync(path.join(srcDir, "sub"));
     fs.writeFileSync(path.join(srcDir, "sub", "a.txt"), "content");

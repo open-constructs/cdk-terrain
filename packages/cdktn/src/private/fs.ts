@@ -76,7 +76,9 @@ export function archiveSync(src: string, dest: string) {
   try {
     const files: Record<string, [Uint8Array, ZipOptions]> = {};
     const walk = (dir: string, prefix: string) => {
-      for (const entry of fs.readdirSync(dir)) {
+      // Sorted so entry order — and therefore archive bytes — cannot depend
+      // on filesystem enumeration order; matches the canonical hash walk.
+      for (const entry of fs.readdirSync(dir).sort()) {
         const full = path.join(dir, entry);
         const zipPath = prefix ? `${prefix}/${entry}` : entry;
         const stat = fs.lstatSync(full);
