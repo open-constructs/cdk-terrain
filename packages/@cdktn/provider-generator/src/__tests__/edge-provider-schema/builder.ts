@@ -1,18 +1,29 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { ProviderSchema, Schema, AttributeType, Block } from "@cdktn/commons";
+import {
+  ProviderSchema,
+  Schema,
+  AttributeType,
+  Block,
+  FunctionSignature,
+} from "@cdktn/commons";
 
 type ResourceSchema = { [type: string]: Schema };
+type FunctionSchema = { [name: string]: FunctionSignature };
 export function schema({
   name,
   provider,
   resources = {},
   dataSources = {},
+  ephemeralResources = {},
+  functions = {},
 }: {
   name: string;
   provider: Schema;
   resources: ResourceSchema;
   dataSources: ResourceSchema;
+  ephemeralResources?: ResourceSchema;
+  functions?: FunctionSchema;
 }): ProviderSchema {
   return {
     format_version: "0.2",
@@ -21,6 +32,8 @@ export function schema({
         provider: provider,
         resource_schemas: resources,
         data_source_schemas: dataSources,
+        ephemeral_resource_schemas: ephemeralResources,
+        functions: functions,
       },
     },
   };
@@ -45,18 +58,21 @@ export class SchemaBuilder {
     required = false,
     computed = false,
     optional = !required,
+    writeOnly = false,
   }: {
     name: string;
     type: AttributeType;
     required?: boolean;
     computed?: boolean;
     optional?: boolean;
+    writeOnly?: boolean;
   }): SchemaBuilder {
     this.schema.block.attributes[name] = {
       type,
       optional,
       computed,
       required,
+      write_only: writeOnly,
     };
     return this;
   }
