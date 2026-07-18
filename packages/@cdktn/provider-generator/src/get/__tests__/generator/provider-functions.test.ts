@@ -3,6 +3,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { TerraformProviderGenerator } from "../../generator/provider-generator";
+import { buildProviderFunctionsModel } from "../../generator/models/provider-function-model";
 import { CodeMaker } from "codemaker";
 import { createTmpHelper } from "../util";
 
@@ -72,4 +73,44 @@ test("generate provider functions covering variadic parameters, primitive/list r
     "utf-8",
   );
   expect(providerLazyIndex).toMatchSnapshot("provider-lazy-index");
+});
+
+test("buildProviderFunctionsModel throws when two function names collapse to the same generated method name", () => {
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      foo_bar: { return_type: "string", parameters: [] },
+      foo__bar: { return_type: "string", parameters: [] },
+    }),
+  ).toThrow(/foo_bar/);
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      foo_bar: { return_type: "string", parameters: [] },
+      foo__bar: { return_type: "string", parameters: [] },
+    }),
+  ).toThrow(/foo__bar/);
+});
+
+test("buildProviderFunctionsModel throws when two parameter names collapse within one function", () => {
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      my_function: {
+        return_type: "string",
+        parameters: [
+          { name: "some_value", type: "string" },
+          { name: "some__value", type: "string" },
+        ],
+      },
+    }),
+  ).toThrow(/some_value/);
+  expect(() =>
+    buildProviderFunctionsModel("example", {
+      my_function: {
+        return_type: "string",
+        parameters: [
+          { name: "some_value", type: "string" },
+          { name: "some__value", type: "string" },
+        ],
+      },
+    }),
+  ).toThrow(/some__value/);
 });

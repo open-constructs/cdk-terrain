@@ -32,6 +32,96 @@
             { "name": "true_value", "type": "dynamic" },
             { "name": "false_value", "type": "dynamic" }
           ]
+        },
+        "list_numbers": {
+          "description": "Returns a list of numbers counting up from 1 to the given count.",
+          "summary": "List numbers",
+          "return_type": ["list", "number"],
+          "parameters": [{ "name": "count", "type": "number" }]
+        },
+        "flag_set": {
+          "description": "Returns true if any flag in the given set of flags is true.",
+          "summary": "Any flag set",
+          "return_type": "bool",
+          "parameters": [{ "name": "flags", "type": ["set", "bool"] }]
+        },
+        "nested_list": {
+          "description": "Flattens a matrix (a list of lists of strings) into a single string.",
+          "summary": "Flatten a matrix",
+          "return_type": "string",
+          "parameters": [
+            { "name": "matrix", "type": ["list", ["list", "string"]] }
+          ]
+        },
+        "build_info": {
+          "description": "Returns an object describing the build that produced the given seed.",
+          "summary": "Build info",
+          "return_type": [
+            "object",
+            { "version": "string", "revision": "string" }
+          ],
+          "parameters": [{ "name": "seed", "type": "string" }]
+        },
+        "tag_map": {
+          "description": "Renders the given map of string tags as a single string.",
+          "summary": "Render tags",
+          "return_type": "string",
+          "parameters": [{ "name": "tags", "type": ["map", "string"] }]
+        },
+        "config_map": {
+          "description": "Renders the given map of config objects as a single string.",
+          "summary": "Render configs",
+          "return_type": "string",
+          "parameters": [
+            {
+              "name": "configs",
+              "type": ["map", ["object", { "enabled": "bool" }]]
+            }
+          ]
+        },
+        "legacy_helper": {
+          "description": "A deprecated helper kept around for backwards compatibility.",
+          "summary": "Legacy helper",
+          "deprecation_message": "Use new_helper instead.",
+          "return_type": "string",
+          "parameters": [{ "name": "input", "type": "string" }]
+        },
+        "trailing_nullable": {
+          "description": "Greets the given name, optionally with a custom greeting.",
+          "summary": "Greet with an optional greeting",
+          "return_type": "string",
+          "parameters": [
+            { "name": "name", "type": "string" },
+            {
+              "name": "greeting",
+              "type": "string",
+              "is_nullable": true
+            }
+          ]
+        },
+        "mid_nullable": {
+          "description": "Joins a possibly-null prefix with a required suffix.",
+          "summary": "Join with a nullable prefix",
+          "return_type": "string",
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "string",
+              "is_nullable": true
+            },
+            { "name": "suffix", "type": "string" }
+          ]
+        },
+        "variadic_nullable": {
+          "description": "Joins a label with any number of possibly-null items.",
+          "summary": "Join with nullable items",
+          "return_type": "string",
+          "parameters": [{ "name": "label", "type": "string" }],
+          "variadic_parameter": {
+            "name": "items",
+            "type": "string",
+            "is_nullable": true
+          }
         }
       }
     }

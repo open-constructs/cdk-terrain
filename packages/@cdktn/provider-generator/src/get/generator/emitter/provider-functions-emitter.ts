@@ -43,17 +43,28 @@ export class ProviderFunctionsEmitter {
     const comment = sanitizedComment(this.code);
     const description = fn.description ?? fn.summary;
     if (description) comment.line(description);
+    if (fn.deprecationMessage) {
+      comment.line(`@deprecated ${fn.deprecationMessage}`);
+    }
     comment.line(SELF_REFERENCE_CYCLE_JSDOC);
-    for (const param of [...fn.parameters, fn.variadicParameter].filter(
-      (p): p is NonNullable<typeof p> => !!p,
-    )) {
-      comment.line(`@param ${param.name} ${param.description ?? ""}`.trimEnd());
+    for (const param of fn.parameters) {
+      comment.line(
+        `@param {${param.docstringType}} ${param.name} ${param.description ?? ""}`.trimEnd(),
+      );
+    }
+    if (fn.variadicParameter) {
+      const param = fn.variadicParameter;
+      comment.line(
+        `@param {Array<${param.docstringType}>} ${param.name} ${param.description ?? ""}`.trimEnd(),
+      );
     }
     comment.line(`@param providerLocalName ${PROVIDER_LOCAL_NAME_JSDOC}`);
     comment.end();
 
     const methodParams = [
-      ...fn.parameters.map((p) => `${p.name}: ${p.tsType}`),
+      ...fn.parameters.map(
+        (p) => `${p.name}${p.optional ? "?" : ""}: ${p.tsType}`,
+      ),
       ...(fn.variadicParameter
         ? [`${fn.variadicParameter.name}: ${fn.variadicParameter.tsType}[]`]
         : []),
