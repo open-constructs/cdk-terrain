@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
 import { App, TerraformStack, Testing } from "cdktn";
-import { provider } from '@cdktn/provider-azuread'
+import { provider } from "@cdktn/provider-azuread";
 
 export class HelloTerra extends TerraformStack {
   constructor(scope: Construct, id: string) {

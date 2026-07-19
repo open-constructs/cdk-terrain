@@ -21,11 +21,7 @@ describe("provider upgrade command", () => {
 
   describe("pre-built", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", [
-        "provider",
-        "add",
-        "random@=3.8.1",
-      ]);
+      await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
     });
 
     it("can update withing the same cdktn version to a specific version", async () => {
