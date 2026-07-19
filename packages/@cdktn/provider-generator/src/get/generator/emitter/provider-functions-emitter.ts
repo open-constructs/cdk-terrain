@@ -63,17 +63,19 @@ export class ProviderFunctionsEmitter {
     if (fn.deprecationMessage) {
       comment.line(`@deprecated ${fn.deprecationMessage}`);
     }
-    for (const param of fn.parameters) {
+    // The variadic parameter's docstringType is already wrapped in
+    // `Array<...>` by buildFunctionModel (see provider-function-model.ts),
+    // so it shares this one `@param` emission path with every fixed
+    // parameter instead of needing its own wrapping here.
+    const allParameters = fn.variadicParameter
+      ? [...fn.parameters, fn.variadicParameter]
+      : fn.parameters;
+    for (const param of allParameters) {
       comment.line(
         `@param {${param.docstringType}} ${param.name} ${param.description ?? ""}`.trimEnd(),
       );
     }
-    if (fn.variadicParameter) {
-      const param = fn.variadicParameter;
-      comment.line(
-        `@param {Array<${param.docstringType}>} ${param.name} ${param.description ?? ""}`.trimEnd(),
-      );
-    }
+    comment.line(`@returns {${fn.returnDocstringType}}`);
     comment.end();
 
     const methodParams = [

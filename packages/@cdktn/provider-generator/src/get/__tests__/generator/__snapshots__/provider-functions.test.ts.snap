@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name: example-provider-functions 1`] = `
+exports[`generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name matches the snapshot: example-provider-functions 1`] = `
 "// generated from provider function schema
 
 import * as cdktn from 'cdktn';
@@ -21,6 +21,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns an object describing the build that produced the given seed.
   * @param {string} seed
+  * @returns {object}
   */
   public buildInfo(seed: string): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "build_info", [seed]);
@@ -31,6 +32,7 @@ export class ExampleProviderFunctions {
   * @param {boolean | IResolvable} condition
   * @param {any} trueValue
   * @param {any} falseValue
+  * @returns {any}
   */
   public conditionIf(condition: boolean | cdktn.IResolvable, trueValue: any, falseValue: any): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "condition_if", [condition, trueValue, falseValue]);
@@ -39,23 +41,89 @@ export class ExampleProviderFunctions {
   /**
   * Renders the given map of config objects as a single string.
   * @param {any} configs
+  * @returns {string}
   */
   public configMap(configs: any): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "config_map", [configs]));
   }
 
   /**
-  * Returns true if any flag in the given set of flags is true.
-  * @param {Array<boolean | IResolvable>} flags
+  * Returns a map of config objects keyed by tag for the given prefix.
+  * @param {string} prefix
+  * @returns {{ [key: string]: any }}
   */
-  public flagSet(flags: Array<boolean | cdktn.IResolvable>): cdktn.IResolvable {
+  public configsByTag(prefix: string): { [key: string]: any } {
+    return cdktn.Token.asAnyMap(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "configs_by_tag", [prefix]));
+  }
+
+  /**
+  * Returns a map of counts keyed by tag for the given prefix.
+  * @param {string} prefix
+  * @returns {{ [key: string]: number }}
+  */
+  public countByTag(prefix: string): { [key: string]: number } {
+    return cdktn.Token.asNumberMap(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "count_by_tag", [prefix]));
+  }
+
+  /**
+  * Returns a default map of string tags derived from the given prefix - used to prove a map(string) RETURN can be fed directly into another function's map(string) PARAMETER (see tag_map above).
+  * @param {string} prefix
+  * @returns {{ [key: string]: string }}
+  */
+  public defaultTags(prefix: string): { [key: string]: string } {
+    return cdktn.Token.asStringMap(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "default_tags", [prefix]));
+  }
+
+  /**
+  * Renders the given list of config objects as a single string.
+  * @param {[list] Array<object>} configs
+  * @returns {string}
+  */
+  public describeConfigs(configs: any[] | cdktn.IResolvable): string {
+    return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "describe_configs", [configs]));
+  }
+
+  /**
+  * Returns true if any flag in the given set of flags is true.
+  * @param {[set] Array<boolean | IResolvable>} flags
+  * @returns {boolean | IResolvable}
+  */
+  public flagSet(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "flag_set", [flags]);
+  }
+
+  /**
+  * Returns a map of flags keyed by tag for the given prefix.
+  * @param {string} prefix
+  * @returns {{ [key: string]: boolean }}
+  */
+  public flagsByTag(prefix: string): { [key: string]: boolean } {
+    return cdktn.Token.asBooleanMap(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "flags_by_tag", [prefix]));
+  }
+
+  /**
+  * Returns a set of flags derived from the given seed - used to prove a set(bool) RETURN can be fed directly into another function's set(bool) PARAMETER (see flag_set above).
+  * @param {string} seed
+  * @returns {[set] Array<boolean | IResolvable>}
+  */
+  public flagsForSeed(seed: string): cdktn.IResolvable {
+    return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "flags_for_seed", [seed]);
+  }
+
+  /**
+  * Returns true if any flag in the given ordered list of flags is true.
+  * @param {[list] Array<boolean | IResolvable>} flags
+  * @returns {boolean | IResolvable}
+  */
+  public flagsOrdered(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {
+    return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "flags_ordered", [flags]);
   }
 
   /**
   * Joins the given strings together using the provided separator.
   * @param {string} separator
   * @param {Array<string>} values
+  * @returns {string}
   */
   public joinStrings(separator: string, values: Array<string>): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "join_strings", [separator, ...values]));
@@ -65,6 +133,7 @@ export class ExampleProviderFunctions {
   * A deprecated helper kept around for backwards compatibility.
   * @deprecated Use new_helper instead.
   * @param {string} input
+  * @returns {string}
   */
   public legacyHelper(input: string): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "legacy_helper", [input]));
@@ -73,6 +142,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a list of numbers counting up from 1 to the given count.
   * @param {number} count
+  * @returns {[list] Array<number>}
   */
   public listNumbers(count: number): number[] {
     return cdktn.Token.asNumberList(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "list_numbers", [count]));
@@ -81,6 +151,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a list of names prefixed with the given prefix.
   * @param {string} prefix
+  * @returns {[list] Array<string>}
   */
   public listPrefixedNames(prefix: string): string[] {
     return cdktn.Token.asList(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "list_prefixed_names", [prefix]));
@@ -88,18 +159,20 @@ export class ExampleProviderFunctions {
 
   /**
   * Joins a possibly-null prefix with a required suffix.
-  * @param {string | null} prefix
+  * @param {string | IResolvable - pass cdktn.Token.nullValue() for an explicit null} prefix
   * @param {string} suffix
+  * @returns {string}
   */
-  public midNullable(prefix: any, suffix: string): string {
+  public midNullable(prefix: string | cdktn.IResolvable, suffix: string): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "mid_nullable", [prefix, suffix]));
   }
 
   /**
   * Flattens a matrix (a list of lists of strings) into a single string.
-  * @param {Array<Array<string>>} matrix
+  * @param {[list] Array<[list] Array<string>>} matrix
+  * @returns {string}
   */
-  public nestedList(matrix: string[][]): string {
+  public nestedList(matrix: string[][] | cdktn.IResolvable): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "nested_list", [matrix]));
   }
 
@@ -107,6 +180,7 @@ export class ExampleProviderFunctions {
   * Adds up a default starting value and any number of addends.
   * @param {number} defaultValue
   * @param {Array<number>} addends
+  * @returns {number}
   */
   public sum(defaultValue: number, addends: Array<number>): number {
     return cdktn.Token.asNumber(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "sum", [defaultValue, ...addends]));
@@ -115,6 +189,7 @@ export class ExampleProviderFunctions {
   /**
   * Renders the given map of string tags as a single string.
   * @param {{ [key: string]: string }} tags
+  * @returns {string}
   */
   public tagMap(tags: { [key: string]: string }): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "tag_map", [tags]));
@@ -123,32 +198,34 @@ export class ExampleProviderFunctions {
   /**
   * Greets the given name, optionally with a custom greeting.
   * @param {string} name
-  * @param {string | null} greeting
+  * @param {string | IResolvable - omit or pass cdktn.Token.nullValue() to render the Terraform null keyword} greeting
+  * @returns {string}
   */
-  public trailingNullable(name: string, greeting?: string): string {
+  public trailingNullable(name: string, greeting?: string | cdktn.IResolvable): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "trailing_nullable", [name, greeting]));
   }
 
   /**
   * Joins a label with any number of possibly-null items.
   * @param {string} label
-  * @param {Array<string | null>} items
+  * @param {Array<string | IResolvable> - pass cdktn.Token.nullValue() for an explicit null} items
+  * @returns {string}
   */
-  public variadicNullable(label: string, items: Array<any>): string {
+  public variadicNullable(label: string, items: Array<string | cdktn.IResolvable>): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "variadic_nullable", [label, ...items]));
   }
 }
 "
 `;
 
-exports[`generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name: provider-index 1`] = `
+exports[`generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name matches the snapshot: provider-index 1`] = `
 "// generated by cdktn get
 export * as providerFunctions from './provider-functions/index';
 
 "
 `;
 
-exports[`generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name: provider-lazy-index 1`] = `
+exports[`generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name matches the snapshot: provider-lazy-index 1`] = `
 "// generated by cdktn get
 Object.defineProperty(exports, 'providerFunctions', { get: function () { return require('./provider-functions'); } });
 
@@ -321,6 +398,7 @@ export class TimeProviderFunctions {
   /**
   * Given a [Go duration string](https://pkg.go.dev/time#ParseDuration), will parse and return an object representation of that duration.
   * @param {string} duration Go time package duration string to parse
+  * @returns {object}
   */
   public durationParse(duration: string): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "duration_parse", [duration]);
@@ -329,6 +407,7 @@ export class TimeProviderFunctions {
   /**
   * Given an RFC3339 timestamp string, will parse and return an object representation of that date and time.
   * @param {string} timestamp RFC3339 timestamp string to parse
+  * @returns {object}
   */
   public rfc3339Parse(timestamp: string): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "rfc3339_parse", [timestamp]);
@@ -337,6 +416,7 @@ export class TimeProviderFunctions {
   /**
   * Given a unix timestamp integer, will parse and return an object representation of that date and time. A unix timestamp is the number of seconds elapsed since January 1, 1970 UTC.
   * @param {number} unixTimestamp Unix Timestamp integer to parse
+  * @returns {object}
   */
   public unixTimestampParse(unixTimestamp: number): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "unix_timestamp_parse", [unixTimestamp]);

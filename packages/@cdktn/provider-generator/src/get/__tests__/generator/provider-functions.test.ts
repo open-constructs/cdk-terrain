@@ -50,39 +50,88 @@ test("generate provider functions for the time provider (real terraform 1.15.6 s
   expect(providerLazyIndex).toMatchSnapshot("provider-lazy-index");
 });
 
-test("generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name", async () => {
-  const code = new CodeMaker();
-  const workdir = tmp("provider-functions-synthetic.test");
-  const spec = JSON.parse(
-    fs.readFileSync(
-      path.join(
-        __dirname,
-        "fixtures",
-        "provider-functions-synthetic.test.fixture.json",
+describe("generate provider functions covering variadic parameters, primitive/list returns, and a 'default' parameter name", () => {
+  let providerFunctionsOutput: string;
+  let providerIndex: string;
+  let providerLazyIndex: string;
+
+  beforeAll(async () => {
+    const code = new CodeMaker();
+    const workdir = tmp("provider-functions-synthetic.test");
+    const spec = JSON.parse(
+      fs.readFileSync(
+        path.join(
+          __dirname,
+          "fixtures",
+          "provider-functions-synthetic.test.fixture.json",
+        ),
+        "utf-8",
       ),
+    );
+    new TerraformProviderGenerator(code, spec).generateAll();
+    await code.save(workdir);
+
+    providerFunctionsOutput = fs.readFileSync(
+      path.join(workdir, "providers/example/provider-functions/index.ts"),
       "utf-8",
-    ),
-  );
-  new TerraformProviderGenerator(code, spec).generateAll();
-  await code.save(workdir);
+    );
+    providerIndex = fs.readFileSync(
+      path.join(workdir, "providers/example/index.ts"),
+      "utf-8",
+    );
+    providerLazyIndex = fs.readFileSync(
+      path.join(workdir, "providers/example/lazy-index.ts"),
+      "utf-8",
+    );
+  });
 
-  const providerFunctionsOutput = fs.readFileSync(
-    path.join(workdir, "providers/example/provider-functions/index.ts"),
-    "utf-8",
-  );
-  expect(providerFunctionsOutput).toMatchSnapshot("example-provider-functions");
+  test("matches the snapshot", () => {
+    expect(providerFunctionsOutput).toMatchSnapshot(
+      "example-provider-functions",
+    );
+    expect(providerIndex).toMatchSnapshot("provider-index");
+    expect(providerLazyIndex).toMatchSnapshot("provider-lazy-index");
+  });
 
-  const providerIndex = fs.readFileSync(
-    path.join(workdir, "providers/example/index.ts"),
-    "utf-8",
-  );
-  expect(providerIndex).toMatchSnapshot("provider-index");
+  // Round 7, composition: this package has no TypeScript-compiling harness
+  // for generated output (no fixture/test anywhere generates a snippet and
+  // feeds it through `tsc`/`ts.transpileModule`, and `cdktn` itself isn't a
+  // dependency of this package to typecheck against), so these are
+  // structural assertions on the emitted declaration text rather than an
+  // actual compile - see also the runtime-level proof in
+  // packages/cdktn/test/provider-functions.test.ts, which exercises the
+  // same union/token mechanics these signatures rely on.
+  describe("composition: a function's return type is directly assignable to another function's parameter of the 'same' Terraform type", () => {
+    test("flagsForSeed()'s set(bool) return type (cdktn.IResolvable) is one of the exact union members flagSet()'s set(bool) parameter declares", () => {
+      expect(providerFunctionsOutput).toContain(
+        "public flagsForSeed(seed: string): cdktn.IResolvable {",
+      );
+      expect(providerFunctionsOutput).toContain(
+        "public flagSet(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {",
+      );
+    });
 
-  const providerLazyIndex = fs.readFileSync(
-    path.join(workdir, "providers/example/lazy-index.ts"),
-    "utf-8",
-  );
-  expect(providerLazyIndex).toMatchSnapshot("provider-lazy-index");
+    test("defaultTags()'s map(string) return type is textually identical to tagMap()'s map(string) parameter type", () => {
+      expect(providerFunctionsOutput).toContain(
+        "public defaultTags(prefix: string): { [key: string]: string } {",
+      );
+      expect(providerFunctionsOutput).toContain(
+        "public tagMap(tags: { [key: string]: string }): string {",
+      );
+    });
+  });
+
+  test("a list(bool) parameter (not just set(bool)) also accepts a whole-collection token", () => {
+    expect(providerFunctionsOutput).toContain(
+      "public flagsOrdered(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {",
+    );
+  });
+
+  test("a list(object) parameter widens to any[] | cdktn.IResolvable (whole-collection token accepted)", () => {
+    expect(providerFunctionsOutput).toContain(
+      "public describeConfigs(configs: any[] | cdktn.IResolvable): string {",
+    );
+  });
 });
 
 test("buildProviderFunctionsModel throws when two function names collapse to the same generated method name", () => {

@@ -22,9 +22,24 @@ export interface ProviderFunctionParameterModel {
    * True when this (fixed, non-variadic) parameter is emitted as a
    * jsii-optional TypeScript parameter (`name?: T`) - see the
    * is_nullable/trailing-compatibility handling in `applyNullability`.
-   * Never set on the variadic parameter: rest parameters can't be `?`.
+   * Never set on the variadic parameter: an array parameter can't be `?`.
    */
   readonly optional?: boolean;
+}
+
+/**
+ * `ProviderFunctionParameterModel` plus the one bit of information that's
+ * only needed while building the model (see `mapParameterType`/
+ * `applyNullability`), never by the emitter: whether `tsType` already
+ * accepts an arbitrary `cdktn.IResolvable` in this position (a bare
+ * boolean/collection-of-boolean token, `any`, or an explicit
+ * `| cdktn.IResolvable` union already present). Nullability handling uses
+ * this to decide whether it needs to append another `| cdktn.IResolvable`
+ * so a caller can pass `cdktn.Token.nullValue()` - without resorting to
+ * re-deriving that answer with a string search over `tsType`.
+ */
+interface InternalParameterModel extends ProviderFunctionParameterModel {
+  readonly acceptsResolvableAlready: boolean;
 }
 
 /**
@@ -43,6 +58,14 @@ export interface ProviderFunctionModel {
    */
   readonly deprecationMessage?: string;
   readonly returnTsType: string;
+  /**
+   * The `@returns {...}` JSDoc type, describing the conceptual/Terraform
+   * shape of the return value - see `mapReturnType`. This deliberately can
+   * differ from `returnTsType` (e.g. a `bool` return is declared
+   * `cdktn.IResolvable` but documented as `boolean | IResolvable`), the same
+   * way a parameter's `docstringType` can differ from its `tsType`.
+   */
+  readonly returnDocstringType: string;
   /**
    * Wraps the `cdktn.TerraformProviderFunction.invoke(...)` call expression
    * into the method's `return` statement (e.g. wrapping it in
@@ -104,6 +127,167 @@ const RESERVED_WRAPPER_MEMBER_NAMES = new Set([
 ]);
 
 /**
+ * Result of mapping a single Terraform attribute type into a jsii-safe
+ * parameter shape (see `mapParameterType`).
+ */
+interface MappedParameterType {
+  readonly tsType: string;
+  readonly docstringType: string;
+  /**
+   * True when `tsType` already accepts an arbitrary `cdktn.IResolvable` in
+   * this position without needing an extra `| cdktn.IResolvable` union -
+   * see `InternalParameterModel`.
+   */
+  readonly acceptsResolvableAlready: boolean;
+}
+
+/**
+ * The bracket-composable ("T[]", no top-level union) TypeScript/docstring
+ * type for an element that can nest inside an array without ITSELF needing
+ * the whole-collection token union at that level: `string`, `number`, or a
+ * list/set of one of those, recursively (e.g. `list(list(string))` bottoms
+ * out at `string`). Returns `undefined` for anything else (`bool`, `map`,
+ * `object`, `dynamic`, or a nested collection that doesn't itself qualify),
+ * so the caller falls back to widening the whole parameter to
+ * `any[] | cdktn.IResolvable` instead.
+ */
+function plainArrayElementType(
+  type: AttributeType,
+): { tsType: string; docstringType: string } | undefined {
+  if (type === "string") return { tsType: "string", docstringType: "string" };
+  if (type === "number") return { tsType: "number", docstringType: "number" };
+  if (Array.isArray(type) && (type[0] === "list" || type[0] === "set")) {
+    const inner = plainArrayElementType(type[1]);
+    if (!inner) return undefined;
+    const label = type[0] === "set" ? "[set] " : "[list] ";
+    return {
+      tsType: `${inner.tsType}[]`,
+      docstringType: `${label}Array<${inner.docstringType}>`,
+    };
+  }
+  return undefined;
+}
+
+/**
+ * Maps a `list`/`set` parameter to its jsii-safe shape - mirrors
+ * `ListAttributeTypeModel`/`SetAttributeTypeModel.inputTypeDefinition`
+ * (both identical) branch for branch, since jsii parameters, like resource
+ * inputs, are allowed to union in a whole-collection `cdktn.IResolvable`
+ * token. `kind` only affects the docstring wording (`[list]`/`[set]`,
+ * flagging the ordering/duplicate-element semantics difference to the
+ * reader) - the type-level handling is identical for both.
+ */
+function mapListOrSetParameterType(
+  kind: "list" | "set",
+  element: AttributeType,
+): MappedParameterType {
+  const label = kind === "set" ? "[set]" : "[list]";
+
+  if (element === "string") {
+    // Mirrors the final `else` branch: encoded list tokens already satisfy
+    // `string[]`, so no union is needed.
+    return {
+      tsType: "string[]",
+      docstringType: `${label} Array<string>`,
+      acceptsResolvableAlready: false,
+    };
+  }
+  if (element === "number") {
+    // Same reasoning as `string` above.
+    return {
+      tsType: "number[]",
+      docstringType: `${label} Array<number>`,
+      acceptsResolvableAlready: false,
+    };
+  }
+  if (element === "bool") {
+    // Mirrors the `elementType.storedClassType === "boolean"` branch: bool
+    // has no lossless per-element token, but the WHOLE collection is still
+    // tokenizable, so the union is on the outside.
+    return {
+      tsType: "Array<boolean | cdktn.IResolvable> | cdktn.IResolvable",
+      docstringType: `${label} Array<boolean | IResolvable>`,
+      acceptsResolvableAlready: true,
+    };
+  }
+
+  const plainElement = plainArrayElementType(element);
+  if (plainElement) {
+    // Mirrors the `elementType.typeModelType !== "simple"` branch: a nested
+    // list/set that itself bottoms out at string/number composes into a
+    // proper nested array type (e.g. `list(list(string))` -> `string[][]`),
+    // with the whole-collection token additionally accepted alongside it.
+    return {
+      tsType: `${plainElement.tsType}[] | cdktn.IResolvable`,
+      docstringType: `${label} Array<${plainElement.docstringType}>`,
+      acceptsResolvableAlready: true,
+    };
+  }
+
+  // map/object/dynamic element, or a nested collection that doesn't itself
+  // reduce to string/number: no jsii-safe array-of-X type exists - widen
+  // the whole parameter to `any[]`. Unlike a bare `any` parameter, plain
+  // `any[]` does NOT structurally accept a whole-collection
+  // `cdktn.IResolvable` token, so the union is required here (this is
+  // stricter than `MapAttributeTypeModel`/`ListAttributeTypeModel` have to
+  // be, since those only ever fall back to `any[] | cdktn.IResolvable` via
+  // the same "not simple" branch above, which already grants it). Keep the
+  // docstring honest about the real element shape rather than just saying
+  // `any`.
+  const elementDescription = mapParameterType(element).docstringType;
+  return {
+    tsType: "any[] | cdktn.IResolvable",
+    docstringType: `${label} Array<${elementDescription}>`,
+    acceptsResolvableAlready: true,
+  };
+}
+
+/**
+ * Maps a `map` parameter to its jsii-safe shape - mirrors
+ * `MapAttributeTypeModel.inputTypeDefinition`. Only the `bool`-element case
+ * is reachable from real provider schemas today (`string`/`number` element
+ * maps stay a plain, non-union record; nested/complex map elements aren't
+ * emitted for provider functions - see the `object` fallback in
+ * `mapParameterType`), but the shape is kept branch-for-branch aligned with
+ * the model it mirrors rather than collapsed.
+ */
+function mapMapParameterType(element: AttributeType): MappedParameterType {
+  if (element === "string") {
+    return {
+      tsType: "{ [key: string]: string }",
+      docstringType: "{ [key: string]: string }",
+      acceptsResolvableAlready: false,
+    };
+  }
+  if (element === "number") {
+    return {
+      tsType: "{ [key: string]: number }",
+      docstringType: "{ [key: string]: number }",
+      acceptsResolvableAlready: false,
+    };
+  }
+  if (element === "bool") {
+    // Mirrors the `elementType.storedClassType === "boolean"` branch: map
+    // of booleans has PER-ENTRY token support, but the whole map itself is
+    // not additionally unioned with `cdktn.IResolvable` (unlike the list/set
+    // case) - matching `MapAttributeTypeModel.inputTypeDefinition` exactly.
+    return {
+      tsType: "{ [key: string]: (boolean | cdktn.IResolvable) }",
+      docstringType: "{ [key: string]: (boolean | IResolvable) }",
+      acceptsResolvableAlready: false,
+    };
+  }
+  // map/object/dynamic element: no structural input helper exists here -
+  // stays `any`, which (being `any`) already accepts a whole-map
+  // `cdktn.IResolvable` token too.
+  return {
+    tsType: "any",
+    docstringType: "any",
+    acceptsResolvableAlready: true,
+  };
+}
+
+/**
  * Maps a provider function parameter's declared Terraform type to a
  * jsii-safe TypeScript parameter type, recursively for collection types.
  *
@@ -111,114 +295,99 @@ const RESERVED_WRAPPER_MEMBER_NAMES = new Set([
  * `bool` is typed `boolean | cdktn.IResolvable` (mirroring
  * `SimpleAttributeTypeModel.inputTypeDefinition`'s input-side convention) -
  * this both accepts a real boolean and still accepts a token in place of
- * one. `dynamic`, `object`, and non-primitive `map` values have no
- * structural typing here (structural input helpers for `object` are
- * deferred to a follow-up issue) and stay `any`.
+ * one. `dynamic` has no structural typing and stays `any` (which already
+ * accepts anything, including a token); `object` (structural input helpers
+ * are deferred to a follow-up issue) stays `any` too.
  *
- * `list`/`set` recurse on their element type: primitive elements (string,
- * number, bool) compose into a proper array type; a nested list/set of a
- * representable element type composes naturally too (e.g.
- * `list(list(string))` -> `string[][]`). Anything that isn't representable
- * as an array element in jsii (map, object, dynamic, or a nested collection
- * that itself bottoms out at `any`) widens the *whole* parameter to
- * `any[]`, but the docstring keeps describing the real element shape (e.g.
- * `Array<object>`) rather than lying about it.
+ * `list`/`set` and `map` delegate to `mapListOrSetParameterType`/
+ * `mapMapParameterType`, which mirror `ListAttributeTypeModel`/
+ * `SetAttributeTypeModel`/`MapAttributeTypeModel.inputTypeDefinition`
+ * branch for branch (see `attribute-type-model.ts`) - the same
+ * whole-collection-token conventions already used for resource inputs.
  */
-function mapParameterType(type: AttributeType): {
-  tsType: string;
-  docstringType: string;
-} {
-  if (type === "string") return { tsType: "string", docstringType: "string" };
-  if (type === "number") return { tsType: "number", docstringType: "number" };
+function mapParameterType(type: AttributeType): MappedParameterType {
+  if (type === "string") {
+    return {
+      tsType: "string",
+      docstringType: "string",
+      acceptsResolvableAlready: false,
+    };
+  }
+  if (type === "number") {
+    return {
+      tsType: "number",
+      docstringType: "number",
+      acceptsResolvableAlready: false,
+    };
+  }
   if (type === "bool") {
     return {
       tsType: "boolean | cdktn.IResolvable",
       docstringType: "boolean | IResolvable",
+      acceptsResolvableAlready: true,
     };
   }
-  if (type === "dynamic") return { tsType: "any", docstringType: "any" };
+  if (type === "dynamic") {
+    return {
+      tsType: "any",
+      docstringType: "any",
+      acceptsResolvableAlready: true,
+    };
+  }
 
   if (Array.isArray(type) && (type[0] === "list" || type[0] === "set")) {
-    const element = type[1];
-
-    if (element === "string") {
-      return { tsType: "string[]", docstringType: "Array<string>" };
-    }
-    if (element === "number") {
-      return { tsType: "number[]", docstringType: "Array<number>" };
-    }
-    if (element === "bool") {
-      return {
-        tsType: "Array<boolean | cdktn.IResolvable>",
-        docstringType: "Array<boolean | IResolvable>",
-      };
-    }
-    if (
-      Array.isArray(element) &&
-      (element[0] === "list" || element[0] === "set")
-    ) {
-      // Nested list/set: recurse and compose. If the inner element type
-      // is itself a union (bool's `boolean | cdktn.IResolvable`), a plain
-      // trailing `[]` would bind to the wrong operand
-      // (`boolean | cdktn.IResolvable[]` reads as `boolean | (IResolvable[])`),
-      // so use the generic `Array<T>` form in that case instead.
-      const child = mapParameterType(element);
-      return {
-        tsType: child.tsType.includes("|")
-          ? `Array<${child.tsType}>`
-          : `${child.tsType}[]`,
-        docstringType: `Array<${child.docstringType}>`,
-      };
-    }
-    // map/object/dynamic element: no jsii-safe array-of-X type exists -
-    // widen the whole parameter to `any[]`, but keep the docstring honest
-    // about the real element shape.
-    const child = mapParameterType(element);
-    return {
-      tsType: "any[]",
-      docstringType: `Array<${child.docstringType}>`,
-    };
+    return mapListOrSetParameterType(type[0], type[1]);
   }
 
   if (Array.isArray(type) && type[0] === "map") {
-    const element = type[1];
-    if (element === "string") {
-      return {
-        tsType: "{ [key: string]: string }",
-        docstringType: "{ [key: string]: string }",
-      };
-    }
-    if (element === "number") {
-      return {
-        tsType: "{ [key: string]: number }",
-        docstringType: "{ [key: string]: number }",
-      };
-    }
-    if (element === "bool") {
-      return {
-        tsType: "{ [key: string]: (boolean | cdktn.IResolvable) }",
-        docstringType: "{ [key: string]: (boolean | IResolvable) }",
-      };
-    }
-    return { tsType: "any", docstringType: "any" };
+    return mapMapParameterType(type[1]);
   }
 
   // object: structural input helpers are deferred to a follow-up issue.
-  return { tsType: "any", docstringType: "object" };
+  return {
+    tsType: "any",
+    docstringType: "object",
+    acceptsResolvableAlready: true,
+  };
 }
 
 function buildParameterModel(
   parameter: FunctionParameter,
   fallbackName: string,
-): ProviderFunctionParameterModel {
+): InternalParameterModel {
   const terraformName = parameter.name ?? fallbackName;
-  const { tsType, docstringType } = mapParameterType(parameter.type);
+  const { tsType, docstringType, acceptsResolvableAlready } = mapParameterType(
+    parameter.type,
+  );
   return {
     terraformName,
     name: sanitizeParameterName(terraformName),
     tsType,
     docstringType,
     description: parameter.description,
+    acceptsResolvableAlready,
+  };
+}
+
+/**
+ * Widens a mapped type's `tsType`/`docstringType` to also accept an
+ * explicit `cdktn.Token.nullValue()` in this position - unless
+ * `acceptsResolvableAlready` says it already does (e.g. a `bool` parameter
+ * is already `boolean | cdktn.IResolvable`, so nullability adds nothing to
+ * the type itself, only to the docstring note appended by the caller).
+ */
+function withNullableResolvableUnion(
+  model: Pick<
+    InternalParameterModel,
+    "tsType" | "docstringType" | "acceptsResolvableAlready"
+  >,
+): { tsType: string; docstringType: string } {
+  if (model.acceptsResolvableAlready) {
+    return { tsType: model.tsType, docstringType: model.docstringType };
+  }
+  return {
+    tsType: `${model.tsType} | cdktn.IResolvable`,
+    docstringType: `${model.docstringType} | IResolvable`,
   };
 }
 
@@ -231,18 +400,28 @@ function buildParameterModel(
  * - A nullable parameter where it and every later fixed parameter are also
  *   nullable becomes jsii-optional (`name?: T`): omitting it in TypeScript
  *   leaves `undefined` in the invoke args array, which `FunctionCall`
- *   already renders as the Terraform `null` keyword.
+ *   already renders as the Terraform `null` keyword. It additionally gains
+ *   the `| cdktn.IResolvable` union (see `withNullableResolvableUnion`), so
+ *   a caller who does supply the argument can pass
+ *   `cdktn.Token.nullValue()` for an explicit Terraform `null` without
+ *   omitting the parameter.
  * - A nullable parameter followed by a required one keeps its position
- *   (jsii can't express "optional but not trailing"), but widens its type
- *   to `any` so a caller can still pass an explicit `null`.
+ *   (jsii can't express "optional but not trailing"), and instead gains the
+ *   same `| cdktn.IResolvable` union so a caller can still pass an explicit
+ *   `cdktn.Token.nullValue()` (an `IResolvable` resolving to `null` - see
+ *   `Token.nullValue()`/`Token.asAny()`) in that fixed position; this
+ *   replaces the previous blanket widening to `any`, which accepted the
+ *   real type too but gave up all type safety to do it.
  *
- * Both cases widen the docstring type to `T | null` to document the real
- * Terraform-side nullability regardless of what jsii can express.
+ * Both cases document the real mechanism in the docstring rather than
+ * implying the plain TypeScript `null` literal is accepted: the trailing
+ * case can also just be omitted, the mid-position case can't be omitted at
+ * all (jsii can't express "optional but not trailing").
  */
 function applyNullability(
   parameters: FunctionParameter[],
-  models: ProviderFunctionParameterModel[],
-): ProviderFunctionParameterModel[] {
+  models: InternalParameterModel[],
+): InternalParameterModel[] {
   const trailingCompatible = new Array(parameters.length).fill(false);
   let allNullableSoFar = true;
   for (let i = parameters.length - 1; i >= 0; i--) {
@@ -254,26 +433,30 @@ function applyNullability(
     const parameter = parameters[index];
     if (!parameter.is_nullable) return model;
 
+    const { tsType, docstringType } = withNullableResolvableUnion(model);
+
     if (trailingCompatible[index]) {
       return {
         ...model,
         optional: true,
-        docstringType: `${model.docstringType} | null`,
+        tsType,
+        docstringType: `${docstringType} - omit or pass cdktn.Token.nullValue() to render the Terraform null keyword`,
       };
     }
 
     return {
       ...model,
-      tsType: "any",
-      docstringType: `${model.docstringType} | null`,
+      tsType,
+      docstringType: `${docstringType} - pass cdktn.Token.nullValue() for an explicit null`,
     };
   });
 }
 
 /**
  * Maps a provider function's declared return type to the jsii-safe
- * TypeScript return type and the expression that unwraps the
- * `TerraformProviderFunction.invoke(...)` `IResolvable` into it.
+ * TypeScript return type, the `@returns` JSDoc type, and the expression
+ * that unwraps the `TerraformProviderFunction.invoke(...)` `IResolvable`
+ * into it.
  *
  * jsii return positions can't use the `T | cdktn.IResolvable` union that
  * parameters can (see `mapParameterType`), so every shape that can't be
@@ -282,46 +465,62 @@ function applyNullability(
  * Provider functions frequently return objects (e.g. every function in the
  * `time` provider), so - unlike built-in `Fn.*` functions - the object case
  * is a primary path, not an error: it is treated the same as
- * `dynamic`/`map`/a `list`/`set` of anything other than `string`/`number`
- * (no `asAnyList` Token helper exists), and returned as the RAW `invoke()`
- * result.
+ * `dynamic`/a `list`/`set` of anything other than `string`/`number` (no
+ * `asAnyList` Token helper exists), and returned as the RAW `invoke()`
+ * result. `map` returns, unlike those, DO have a full set of typed Token
+ * helpers (`asStringMap`/`asNumberMap`/`asBooleanMap`/`asAnyMap`), so every
+ * `map` shape gets an actual typed record return instead of falling back to
+ * `cdktn.IResolvable`.
  *
- * The declared return type is `cdktn.IResolvable` (not `any`): unlike
- * `helpers.ts` `asAny`, this must NOT go through `cdktn.Token.asString(...)`
- * - `Token.asString()` produces an encoded string token that
- * `Tokenization.isResolvable()` does not recognize, so generated struct
- * setters (e.g. an `OutputReference` `internalValue`) treat it as a plain
- * object with no known keys and the attribute silently vanishes from synth
- * output. The raw `IResolvable` from `invoke()` IS recognized by
- * `Tokenization.isResolvable()` and resolves correctly. Declaring it as
- * `cdktn.IResolvable` instead of `any` also gives callers real type safety:
- * `any` let a caller write `result.hours` on a token with no compile-time
- * feedback, silently producing `undefined` at runtime; `IResolvable` has no
- * such property and forces the caller through `cdktn.Token`/the provider's
- * struct types instead. `invoke()` already returns `IResolvable`, so no
- * cast is needed to return it as `cdktn.IResolvable`.
+ * Whenever the declared return type IS `cdktn.IResolvable` (not `any`):
+ * unlike `helpers.ts` `asAny`, this must NOT go through
+ * `cdktn.Token.asString(...)` - `Token.asString()` produces an encoded
+ * string token that `Tokenization.isResolvable()` does not recognize, so
+ * generated struct setters (e.g. an `OutputReference` `internalValue`) treat
+ * it as a plain object with no known keys and the attribute silently
+ * vanishes from synth output. The raw `IResolvable` from `invoke()` IS
+ * recognized by `Tokenization.isResolvable()` and resolves correctly.
+ * Declaring it as `cdktn.IResolvable` instead of `any` also gives callers
+ * real type safety: `any` let a caller write `result.hours` on a token with
+ * no compile-time feedback, silently producing `undefined` at runtime;
+ * `IResolvable` has no such property and forces the caller through
+ * `cdktn.Token`/the provider's struct types instead. `invoke()` already
+ * returns `IResolvable`, so no cast is needed to return it as
+ * `cdktn.IResolvable`.
  */
 function mapReturnType(returnType: AttributeType): {
   tsType: string;
+  docstringType: string;
   wrapReturn: (invokeExpression: string) => string;
 } {
   if (returnType === "string") {
     return {
       tsType: "string",
+      docstringType: "string",
       wrapReturn: (expr) => `cdktn.Token.asString(${expr})`,
     };
   }
   if (returnType === "number") {
     return {
       tsType: "number",
+      docstringType: "number",
       wrapReturn: (expr) => `cdktn.Token.asNumber(${expr})`,
     };
   }
   if (returnType === "bool") {
     // Booleans can't be represented as tokens (see helpers.ts asBoolean):
-    // return the IResolvable produced by invoke() unwrapped.
+    // return the IResolvable produced by invoke() unwrapped. The docstring
+    // still documents the real conceptual shape.
     return {
       tsType: "cdktn.IResolvable",
+      docstringType: "boolean | IResolvable",
+      wrapReturn: (expr) => expr,
+    };
+  }
+  if (returnType === "dynamic") {
+    return {
+      tsType: "cdktn.IResolvable",
+      docstringType: "any",
       wrapReturn: (expr) => expr,
     };
   }
@@ -329,35 +528,80 @@ function mapReturnType(returnType: AttributeType): {
     Array.isArray(returnType) &&
     (returnType[0] === "list" || returnType[0] === "set")
   ) {
+    const label = returnType[0] === "set" ? "[set]" : "[list]";
     const element = returnType[1];
     if (element === "string") {
       return {
         tsType: "string[]",
+        docstringType: `${label} Array<string>`,
         wrapReturn: (expr) => `cdktn.Token.asList(${expr})`,
       };
     }
     if (element === "number") {
       return {
         tsType: "number[]",
+        docstringType: `${label} Array<number>`,
         wrapReturn: (expr) => `cdktn.Token.asNumberList(${expr})`,
       };
     }
     // list/set of anything else: there is no `asAnyList` Token helper -
-    // fall back to the raw IResolvable, same reasoning as
-    // dynamic/map/object below.
+    // fall back to the raw IResolvable, same reasoning as dynamic/object
+    // below, but keep the docstring honest about the real element shape
+    // (reusing mapParameterType purely for its descriptive docstringType -
+    // its tsType/acceptsResolvableAlready are irrelevant here).
     return {
       tsType: "cdktn.IResolvable",
+      docstringType: `${label} Array<${mapParameterType(element).docstringType}>`,
       wrapReturn: (expr) => expr,
     };
   }
-  // dynamic, map, object: no structural typing for arbitrary provider
-  // function results - declared as `cdktn.IResolvable`, and returned as the
-  // raw `IResolvable` from invoke() (NOT wrapped in `cdktn.Token.asString(...)`,
-  // which would make the result unrecognizable to
-  // `Tokenization.isResolvable()` downstream - see the mapReturnType
-  // docstring above).
+  if (Array.isArray(returnType) && returnType[0] === "map") {
+    // Unlike list/set and object/dynamic, every `map` shape has a matching
+    // typed Token helper (see token.ts), so it gets a real typed record
+    // return instead of falling back to the raw IResolvable.
+    const element = returnType[1];
+    if (element === "string") {
+      return {
+        tsType: "{ [key: string]: string }",
+        docstringType: "{ [key: string]: string }",
+        wrapReturn: (expr) => `cdktn.Token.asStringMap(${expr})`,
+      };
+    }
+    if (element === "number") {
+      return {
+        tsType: "{ [key: string]: number }",
+        docstringType: "{ [key: string]: number }",
+        wrapReturn: (expr) => `cdktn.Token.asNumberMap(${expr})`,
+      };
+    }
+    if (element === "bool") {
+      // Token.asBooleanMap's declared return type is `{ [key: string]:
+      // boolean }` (see token.ts) - used verbatim, not unioned with
+      // IResolvable: the map's individual entries are plain booleans once
+      // unwrapped by the helper.
+      return {
+        tsType: "{ [key: string]: boolean }",
+        docstringType: "{ [key: string]: boolean }",
+        wrapReturn: (expr) => `cdktn.Token.asBooleanMap(${expr})`,
+      };
+    }
+    // map of anything else (object/dynamic/nested collection): asAnyMap
+    // still gives a typed (if loosely-typed) record rather than falling
+    // back to the raw IResolvable.
+    return {
+      tsType: "{ [key: string]: any }",
+      docstringType: "{ [key: string]: any }",
+      wrapReturn: (expr) => `cdktn.Token.asAnyMap(${expr})`,
+    };
+  }
+  // object: no structural typing for arbitrary provider function results -
+  // declared as `cdktn.IResolvable`, and returned as the raw `IResolvable`
+  // from invoke() (NOT wrapped in `cdktn.Token.asString(...)`, which would
+  // make the result unrecognizable to `Tokenization.isResolvable()`
+  // downstream - see the mapReturnType docstring above).
   return {
     tsType: "cdktn.IResolvable",
+    docstringType: "object",
     wrapReturn: (expr) => expr,
   };
 }
@@ -366,9 +610,11 @@ function buildFunctionModel(
   terraformName: string,
   signature: FunctionSignature,
 ): ProviderFunctionModel {
-  const { tsType: returnTsType, wrapReturn } = mapReturnType(
-    signature.return_type,
-  );
+  const {
+    tsType: returnTsType,
+    docstringType: returnDocstringType,
+    wrapReturn,
+  } = mapReturnType(signature.return_type);
 
   const rawParameters = signature.parameters ?? [];
   const parameters = applyNullability(
@@ -378,19 +624,38 @@ function buildFunctionModel(
     ),
   );
 
-  let variadicParameter = signature.variadic_parameter
-    ? buildParameterModel(signature.variadic_parameter, "values")
-    : undefined;
-  if (variadicParameter && signature.variadic_parameter?.is_nullable) {
-    // A nullable variadic parameter: jsii can't express "each individual
-    // argument may independently be null" on a rest parameter, so the
-    // element type widens to `any` (signature becomes `values: any[]`);
-    // the docstring keeps the honest per-element type.
-    variadicParameter = {
-      ...variadicParameter,
-      tsType: "any",
-      docstringType: `${variadicParameter.docstringType} | null`,
-    };
+  let variadicParameter: InternalParameterModel | undefined;
+  if (signature.variadic_parameter) {
+    const elementModel = buildParameterModel(
+      signature.variadic_parameter,
+      "values",
+    );
+    if (signature.variadic_parameter.is_nullable) {
+      // A nullable variadic parameter: jsii can't express "each individual
+      // argument may independently be null" on the generated `values:
+      // Array<T>` array parameter (it's an ordinary array parameter, not a
+      // true rest/spread parameter - only the invoke() call site spreads
+      // it), so every element's type instead widens to also accept an
+      // explicit `cdktn.Token.nullValue()`, the same way a fixed nullable
+      // parameter does (see `withNullableResolvableUnion`); the docstring
+      // keeps the honest per-element type plus that guidance.
+      const { tsType, docstringType } =
+        withNullableResolvableUnion(elementModel);
+      variadicParameter = {
+        ...elementModel,
+        tsType,
+        docstringType: `Array<${docstringType}> - pass cdktn.Token.nullValue() for an explicit null`,
+      };
+    } else {
+      // Non-nullable: the docstring wraps the element's docstring type in
+      // `Array<...>` here (rather than in the emitter), so every parameter
+      // - fixed or variadic - can share one `@param {docstringType}`
+      // emission path.
+      variadicParameter = {
+        ...elementModel,
+        docstringType: `Array<${elementModel.docstringType}>`,
+      };
+    }
   }
 
   return {
@@ -400,6 +665,7 @@ function buildFunctionModel(
     summary: signature.summary,
     deprecationMessage: signature.deprecation_message,
     returnTsType,
+    returnDocstringType,
     wrapReturn,
     parameters,
     variadicParameter,

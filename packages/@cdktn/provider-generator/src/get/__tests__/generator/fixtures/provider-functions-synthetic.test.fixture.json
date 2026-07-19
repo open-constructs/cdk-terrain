@@ -45,6 +45,29 @@
           "return_type": "bool",
           "parameters": [{ "name": "flags", "type": ["set", "bool"] }]
         },
+        "flags_for_seed": {
+          "description": "Returns a set of flags derived from the given seed - used to prove a set(bool) RETURN can be fed directly into another function's set(bool) PARAMETER (see flag_set above).",
+          "summary": "Flags for seed",
+          "return_type": ["set", "bool"],
+          "parameters": [{ "name": "seed", "type": "string" }]
+        },
+        "flags_ordered": {
+          "description": "Returns true if any flag in the given ordered list of flags is true.",
+          "summary": "Any flag set (ordered)",
+          "return_type": "bool",
+          "parameters": [{ "name": "flags", "type": ["list", "bool"] }]
+        },
+        "describe_configs": {
+          "description": "Renders the given list of config objects as a single string.",
+          "summary": "Describe configs",
+          "return_type": "string",
+          "parameters": [
+            {
+              "name": "configs",
+              "type": ["list", ["object", { "enabled": "bool" }]]
+            }
+          ]
+        },
         "nested_list": {
           "description": "Flattens a matrix (a list of lists of strings) into a single string.",
           "summary": "Flatten a matrix",
@@ -67,6 +90,30 @@
           "summary": "Render tags",
           "return_type": "string",
           "parameters": [{ "name": "tags", "type": ["map", "string"] }]
+        },
+        "default_tags": {
+          "description": "Returns a default map of string tags derived from the given prefix - used to prove a map(string) RETURN can be fed directly into another function's map(string) PARAMETER (see tag_map above).",
+          "summary": "Default tags",
+          "return_type": ["map", "string"],
+          "parameters": [{ "name": "prefix", "type": "string" }]
+        },
+        "count_by_tag": {
+          "description": "Returns a map of counts keyed by tag for the given prefix.",
+          "summary": "Count by tag",
+          "return_type": ["map", "number"],
+          "parameters": [{ "name": "prefix", "type": "string" }]
+        },
+        "flags_by_tag": {
+          "description": "Returns a map of flags keyed by tag for the given prefix.",
+          "summary": "Flags by tag",
+          "return_type": ["map", "bool"],
+          "parameters": [{ "name": "prefix", "type": "string" }]
+        },
+        "configs_by_tag": {
+          "description": "Returns a map of config objects keyed by tag for the given prefix.",
+          "summary": "Configs by tag",
+          "return_type": ["map", ["object", { "enabled": "bool" }]],
+          "parameters": [{ "name": "prefix", "type": "string" }]
         },
         "config_map": {
           "description": "Renders the given map of config objects as a single string.",
