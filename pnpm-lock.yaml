@@ -847,9 +847,6 @@ importers:
 
   examples/typescript/google-cloudrun:
     dependencies:
-      cdktf:
-        specifier: 0.21.0
-        version: 0.21.0(constructs@10.6.0)
       cdktn:
         specifier: workspace:*
         version: link:../../../packages/cdktn
@@ -4250,15 +4247,6 @@ packages:
 
   caseless@0.12.0:
     resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
-
-  cdktf@0.21.0:
-    resolution: {integrity: sha512-bdTOOyrFSXw0p5d7/3dye7ZWYzrUatyMjWEAAwTGoqghjygRj6Q55y1QZnSB021NRDzYZ3BhFGsOkpmIjQMzNQ==}
-    peerDependencies:
-      constructs: ^10.4.2
-    bundledDependencies:
-      - archiver
-      - json-stable-stringify
-      - semver
 
   chalk@2.4.2:
     resolution: {integrity: sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==}
@@ -10135,7 +10123,7 @@ snapshots:
 
   '@types/responselike@1.0.0':
     dependencies:
-      '@types/node': 18.19.130
+      '@types/node': 22.20.1
     optional: true
 
   '@types/semver@7.7.1': {}
@@ -10940,10 +10928,6 @@ snapshots:
 
   caseless@0.12.0:
     optional: true
-
-  cdktf@0.21.0(constructs@10.6.0):
-    dependencies:
-      constructs: 10.6.0
 
   chalk@2.4.2:
     dependencies:
