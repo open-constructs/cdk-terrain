@@ -15,15 +15,15 @@ describe("provider upgrade command", () => {
     });
 
     test("installs pre-built provider using gradle", async () => {
-      await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
+      await driver.exec("cdktn", ["provider", "add", "dns@=3.6.0"]);
 
-      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.9.0"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "dns@=3.6.1"]);
 
       expect(driver.readLocalFile("build.gradle")).not.toContain(
-        "cdktn-provider-random:14.0.0",
+        "cdktn-provider-dns:12.1.0",
       );
       expect(driver.readLocalFile("build.gradle")).toContain(
-        "cdktn-provider-random:14.1.0",
+        "cdktn-provider-dns:12.1.1",
       );
     }, 500_000);
   });

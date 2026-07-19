@@ -15,7 +15,7 @@ describe("provider list command", () => {
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
+      await driver.exec("cdktn", ["provider", "add", "dns@=3.6.0"]);
 
       await driver.exec("cdktn", [
         "provider",
@@ -45,10 +45,10 @@ describe("provider list command", () => {
 
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "io.cdktn.cdktn-provider-random",
-          packageVersion: "14.0.0",
-          providerName: "random",
-          providerVersion: "3.8.1",
+          packageName: "io.cdktn.cdktn-provider-dns",
+          packageVersion: "12.1.0",
+          providerName: "dns",
+          providerVersion: "3.6.0",
           cdktnVersion: "^0.23.0",
         }),
       );
