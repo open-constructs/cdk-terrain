@@ -7,7 +7,6 @@ on:
   workflow_dispatch: {}
 
 # We special-case @types/node because we want to stay on the current major (minimum supported node release)
-# We special-case @types/node further because of an incompatibility with https-proxy-agent
 # We special-case @types/fs-extra because the current major (9.x) is broken with @types/node >= 10
 # We special-case typescript because it's not semantically versioned
 # We special-case constructs because we want to stay in control of the minimum compatible version
@@ -52,7 +51,7 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade dependencies at repository root
-          ncu --upgrade --filter=@types/fs-extra --target=minor --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+          ncu --upgrade --filter=@types/node,@types/fs-extra --target=minor --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
           ncu --upgrade --filter=typescript --target=patch --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
           ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor \
             --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
@@ -208,7 +207,7 @@ jobs:
           done
 
           ncu --upgrade "${workspace_args[@]}" --no-root \
-            --filter=@types/fs-extra --target=minor \
+            --filter=@types/node,@types/fs-extra --target=minor \
             --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
 
           ncu --upgrade "${workspace_args[@]}" --no-root \
