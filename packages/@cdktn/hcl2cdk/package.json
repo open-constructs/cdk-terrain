@@ -58,7 +58,7 @@
     "@types/babel__template": "7.4.4",
     "@types/deep-equal": "1.0.4",
     "@types/fs-extra": "11.0.4",
-    "@types/node": "20.19.37",
+    "@types/node": "22.20.1",
     "@types/prettier": "2.7.3",
     "@types/reserved-words": "0.1.4",
     "execa": "5.1.1",

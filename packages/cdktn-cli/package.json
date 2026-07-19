@@ -43,7 +43,7 @@
     "bundle"
   ],
   "dependencies": {
-    "@types/node": "20.19.1",
+    "@types/node": "22.20.1",
     "@cdktn/hcl-tools": "workspace:*",
     "@cdktn/hcl2cdk": "workspace:*",
     "@cdktn/hcl2json": "workspace:*",
