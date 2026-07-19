@@ -847,7 +847,7 @@ class GradlePackageManager extends JavaPackageManager {
         );
       })
       .map((dep) => ({
-        name: `com.hashicorp.${dep!.name}`,
+        name: `${dep!.group}.${dep!.name}`,
         version: dep!.version,
       }));
 
