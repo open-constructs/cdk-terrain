@@ -25,6 +25,11 @@ describe("provider add command", () => {
       ]);
     }, 500_000);
 
+    it("detects correct cdktn version", async () => {
+      const res = await driver.exec("cdktn", ["debug"]);
+      expect(res.stdout).toContain("cdktn: 0.23.1");
+    });
+
     onPosix(
       "installs pre-built provider using nuget",
       async () => {
