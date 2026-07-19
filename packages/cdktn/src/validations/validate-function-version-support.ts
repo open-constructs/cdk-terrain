@@ -9,7 +9,7 @@ import {
   FunctionVersionConstraints,
   functionVersionConstraints,
 } from "../functions/function-availability.generated";
-import { getUsedFunctions } from "../functions/usage-registry";
+import { TerraformStack } from "../terraform-stack";
 
 /**
  * Validates that every Terraform function used through `Fn` is supported by
@@ -25,12 +25,25 @@ import { getUsedFunctions } from "../functions/usage-registry";
  *
  * Functions used via raw escape hatches (overrides, hand-written expression
  * strings) are not tracked and therefore not validated.
+ *
+ * Usage is read from the OWNING STACK (`TerraformStack._getUsedFunctions()`)
+ * rather than from `node.root`: this validation is registered in
+ * `TerraformStack`'s constructor with the stack itself as scope, and
+ * `resolveTargetVersions` below walks context up from that same scope, so a
+ * per-stack `targetVersions` override is possible - reading a root-keyed
+ * (App-wide) usage record would validate one stack's usage against a
+ * sibling stack's targets. See `TerraformStack._usedFunctions` for the full
+ * rationale.
  */
 export class ValidateFunctionVersionSupport implements IValidation {
   constructor(protected scope: IConstruct) {}
 
   public validate() {
-    const constrainedFunctions = getUsedFunctions(this.scope.node.root)
+    const stack = TerraformStack.isStack(this.scope)
+      ? this.scope
+      : TerraformStack.of(this.scope);
+    const constrainedFunctions = stack
+      ._getUsedFunctions()
       .filter((name) => name in functionVersionConstraints)
       .sort();
 

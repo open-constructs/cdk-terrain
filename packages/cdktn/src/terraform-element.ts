@@ -89,11 +89,16 @@ export class TerraformElement extends Construct {
    * validations - each feature installs at most one node validation for
    * the lifetime of the element, gated on/off via the registration's
    * `active` flag instead of being re-added or removed.
+   *
+   * Lazily allocated: most elements in a large stack never register a
+   * provider feature at all, so this stays `undefined` until the first
+   * registration instead of every `TerraformElement` paying for an empty
+   * `Map` it will never use.
    */
-  private readonly _registeredProviderFeatures = new Map<
+  private _registeredProviderFeatures?: Map<
     ProviderFeature,
     ProviderFeatureRegistration
-  >();
+  >;
 
   constructor(scope: Construct, id: string, elementType?: string) {
     super(scope, id);
@@ -168,6 +173,11 @@ export class TerraformElement extends Construct {
    * @internal
    */
   public _resetResolveDiscoveredProviderFeatureUsage(): void {
+    // Nothing was ever registered on this element: skip allocating the Map
+    // just to iterate zero entries.
+    if (!this._registeredProviderFeatures) {
+      return;
+    }
     for (const registration of this._registeredProviderFeatures.values()) {
       if (registration.mode === "resolve-discovered") {
         registration.validation.active = false;
@@ -179,7 +189,7 @@ export class TerraformElement extends Construct {
     feature: ProviderFeature,
     mode: ProviderFeatureRegistrationMode,
   ): void {
-    const existing = this._registeredProviderFeatures.get(feature);
+    const existing = this._registeredProviderFeatures?.get(feature);
     if (existing) {
       // Already installed on this element: (re-)activate it rather than
       // stacking a second node validation for the same feature.
@@ -209,6 +219,9 @@ export class TerraformElement extends Construct {
       ),
     );
 
+    if (!this._registeredProviderFeatures) {
+      this._registeredProviderFeatures = new Map();
+    }
     this._registeredProviderFeatures.set(feature, { mode, validation });
     this.node.addValidation(validation);
   }

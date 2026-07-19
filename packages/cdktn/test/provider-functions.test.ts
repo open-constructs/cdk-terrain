@@ -3,6 +3,7 @@
 import {
   App,
   Testing,
+  Token,
   Tokenization,
   TerraformOutput,
   TerraformStack,
@@ -109,6 +110,83 @@ describe("invoke() preserves null/undefined positional arguments", () => {
     const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
     expect(value).toMatch(
       /provider::cfncompat::condition_if\(true, null, \{"a" = 1\}\)/,
+    );
+  });
+
+  // Round 7, section 3: a generated nullable fixed parameter's type now
+  // unions in `cdktn.IResolvable` specifically so a caller can pass
+  // `cdktn.Token.nullValue()` in that position (see `applyNullability` in
+  // provider-function-model.ts). `Token.nullValue()` is `Token.asAny(null)`
+  // - an `IResolvable` that resolves to `null` - so this pins, at the
+  // runtime primitive every generated wrapper method calls through to, that
+  // passing it in a FIXED positional slot renders the bare Terraform `null`
+  // keyword in that slot, same as a literal `null`/`undefined` above, rather
+  // than e.g. a quoted string or an unresolved token expression.
+  test("cdktn.Token.nullValue() passed as a fixed positional argument renders the bare null keyword in that position", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("cfncompat", "condition_if", [
+        true,
+        Token.nullValue(),
+        { a: 1 },
+      ]),
+    });
+
+    const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
+    expect(value).toMatch(
+      /provider::cfncompat::condition_if\(true, null, \{"a" = 1\}\)/,
+    );
+  });
+});
+
+// Round 7, section 5: proves - at the `TerraformProviderFunction.invoke()`
+// primitive every generated wrapper method is a thin call-through to - the
+// two runtime mechanics the round-7 type changes rely on being sound:
+// generated parameter types that now union in a whole-collection
+// `cdktn.IResolvable` token actually synthesize correctly when given one,
+// and a raw `IResolvable` returned by one invoke() call composes correctly
+// as an argument into a second invoke() call (the same shape a generated
+// method returning e.g. `set(bool)`/`map(string)` feeding into another
+// generated method's parameter of that type would produce). There is no
+// TypeScript-compiling harness in this repository for generated provider
+// bindings (see the composition tests in
+// packages/@cdktn/provider-generator's provider-functions.test.ts for the
+// generator-side structural assertions on the emitted declaration text).
+describe("whole-collection tokens and invoke()-to-invoke() composition", () => {
+  test("a whole-collection IResolvable token (e.g. standing in for a list(bool)/set(bool) parameter) synthesizes as its resolved value, not as an opaque token expression", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("example", "flag_set", [
+        Token.asAny([true, false]),
+      ]),
+    });
+
+    const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
+    expect(value).toBe("${provider::example::flag_set([true, false])}");
+  });
+
+  test("the raw IResolvable one invoke() call returns composes correctly as an argument into a second invoke() call", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    const innerResult = TerraformProviderFunction.invoke(
+      "example",
+      "flags_for_seed",
+      ["a-seed"],
+    );
+    new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("example", "flag_set", [
+        innerResult,
+      ]),
+    });
+
+    const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
+    expect(value).toBe(
+      '${provider::example::flag_set(provider::example::flags_for_seed("a-seed"))}',
     );
   });
 });
@@ -296,13 +374,16 @@ describe("resolve-discovered provider-function usage: entry points and synthesis
   });
 
   test("multi-stack App.synth(): preparing stack2 does not erase provider-function usage stack1 already recorded", () => {
-    // The function-usage registry reset (resetUsageForRoot) runs exactly
-    // once, at the very start of App.synth(), keyed by the App root shared
-    // by every stack - deliberately NOT inside prepareStack(), because
-    // App.synth() prepares stacks one at a time and a per-stack reset there
-    // would wipe out a sibling stack's usage already recorded earlier in
-    // that same loop. stack1 is prepared (and its usage recorded) before
-    // stack2 is prepared here.
+    // Usage is now recorded and read per-stack (`TerraformStack._usedFunctions`
+    // / `_usedProviderFunctions`), each cleared by that stack's own
+    // `_runPreparingResolve()` - so this scenario is trivially true: stack1's
+    // usage lives entirely on stack1 and nothing stack2's preparation does
+    // can touch it. This coverage is kept (rather than deleted) as a
+    // regression test for the round-6 bug this replaces: a single
+    // App-root-keyed registry, reset once at the start of App.synth(), used
+    // to require this comment's reasoning about *when* the shared reset ran
+    // relative to per-stack preparation. With per-stack ownership there is
+    // no shared state left to race.
     const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
     const stack1 = new TerraformStack(app, "Stack1");
@@ -312,5 +393,103 @@ describe("resolve-discovered provider-function usage: entry points and synthesis
     new TerraformOutput(stack2, "unrelated-output", { value: "just a stack" });
 
     expect(() => app.synth()).toThrow(/provider-defined functions/);
+  });
+});
+
+// Round 7: usage moved from a single App-root-keyed registry onto each
+// TerraformStack instance. This matters because
+// ValidateProviderFunctionTargetSupport is registered in TerraformStack's
+// constructor with the STACK as scope, and resolveTargetVersions() walks
+// context up FROM that scope - so sibling stacks can declare different
+// targetVersions via stack-level context. Root-keyed usage would validate
+// one stack's usage against a sibling's targets, producing false positives
+// (an unrelated, compatible sibling failing because of a stricter sibling's
+// targets) and false negatives (a genuinely incompatible stack passing
+// because a compatible sibling's usage happened to satisfy the check).
+describe("stack-owned usage: sibling stacks with independent targetVersions", () => {
+  function appWithStacks() {
+    const outdir = tmp("cdktf.outdir.");
+    return Testing.stubVersion(new App({ stackTraces: false, outdir }));
+  }
+
+  function gatedProviderFunctionValue() {
+    return TerraformProviderFunction.invoke("time", "rfc3339_parse", [
+      "2023-01-01T00:00:00Z",
+    ]);
+  }
+
+  test("app.synth() passes when a compatible stack uses the function and an incompatible sibling never does", () => {
+    const app = appWithStacks();
+
+    const compatible = new TerraformStack(app, "CompatibleStack");
+    compatible.node.setContext("targetVersions", {
+      terraform: ">=1.8.0",
+      opentofu: ">=1.7.0",
+    });
+    new TerraformOutput(compatible, "gated-output", {
+      value: gatedProviderFunctionValue(),
+    });
+
+    const incompatible = new TerraformStack(app, "IncompatibleStack");
+    new TerraformOutput(incompatible, "unrelated-output", {
+      value: "no provider function used here",
+    });
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("app.synth() fails with only the incompatible stack's error when its compatible sibling never uses the function", () => {
+    const app = appWithStacks();
+
+    const compatible = new TerraformStack(app, "CompatibleStack");
+    compatible.node.setContext("targetVersions", {
+      terraform: ">=1.8.0",
+      opentofu: ">=1.7.0",
+    });
+    new TerraformOutput(compatible, "harmless-output", {
+      value: "no provider function used here",
+    });
+
+    const incompatible = new TerraformStack(app, "IncompatibleStack");
+    new TerraformOutput(incompatible, "gated-output", {
+      value: gatedProviderFunctionValue(),
+    });
+
+    let error: Error | undefined;
+    try {
+      app.synth();
+    } catch (e) {
+      error = e as Error;
+    }
+
+    expect(error).toBeDefined();
+    expect(error!.message).toContain("provider-defined functions");
+    expect(error!.message).toContain("[IncompatibleStack]");
+    expect(error!.message).not.toContain("[CompatibleStack]");
+  });
+
+  test("a single shared token rendered into both stacks' outputs is attributed to each stack independently", () => {
+    const app = appWithStacks();
+    const stackA = new TerraformStack(app, "StackA");
+    const stackB = new TerraformStack(app, "StackB");
+
+    // The exact same token/IResolvable instance, resolved once per stack
+    // (each stack has its own preparing-resolve pass over its own
+    // elements) - proving that recording happens per RESOLVE, attributed to
+    // whichever stack is doing the resolving, not just once for whichever
+    // stack happens to resolve it first.
+    const sharedValue = gatedProviderFunctionValue();
+    new TerraformOutput(stackA, "output-a", { value: sharedValue });
+    new TerraformOutput(stackB, "output-b", { value: sharedValue });
+
+    // Both stacks target the (incompatible) default baseline, and each is
+    // validated independently of the other (Testing.synth's resolve/reset
+    // discovery step targets a single stack), so both fail.
+    expect(() => Testing.synth(stackA, true)).toThrow(
+      /provider-defined functions/,
+    );
+    expect(() => Testing.synth(stackB, true)).toThrow(
+      /provider-defined functions/,
+    );
   });
 });

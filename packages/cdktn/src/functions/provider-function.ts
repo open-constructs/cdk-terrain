@@ -38,8 +38,9 @@ export class TerraformProviderFunction {
   ): IResolvable {
     const fullName = `provider::${providerLocalName}::${functionName}`;
     // Usage is recorded at token-resolve time (see FunctionCall.resolve() in
-    // tfExpression.ts and usage-registry.ts), not here at call time: this
-    // just builds the token that resolve() later records when it actually
+    // tfExpression.ts, and TerraformStack._usedFunctions/
+    // _recordProviderFunctionUsage), not here at call time: this just
+    // builds the token that resolve() later records when it actually
     // renders into a stack.
     //
     // Note: intentionally NOT `[variadic(anyValue)]` - variadic()/listOf()

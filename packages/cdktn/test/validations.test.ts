@@ -688,4 +688,52 @@ describe("ValidateFunctionVersionSupport", () => {
       "
     `);
   });
+
+  // Round 7: usage moved from a single App-root-keyed registry onto each
+  // TerraformStack instance, because ValidateFunctionVersionSupport is
+  // registered with the STACK as scope and resolveTargetVersions() walks
+  // context up from that scope - sibling stacks can declare different
+  // targetVersions via stack-level context. Root-keyed usage would
+  // validate a stack's usage against a DIFFERENT sibling stack's targets;
+  // here Stack2 uses a function gated to a floor it doesn't declare, while
+  // Stack1 (a stricter, compatible sibling) declares no usage at all - with
+  // the old root-keyed registry this would have incorrectly attributed
+  // Stack2's usage check against Stack1's targets too (or vice versa).
+  test("sibling stacks with different declared targets are validated independently: an incompatible stack's usage does not leak onto a compatible sibling", () => {
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
+
+    const compatible = new TerraformStack(app, "CompatibleStack");
+    compatible.node.setContext("targetVersions", {
+      terraform: ">=1.9.0",
+      opentofu: ">=1.7.0",
+    });
+    new TestProvider(compatible, "provider", {});
+    compatible.node.addValidation(
+      new ValidateFunctionVersionSupport(compatible),
+    );
+    new TestResource(compatible, "harmless", {
+      name: "no gated function used here",
+    });
+
+    const incompatible = new TerraformStack(app, "IncompatibleStack");
+    new TestProvider(incompatible, "provider", {});
+    incompatible.node.addValidation(
+      new ValidateFunctionVersionSupport(incompatible),
+    );
+    new TestResource(incompatible, "usesTemplatestring", {
+      name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
+    });
+
+    let error: Error | undefined;
+    try {
+      app.synth();
+    } catch (e) {
+      error = e as Error;
+    }
+
+    expect(error).toBeDefined();
+    expect(error!.message).toContain("[IncompatibleStack");
+    expect(error!.message).not.toContain("[CompatibleStack");
+  });
 });

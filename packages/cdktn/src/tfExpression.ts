@@ -7,10 +7,6 @@ import { App } from "./app";
 import { TerraformStack } from "./terraform-stack";
 import { ITerraformDependable } from "./terraform-dependable";
 import { Construct } from "constructs";
-import {
-  recordFunctionUsage,
-  recordProviderFunctionUsage,
-} from "./functions/usage-registry";
 
 const TERRAFORM_IDENTIFIER_REGEX = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
 
@@ -19,6 +15,49 @@ class TFExpression extends Intrinsic implements IResolvable {
   protected resolveExpressionPart(context: IResolveContext, arg: any): string {
     const resolvedArg = context.resolve(arg);
     if (Tokenization.isResolvable(arg)) {
+      // A resolvable arg (e.g. `cdktn.Token.nullValue()`, an IResolvable
+      // wrapping `null` - see Token.nullValue()/Token.asAny()) can itself
+      // resolve to `null`/`undefined`. Collapse that to the literal "null"
+      // string too, for the exact same reason as the plain-null/undefined
+      // branch further down: Array.prototype.join() (used by callers like
+      // FunctionCall.resolve()) treats a `null`/`undefined` array ELEMENT as
+      // an empty string, silently dropping the argument instead of
+      // rendering the Terraform `null` keyword. Without this, only a
+      // literal JS `null`/`undefined` argument rendered correctly - a
+      // resolvable token that resolves to `null` (the only way to pass an
+      // explicit `null` in a jsii-typed fixed position, since jsii can't
+      // express a literal `null` parameter type) silently vanished instead.
+      if (resolvedArg === null || resolvedArg === undefined) {
+        return "null";
+      }
+      // A resolvable can itself resolve to a plain (unencoded) array/object
+      // rather than an already-rendered string - e.g. a manually-constructed
+      // whole-collection token like `cdktn.Token.asAny([true, false])`
+      // (exactly the shape a jsii-typed `Array<boolean | cdktn.IResolvable>
+      // | cdktn.IResolvable` provider-function parameter now accepts - see
+      // provider-function-model.ts). Format it the same bracket/brace way
+      // the plain array/object branches below do, recursing on
+      // `resolvedArg`'s own elements (NOT `arg`'s - `arg` is the resolvable
+      // wrapper itself, not indexable/keyable). Without this, the array
+      // branch below is unreachable for a resolvable arg (this `if` already
+      // returned), so the raw array/object fell straight through to the
+      // plain `return resolvedArg` at the bottom - relying on the caller's
+      // `Array.prototype.join()` (FunctionCall.resolve() et al.) to
+      // stringify it, which drops an array's brackets/spacing (renders
+      // `true,false` instead of `[true, false]`) and, for an object, would
+      // produce the useless literal string `[object Object]`.
+      if (Array.isArray(resolvedArg)) {
+        return `[${resolvedArg
+          .map((item) => this.resolveArg(context, item))
+          .join(", ")}]`;
+      }
+      if (typeof resolvedArg === "object") {
+        return `{${Object.keys(resolvedArg)
+          .map(
+            (key) => `"${key}" = ${this.resolveArg(context, resolvedArg[key])}`,
+          )
+          .join(", ")}}`;
+      }
       return resolvedArg;
     }
     if (Array.isArray(resolvedArg)) {
@@ -379,15 +418,37 @@ class FunctionCall extends TFExpression {
     // Recording here, at resolve time, is deliberate: a `Fn.*()`/
     // `TerraformProviderFunction.invoke()` call only produces a token: this
     // is the point where that token actually lands in a rendered stack, so
-    // usage is attributed to the App whose synthesis is doing the
-    // rendering (`context.scope` is always the enclosing `TerraformStack`;
-    // its root is the owning `App`). See usage-registry.ts for the full
-    // rationale.
-    const root = context.scope.node.root;
-    if (this.name.startsWith("provider::")) {
-      recordProviderFunctionUsage(root, this.name);
+    // usage is attributed to the STACK whose synthesis is doing the
+    // rendering - see `TerraformStack._usedFunctions` for why usage is
+    // stack-owned rather than App-owned.
+    //
+    // `context.scope` IS the resolving TerraformStack for every
+    // synth-driven resolve (App.synth, Testing.synth/synthHcl,
+    // StackSynthesizer.synthesize all resolve elements with their owning
+    // stack as scope), so `TerraformStack.isStack` is checked first as the
+    // common case. `TerraformStack.of()` is a fallback for a scope that is
+    // some other construct within a stack. If neither finds a stack (a
+    // user-driven `Tokens.resolve()` call against a bare scope with no
+    // stack in its ancestry), there is nowhere to record into - and nothing
+    // would ever read it back to validate anyway - so recording is quietly
+    // skipped rather than throwing.
+    let stack: TerraformStack | undefined;
+    if (TerraformStack.isStack(context.scope)) {
+      stack = context.scope;
     } else {
-      recordFunctionUsage(root, this.name);
+      try {
+        stack = TerraformStack.of(context.scope);
+      } catch {
+        stack = undefined;
+      }
+    }
+
+    if (stack) {
+      if (this.name.startsWith("provider::")) {
+        stack._recordProviderFunctionUsage(this.name);
+      } else {
+        stack._recordFunctionUsage(this.name);
+      }
     }
 
     const suppressBraces = context.suppressBraces;

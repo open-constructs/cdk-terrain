@@ -6,7 +6,7 @@ import {
   resolveTargetVersions,
 } from "./target-versions";
 import { providerFeatureConstraints } from "../provider-feature-constraints";
-import { getUsedProviderFunctions } from "../functions/usage-registry";
+import { TerraformStack } from "../terraform-stack";
 
 /**
  * Validates that any provider-defined functions
@@ -23,17 +23,24 @@ import { getUsedProviderFunctions } from "../functions/usage-registry";
  *
  * Registered unconditionally (no feature flag): this is new API surface, and
  * the check only ever fires when a provider function is actually used —
- * i.e. its token was resolved while rendering a stack owned by the same
- * App as this validation's scope (usage is recorded per-App-root at
- * token-resolve time; see `../functions/usage-registry.ts`).
+ * i.e. its token was resolved while rendering this validation's OWNING
+ * STACK (`TerraformStack._getUsedProviderFunctions()`), not while rendering
+ * some other stack in the same App: this validation is registered in
+ * `TerraformStack`'s constructor with the stack itself as scope, and
+ * `resolveTargetVersions` below walks context up from that same scope, so a
+ * per-stack `targetVersions` override is possible - reading a root-keyed
+ * (App-wide) usage record would validate one stack's usage against a
+ * sibling stack's targets. See `TerraformStack._usedFunctions` for the full
+ * rationale.
  */
 export class ValidateProviderFunctionTargetSupport implements IValidation {
   constructor(protected scope: IConstruct) {}
 
   public validate() {
-    const usedProviderFunctions = getUsedProviderFunctions(
-      this.scope.node.root,
-    ).sort();
+    const stack = TerraformStack.isStack(this.scope)
+      ? this.scope
+      : TerraformStack.of(this.scope);
+    const usedProviderFunctions = stack._getUsedProviderFunctions().sort();
 
     // no provider-defined functions in use: nothing to validate
     if (usedProviderFunctions.length === 0) {

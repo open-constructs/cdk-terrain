@@ -11,7 +11,6 @@ import { Aspects, IAspect } from "../aspect";
 import { StackAnnotation } from "../manifest";
 import { ValidateTerraformVersion } from "../validations/validate-terraform-version";
 import { encounteredAnnotationWithLevelError } from "../errors";
-import { resetUsageForRoot } from "../functions/usage-registry";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class StackSynthesizer implements IStackSynthesizer {
@@ -37,16 +36,15 @@ export class StackSynthesizer implements IStackSynthesizer {
       // usage are rediscovered for the current pass before validations run
       // below. See ISynthesisSession.stacksPrepared.
       //
-      // Terraform-function usage is recorded per-root (see
-      // functions/usage-registry.ts) and, unlike provider-feature
-      // registrations, is NOT reset as a side effect of `prepareStack()` -
-      // resetting it is the caller's responsibility. Without this, a
-      // function rendered by an earlier pass over this same stack/root
-      // (e.g. a previous direct call to this same synthesize()) would keep
-      // failing target-version validation in a later pass even after that
-      // usage is gone, breaking the per-synthesis-epoch guarantee that
-      // App.synth() and Testing.synth()/synthHcl() already provide.
-      resetUsageForRoot(this.stack.node.root);
+      // Terraform-function usage is recorded per-stack (see
+      // `TerraformStack._usedFunctions`) and `prepareStack()` clears this
+      // stack's own usage sets itself, as the first step of
+      // `_runPreparingResolve()`, before rediscovering them. Without this,
+      // a function rendered by an earlier pass over this same stack (e.g. a
+      // previous direct call to this same synthesize()) would keep failing
+      // target-version validation in a later pass even after that usage is
+      // gone, breaking the per-synthesis-epoch guarantee that App.synth()
+      // and Testing.synth()/synthHcl() already provide.
       this.stack.prepareStack();
     }
 

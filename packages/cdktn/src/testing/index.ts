@@ -12,7 +12,6 @@ import { FUTURE_FLAGS } from "../features";
 import { IConstruct, Construct } from "constructs";
 import { setupJest } from "./adapters/jest";
 import { invokeAspects } from "../synthesize/synthesizer";
-import { resetUsageForRoot } from "../functions/usage-registry";
 import {
   getToHaveResourceWithProperties,
   getToHaveDataSourceWithProperties,
@@ -114,8 +113,8 @@ export class Testing {
       // provider-feature and Terraform-function usage, so the validations
       // below see what this pass actually renders instead of stale usage
       // (or none at all) left over from a previous call against the same
-      // stack. See TerraformStack._runPreparingResolve.
-      resetUsageForRoot(stack.node.root);
+      // stack. `_runPreparingResolve` clears the stack's own function-usage
+      // sets itself before rediscovering - see `TerraformStack._usedFunctions`.
       stack._runPreparingResolve();
       stack.runAllValidations();
     }
@@ -161,7 +160,6 @@ export class Testing {
     if (runValidations) {
       // See the matching comment in Testing.synth(): only the resolve/reset
       // discovery half of prepareStack(), never the backend-injecting half.
-      resetUsageForRoot(stack.node.root);
       stack._runPreparingResolve();
       stack.runAllValidations();
     }
