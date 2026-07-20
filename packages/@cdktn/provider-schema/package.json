@@ -45,7 +45,7 @@
     "@types/fs-extra": "11.0.4",
     "safe-stable-stringify": "2.5.0",
     "tsc-files": "1.1.4",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.4"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": "tsc-files ambient.d.ts --noEmit"

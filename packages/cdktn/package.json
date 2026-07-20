@@ -82,12 +82,12 @@
         "constructs": "10.6.0",
         "jsii": "~5.9.0",
         "jsii-pacmak": "1.128.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.0.4"
     },
     "dependencies": {
-        "fflate": "0.8.2",
+        "fflate": "0.8.3",
         "safe-stable-stringify": "2.5.0",
-        "semver": "7.7.4"
+        "semver": "7.8.5"
     },
     "bundledDependencies": [
         "fflate",
