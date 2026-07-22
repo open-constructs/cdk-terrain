@@ -10,6 +10,24 @@ import { Construct } from "constructs";
 
 const TERRAFORM_IDENTIFIER_REGEX = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
 
+/**
+ * Serializes an object key as a Terraform quoted-string literal:
+ * `JSON.stringify` covers quotes, backslashes and control characters, and
+ * `$${`/`%%{` are Terraform's own escapes for what would otherwise become
+ * template interpolation/directive sequences inside the quoted string. The
+ * pre-existing direct-object branches of `resolveExpressionPart` still
+ * interpolate keys unescaped - tracked in
+ * https://github.com/open-constructs/cdk-terrain/issues/350.
+ */
+function quotedStringKey(key: string): string {
+  // Replacer functions, not replacement strings: in a replacement string
+  // `$$` is itself an escape (for a literal `$`), so `"$${"` would emit
+  // just `${` - silently undoing the escape this exists to produce.
+  return JSON.stringify(key)
+    .replace(/\$\{/g, () => "$${")
+    .replace(/%\{/g, () => "%%{");
+}
+
 // eslint-disable-next-line jsdoc/require-jsdoc
 class TFExpression extends Intrinsic implements IResolvable {
   protected resolveExpressionPart(context: IResolveContext, arg: any): string {
@@ -54,7 +72,8 @@ class TFExpression extends Intrinsic implements IResolvable {
       if (typeof resolvedArg === "object") {
         return `{${Object.keys(resolvedArg)
           .map(
-            (key) => `"${key}" = ${this.resolveArg(context, resolvedArg[key])}`,
+            (key) =>
+              `${quotedStringKey(key)} = ${this.resolveArg(context, resolvedArg[key])}`,
           )
           .join(", ")}}`;
       }

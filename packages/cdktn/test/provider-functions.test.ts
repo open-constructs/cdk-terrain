@@ -70,12 +70,12 @@ test("invoke() result passed as a resource attribute survives synth as a provide
   );
 });
 
-// Bug 2 regression: invoke() used to flatten/validate args through
-// variadic(anyValue), whose underlying listOf() filters out null/undefined
-// ENTRIES - correct for a genuinely variadic trailing list, wrong for a
-// fixed-arity positional call, where a literal `null` in the middle is a
-// meaningful argument (Terraform errors "Missing value for value_if_false"
-// when it silently disappears).
+// invoke() must not flatten/validate its args through variadic(anyValue):
+// the underlying listOf() filters out null/undefined ENTRIES - correct for
+// a genuinely variadic trailing list, wrong for a fixed-arity positional
+// call, where a literal `null` in the middle is a meaningful argument
+// (Terraform errors "Missing value for value_if_false" when it silently
+// disappears).
 describe("invoke() preserves null/undefined positional arguments", () => {
   test("a literal null in the second position renders as three comma-separated arguments with a literal null", () => {
     const app = Testing.app();
@@ -113,8 +113,8 @@ describe("invoke() preserves null/undefined positional arguments", () => {
     );
   });
 
-  // Round 7, section 3: a generated nullable fixed parameter's type now
-  // unions in `cdktn.IResolvable` specifically so a caller can pass
+  // A generated nullable fixed parameter's type unions in
+  // `cdktn.IResolvable` specifically so a caller can pass
   // `cdktn.Token.nullValue()` in that position (see `applyNullability` in
   // provider-function-model.ts). `Token.nullValue()` is `Token.asAny(null)`
   // - an `IResolvable` that resolves to `null` - so this pins, at the
@@ -141,10 +141,10 @@ describe("invoke() preserves null/undefined positional arguments", () => {
   });
 });
 
-// Round 7, section 5: proves - at the `TerraformProviderFunction.invoke()`
-// primitive every generated wrapper method is a thin call-through to - the
-// two runtime mechanics the round-7 type changes rely on being sound:
-// generated parameter types that now union in a whole-collection
+// Proves - at the `TerraformProviderFunction.invoke()` primitive every
+// generated wrapper method is a thin call-through to - the two runtime
+// mechanics the generated types rely on being sound:
+// generated parameter types that union in a whole-collection
 // `cdktn.IResolvable` token actually synthesize correctly when given one,
 // and a raw `IResolvable` returned by one invoke() call composes correctly
 // as an argument into a second invoke() call (the same shape a generated
@@ -167,6 +167,33 @@ describe("whole-collection tokens and invoke()-to-invoke() composition", () => {
 
     const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
     expect(value).toBe("${provider::example::flag_set([true, false])}");
+  });
+
+  test("a whole-collection token resolving to a map escapes keys containing quotes, backslashes, and template markers into valid quoted-string literals", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+
+    new TerraformOutput(stack, "test-output", {
+      value: TerraformProviderFunction.invoke("example", "flag_map", [
+        Token.asAny({
+          'he"llo': "a",
+          "back\\slash": "b",
+          "${interp}": "c",
+          "%{directive}": "d",
+        }),
+      ]),
+    });
+
+    // Keys are serialized as Terraform quoted-string literals: quotes,
+    // backslashes and control characters JSON-escaped, `${`/`%{` rendered
+    // via Terraform's own `$${`/`%%{` escapes so the literal key doesn't
+    // become a template interpolation/directive sequence. (The pre-existing
+    // direct-object branch is not covered here - see
+    // https://github.com/open-constructs/cdk-terrain/issues/350.)
+    const { value } = JSON.parse(Testing.synth(stack)).output["test-output"];
+    expect(value).toBe(
+      '${provider::example::flag_map({"he\\"llo" = "a", "back\\\\slash" = "b", "$${interp}" = "c", "%%{directive}" = "d"})}',
+    );
   });
 
   test("the raw IResolvable one invoke() call returns composes correctly as an argument into a second invoke() call", () => {
@@ -278,14 +305,15 @@ describe("ValidateProviderFunctionTargetSupport", () => {
   });
 
   test("still fires when a second, unrelated App is constructed between usage and synth of the first (interleaved Apps)", () => {
-    // Regression test: with call-time recording into a single process-global
-    // registry, App B's constructor used to reset that registry, silently
-    // wiping out the usage App A had already recorded for
-    // TerraformProviderFunction.invoke() before App A ever got to synth() -
-    // a false negative that skipped target-version validation entirely.
-    // Recording at token-RESOLVE time, keyed by the resolving root, fixes
-    // this: App A's usage is only ever recorded (during App A's own
-    // prepareStack pass) and read back from App A's own root.
+    // Guards the interleaved-Apps scenario the released built-in `Fn.*`
+    // usage tracking got wrong (see the matching test in
+    // validations.test.ts): with call-time recording into a process-global
+    // registry that every App constructor reset, App B's construction
+    // silently wiped out the usage App A had already recorded before App A
+    // ever got to synth() - a false negative that skipped target-version
+    // validation entirely. Provider-function usage is recorded at
+    // token-RESOLVE time onto the stack being resolved, so App B's
+    // construction cannot touch App A's usage.
     const { app: app1, stack: stack1 } = appWithStack();
     new TerraformOutput(stack1, "test-output", {
       value: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
@@ -294,7 +322,7 @@ describe("ValidateProviderFunctionTargetSupport", () => {
     });
 
     // App B is constructed here, strictly between App A's usage and App
-    // A's synth() call - the interleaving that used to trigger the bug.
+    // A's synth() call - the interleaving a process-global design breaks on.
     appWithStack();
 
     expect(() => app1.synth()).toThrowErrorMatchingInlineSnapshot(`
@@ -308,13 +336,13 @@ describe("ValidateProviderFunctionTargetSupport", () => {
   });
 });
 
-// Round 6, Findings 2 and 3 for the function-usage registry: the identical
-// entry-point gap that existed for write-only attributes existed here too -
-// usage is only ever discovered by a prepare step that resolves every
-// element's toTerraform(), and only App.synth() ran that step. And because
-// usage represents only the CURRENT synthesis pass, repeat synthesis of the
-// same App must not let a function rendered in an earlier pass keep failing
-// a later pass where it no longer appears.
+// Same entry-point requirement as resolve-discovered write-only usage (see
+// write-only.test.ts): usage is only ever discovered by a prepare step that
+// resolves every element's toTerraform(), so every validation-enabled entry
+// point - not just App.synth() - must run that step itself before
+// validating. And because usage represents only the CURRENT synthesis pass,
+// repeat synthesis of the same App must not let a function rendered in an
+// earlier pass keep failing a later pass where it no longer appears.
 describe("resolve-discovered provider-function usage: entry points and synthesis epochs", () => {
   function appWithStack(context?: Record<string, any>) {
     const outdir = tmp("cdktf.outdir.");
@@ -374,16 +402,16 @@ describe("resolve-discovered provider-function usage: entry points and synthesis
   });
 
   test("multi-stack App.synth(): preparing stack2 does not erase provider-function usage stack1 already recorded", () => {
-    // Usage is now recorded and read per-stack (`TerraformStack._usedFunctions`
+    // Usage is recorded and read per-stack (`TerraformStack._usedFunctions`
     // / `_usedProviderFunctions`), each cleared by that stack's own
-    // `_runPreparingResolve()` - so this scenario is trivially true: stack1's
-    // usage lives entirely on stack1 and nothing stack2's preparation does
-    // can touch it. This coverage is kept (rather than deleted) as a
-    // regression test for the round-6 bug this replaces: a single
-    // App-root-keyed registry, reset once at the start of App.synth(), used
-    // to require this comment's reasoning about *when* the shared reset ran
-    // relative to per-stack preparation. With per-stack ownership there is
-    // no shared state left to race.
+    // `_runPreparingResolve()` - so this scenario holds structurally:
+    // stack1's usage lives entirely on stack1 and nothing stack2's
+    // preparation does can touch it. The coverage pins exactly that
+    // per-stack ownership: any design sharing usage state across stacks
+    // (e.g. one registry on the App with a single shared reset) has to
+    // reason about *when* the shared reset runs relative to each stack's
+    // preparation - with per-stack ownership there is no shared state to
+    // race.
     const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
     const stack1 = new TerraformStack(app, "Stack1");
@@ -396,13 +424,14 @@ describe("resolve-discovered provider-function usage: entry points and synthesis
   });
 });
 
-// Round 7: usage moved from a single App-root-keyed registry onto each
-// TerraformStack instance. This matters because
+// Usage lives on each TerraformStack instance, not in a registry keyed by
+// the shared App root. This matters because
 // ValidateProviderFunctionTargetSupport is registered in TerraformStack's
 // constructor with the STACK as scope, and resolveTargetVersions() walks
 // context up FROM that scope - so sibling stacks can declare different
-// targetVersions via stack-level context. Root-keyed usage would validate
-// one stack's usage against a sibling's targets, producing false positives
+// targetVersions via stack-level context. Usage shared across siblings
+// would validate one stack's usage against a sibling's targets, producing
+// false positives
 // (an unrelated, compatible sibling failing because of a stricter sibling's
 // targets) and false negatives (a genuinely incompatible stack passing
 // because a compatible sibling's usage happened to satisfy the check).
