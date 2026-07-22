@@ -1,6 +1,13 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { App, Lazy, Testing, TerraformResource, TerraformStack } from "../src";
+import {
+  App,
+  Lazy,
+  Testing,
+  TerraformResource,
+  TerraformStack,
+  Token,
+} from "../src";
 import { Construct } from "constructs";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
@@ -238,7 +245,7 @@ describe("registerProviderFeatureUsage (write-only attributes)", () => {
     expect(() => app.synth()).toThrow(/write-only attributes requires/);
   });
 
-  // (g) explicit null from the start (previous round's semantics, preserved)
+  // (g) explicit null from the start
   test("constructor: explicit null from the start is treated as omission, synth passes", () => {
     const { app, stack } = appWithStack();
     const resource = new TestWriteOnlyResource(stack, "testResource", {
@@ -260,6 +267,22 @@ describe("registerProviderFeatureUsage (write-only attributes)", () => {
     expect(() => app.synth()).not.toThrow();
   });
 
+  test("a token that RESOLVES to null (cdktn.Token.nullValue()) is treated as omission too, synth passes", () => {
+    // Unlike a literal `null`, `Token.nullValue()` is an IResolvable, so it
+    // does get wrapped by markWriteOnlyAttribute() - this pins that the
+    // wrapper's resolve-time nullish check treats the RESOLVED value as the
+    // Terraform-semantics source of truth: a token resolving to `null`
+    // renders as an explicit null-out and must not arm the validation, same
+    // as assigning `null` directly.
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+
+    resource.secretKeyWo = Token.nullValue() as unknown as string;
+
+    expect(() => app.synth()).not.toThrow();
+    expect(synthesizedSecretKeyWo(stack)).toBeNull();
+  });
+
   test("unknown feature key throws", () => {
     const { stack } = appWithStack();
     const resource = new TestWriteOnlyResource(stack, "testResource", {});
@@ -272,16 +295,15 @@ describe("registerProviderFeatureUsage (write-only attributes)", () => {
   });
 });
 
-// Round 6, Finding 2: markWriteOnlyAttribute's registration is only ever
-// discovered by a prepare step (TerraformStack._runPreparingResolve). Every
+// markWriteOnlyAttribute's registration is only ever discovered by a
+// prepare step (TerraformStack._runPreparingResolve). Every
 // validation-enabled entry point must run that prepare step itself before
 // validating, not just App.synth() - otherwise a write-only value that
 // violates the declared targets silently renders without ever being
-// flagged. Round 6, Finding 3: because the registration this discovers
-// represents only the CURRENT synthesis pass, repeat synthesis of the same
-// App/stack must neither leak a stale registration into a pass where the
-// value is no longer present, nor stack up duplicate validations across
-// passes.
+// flagged. And because the registration this discovers represents only the
+// CURRENT synthesis pass, repeat synthesis of the same App/stack must
+// neither leak a stale registration into a pass where the value is no
+// longer present, nor stack up duplicate validations across passes.
 describe("resolve-discovered write-only usage: entry points and synthesis epochs", () => {
   test("Testing.synth(stack, true) surfaces an old-target write-only failure", () => {
     const { stack } = appWithStack();

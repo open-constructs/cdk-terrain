@@ -214,7 +214,7 @@ describe("ephemeral resource target version validation", () => {
     expect(() => app.synth()).not.toThrow();
   });
 
-  // Round 6, Finding 3: registrations made via the plain (structural)
+  // Registrations made via the plain (structural)
   // `registerProviderFeatureUsage` - the element's mere existence is the
   // usage, as here in TestEphemeralResource's constructor - are never
   // deactivated by the per-synthesis-pass reset that resolve-discovered

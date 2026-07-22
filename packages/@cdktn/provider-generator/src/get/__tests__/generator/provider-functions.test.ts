@@ -93,7 +93,7 @@ describe("generate provider functions covering variadic parameters, primitive/li
     expect(providerLazyIndex).toMatchSnapshot("provider-lazy-index");
   });
 
-  // Round 7, composition: this package has no TypeScript-compiling harness
+  // This package has no TypeScript-compiling harness
   // for generated output (no fixture/test anywhere generates a snippet and
   // feeds it through `tsc`/`ts.transpileModule`, and `cdktn` itself isn't a
   // dependency of this package to typecheck against), so these are

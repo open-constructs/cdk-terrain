@@ -248,14 +248,12 @@ export class TerraformStack extends Construct {
    * provider-feature and Terraform-function usage.
    *
    * Clears this stack's own `_usedFunctions`/`_usedProviderFunctions` sets
-   * first - this stack's per-pass epoch for Terraform-function usage,
-   * replacing what used to be a single App-root-keyed reset that every
-   * validation-enabled entry point (`App.synth`, `Testing.synth`/
-   * `synthHcl`, `StackSynthesizer.synthesize`) had to remember to call
-   * separately. Because this now runs here, once per stack, every one of
-   * those entry points gets the reset for free just by calling
+   * first - this stack's per-pass epoch for Terraform-function usage.
+   * Because the reset lives here, once per stack, every validation-enabled
+   * entry point (`App.synth`, `Testing.synth`/`synthHcl`,
+   * `StackSynthesizer.synthesize`) gets it for free just by calling
    * `prepareStack()`/`_runPreparingResolve()` - see `_usedFunctions` for why
-   * usage is keyed by stack rather than by App root.
+   * usage is keyed by stack.
    *
    * Then deactivates every element's stale `resolve-discovered`
    * provider-feature registrations (see
@@ -267,6 +265,12 @@ export class TerraformStack extends Construct {
    * `FunctionCall.resolve()`, which records into `_recordFunctionUsage`/
    * `_recordProviderFunctionUsage` above). A preparing resolve run might
    * also add new resources to the stack, e.g. for cross stack references.
+   * Cross-stack references stay sound even though this method skips THIS
+   * stack's `ensureBackendExists()`: resolving one materializes the ORIGIN
+   * stack's backend on demand (`registerIncomingCrossStackReference` calls
+   * `fromStack.ensureBackendExists()` itself), so only the synthesizing
+   * stack's own backend block is left uninjected - which is exactly what
+   * the `Testing.synth`/`synthHcl` callers want.
    *
    * @internal
    */

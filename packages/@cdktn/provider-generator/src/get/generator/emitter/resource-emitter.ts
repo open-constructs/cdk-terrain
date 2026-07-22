@@ -246,13 +246,6 @@ export class ResourceEmitter {
     }
 
     // initialize config properties
-    //
-    // Write-only usage is not registered here: registration now happens at
-    // resolve time from synthesizeAttributes()/synthesizeHclAttributes()
-    // (see AttributesEmitter#emitToTerraform/#emitToHclTerraform and
-    // TerraformResource#markWriteOnlyAttribute), not at mutation time, so
-    // there is no mutation-time guard to emit for constructor assignment
-    // either.
     for (const att of resource.configStruct.assignableAttributes) {
       if (att.setterType._type === "stored_class") {
         this.code.line(

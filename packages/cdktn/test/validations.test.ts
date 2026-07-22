@@ -632,10 +632,11 @@ describe("ValidateFunctionVersionSupport", () => {
   });
 
   test("does not leak Fn usage from one App into a later, unrelated App in the same process", () => {
-    // Usage is now recorded per-App-root (the resolving stack's
-    // `node.root`) rather than in a single process-global registry, so
-    // isolation between App trees is structural, not something that
-    // depends on a reset running between tests.
+    // Usage is recorded on the TerraformStack instance whose elements
+    // rendered it (see TerraformStack._usedFunctions), not in a
+    // process-global registry, so isolation between App trees is
+    // structural, not something that depends on a reset running between
+    // tests.
     const { app: app1, testResource: testResource1 } = appWithStack({
       [VALIDATE_FUNCTION_VERSIONS]: "true",
       targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
@@ -660,14 +661,14 @@ describe("ValidateFunctionVersionSupport", () => {
   });
 
   test("still fires when a second, unrelated App is constructed between usage and synth of the first (interleaved Apps)", () => {
-    // Regression test: with call-time recording into a single process-global
-    // registry, App B's constructor used to reset that registry, silently
-    // wiping out the usage App A had already recorded for
-    // Fn.templatestring() before App A ever got to synth() - a false
-    // negative that skipped target-version validation entirely. Recording
-    // at token-RESOLVE time, keyed by the resolving root, fixes this: App
-    // A's usage is only ever recorded (during App A's own prepareStack
-    // pass) and read back from App A's own root.
+    // Regression test against the released call-time design: recording into
+    // a single process-global registry that every App constructor reset
+    // meant App B's construction silently wiped out the usage App A had
+    // already recorded for Fn.templatestring() before App A ever got to
+    // synth() - a false negative that skipped target-version validation
+    // entirely. Recording at token-RESOLVE time, onto the stack being
+    // resolved, is immune to this: App A's usage is recorded during App A's
+    // own prepareStack pass and read back from App A's own stacks.
     const { app: app1, testResource: testResource1 } = appWithStack({
       [VALIDATE_FUNCTION_VERSIONS]: "true",
     });
@@ -689,16 +690,16 @@ describe("ValidateFunctionVersionSupport", () => {
     `);
   });
 
-  // Round 7: usage moved from a single App-root-keyed registry onto each
-  // TerraformStack instance, because ValidateFunctionVersionSupport is
+  // Usage lives on each TerraformStack instance (not in any registry keyed
+  // by the shared App root) because ValidateFunctionVersionSupport is
   // registered with the STACK as scope and resolveTargetVersions() walks
   // context up from that scope - sibling stacks can declare different
-  // targetVersions via stack-level context. Root-keyed usage would
-  // validate a stack's usage against a DIFFERENT sibling stack's targets;
-  // here Stack2 uses a function gated to a floor it doesn't declare, while
-  // Stack1 (a stricter, compatible sibling) declares no usage at all - with
-  // the old root-keyed registry this would have incorrectly attributed
-  // Stack2's usage check against Stack1's targets too (or vice versa).
+  // targetVersions via stack-level context. Any usage store shared across
+  // siblings would validate one stack's usage against a DIFFERENT sibling
+  // stack's targets; here Stack2 uses a function gated to a floor it
+  // doesn't declare, while Stack1 (a stricter, compatible sibling) declares
+  // no usage at all - shared usage would incorrectly attribute Stack2's
+  // usage check against Stack1's targets too (or vice versa).
   test("sibling stacks with different declared targets are validated independently: an incompatible stack's usage does not leak onto a compatible sibling", () => {
     const outdir = tmp("cdktf.outdir.");
     const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));

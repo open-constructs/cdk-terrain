@@ -30,14 +30,11 @@ test("generate a vault_alicloud_secret_backend resource with a write-only attrib
   expect(output).toMatch(
     /@deprecated Write-only: the provider never returns this value[\s\S]*?public get secretKeyWo\(\)/,
   );
-  // ... its setter is a plain assignment - no registration happens at
-  // mutation time anymore ...
+  // ... its setter is a plain assignment ...
   expect(output).toMatch(
     /public set secretKeyWo\(value: string\) \{\n\s*this\._secretKeyWo = value;\n\s*\}/,
   );
-  // ... nor does the constructor-assigned config value register anything.
-  expect(output).not.toMatch(/registerProviderFeatureUsage/);
-  // Registration instead happens at resolve time, from inside
+  // ... and usage registration happens at resolve time, from inside
   // synthesizeAttributes()/synthesizeHclAttributes(), by wrapping the
   // mapped value in markWriteOnlyAttribute() ...
   expect(output).toMatch(
