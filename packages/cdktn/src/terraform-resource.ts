@@ -300,13 +300,15 @@ export class TerraformResource
       return value;
     }
 
-    const resource = this;
     return {
       creationStack: captureCreationStack(),
-      resolve(context: IResolveContext): any {
+      // Arrow function: `this` stays the resource lexically. `toString()`
+      // below must remain a shorthand method instead - its `this` is the
+      // wrapper token object being stringified.
+      resolve: (context: IResolveContext): any => {
         const resolved = context.resolve(value);
         if (resolved != null) {
-          resource._registerResolveDiscoveredProviderFeatureUsage(
+          this._registerResolveDiscoveredProviderFeatureUsage(
             ProviderFeature.WRITE_ONLY_ATTRIBUTES,
           );
         }
