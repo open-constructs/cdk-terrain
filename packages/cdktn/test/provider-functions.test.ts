@@ -35,8 +35,8 @@ test("invoke() renders provider::<name>::<function>(...) in synthesized output",
   `);
 });
 
-// Bug 1 regression: dynamic/object/map-typed generated wrappers used to
-// force-coerce the invoke() result through `cdktn.Token.asString(...)`,
+// dynamic/object/map-typed generated wrappers must not force-coerce the
+// invoke() result through `cdktn.Token.asString(...)`,
 // which produces a value `Tokenization.isResolvable()` does not recognize -
 // silently dropping the attribute wherever a generated struct setter
 // (OutputReference internalValue) inspects the value's keys. The raw
