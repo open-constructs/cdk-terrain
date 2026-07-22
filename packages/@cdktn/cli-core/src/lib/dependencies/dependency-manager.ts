@@ -233,7 +233,7 @@ export class DependencyManager {
   provider: ${constraint.simplifiedName}
   version : ${constraint.version || "latest"}
   language: ${this.targetLanguage}
-  cdktf   : ${this.cdktfVersion}
+  cdktn   : ${this.cdktfVersion}
 `);
 
     if (

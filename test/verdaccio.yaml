@@ -33,17 +33,6 @@ uplinks:
       maxFreeSockets: 10
 
 packages:
-  "cdktf**":
-    # scoped packages
-    # legacy packages (for backward compatibility testing)
-    proxy: npmjs
-    access: $all
-
-  "@cdktf/*":
-    # legacy scoped packages (for backward compatibility testing)
-    proxy: npmjs
-    access: $all
-
   "cdktn**":
     # scoped packages
     access: $all

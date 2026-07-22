@@ -234,7 +234,7 @@ export async function generateJsiiLanguage(
       const packageDir = opts.java.package.replace(/\./g, "/");
       await fs.mkdirp(path.join(target, "main/java", packageDir));
       await fs.mkdirp(path.join(target, "main/resources", packageDir));
-      await fs.copy(source, target, { recursive: true, overwrite: false });
+      await fs.copy(source, target, { overwrite: false });
     }
 
     if (opts.csharp) {

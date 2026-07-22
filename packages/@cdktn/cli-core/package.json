@@ -44,21 +44,21 @@
     "cdktn": "workspace:*",
     "chalk": "4.1.2",
     "chokidar": "3.6.0",
-    "ci-info": "3.9.0",
+    "ci-info": "4.4.0",
     "codemaker": "1.128.0",
     "constructs": "10.6.0",
     "cross-spawn": "7.0.6",
-    "fs-extra": "8.1.0",
+    "fs-extra": "11.3.6",
     "indent-string": "4.0.0",
-    "minimatch": "5.1.9",
+    "minimatch": "10.2.5",
     "pkg-up": "3.1.0",
     "semver": "7.7.4",
-    "sscaff": "1.2.274",
+    "sscaff": "2.0.388",
     "strip-ansi": "6.0.1",
     "undici": "8.6.0",
     "xml-js": "1.6.11",
     "xstate": "4.38.3",
-    "zod": "3.25.76"
+    "zod": "4.4.3"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": "tsc-files ambient.d.ts --noEmit"
@@ -66,8 +66,7 @@
   "devDependencies": {
     "@cdktn/provider-generator": "workspace:*",
     "@types/cross-spawn": "6.0.6",
-    "@types/fs-extra": "8.1.5",
-    "@types/minimatch": "5.1.2",
+    "@types/fs-extra": "11.0.4",
     "@types/node": "20.19.1",
     "@types/semver": "7.7.1",
     "nock": "^14.0.0",

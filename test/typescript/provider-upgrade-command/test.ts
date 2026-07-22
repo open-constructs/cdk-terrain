@@ -13,64 +13,58 @@ describe("provider upgrade command", () => {
     driver = new TestDriver(__dirname, {
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-cli
     await driver.setupTypescriptProject();
 
-    await driver.exec("npm", ["install", "cdktf@0.10.4"]);
+    await driver.exec("npm", ["install", "cdktn@0.23.1"]);
   }, 500_000);
 
   describe("pre-built", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", [
-        "provider",
-        "add",
-        "random@=3.1.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
-      ]);
+      await driver.exec("cdktn", ["provider", "add", "random@=3.8.1"]);
     });
 
-    it("can update withing the same cdktf version to a specific version", async () => {
+    it("can update withing the same cdktn version to a specific version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.0.0"),
       );
 
-      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.2.0"]);
+      await driver.exec("cdktn", ["provider", "upgrade", "random@=3.9.0"]);
 
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.1.0"),
       );
     });
 
-    it("can update within the same cdktf version to the latest version", async () => {
+    it("can update within the same cdktn version to the latest version", async () => {
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.0.0"),
       );
 
       await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
-      // Assert that we have version 0.2.64
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.1.0"),
       );
     });
 
-    it("can update within the same cdktf version to the latest version with a fresh npm install", async () => {
+    it("can update within the same cdktn version to the latest version in npm", async () => {
       // Pin random provider version so that the upgrade can do anything
       await driver.exec("npm", [
         "install",
         "--save-exact",
-        "@cdktf/provider-random@0.2.55",
+        "@cdktn/provider-random@12.1.0",
       ]);
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.55"),
+        packageJsonWithDependency("@cdktn/provider-random", "12.1.0"),
       );
       await driver.exec("rm", ["-rf", "node_modules"]);
       await driver.exec("rm", ["package-lock.json"]);
       await driver.exec("npm", ["install"]); // npm install to update the lockfile
       await driver.exec("cdktn", ["provider", "upgrade", "random"]);
 
-      // Assert that we have version 0.2.64
       expect(driver.packageJson()).toEqual(
-        packageJsonWithDependency("@cdktf/provider-random", "0.2.64"),
+        packageJsonWithDependency("@cdktn/provider-random", "14.1.0"),
       );
     });
   });

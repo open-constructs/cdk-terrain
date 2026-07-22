@@ -40,7 +40,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install npm-check-updates@^9.0.0
+          npm -g install npm-check-updates@22.2.9
       # Install first so `nx` is available for the package listing below.
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
@@ -52,9 +52,10 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade dependencies at repository root
-          ncu --upgrade --filter=@types/fs-extra --target=minor
-          ncu --upgrade --filter=typescript --target=patch
-          ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor
+          ncu --upgrade --filter=@types/fs-extra --target=minor --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+          ncu --upgrade --filter=typescript --target=patch --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+          ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor \
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
 
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
@@ -75,6 +76,8 @@ jobs:
   prRoot:
     name: Create Pull Request Root
     needs: upgradeRoot
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Check Out
@@ -91,6 +94,23 @@ jobs:
       - name: Remove patch file
         run: rm -f ./upgrade.patch
 
+      - name: Mint CDKTN maintainers App token
+        id: app-token
+        # Pin maintained by Dependabot (github-actions). See .github/dependabot.yml
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
+          private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+          permission-contents: write # is needed to create/update the automation branch.
+          permission-pull-requests: write # covers creating/updating the PR, labels, and review requests.
+          permission-members: read # limits organization access to the team lookup already being requested for cdktn-maintainers.
+
+      - name: Get GitHub App User ID
+        id: get_user_id
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: echo "id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
       - name: Make Pull Request
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
@@ -105,7 +125,9 @@ jobs:
             Ran npm-check-updates and pnpm update to keep the `pnpm-lock.yaml` file up-to-date.
           labels: dependencies,auto-approve,ci/run-all
           team-reviewers: cdktn-maintainers
-          token: ${{ secrets.TERRAFORM_CDK_PUSH_GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
+          author: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
+          committer: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
 
   upgradePackage:
     name: Pnpm Upgrade Package
@@ -165,7 +187,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install npm-check-updates@^9.0.0
+          npm -g install npm-check-updates@22.2.9
       # Install first so `nx` is available for the package listing below.
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
@@ -175,19 +197,49 @@ jobs:
         run: |-
           echo "list=$(pnpm exec nx show projects --json | jq -r 'join(",")')" >> $GITHUB_OUTPUT
       - name: Run "ncu -u"
+        shell: bash
+        env:
+          NCU_WORKSPACES: ${{ join(matrix.pr.packages, ' ') }}
         run: |-
-          # Upgrade all the packages
-          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=@types/fs-extra --target=minor
-          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --filter=typescript --target=patch
-          pnpm exec nx exec -p '${{ join(matrix.pr.packages, ',') }}' -- ncu --upgrade --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}'  --target=minor
+          read -ra workspaces <<< "$NCU_WORKSPACES"
+          workspace_args=()
+          for workspace in "${workspaces[@]}"; do
+            workspace_args+=(--workspace "$workspace")
+          done
+
+          ncu --upgrade "${workspace_args[@]}" --no-root \
+            --filter=@types/fs-extra --target=minor \
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+
+          ncu --upgrade "${workspace_args[@]}" --no-root \
+            --filter=typescript --target=patch \
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+
+          ncu --upgrade "${workspace_args[@]}" --no-root \
+            --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}' \
+            --target=minor \
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline --no-frozen-lockfile
 
-      - name: Set git identity
-        run: |-
-          git config --global user.email "github-team-tf-cdk@hashicorp.com"
-          git config --global user.name "team-tf-cdk"
+      - name: Mint CDKTN maintainers App token
+        id: app-token
+        # Pin maintained by Dependabot (github-actions). See .github/dependabot.yml
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
+          private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+          permission-contents: write # is needed to create/update the automation branch.
+          permission-pull-requests: write # covers creating/updating the PR, labels, and review requests.
+          permission-members: read # limits organization access to the team lookup already being requested for cdktn-maintainers.
+
+      - name: Get GitHub App User ID
+        id: get_user_id
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: echo "id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Make Pull Request
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
@@ -207,8 +259,9 @@ jobs:
 
           labels: dependencies,auto-approve
           team-reviewers: cdktn-maintainers
-          token: ${{ secrets.TERRAFORM_CDK_PUSH_GITHUB_TOKEN }}
-          author: team-tf-cdk <github-team-tf-cdk@hashicorp.com>
+          token: ${{ steps.app-token.outputs.token }}
+          author: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
+          committer: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
 
   upgradeJSII:
     name: Pnpm Upgrade JSII
@@ -232,7 +285,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install Tools
         run: |-
-          npm -g install npm-check-updates@^9.0.0
+          npm -g install npm-check-updates@22.2.9
       # Install first so `nx` is available for the package listing below.
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline
@@ -244,15 +297,30 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade all the packages
-          pnpm exec nx exec -- ncu --upgrade --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' --target=minor
+          ncu --upgrade --workspaces --root \
+            --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' \
+            --target=minor \
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       - name: Run "pnpm install"
         run: pnpm install --prefer-offline --no-frozen-lockfile
 
-      - name: Set git identity
-        run: |-
-          git config --global user.email "github-team-tf-cdk@hashicorp.com"
-          git config --global user.name "team-tf-cdk"
+      - name: Mint CDKTN maintainers App token
+        id: app-token
+        # Pin maintained by Dependabot (github-actions). See .github/dependabot.yml
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
+          private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
+          permission-contents: write # is needed to create/update the automation branch.
+          permission-pull-requests: write # covers creating/updating the PR, labels, and review requests.
+          permission-members: read # limits organization access to the team lookup already being requested for cdktn-maintainers.
+
+      - name: Get GitHub App User ID
+        id: get_user_id
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: echo "id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Make Pull Request
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
@@ -270,5 +338,6 @@ jobs:
 
           labels: dependencies,auto-approve
           team-reviewers: cdktn-maintainers
-          token: ${{ secrets.TERRAFORM_CDK_PUSH_GITHUB_TOKEN }}
-          author: team-tf-cdk <github-team-tf-cdk@hashicorp.com>
+          token: ${{ steps.app-token.outputs.token }}
+          author: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
+          committer: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>

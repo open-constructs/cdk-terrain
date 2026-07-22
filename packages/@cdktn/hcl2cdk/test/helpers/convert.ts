@@ -248,10 +248,6 @@ const preSynth: Record<
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="HashiCorp.Cdktf" Version="0.21.0" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Io.Cdktn" Version="0.0.0" />
     </ItemGroup>
 

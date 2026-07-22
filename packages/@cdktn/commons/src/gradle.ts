@@ -94,9 +94,9 @@ export function getDependencyInformationFromLine(
 
   if (matches[3] === undefined) {
     return {
-      group: "",
-      name: matches[1],
-      version: matches[2],
+      group: matches[1],
+      name: matches[2],
+      version: "",
     };
   }
 

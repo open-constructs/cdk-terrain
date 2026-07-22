@@ -8,22 +8,18 @@ describe("provider list command", () => {
     driver = new TestDriver(__dirname, {
       DISABLE_VERSION_CHECK: "true",
       CI: "1",
-    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktf-cli
+    }); // reset CDKTF_DIST set by run-against-dist script & disable version check as we have to use an older version of cdktn-cli
     await driver.setupGoProject();
 
     await driver.exec("go", [
       "get",
-      "github.com/hashicorp/terraform-cdk-go/cdktf@v0.13.0",
+      "github.com/open-constructs/cdk-terrain-go/cdktn@v0.23.1",
     ]);
   }, 500_000);
 
   describe("lists both local and prebuilt providers", () => {
     beforeEach(async () => {
-      await driver.exec("cdktn", [
-        "provider",
-        "add",
-        "random@=3.4.3", // this is not the latest version, but theres v0.2.55 of the pre-built provider resulting in exactly this package
-      ]);
+      await driver.exec("cdktn", ["provider", "add", "random@=3.9.0"]);
       await driver.exec("cdktn", [
         "provider",
         "add",
@@ -52,11 +48,11 @@ describe("provider list command", () => {
 
       expect(output.prebuilt[0]).toEqual(
         expect.objectContaining({
-          packageName: "github.com/cdktf/cdktf-provider-random-go/random",
-          packageVersion: "3.0.11",
+          packageName: "github.com/cdktn-io/cdktn-provider-random-go/random",
+          packageVersion: "14.1.0",
           providerName: "random",
-          providerVersion: "3.4.3",
-          cdktfVersion: "^0.13.0",
+          providerVersion: "3.9.0",
+          cdktnVersion: "^0.23.0",
         }),
       );
     }, 120_000);

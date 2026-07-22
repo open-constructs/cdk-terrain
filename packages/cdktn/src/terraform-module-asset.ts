@@ -10,6 +10,7 @@ import * as fs from "fs";
 import { TerraformStack } from "./terraform-stack";
 import { AssetType, TerraformAsset } from "./terraform-asset";
 import { copySync, hashPath } from "./private/fs";
+import { CANONICAL_ASSET_HASHES } from "./features";
 
 const TERRAFORM_MODULE_ASSET_SYMBOL = Symbol.for("cdktf.TerraformModuleAsset");
 
@@ -66,10 +67,19 @@ export class TerraformModuleAsset extends Construct {
     }
 
     // Create asset based on tmp dir
+    const canonical = !!this.node.tryGetContext(CANONICAL_ASSET_HASHES);
     this.asset = new TerraformAsset(this, "asset", {
       path: tmpDir,
       type: AssetType.DIRECTORY,
-      assetHash: staticModuleAssetHash ?? hashPath(relativeAssetPath),
+      // The emitted asset is only the module sources copied into tmpDir, so
+      // the canonical scheme hashes that exact tree — unrelated siblings
+      // under the sources' common ancestor cannot churn the hash. Legacy
+      // keeps hashing the ancestor to preserve historical hashes.
+      assetHash:
+        staticModuleAssetHash ??
+        (canonical
+          ? hashPath(tmpDir, { canonical: true })
+          : hashPath(relativeAssetPath)),
     });
   }
 
