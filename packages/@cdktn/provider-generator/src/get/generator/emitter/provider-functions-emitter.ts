@@ -71,11 +71,20 @@ export class ProviderFunctionsEmitter {
       ? [...fn.parameters, fn.variadicParameter]
       : fn.parameters;
     for (const param of allParameters) {
+      // Official JSDoc grammar: only the type expression goes inside the
+      // braces; prose (the schema description plus any generated
+      // list/set/nullability guidance - see the model's `docstringNote`)
+      // follows the parameter name after ` - `.
+      const prose = [param.description, param.docstringNote]
+        .filter(Boolean)
+        .join(" ");
       comment.line(
-        `@param {${param.docstringType}} ${param.name} ${param.description ?? ""}`.trimEnd(),
+        `@param {${param.docstringType}} ${param.name}${prose ? ` - ${prose}` : ""}`,
       );
     }
-    comment.line(`@returns {${fn.returnDocstringType}}`);
+    comment.line(
+      `@returns {${fn.returnDocstringType}}${fn.returnDocstringNote ? ` ${fn.returnDocstringNote}` : ""}`,
+    );
     comment.end();
 
     const methodParams = [

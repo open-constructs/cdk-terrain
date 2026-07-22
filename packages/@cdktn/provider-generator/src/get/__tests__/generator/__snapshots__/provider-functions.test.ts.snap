@@ -76,7 +76,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Renders the given list of config objects as a single string.
-  * @param {[list] Array<object>} configs
+  * @param {Array<object>} configs - Terraform list.
   * @returns {string}
   */
   public describeConfigs(configs: any[] | cdktn.IResolvable): string {
@@ -85,7 +85,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Returns true if any flag in the given set of flags is true.
-  * @param {[set] Array<boolean | IResolvable>} flags
+  * @param {Array<boolean | IResolvable>} flags - Terraform set; ordering is not guaranteed and duplicate values are removed.
   * @returns {boolean | IResolvable}
   */
   public flagSet(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {
@@ -104,7 +104,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a set of flags derived from the given seed - used to prove a set(bool) RETURN can be fed directly into another function's set(bool) PARAMETER (see flag_set above).
   * @param {string} seed
-  * @returns {[set] Array<boolean | IResolvable>}
+  * @returns {Array<boolean | IResolvable>} Terraform set; ordering is not guaranteed and duplicate values are removed.
   */
   public flagsForSeed(seed: string): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "flags_for_seed", [seed]);
@@ -112,7 +112,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Returns true if any flag in the given ordered list of flags is true.
-  * @param {[list] Array<boolean | IResolvable>} flags
+  * @param {Array<boolean | IResolvable>} flags - Terraform list.
   * @returns {boolean | IResolvable}
   */
   public flagsOrdered(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {
@@ -142,7 +142,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a list of numbers counting up from 1 to the given count.
   * @param {number} count
-  * @returns {[list] Array<number>}
+  * @returns {Array<number>} Terraform list.
   */
   public listNumbers(count: number): number[] {
     return cdktn.Token.asNumberList(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "list_numbers", [count]));
@@ -151,7 +151,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a list of names prefixed with the given prefix.
   * @param {string} prefix
-  * @returns {[list] Array<string>}
+  * @returns {Array<string>} Terraform list.
   */
   public listPrefixedNames(prefix: string): string[] {
     return cdktn.Token.asList(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "list_prefixed_names", [prefix]));
@@ -159,7 +159,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Joins a possibly-null prefix with a required suffix.
-  * @param {string | IResolvable - pass cdktn.Token.nullValue() for an explicit null} prefix
+  * @param {string | IResolvable} prefix - Pass cdktn.Token.nullValue() for an explicit Terraform null.
   * @param {string} suffix
   * @returns {string}
   */
@@ -169,7 +169,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Flattens a matrix (a list of lists of strings) into a single string.
-  * @param {[list] Array<[list] Array<string>>} matrix
+  * @param {Array<Array<string>>} matrix - Terraform list.
   * @returns {string}
   */
   public nestedList(matrix: string[][] | cdktn.IResolvable): string {
@@ -198,7 +198,7 @@ export class ExampleProviderFunctions {
   /**
   * Greets the given name, optionally with a custom greeting.
   * @param {string} name
-  * @param {string | IResolvable - omit or pass cdktn.Token.nullValue() to render the Terraform null keyword} greeting
+  * @param {string | IResolvable} greeting - Omit or pass cdktn.Token.nullValue() to render the Terraform null keyword.
   * @returns {string}
   */
   public trailingNullable(name: string, greeting?: string | cdktn.IResolvable): string {
@@ -208,7 +208,7 @@ export class ExampleProviderFunctions {
   /**
   * Joins a label with any number of possibly-null items.
   * @param {string} label
-  * @param {Array<string | IResolvable> - pass cdktn.Token.nullValue() for an explicit null} items
+  * @param {Array<string | IResolvable>} items - Pass cdktn.Token.nullValue() for an explicit Terraform null.
   * @returns {string}
   */
   public variadicNullable(label: string, items: Array<string | cdktn.IResolvable>): string {
@@ -397,7 +397,7 @@ export class TimeProviderFunctions {
 
   /**
   * Given a [Go duration string](https://pkg.go.dev/time#ParseDuration), will parse and return an object representation of that duration.
-  * @param {string} duration Go time package duration string to parse
+  * @param {string} duration - Go time package duration string to parse
   * @returns {object}
   */
   public durationParse(duration: string): cdktn.IResolvable {
@@ -406,7 +406,7 @@ export class TimeProviderFunctions {
 
   /**
   * Given an RFC3339 timestamp string, will parse and return an object representation of that date and time.
-  * @param {string} timestamp RFC3339 timestamp string to parse
+  * @param {string} timestamp - RFC3339 timestamp string to parse
   * @returns {object}
   */
   public rfc3339Parse(timestamp: string): cdktn.IResolvable {
@@ -415,7 +415,7 @@ export class TimeProviderFunctions {
 
   /**
   * Given a unix timestamp integer, will parse and return an object representation of that date and time. A unix timestamp is the number of seconds elapsed since January 1, 1970 UTC.
-  * @param {number} unixTimestamp Unix Timestamp integer to parse
+  * @param {number} unixTimestamp - Unix Timestamp integer to parse
   * @returns {object}
   */
   public unixTimestampParse(unixTimestamp: number): cdktn.IResolvable {

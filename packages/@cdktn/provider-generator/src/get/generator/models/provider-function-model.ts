@@ -16,7 +16,20 @@ export interface ProviderFunctionParameterModel {
   readonly terraformName: string;
   readonly name: string;
   readonly tsType: string;
+  /**
+   * The JSDoc type expression emitted inside the `@param {...}` braces.
+   * A pure type expression only - prose (Terraform list/set semantics,
+   * `cdktn.Token.nullValue()` guidance) belongs in `docstringNote`.
+   */
   readonly docstringType: string;
+  /**
+   * Prose appended after the parameter name (and `description`, if any) in
+   * the emitted `@param` line - e.g. set-ordering semantics or how to pass
+   * an explicit Terraform `null`. Official JSDoc places only the type
+   * expression inside the braces, so this must never be folded into
+   * `docstringType`.
+   */
+  readonly docstringNote?: string;
   readonly description?: string;
   /**
    * True when this (fixed, non-variadic) parameter is emitted as a
@@ -66,6 +79,12 @@ export interface ProviderFunctionModel {
    * way a parameter's `docstringType` can differ from its `tsType`.
    */
   readonly returnDocstringType: string;
+  /**
+   * Prose appended after the `@returns {...}` braces (e.g. Terraform
+   * list/set semantics) - the return-side counterpart of a parameter's
+   * `docstringNote`.
+   */
+  readonly returnDocstringNote?: string;
   /**
    * Wraps the `cdktn.TerraformProviderFunction.invoke(...)` call expression
    * into the method's `return` statement (e.g. wrapping it in
@@ -133,6 +152,8 @@ const RESERVED_WRAPPER_MEMBER_NAMES = new Set([
 interface MappedParameterType {
   readonly tsType: string;
   readonly docstringType: string;
+  /** See `ProviderFunctionParameterModel.docstringNote`. */
+  readonly docstringNote?: string;
   /**
    * True when `tsType` already accepts an arbitrary `cdktn.IResolvable` in
    * this position without needing an extra `| cdktn.IResolvable` union -
@@ -159,10 +180,9 @@ function plainArrayElementType(
   if (Array.isArray(type) && (type[0] === "list" || type[0] === "set")) {
     const inner = plainArrayElementType(type[1]);
     if (!inner) return undefined;
-    const label = type[0] === "set" ? "[set] " : "[list] ";
     return {
       tsType: `${inner.tsType}[]`,
-      docstringType: `${label}Array<${inner.docstringType}>`,
+      docstringType: `Array<${inner.docstringType}>`,
     };
   }
   return undefined;
@@ -173,22 +193,26 @@ function plainArrayElementType(
  * `ListAttributeTypeModel`/`SetAttributeTypeModel.inputTypeDefinition`
  * (both identical) branch for branch, since jsii parameters, like resource
  * inputs, are allowed to union in a whole-collection `cdktn.IResolvable`
- * token. `kind` only affects the docstring wording (`[list]`/`[set]`,
- * flagging the ordering/duplicate-element semantics difference to the
+ * token. `kind` only affects the docstring note (flagging the
+ * ordering/duplicate-element semantics difference of a Terraform set to the
  * reader) - the type-level handling is identical for both.
  */
 function mapListOrSetParameterType(
   kind: "list" | "set",
   element: AttributeType,
 ): MappedParameterType {
-  const label = kind === "set" ? "[set]" : "[list]";
+  const docstringNote =
+    kind === "set"
+      ? "Terraform set; ordering is not guaranteed and duplicate values are removed."
+      : "Terraform list.";
 
   if (element === "string") {
     // Mirrors the final `else` branch: encoded list tokens already satisfy
     // `string[]`, so no union is needed.
     return {
       tsType: "string[]",
-      docstringType: `${label} Array<string>`,
+      docstringType: "Array<string>",
+      docstringNote,
       acceptsResolvableAlready: false,
     };
   }
@@ -196,7 +220,8 @@ function mapListOrSetParameterType(
     // Same reasoning as `string` above.
     return {
       tsType: "number[]",
-      docstringType: `${label} Array<number>`,
+      docstringType: "Array<number>",
+      docstringNote,
       acceptsResolvableAlready: false,
     };
   }
@@ -206,7 +231,8 @@ function mapListOrSetParameterType(
     // tokenizable, so the union is on the outside.
     return {
       tsType: "Array<boolean | cdktn.IResolvable> | cdktn.IResolvable",
-      docstringType: `${label} Array<boolean | IResolvable>`,
+      docstringType: "Array<boolean | IResolvable>",
+      docstringNote,
       acceptsResolvableAlready: true,
     };
   }
@@ -219,7 +245,8 @@ function mapListOrSetParameterType(
     // with the whole-collection token additionally accepted alongside it.
     return {
       tsType: `${plainElement.tsType}[] | cdktn.IResolvable`,
-      docstringType: `${label} Array<${plainElement.docstringType}>`,
+      docstringType: `Array<${plainElement.docstringType}>`,
+      docstringNote,
       acceptsResolvableAlready: true,
     };
   }
@@ -237,7 +264,8 @@ function mapListOrSetParameterType(
   const elementDescription = mapParameterType(element).docstringType;
   return {
     tsType: "any[] | cdktn.IResolvable",
-    docstringType: `${label} Array<${elementDescription}>`,
+    docstringType: `Array<${elementDescription}>`,
+    docstringNote,
     acceptsResolvableAlready: true,
   };
 }
@@ -356,14 +384,14 @@ function buildParameterModel(
   fallbackName: string,
 ): InternalParameterModel {
   const terraformName = parameter.name ?? fallbackName;
-  const { tsType, docstringType, acceptsResolvableAlready } = mapParameterType(
-    parameter.type,
-  );
+  const { tsType, docstringType, docstringNote, acceptsResolvableAlready } =
+    mapParameterType(parameter.type);
   return {
     terraformName,
     name: sanitizeParameterName(terraformName),
     tsType,
     docstringType,
+    docstringNote,
     description: parameter.description,
     acceptsResolvableAlready,
   };
@@ -409,11 +437,11 @@ function withNullableResolvableUnion(
  *   (jsii can't express "optional but not trailing"), and instead gains the
  *   same `| cdktn.IResolvable` union so a caller can still pass an explicit
  *   `cdktn.Token.nullValue()` (an `IResolvable` resolving to `null` - see
- *   `Token.nullValue()`/`Token.asAny()`) in that fixed position; this
- *   replaces the previous blanket widening to `any`, which accepted the
- *   real type too but gave up all type safety to do it.
+ *   `Token.nullValue()`/`Token.asAny()`) in that fixed position - keeping
+ *   the parameter's real type rather than giving up all type safety by
+ *   widening it to `any`.
  *
- * Both cases document the real mechanism in the docstring rather than
+ * Both cases document the real mechanism in the docstring note rather than
  * implying the plain TypeScript `null` literal is accepted: the trailing
  * case can also just be omitted, the mid-position case can't be omitted at
  * all (jsii can't express "optional but not trailing").
@@ -434,20 +462,18 @@ function applyNullability(
     if (!parameter.is_nullable) return model;
 
     const { tsType, docstringType } = withNullableResolvableUnion(model);
-
-    if (trailingCompatible[index]) {
-      return {
-        ...model,
-        optional: true,
-        tsType,
-        docstringType: `${docstringType} - omit or pass cdktn.Token.nullValue() to render the Terraform null keyword`,
-      };
-    }
+    const nullabilityNote = trailingCompatible[index]
+      ? "Omit or pass cdktn.Token.nullValue() to render the Terraform null keyword."
+      : "Pass cdktn.Token.nullValue() for an explicit Terraform null.";
 
     return {
       ...model,
+      ...(trailingCompatible[index] ? { optional: true } : {}),
       tsType,
-      docstringType: `${docstringType} - pass cdktn.Token.nullValue() for an explicit null`,
+      docstringType,
+      docstringNote: [model.docstringNote, nullabilityNote]
+        .filter(Boolean)
+        .join(" "),
     };
   });
 }
@@ -491,6 +517,7 @@ function applyNullability(
 function mapReturnType(returnType: AttributeType): {
   tsType: string;
   docstringType: string;
+  docstringNote?: string;
   wrapReturn: (invokeExpression: string) => string;
 } {
   if (returnType === "string") {
@@ -528,19 +555,24 @@ function mapReturnType(returnType: AttributeType): {
     Array.isArray(returnType) &&
     (returnType[0] === "list" || returnType[0] === "set")
   ) {
-    const label = returnType[0] === "set" ? "[set]" : "[list]";
+    const docstringNote =
+      returnType[0] === "set"
+        ? "Terraform set; ordering is not guaranteed and duplicate values are removed."
+        : "Terraform list.";
     const element = returnType[1];
     if (element === "string") {
       return {
         tsType: "string[]",
-        docstringType: `${label} Array<string>`,
+        docstringType: "Array<string>",
+        docstringNote,
         wrapReturn: (expr) => `cdktn.Token.asList(${expr})`,
       };
     }
     if (element === "number") {
       return {
         tsType: "number[]",
-        docstringType: `${label} Array<number>`,
+        docstringType: "Array<number>",
+        docstringNote,
         wrapReturn: (expr) => `cdktn.Token.asNumberList(${expr})`,
       };
     }
@@ -551,7 +583,8 @@ function mapReturnType(returnType: AttributeType): {
     // its tsType/acceptsResolvableAlready are irrelevant here).
     return {
       tsType: "cdktn.IResolvable",
-      docstringType: `${label} Array<${mapParameterType(element).docstringType}>`,
+      docstringType: `Array<${mapParameterType(element).docstringType}>`,
+      docstringNote,
       wrapReturn: (expr) => expr,
     };
   }
@@ -613,6 +646,7 @@ function buildFunctionModel(
   const {
     tsType: returnTsType,
     docstringType: returnDocstringType,
+    docstringNote: returnDocstringNote,
     wrapReturn,
   } = mapReturnType(signature.return_type);
 
@@ -638,13 +672,19 @@ function buildFunctionModel(
       // it), so every element's type instead widens to also accept an
       // explicit `cdktn.Token.nullValue()`, the same way a fixed nullable
       // parameter does (see `withNullableResolvableUnion`); the docstring
-      // keeps the honest per-element type plus that guidance.
+      // keeps the honest per-element type plus that guidance in its note.
       const { tsType, docstringType } =
         withNullableResolvableUnion(elementModel);
       variadicParameter = {
         ...elementModel,
         tsType,
-        docstringType: `Array<${docstringType}> - pass cdktn.Token.nullValue() for an explicit null`,
+        docstringType: `Array<${docstringType}>`,
+        docstringNote: [
+          elementModel.docstringNote,
+          "Pass cdktn.Token.nullValue() for an explicit Terraform null.",
+        ]
+          .filter(Boolean)
+          .join(" "),
       };
     } else {
       // Non-nullable: the docstring wraps the element's docstring type in
@@ -666,6 +706,7 @@ function buildFunctionModel(
     deprecationMessage: signature.deprecation_message,
     returnTsType,
     returnDocstringType,
+    returnDocstringNote,
     wrapReturn,
     parameters,
     variadicParameter,
