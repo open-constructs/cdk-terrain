@@ -50,6 +50,6 @@
   "devDependencies": {
     "@types/fs-extra": "11.0.4",
     "@types/node": "22.20.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.4"
   }
 }
