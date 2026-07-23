@@ -66,6 +66,15 @@ export class ExampleProviderFunctions {
   }
 
   /**
+  * Deduplicates each group of names, returning a list of name sets.
+  * @param {Array<Set<string>>} nameGroups
+  * @returns {Array<Set<string>>}
+  */
+  public dedupeNameGroups(nameGroups: string[][] | cdktn.IResolvable): cdktn.IResolvable {
+    return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "dedupe_name_groups", [nameGroups]);
+  }
+
+  /**
   * Returns a default map of string tags derived from the given prefix - used to prove a map(string) RETURN can be fed directly into another function's map(string) PARAMETER (see tag_map above).
   * @param {string} prefix
   * @returns {{ [key: string]: string }}
@@ -76,7 +85,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Renders the given list of config objects as a single string.
-  * @param {Array<object>} configs - Terraform list.
+  * @param {Array<object>} configs
   * @returns {string}
   */
   public describeConfigs(configs: any[] | cdktn.IResolvable): string {
@@ -85,7 +94,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Returns true if any flag in the given set of flags is true.
-  * @param {Array<boolean | IResolvable>} flags - Terraform set; ordering is not guaranteed and duplicate values are removed.
+  * @param {Set<boolean | IResolvable>} flags - Terraform set; ordering is not guaranteed and duplicate values are removed.
   * @returns {boolean | IResolvable}
   */
   public flagSet(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {
@@ -104,7 +113,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a set of flags derived from the given seed - used to prove a set(bool) RETURN can be fed directly into another function's set(bool) PARAMETER (see flag_set above).
   * @param {string} seed
-  * @returns {Array<boolean | IResolvable>} Terraform set; ordering is not guaranteed and duplicate values are removed.
+  * @returns {Set<boolean | IResolvable>} Terraform set; ordering is not guaranteed and duplicate values are removed.
   */
   public flagsForSeed(seed: string): cdktn.IResolvable {
     return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "flags_for_seed", [seed]);
@@ -112,7 +121,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Returns true if any flag in the given ordered list of flags is true.
-  * @param {Array<boolean | IResolvable>} flags - Terraform list.
+  * @param {Array<boolean | IResolvable>} flags
   * @returns {boolean | IResolvable}
   */
   public flagsOrdered(flags: Array<boolean | cdktn.IResolvable> | cdktn.IResolvable): cdktn.IResolvable {
@@ -142,7 +151,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a list of numbers counting up from 1 to the given count.
   * @param {number} count
-  * @returns {Array<number>} Terraform list.
+  * @returns {Array<number>}
   */
   public listNumbers(count: number): number[] {
     return cdktn.Token.asNumberList(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "list_numbers", [count]));
@@ -151,7 +160,7 @@ export class ExampleProviderFunctions {
   /**
   * Returns a list of names prefixed with the given prefix.
   * @param {string} prefix
-  * @returns {Array<string>} Terraform list.
+  * @returns {Array<string>}
   */
   public listPrefixedNames(prefix: string): string[] {
     return cdktn.Token.asList(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "list_prefixed_names", [prefix]));
@@ -169,7 +178,7 @@ export class ExampleProviderFunctions {
 
   /**
   * Flattens a matrix (a list of lists of strings) into a single string.
-  * @param {Array<Array<string>>} matrix - Terraform list.
+  * @param {Array<Array<string>>} matrix
   * @returns {string}
   */
   public nestedList(matrix: string[][] | cdktn.IResolvable): string {
@@ -203,6 +212,15 @@ export class ExampleProviderFunctions {
   */
   public trailingNullable(name: string, greeting?: string | cdktn.IResolvable): string {
     return cdktn.Token.asString(cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "trailing_nullable", [name, greeting]));
+  }
+
+  /**
+  * Returns the distinct name lists among the given ones.
+  * @param {Set<Array<string>>} nameLists - Terraform set; ordering is not guaranteed and duplicate values are removed.
+  * @returns {Set<Array<string>>} Terraform set; ordering is not guaranteed and duplicate values are removed.
+  */
+  public uniqueNameLists(nameLists: string[][] | cdktn.IResolvable): cdktn.IResolvable {
+    return cdktn.TerraformProviderFunction.invoke(this.providerLocalName, "unique_name_lists", [nameLists]);
   }
 
   /**

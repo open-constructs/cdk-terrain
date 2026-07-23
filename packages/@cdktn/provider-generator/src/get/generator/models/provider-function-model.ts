@@ -182,7 +182,7 @@ function plainArrayElementType(
     if (!inner) return undefined;
     return {
       tsType: `${inner.tsType}[]`,
-      docstringType: `Array<${inner.docstringType}>`,
+      docstringType: `${type[0] === "set" ? "Set" : "Array"}<${inner.docstringType}>`,
     };
   }
   return undefined;
@@ -193,25 +193,30 @@ function plainArrayElementType(
  * `ListAttributeTypeModel`/`SetAttributeTypeModel.inputTypeDefinition`
  * (both identical) branch for branch, since jsii parameters, like resource
  * inputs, are allowed to union in a whole-collection `cdktn.IResolvable`
- * token. `kind` only affects the docstring note (flagging the
- * ordering/duplicate-element semantics difference of a Terraform set to the
- * reader) - the type-level handling is identical for both.
+ * token. `kind` only affects the documentation: the docstring notation
+ * (`Array<...>` for a Terraform list, `Set<...>` for a Terraform set,
+ * recursively via `plainArrayElementType`/`mapParameterType`) plus, for
+ * sets, a prose note - the jsii type is an array either way, so the note
+ * keeps a reader from literally passing a JS `Set` and flags the
+ * ordering/duplicate-element semantics difference. The type-level handling
+ * is identical for both.
  */
 function mapListOrSetParameterType(
   kind: "list" | "set",
   element: AttributeType,
 ): MappedParameterType {
+  const wrapper = kind === "set" ? "Set" : "Array";
   const docstringNote =
     kind === "set"
       ? "Terraform set; ordering is not guaranteed and duplicate values are removed."
-      : "Terraform list.";
+      : undefined;
 
   if (element === "string") {
     // Mirrors the final `else` branch: encoded list tokens already satisfy
     // `string[]`, so no union is needed.
     return {
       tsType: "string[]",
-      docstringType: "Array<string>",
+      docstringType: `${wrapper}<string>`,
       docstringNote,
       acceptsResolvableAlready: false,
     };
@@ -220,7 +225,7 @@ function mapListOrSetParameterType(
     // Same reasoning as `string` above.
     return {
       tsType: "number[]",
-      docstringType: "Array<number>",
+      docstringType: `${wrapper}<number>`,
       docstringNote,
       acceptsResolvableAlready: false,
     };
@@ -231,7 +236,7 @@ function mapListOrSetParameterType(
     // tokenizable, so the union is on the outside.
     return {
       tsType: "Array<boolean | cdktn.IResolvable> | cdktn.IResolvable",
-      docstringType: "Array<boolean | IResolvable>",
+      docstringType: `${wrapper}<boolean | IResolvable>`,
       docstringNote,
       acceptsResolvableAlready: true,
     };
@@ -245,7 +250,7 @@ function mapListOrSetParameterType(
     // with the whole-collection token additionally accepted alongside it.
     return {
       tsType: `${plainElement.tsType}[] | cdktn.IResolvable`,
-      docstringType: `Array<${plainElement.docstringType}>`,
+      docstringType: `${wrapper}<${plainElement.docstringType}>`,
       docstringNote,
       acceptsResolvableAlready: true,
     };
@@ -264,7 +269,7 @@ function mapListOrSetParameterType(
   const elementDescription = mapParameterType(element).docstringType;
   return {
     tsType: "any[] | cdktn.IResolvable",
-    docstringType: `Array<${elementDescription}>`,
+    docstringType: `${wrapper}<${elementDescription}>`,
     docstringNote,
     acceptsResolvableAlready: true,
   };
@@ -555,15 +560,19 @@ function mapReturnType(returnType: AttributeType): {
     Array.isArray(returnType) &&
     (returnType[0] === "list" || returnType[0] === "set")
   ) {
+    // Same documentation conventions as `mapListOrSetParameterType`: the
+    // notation (`Array<...>`/`Set<...>`) carries the Terraform collection
+    // structure recursively, and only sets get a prose note.
+    const wrapper = returnType[0] === "set" ? "Set" : "Array";
     const docstringNote =
       returnType[0] === "set"
         ? "Terraform set; ordering is not guaranteed and duplicate values are removed."
-        : "Terraform list.";
+        : undefined;
     const element = returnType[1];
     if (element === "string") {
       return {
         tsType: "string[]",
-        docstringType: "Array<string>",
+        docstringType: `${wrapper}<string>`,
         docstringNote,
         wrapReturn: (expr) => `cdktn.Token.asList(${expr})`,
       };
@@ -571,7 +580,7 @@ function mapReturnType(returnType: AttributeType): {
     if (element === "number") {
       return {
         tsType: "number[]",
-        docstringType: "Array<number>",
+        docstringType: `${wrapper}<number>`,
         docstringNote,
         wrapReturn: (expr) => `cdktn.Token.asNumberList(${expr})`,
       };
@@ -583,7 +592,7 @@ function mapReturnType(returnType: AttributeType): {
     // its tsType/acceptsResolvableAlready are irrelevant here).
     return {
       tsType: "cdktn.IResolvable",
-      docstringType: `Array<${mapParameterType(element).docstringType}>`,
+      docstringType: `${wrapper}<${mapParameterType(element).docstringType}>`,
       docstringNote,
       wrapReturn: (expr) => expr,
     };

@@ -93,6 +93,24 @@ describe("generate provider functions covering variadic parameters, primitive/li
     expect(providerLazyIndex).toMatchSnapshot("provider-lazy-index");
   });
 
+  test("nested collection docstrings use the compact recursive Array/Set notation", () => {
+    // list(set(string)): notation carries the structure; a plain Terraform
+    // list needs no prose note.
+    expect(providerFunctionsOutput).toContain(
+      "@param {Array<Set<string>>} nameGroups",
+    );
+    expect(providerFunctionsOutput).toContain("@returns {Array<Set<string>>}");
+    // set(list(string)): Set<...> notation plus the set-semantics prose note
+    // (the jsii type is still an array - the note keeps a reader from
+    // literally passing a JS Set).
+    expect(providerFunctionsOutput).toContain(
+      "@param {Set<Array<string>>} nameLists - Terraform set; ordering is not guaranteed and duplicate values are removed.",
+    );
+    expect(providerFunctionsOutput).toContain(
+      "@returns {Set<Array<string>>} Terraform set; ordering is not guaranteed and duplicate values are removed.",
+    );
+  });
+
   // This package has no TypeScript-compiling harness
   // for generated output (no fixture/test anywhere generates a snippet and
   // feeds it through `tsc`/`ts.transpileModule`, and `cdktn` itself isn't a

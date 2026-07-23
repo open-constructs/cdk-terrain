@@ -76,6 +76,22 @@
             { "name": "matrix", "type": ["list", ["list", "string"]] }
           ]
         },
+        "dedupe_name_groups": {
+          "description": "Deduplicates each group of names, returning a list of name sets.",
+          "summary": "Dedupe name groups",
+          "return_type": ["list", ["set", "string"]],
+          "parameters": [
+            { "name": "name_groups", "type": ["list", ["set", "string"]] }
+          ]
+        },
+        "unique_name_lists": {
+          "description": "Returns the distinct name lists among the given ones.",
+          "summary": "Unique name lists",
+          "return_type": ["set", ["list", "string"]],
+          "parameters": [
+            { "name": "name_lists", "type": ["set", ["list", "string"]] }
+          ]
+        },
         "build_info": {
           "description": "Returns an object describing the build that produced the given seed.",
           "summary": "Build info",
