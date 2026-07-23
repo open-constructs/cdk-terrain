@@ -87,7 +87,7 @@ app.synth();`,
           "constructs": "^10.3.0"
         },
         "devDependencies": {
-          "@types/node": "^14.0.26",
+          "@types/node": "^22.20.1",
           "typescript": "^5.4.5",
           "cdktn-cli": "${CDKTF_CLI}"
         }
