@@ -118,7 +118,7 @@ export async function convert({
         message:
           "Enter your Terrafrom code to convert to cdktn (or run the command again and pass it as stdin):",
         postfix: ".tf",
-        waitForUseInput: true,
+        waitForUserInput: true,
       });
     } catch {
       throw Errors.Usage(

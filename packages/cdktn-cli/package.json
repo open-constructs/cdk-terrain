@@ -47,7 +47,7 @@
     "@cdktn/hcl-tools": "workspace:*",
     "@cdktn/hcl2cdk": "workspace:*",
     "@cdktn/hcl2json": "workspace:*",
-    "@inquirer/prompts": "6.0.1",
+    "@inquirer/prompts": "7.10.1",
     "ansi-escapes": "4.3.2",
     "cli-cursor": "3.1.0",
     "cli-spinners": "2.9.2",
