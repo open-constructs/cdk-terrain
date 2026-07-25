@@ -515,7 +515,7 @@ export class TerraformResource
   }
 
   /**
-   * Move the resource corresponding to "id" to this resource. Note that the resource being moved from must be marked as moved using it's instance function.
+   * Move the resource corresponding to "id" to this resource. Note that the resource being moved from must be marked as moved using its instance function.
    * @param id Full id of resource being moved from, e.g. "aws_s3_bucket.example"
    */
   public moveFromId(id: string) {
