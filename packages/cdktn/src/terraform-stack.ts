@@ -20,7 +20,6 @@ import {
   ValidateProviderFunctionTargetSupport,
   ValidateProviderPresence,
 } from "./validations";
-import { VALIDATE_FUNCTION_VERSIONS } from "./features";
 import { App } from "./app";
 import { TerraformBackend } from "./terraform-backend";
 import { TerraformResourceTargets } from "./terraform-resource-targets";
@@ -131,9 +130,7 @@ export class TerraformStack extends Construct {
     );
     Object.defineProperty(this, STACK_SYMBOL, { value: true });
     this.node.addValidation(new ValidateProviderPresence(this));
-    if (this.node.tryGetContext(VALIDATE_FUNCTION_VERSIONS)) {
-      this.node.addValidation(new ValidateFunctionVersionSupport(this));
-    }
+    this.node.addValidation(new ValidateFunctionVersionSupport(this));
     this.node.addValidation(new ValidateProviderFunctionTargetSupport(this));
   }
 

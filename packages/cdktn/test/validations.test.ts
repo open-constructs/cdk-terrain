@@ -11,12 +11,10 @@ import {
   resolveTargetVersions,
   ValidateBinaryVersion,
   ValidateFeatureTargetSupport,
-  ValidateFunctionVersionSupport,
 } from "../src/validations";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
 import { terraformBinaryName } from "../src/util";
-import { VALIDATE_FUNCTION_VERSIONS } from "../src/features";
 
 const tmp = createTmpHelper();
 
@@ -492,10 +490,7 @@ describe("ValidateFunctionVersionSupport", () => {
   }
 
   test("ignores universally available functions without resolving targets", () => {
-    const { app, stack, testResource } = appWithStack();
-    testResource.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource),
-    );
+    const { app, stack } = appWithStack();
     new TestResource(stack, "usesBaselineFunction", {
       name: Fn.abs(-42).toString(),
     });
@@ -511,17 +506,14 @@ describe("ValidateFunctionVersionSupport", () => {
 
   test("fails against the default baseline targets when a function needs a newer floor", () => {
     const { app, testResource } = appWithStack();
-    testResource.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource),
-    );
     new TestResource(testResource, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
 
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
-        [MyStack/testResource] Terraform function "templatestring" requires terraform >=1.9.0, but the project targets terraform >=1.5.7. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
-        [MyStack/testResource] Terraform function "templatestring" requires opentofu >=1.7.0, but the project targets opentofu >=1.6.0. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+        [MyStack] Terraform function "templatestring" requires terraform >=1.9.0, but the project targets terraform >=1.5.7. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+        [MyStack] Terraform function "templatestring" requires opentofu >=1.7.0, but the project targets opentofu >=1.6.0. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
 
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
@@ -532,9 +524,6 @@ describe("ValidateFunctionVersionSupport", () => {
     const { app, testResource } = appWithStack({
       targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
     });
-    testResource.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource),
-    );
     new TestResource(testResource, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
@@ -552,16 +541,13 @@ describe("ValidateFunctionVersionSupport", () => {
     const { app, testResource } = appWithStack({
       targetVersions: { terraform: ">=1.15.0" },
     });
-    testResource.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource),
-    );
     new TestResource(testResource, "usesCidrcontains", {
       name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
     });
 
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
-        [MyStack/testResource] Terraform function "cidrcontains" is not supported by terraform, but the project targets terraform >=1.15.0. It is available in opentofu >=1.7.0.
+        [MyStack] Terraform function "cidrcontains" is not supported by terraform, but the project targets terraform >=1.15.0. It is available in opentofu >=1.7.0.
 
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
@@ -572,9 +558,6 @@ describe("ValidateFunctionVersionSupport", () => {
     const { app, testResource } = appWithStack({
       targetVersions: { opentofu: ">=1.7.0" },
     });
-    testResource.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource),
-    );
     new TestResource(testResource, "usesCidrcontains", {
       name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
     });
@@ -586,49 +569,51 @@ describe("ValidateFunctionVersionSupport", () => {
     const { app, testResource } = appWithStack({
       targetVersions: { tofu: ">=1.7.0" },
     });
-    testResource.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource),
-    );
     new TestResource(testResource, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
 
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
-        [MyStack/testResource] targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")
+        [MyStack] targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")
 
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "
     `);
   });
 
-  test("is added to stacks via the validateFunctionVersions feature flag", () => {
-    const { app, stack } = appWithStack({
-      [VALIDATE_FUNCTION_VERSIONS]: "true",
-      targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
-    });
+  // The `validateFunctionVersions` context key that used to gate this
+  // validation is gone - it is registered on every stack now. `context` is an
+  // untyped passthrough map, so a cdktf.json that still carries the key stays
+  // valid; the key is simply inert, whichever value it holds. The two tests
+  // below pin both halves of that: a stale truthy key is not an error, and a
+  // falsy one no longer opts out. The literal string is spelled out here
+  // because the constant it came from no longer exists.
+  test("keeps working when a legacy cdktf.json still sets the removed validateFunctionVersions key", () => {
+    const { app, stack } = appWithStack({ validateFunctionVersions: "true" });
     new TestResource(stack, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
 
-    const execSpy = jest.spyOn(child_process, "execSync");
-    try {
-      expect(() => app.synth()).not.toThrow();
-      expect(execSpy).not.toHaveBeenCalled();
-    } finally {
-      execSpy.mockRestore();
-    }
+    expect(() => app.synth()).toThrow(
+      'Terraform function "templatestring" requires terraform >=1.9.0',
+    );
   });
 
-  test("is not added to stacks without the feature flag", () => {
-    const { app, testResource } = appWithStack();
-    new TestResource(testResource, "usesTemplatestring", {
+  test("still validates when a legacy cdktf.json explicitly disables the removed key", () => {
+    const { app, stack } = appWithStack({ validateFunctionVersions: false });
+    new TestResource(stack, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
 
-    // no validation registered: even a function outside the default baseline
-    // does not fail synth
-    expect(() => app.synth()).not.toThrow();
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack] Terraform function "templatestring" requires terraform >=1.9.0, but the project targets terraform >=1.5.7. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+        [MyStack] Terraform function "templatestring" requires opentofu >=1.7.0, but the project targets opentofu >=1.6.0. It is available in terraform >=1.9.0 and opentofu >=1.7.0.
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
   });
 
   test("does not leak Fn usage from one App into a later, unrelated App in the same process", () => {
@@ -638,12 +623,8 @@ describe("ValidateFunctionVersionSupport", () => {
     // structural, not something that depends on a reset running between
     // tests.
     const { app: app1, testResource: testResource1 } = appWithStack({
-      [VALIDATE_FUNCTION_VERSIONS]: "true",
       targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.7.0" },
     });
-    testResource1.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource1),
-    );
     new TestResource(testResource1, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
@@ -651,12 +632,7 @@ describe("ValidateFunctionVersionSupport", () => {
 
     // app2 targets the default baseline (which does NOT support
     // templatestring) but never calls Fn.templatestring itself.
-    const { app: app2, testResource: testResource2 } = appWithStack({
-      [VALIDATE_FUNCTION_VERSIONS]: "true",
-    });
-    testResource2.node.addValidation(
-      new ValidateFunctionVersionSupport(testResource2),
-    );
+    const { app: app2 } = appWithStack();
     expect(() => app2.synth()).not.toThrow();
   });
 
@@ -669,16 +645,14 @@ describe("ValidateFunctionVersionSupport", () => {
     // entirely. Recording at token-RESOLVE time, onto the stack being
     // resolved, is immune to this: App A's usage is recorded during App A's
     // own prepareStack pass and read back from App A's own stacks.
-    const { app: app1, testResource: testResource1 } = appWithStack({
-      [VALIDATE_FUNCTION_VERSIONS]: "true",
-    });
+    const { app: app1, testResource: testResource1 } = appWithStack();
     new TestResource(testResource1, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });
 
     // App B is constructed here, strictly between App A's usage and App
     // A's synth() call - the interleaving that used to trigger the bug.
-    appWithStack({ [VALIDATE_FUNCTION_VERSIONS]: "true" });
+    appWithStack();
 
     expect(() => app1.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
@@ -710,18 +684,12 @@ describe("ValidateFunctionVersionSupport", () => {
       opentofu: ">=1.7.0",
     });
     new TestProvider(compatible, "provider", {});
-    compatible.node.addValidation(
-      new ValidateFunctionVersionSupport(compatible),
-    );
     new TestResource(compatible, "harmless", {
       name: "no gated function used here",
     });
 
     const incompatible = new TerraformStack(app, "IncompatibleStack");
     new TestProvider(incompatible, "provider", {});
-    incompatible.node.addValidation(
-      new ValidateFunctionVersionSupport(incompatible),
-    );
     new TestResource(incompatible, "usesTemplatestring", {
       name: Fn.templatestring("$${greeting}", { greeting: "hello" }),
     });

@@ -8,8 +8,8 @@ gaps per product). It is consumed by:
   bindings.
 - `../scripts/generate-function-availability.ts` — emits
   `packages/cdktn/src/functions/function-availability.generated.ts`, the
-  version-constraint map used by the synth-time `validateFunctionVersions`
-  check.
+  version-constraint map used by the synth-time function version validation
+  (`ValidateFunctionVersionSupport`).
 
 ## Regenerating
 

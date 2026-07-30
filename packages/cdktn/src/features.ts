@@ -30,15 +30,6 @@ export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
   "failOnConstructsOutsideOfStacks";
 
 /**
- * When enabled, each TerraformStack validates that the Terraform functions
- * used through `Fn` are supported by the runtime versions declared in
- * `targetVersions` (Terraform and/or OpenTofu). This is a purely static check
- * against the vendored function availability matrix; it never executes a
- * Terraform-compatible CLI.
- */
-export const VALIDATE_FUNCTION_VERSIONS = "validateFunctionVersions";
-
-/**
  * When enabled, TerraformAsset and TerraformModuleAsset compute asset hashes
  * with a canonical entry-framed scheme modeled on git trees and Nix NAR:
  * every entry contributes its type, permission mask (for files and
@@ -58,6 +49,5 @@ export const CANONICAL_ASSET_HASHES = "canonicalAssetHashes";
 
 export const FUTURE_FLAGS = {
   [FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS]: "true",
-  [VALIDATE_FUNCTION_VERSIONS]: "true",
   [CANONICAL_ASSET_HASHES]: "true",
 };

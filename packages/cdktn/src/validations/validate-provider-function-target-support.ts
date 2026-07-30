@@ -21,8 +21,8 @@ import { TerraformStack } from "../terraform-stack";
  * provider function has been used, and otherwise checked once, naming every
  * used function so the error is actionable.
  *
- * Registered unconditionally (no feature flag): this is new API surface, and
- * the check only ever fires when a provider function is actually used —
+ * Registered unconditionally: this is new API surface, and the check only
+ * ever fires when a provider function is actually used —
  * i.e. its token was resolved while rendering this validation's OWNING
  * STACK (`TerraformStack._getUsedProviderFunctions()`), not while rendering
  * some other stack in the same App: this validation is registered in
