@@ -9,6 +9,7 @@ import { Testing, TerraformStack, TerraformAsset, AssetType } from "../src";
 import { CANONICAL_ASSET_HASHES } from "../src/features";
 import { TerraformModuleAsset } from "../src/terraform-module-asset";
 import { archiveSync, hashPath } from "../src/private/fs";
+import { testIfPosixPermissions, testIfSymlinks } from "./helper/capabilities";
 
 function createTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-canonical-test-"));
@@ -50,16 +51,19 @@ describe("canonical asset hash scheme", () => {
     expect(canonical(srcDir)).not.toBe(before);
   });
 
-  test("changing file permissions changes the hash (archiveSync emits them)", () => {
-    const file = path.join(srcDir, "run.sh");
-    fs.writeFileSync(file, "#!/bin/sh\n");
-    fs.chmodSync(file, 0o644);
-    const before = canonical(srcDir);
+  testIfPosixPermissions(
+    "changing file permissions changes the hash (archiveSync emits them)",
+    () => {
+      const file = path.join(srcDir, "run.sh");
+      fs.writeFileSync(file, "#!/bin/sh\n");
+      fs.chmodSync(file, 0o644);
+      const before = canonical(srcDir);
 
-    fs.chmodSync(file, 0o755);
+      fs.chmodSync(file, 0o755);
 
-    expect(canonical(srcDir)).not.toBe(before);
-  });
+      expect(canonical(srcDir)).not.toBe(before);
+    },
+  );
 
   test("adding or removing an empty directory changes the hash (copySync emits them)", () => {
     fs.writeFileSync(path.join(srcDir, "a.txt"), "content");
@@ -73,49 +77,58 @@ describe("canonical asset hash scheme", () => {
     expect(canonical(srcDir)).toBe(before);
   });
 
-  test("a regular file and a symlink with the same payload hash differently", () => {
-    const asFile = createTempDir();
-    fs.writeFileSync(path.join(asFile, "current"), "a.txt");
-    const asLink = createTempDir();
-    fs.symlinkSync("a.txt", path.join(asLink, "current"));
+  testIfSymlinks(
+    "a regular file and a symlink with the same payload hash differently",
+    () => {
+      const asFile = createTempDir();
+      fs.writeFileSync(path.join(asFile, "current"), "a.txt");
+      const asLink = createTempDir();
+      fs.symlinkSync("a.txt", path.join(asLink, "current"));
 
-    expect(canonical(asFile)).not.toBe(canonical(asLink));
+      expect(canonical(asFile)).not.toBe(canonical(asLink));
 
-    fs.rmSync(asFile, { recursive: true, force: true });
-    fs.rmSync(asLink, { recursive: true, force: true });
-  });
+      fs.rmSync(asFile, { recursive: true, force: true });
+      fs.rmSync(asLink, { recursive: true, force: true });
+    },
+  );
 
-  test("does not crash on circular symlinks and sees retargeting", () => {
-    fs.mkdirSync(path.join(srcDir, "pkg"));
-    fs.writeFileSync(path.join(srcDir, "pkg", "index.js"), "module");
-    fs.symlinkSync("../pkg", path.join(srcDir, "pkg", "self"));
-    const before = canonical(srcDir);
+  testIfSymlinks(
+    "does not crash on circular symlinks and sees retargeting",
+    () => {
+      fs.mkdirSync(path.join(srcDir, "pkg"));
+      fs.writeFileSync(path.join(srcDir, "pkg", "index.js"), "module");
+      fs.symlinkSync("../pkg", path.join(srcDir, "pkg", "self"));
+      const before = canonical(srcDir);
 
-    fs.rmSync(path.join(srcDir, "pkg", "self"));
-    fs.symlinkSync("index.js", path.join(srcDir, "pkg", "self"));
+      fs.rmSync(path.join(srcDir, "pkg", "self"));
+      fs.symlinkSync("index.js", path.join(srcDir, "pkg", "self"));
 
-    expect(canonical(srcDir)).not.toBe(before);
-  });
+      expect(canonical(srcDir)).not.toBe(before);
+    },
+  );
 
-  test("identical logical trees hash identically regardless of location", () => {
-    const build = (root: string) => {
-      fs.mkdirSync(path.join(root, "sub"));
-      fs.mkdirSync(path.join(root, "empty"));
-      const file = path.join(root, "sub", "a.txt");
-      fs.writeFileSync(file, "content");
-      fs.chmodSync(file, 0o644);
-      fs.symlinkSync("sub/a.txt", path.join(root, "link"));
-    };
-    const otherDir = createTempDir();
-    build(srcDir);
-    build(otherDir);
+  testIfSymlinks(
+    "identical logical trees hash identically regardless of location",
+    () => {
+      const build = (root: string) => {
+        fs.mkdirSync(path.join(root, "sub"));
+        fs.mkdirSync(path.join(root, "empty"));
+        const file = path.join(root, "sub", "a.txt");
+        fs.writeFileSync(file, "content");
+        fs.chmodSync(file, 0o644);
+        fs.symlinkSync("sub/a.txt", path.join(root, "link"));
+      };
+      const otherDir = createTempDir();
+      build(srcDir);
+      build(otherDir);
 
-    expect(canonical(srcDir)).toBe(canonical(otherDir));
-    // repeated runs over the same tree are stable
-    expect(canonical(srcDir)).toBe(canonical(srcDir));
+      expect(canonical(srcDir)).toBe(canonical(otherDir));
+      // repeated runs over the same tree are stable
+      expect(canonical(srcDir)).toBe(canonical(srcDir));
 
-    fs.rmSync(otherDir, { recursive: true, force: true });
-  });
+      fs.rmSync(otherDir, { recursive: true, force: true });
+    },
+  );
 });
 
 describe("canonical archive hashing tracks the emitted ZIP", () => {
@@ -154,17 +167,20 @@ describe("canonical archive hashing tracks the emitted ZIP", () => {
     expect(canonical(srcDir)).not.toBe(beforeDirectoryHash);
   });
 
-  test("a permission change alters both the ZIP bytes and the archive hash", () => {
-    const file = path.join(srcDir, "run.sh");
-    fs.writeFileSync(file, "#!/bin/sh\n");
-    fs.chmodSync(file, 0o644);
-    const before = { zip: zipBytes(), hash: canonicalArchive(srcDir) };
+  testIfPosixPermissions(
+    "a permission change alters both the ZIP bytes and the archive hash",
+    () => {
+      const file = path.join(srcDir, "run.sh");
+      fs.writeFileSync(file, "#!/bin/sh\n");
+      fs.chmodSync(file, 0o644);
+      const before = { zip: zipBytes(), hash: canonicalArchive(srcDir) };
 
-    fs.chmodSync(file, 0o755);
+      fs.chmodSync(file, 0o755);
 
-    expect(zipBytes().equals(before.zip)).toBe(false);
-    expect(canonicalArchive(srcDir)).not.toBe(before.hash);
-  });
+      expect(zipBytes().equals(before.zip)).toBe(false);
+      expect(canonicalArchive(srcDir)).not.toBe(before.hash);
+    },
+  );
 
   test("equivalent trees with different creation histories emit identical archives", () => {
     const build = (root: string, order: string[]) => {

@@ -12,9 +12,12 @@ import {
   findLowestCommonPath,
   TerraformModuleAsset,
 } from "../src/terraform-module-asset";
+import { describeIfSymlinks } from "./helper/capabilities";
 
 describe("TerraformModuleAsset", () => {
-  describe("module source copying (#320)", () => {
+  // The fixture builds a directory symlink in beforeEach, so the whole block
+  // depends on symlink creation being permitted.
+  describeIfSymlinks("module source copying (#320)", () => {
     let moduleDir: string;
 
     beforeEach(() => {

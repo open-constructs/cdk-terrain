@@ -6,6 +6,7 @@ import * as path from "path";
 import { execSync } from "child_process";
 import { unzipSync } from "fflate";
 import { archiveSync } from "../src/private/fs";
+import { testIfUnzip } from "./helper/capabilities";
 
 function createTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-archive-test-"));
@@ -14,6 +15,11 @@ function createTempDir(): string {
 /**
  * Extracts a zip to a temp directory using the system `unzip` command
  * and returns a map of relative paths to their contents.
+ *
+ * Using the system extractor is the point: it checks our fflate-written
+ * archives against an independent implementation. Tests calling this are
+ * therefore gated on `unzip` being present rather than falling back to
+ * fflate, which would make the assertion circular.
  */
 function extractZip(zipPath: string): Map<string, Buffer> {
   const extractDir = createTempDir();
@@ -51,7 +57,7 @@ describe("archiveSync", () => {
     fs.rmSync(destDir, { recursive: true, force: true });
   });
 
-  test("creates a valid zip from a single file", () => {
+  testIfUnzip("creates a valid zip from a single file", () => {
     fs.writeFileSync(path.join(srcDir, "hello.txt"), "hello world");
 
     const zipPath = path.join(destDir, "output.zip");
@@ -63,7 +69,7 @@ describe("archiveSync", () => {
     expect(files.get("hello.txt")!.toString("utf-8")).toBe("hello world");
   });
 
-  test("creates a valid zip from multiple files", () => {
+  testIfUnzip("creates a valid zip from multiple files", () => {
     fs.writeFileSync(path.join(srcDir, "a.txt"), "aaa");
     fs.writeFileSync(path.join(srcDir, "b.txt"), "bbb");
 
@@ -76,7 +82,7 @@ describe("archiveSync", () => {
     expect(files.get("b.txt")!.toString("utf-8")).toBe("bbb");
   });
 
-  test("preserves subdirectory structure", () => {
+  testIfUnzip("preserves subdirectory structure", () => {
     fs.mkdirSync(path.join(srcDir, "sub"), { recursive: true });
     fs.writeFileSync(path.join(srcDir, "root.txt"), "root");
     fs.writeFileSync(path.join(srcDir, "sub", "nested.txt"), "nested");
@@ -90,7 +96,7 @@ describe("archiveSync", () => {
     expect(files.get("sub/nested.txt")!.toString("utf-8")).toBe("nested");
   });
 
-  test("handles deeply nested directories", () => {
+  testIfUnzip("handles deeply nested directories", () => {
     const deepDir = path.join(srcDir, "a", "b", "c");
     fs.mkdirSync(deepDir, { recursive: true });
     fs.writeFileSync(path.join(deepDir, "deep.txt"), "deep content");
@@ -116,7 +122,7 @@ describe("archiveSync", () => {
     expect(zipSize).toBeLessThan(100);
   });
 
-  test("handles binary content", () => {
+  testIfUnzip("handles binary content", () => {
     const binaryContent = Buffer.from([0x00, 0x01, 0xff, 0xfe, 0x80, 0x7f]);
     fs.writeFileSync(path.join(srcDir, "binary.bin"), binaryContent);
 
@@ -128,7 +134,7 @@ describe("archiveSync", () => {
     expect(files.get("binary.bin")).toEqual(binaryContent);
   });
 
-  test("handles empty files", () => {
+  testIfUnzip("handles empty files", () => {
     fs.writeFileSync(path.join(srcDir, "empty.txt"), "");
 
     const zipPath = path.join(destDir, "output.zip");
