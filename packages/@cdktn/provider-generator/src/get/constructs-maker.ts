@@ -38,9 +38,14 @@ async function resolvePublishableFiles(dir: string): Promise<string[]> {
   const stdout = await exec("npm", ["pack", "--dry-run", "--json"], {
     cwd: dir,
   });
-  const packInfo = JSON.parse(stdout) as Array<{ files: { path: string }[] }>;
+  // npm <=11 reports an array of packed packages; npm >=12 reports an object
+  // keyed by package name. Accept either so the build is npm-version agnostic.
+  const parsed = JSON.parse(stdout) as
+    | Array<{ files: { path: string }[] }>
+    | Record<string, { files: { path: string }[] }>;
+  const packInfo = Array.isArray(parsed) ? parsed[0] : Object.values(parsed)[0];
   // Drop `..`-escape paths npm emits when following pnpm's node_modules symlinks.
-  return packInfo[0].files.map((f) => f.path).filter((p) => !p.includes(".."));
+  return packInfo.files.map((f) => f.path).filter((p) => !p.includes(".."));
 }
 
 export interface GenerateJSIIOptions {
