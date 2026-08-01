@@ -20,6 +20,13 @@ export class HelloTerra extends TerraformStack {
       {
         "local-exec": {
           command: `sleep ${timeout} && ${command}`,
+          // Terraform runs local-exec through cmd.exe on Windows, which has no
+          // `sleep`, so every stack would fail rather than only the one that is
+          // meant to. Run it through bash there so the staggered timings this
+          // test depends on behave the same on all platforms.
+          ...(process.platform === "win32"
+            ? { interpreter: ["bash", "-c"] }
+            : {}),
         },
       },
     ]);

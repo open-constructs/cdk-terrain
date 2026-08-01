@@ -12,6 +12,21 @@ const input = `
 resource "null_resource" "dummy" {}
 `;
 
+/**
+ * Environment for the spawned CLI with FORCE_COLOR removed.
+ *
+ * The test runner (nx) sets FORCE_COLOR when attached to a TTY. The CLI sets
+ * NO_COLOR for its own output, and Node warns on stderr when both are set:
+ * "The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set."
+ * That warning breaks the assertions below that stderr is empty, so drop
+ * FORCE_COLOR rather than loosening them.
+ */
+function envWithoutForceColor(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  delete env.FORCE_COLOR;
+  return env;
+}
+
 describe("convert command", () => {
   it("proposes specifying a provider version", async () => {
     await mkdtemp(async (cwd) => {
@@ -23,6 +38,8 @@ describe("convert command", () => {
         stdio: "pipe",
         cwd,
         input,
+        env: envWithoutForceColor(),
+        extendEnv: false,
       });
       expect(result.stderr).toEqual("");
       expect(result.stdout).toContain(
@@ -44,6 +61,8 @@ describe("convert command", () => {
         stdio: "pipe",
         cwd,
         input,
+        env: envWithoutForceColor(),
+        extendEnv: false,
       });
       expect(result.stderr).toEqual("");
       expect(result.stdout).not.toContain(
@@ -61,6 +80,8 @@ describe("convert command", () => {
         stdio: "pipe",
         cwd,
         input,
+        env: envWithoutForceColor(),
+        extendEnv: false,
       });
       expect(result.stderr).toEqual("");
       expect(result.stdout).toContain(
@@ -81,6 +102,8 @@ describe("convert command", () => {
         {
           stdio: "pipe",
           cwd,
+          env: envWithoutForceColor(),
+          extendEnv: false,
           input: `resource "kubernetes_deployment" "myapp" {
             metadata {
               name = "myapp-frontend-dev"
@@ -145,6 +168,8 @@ describe("convert command", () => {
         {
           stdio: "pipe",
           cwd,
+          env: envWithoutForceColor(),
+          extendEnv: false,
           input: `resource "kubernetes_deployment" "myapp" {
             metadata {
               name = "myapp-frontend-dev"

@@ -36,7 +36,12 @@ export function expectModuleToMatchSnapshot(
   fixtureNames: string[],
 ) {
   test(testName, async () => {
-    await withTempDir(`${testName.replace(/\s*/, "-")}.test`, async () => {
+    // Test names become a directory name, so collapse anything that is not
+    // filename-safe. The previous /\s*/ matched the empty string at index 0
+    // (no global flag either), which only prepended a "-" and left spaces --
+    // and characters like "*" in a test title are illegal in Windows paths.
+    const safeName = testName.replace(/[^a-zA-Z0-9._-]+/g, "-");
+    await withTempDir(`${safeName}.test`, async () => {
       const curdir = process.cwd();
       fs.mkdirSync("module");
 
