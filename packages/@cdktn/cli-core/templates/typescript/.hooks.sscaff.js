@@ -28,7 +28,13 @@ exports.post = (ctx) => {
     throw new Error(`missing context "npm_cdktf"`);
   }
 
-  installDeps([npm_cdktf, `constructs@10`], false, silent);
+  // Mirrors the `constructs` peer dependency range declared by the cdktn
+  // package. 10.8.0 is excluded because it dropped `jsii.tsc.outDir` from its
+  // package.json, which jsii-rosetta needs to map the shipped .d.ts files back
+  // to the symbol ids in the assembly; without it `cdktn convert` emits
+  // unresolved Java/Go imports (`constructs.Construct` instead of
+  // `software.constructs.Construct`). Keep both ranges in sync.
+  installDeps([npm_cdktf, `constructs@>=10.6.0 <10.8.0`], false, silent);
   installDeps(
     ["@types/node", "typescript@5.x", "jest", "@types/jest", "ts-jest", "ts-node"],
     true,
@@ -46,7 +52,13 @@ function installDeps(deps, isDev, silent) {
   const env = Object.assign({}, process.env);
   env["NODE_ENV"] = "development";
 
-  execSync(`npm install ${devDep} ${deps.join(" ")}`, {
+  // Each spec is double-quoted so ranges containing spaces or shell
+  // metacharacters survive the shell. Double quotes (rather than single) work
+  // on both POSIX shells and cmd.exe, where an unquoted `^` is the escape
+  // character and would silently turn `cdktn@^1.2.3` into `cdktn@1.2.3`.
+  const specs = deps.map((dep) => `"${dep}"`).join(" ");
+
+  execSync(`npm install ${devDep} ${specs}`, {
     stdio: silent ? "ignore" : "inherit",
     env,
   });
