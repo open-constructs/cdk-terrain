@@ -27,6 +27,10 @@ import { pacmak } from "jsii-pacmak";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageDir = resolve(__dirname, "..");
+// npm ships as a .cmd shim on Windows, and Node refuses to spawn .cmd/.bat
+// files directly (CVE-2024-27980 hardening -> spawnSync EINVAL). Route npm
+// through a shell there so cmd.exe resolves the shim; no-op elsewhere.
+const NPM_SPAWN_OPTS = process.platform === "win32" ? { shell: true } : {};
 const stagingDir = join(packageDir, ".pack-staging");
 const distOutDir = join(packageDir, "dist");
 
@@ -58,9 +62,13 @@ function resolveSourceFiles() {
   console.log("Resolving cdktn's file list via `npm pack --dry-run`...");
   const packJson = execFileSync("npm", ["pack", "--dry-run", "--json"], {
     cwd: packageDir,
+    ...NPM_SPAWN_OPTS,
   }).toString();
-  const packInfo = JSON.parse(packJson);
-  const files = packInfo[0].files
+  // npm <=11 reports an array of packed packages; npm >=12 reports an object
+  // keyed by package name. Accept either so this is npm-version agnostic.
+  const parsed = JSON.parse(packJson);
+  const packInfo = Array.isArray(parsed) ? parsed[0] : Object.values(parsed)[0];
+  const files = packInfo.files
     .map((f) => f.path)
     .filter((p) => !p.includes(".."));
   console.log(`  ${files.length} source files to copy.`);
@@ -72,8 +80,26 @@ function resolveSourceFiles() {
  */
 function prepareStagingDir() {
   console.log(`Preparing staging dir at ${stagingDir}...`);
-  rmSync(stagingDir, { recursive: true, force: true });
+  // maxRetries covers EBUSY/EPERM from a watcher still holding a handle here.
+  rmSync(stagingDir, { recursive: true, force: true, maxRetries: 5 });
   mkdirSync(stagingDir, { recursive: true });
+}
+
+/**
+ * Remove the staging tree once its dist/ has been moved out, so it cannot be
+ * left behind holding a nested package.json and node_modules.
+ *
+ * Best effort: a file watcher may still hold handles inside it on Windows, and
+ * a leftover tree must not fail an otherwise successful package run. The
+ * `.pack-staging` entry in .npmignore keeps a stale tree from breaking the next
+ * `npm pack`, and the one in .nxignore keeps the nx daemon from watching it.
+ */
+function cleanStagingDir() {
+  try {
+    rmSync(stagingDir, { recursive: true, force: true, maxRetries: 5 });
+  } catch (err) {
+    console.warn(`Could not remove staging dir ${stagingDir}: ${err.message}`);
+  }
 }
 
 /**
@@ -114,7 +140,7 @@ function installRuntimeDeps() {
       "--prefer-offline",
       "--ignore-scripts",
     ],
-    { cwd: stagingDir },
+    { cwd: stagingDir, ...NPM_SPAWN_OPTS },
   );
 }
 
@@ -165,4 +191,5 @@ installRuntimeDeps();
 await runJsiiPacmak(targets);
 runGoCopyrightHeader();
 moveDistOut();
+cleanStagingDir();
 console.log("Done.");

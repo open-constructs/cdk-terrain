@@ -1,1 +1,6 @@
 packages/@cdktn/cli-core/templates
+
+# Build staging tree for the cdktn package. On Windows the nx daemon's file
+# watcher keeps handles open on watched directories, which makes the rmSync in
+# scripts/pack.mjs fail with EPERM and leaves the tree behind.
+packages/cdktn/.pack-staging
