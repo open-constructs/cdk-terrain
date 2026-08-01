@@ -121,6 +121,35 @@ To build and install `cdk-terrain` locally you need to install:
 
 - rsync
 
+**Required on Windows:**
+
+- Git Bash, with `C:\Program Files\Git\bin` on `PATH` **ahead of**
+  `%LOCALAPPDATA%\Microsoft\WindowsApps`.
+
+  Package scripts invoke shell scripts as `bash <script>.sh`, because cmd.exe
+  cannot execute a script by path. The `bash.exe` that ships in `WindowsApps` is
+  the WSL launcher: it runs in Linux userspace and cannot see the Windows Node
+  toolchain, so builds fail in confusing ways rather than reporting a missing
+  interpreter. Check which one you get with:
+
+  ```shell
+  $ where bash   # expect C:\Program Files\Git\bin\bash.exe first
+  ```
+
+  `Git\bin` contains only `bash`, `sh` and `git`, so it will not shadow the
+  Windows `find` and `sort` the way adding `Git\usr\bin` would.
+
+- An LF working tree. `.gitattributes` pins this, so a fresh clone is correct.
+  A clone made earlier with `core.autocrlf=true` will still have CRLF files,
+  which breaks nx's lockfile parsing and every `#!/bin/bash` script. Renormalize
+  an existing clone with:
+
+  ```shell
+  $ git config core.autocrlf false
+  $ git rm --cached -r .
+  $ git reset --hard
+  ```
+
 Alternatively you can work on the CDK from within a docker container with the image `terraconstructs/jsii-terraform`, e.g.:
 
 ```shell
@@ -229,6 +258,13 @@ $ pnpm test:update
 ```
 
 **Important:** The `pnpm package` command requires Maven (`mvn`) to be installed, which is not managed by mise. See [Prerequisites](#prerequisites) for installation instructions.
+
+**Note:** A few tests in `packages/cdktn` run a real `terraform plan` against the
+Docker provider and need a running Docker daemon — this is separate from the
+optional containerized workflow described in [Prerequisites](#prerequisites).
+Without a daemon they fail as a bare `expect(received).toBeTruthy()` that
+mentions neither Docker nor Terraform, so check `docker info` before digging
+into the code.
 
 ### Integration Tests
 
