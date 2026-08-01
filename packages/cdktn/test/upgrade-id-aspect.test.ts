@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
+import * as path from "path";
 import { Aspects, MigrateIds, TerraformStack, Testing } from "../src";
 import { TestModule } from "./helper";
 
@@ -21,7 +22,7 @@ describe("MigrateIds", () => {
         constructPath: "staging/vpc",
         level: "@cdktf/warn",
         message: `Found module with new id vpc. Moving this module requires a manual state migration.
-If this module has not been moved yet, run "terraform state mv module.staging_vpc_C4EA2553 module.vpc" in the output directory "${app.outdir}/stacks/staging" to migrate the existing state to its new id.
+If this module has not been moved yet, run "terraform state mv module.staging_vpc_C4EA2553 module.vpc" in the output directory "${path.join(app.outdir, "stacks", "staging")}" to migrate the existing state to its new id.
 Refer to the following page for more information: https://cdktn.io/docs/examples-and-guides/refactoring#moving-or-renaming-modules`,
       },
     ]);

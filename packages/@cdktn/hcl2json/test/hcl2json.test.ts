@@ -110,10 +110,11 @@ describe("convertFiles", () => {
   });
 
   test("invalid path", () => {
+    // The resolved path is platform specific -- Windows anchors a rooted path
+    // onto the current drive, giving "C:\some\not\existing\path" -- so assert
+    // on the error itself rather than snapshotting the path.
     return expect(
       convertFiles(path.join("/some/not/existing/path")),
-    ).rejects.toMatchInlineSnapshot(
-      `[Error: ENOENT: no such file or directory, scandir '/some/not/existing/path']`,
-    );
+    ).rejects.toThrow(/ENOENT: no such file or directory, scandir/);
   });
 });

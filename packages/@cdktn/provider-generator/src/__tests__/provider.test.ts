@@ -39,7 +39,9 @@ function directorySnapshot(root: string) {
       content = fs.readFileSync(filePath, "utf-8");
     }
 
-    output[file] = content;
+    // glob yields native separators on Windows; key the snapshot by a
+    // "/"-separated path so it is identical on every platform.
+    output[file.split(path.sep).join(path.posix.sep)] = content;
   }
 
   return output;

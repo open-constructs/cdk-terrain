@@ -5,6 +5,7 @@
 
 import { TerraformProviderLock } from "../../lib/terraform-provider-lock";
 import { readFile, stat } from "fs/promises";
+import * as path from "path";
 import { ProviderConstraint } from "../../lib/dependencies/dependency-manager";
 
 jest.mock("fs/promises", () => {
@@ -46,7 +47,7 @@ describe("TerraformProviderLock", () => {
     const lock = new TerraformProviderLock("test");
     await lock.providers();
 
-    expect(readFile).toHaveBeenCalledWith(`test/.terraform.lock.hcl`);
+    expect(readFile).toHaveBeenCalledWith(path.join("test", ".terraform.lock.hcl"));
   });
 
   it("doesn't read the file twice", async () => {
@@ -191,12 +192,12 @@ describe("TerraformProviderLock", () => {
     (stat as jest.Mock).mockResolvedValueOnce({});
 
     expect(await lock.hasProviderLockFile()).toBeTruthy();
-    expect(stat).toHaveBeenCalledWith("test/.terraform.lock.hcl");
+    expect(stat).toHaveBeenCalledWith(path.join("test", ".terraform.lock.hcl"));
 
     (stat as jest.Mock).mockClear();
     (stat as jest.Mock).mockRejectedValueOnce(new Error("unable to find file"));
 
     expect(await lock.hasProviderLockFile()).toBeFalsy();
-    expect(stat).toHaveBeenCalledWith("test/.terraform.lock.hcl");
+    expect(stat).toHaveBeenCalledWith(path.join("test", ".terraform.lock.hcl"));
   });
 });

@@ -259,8 +259,10 @@ describe("matchers", () => {
     it("fails if anything but a path is passed", () => {
       const res = toBeValidTerraform("not a path");
       expect(res.pass).toBeFalsy();
-      expect(res.message).toMatchInlineSnapshot(
-        `"Expected subject to be a terraform directory: Error: ENOENT: no such file or directory, stat 'not a path'"`,
+      // Node reports the path as given on POSIX but resolves it against cwd on
+      // Windows, so match the message rather than snapshotting the full path.
+      expect(res.message).toMatch(
+        /^Expected subject to be a terraform directory: Error: ENOENT: no such file or directory, stat '.*not a path'$/,
       );
     });
 
@@ -310,8 +312,10 @@ describe("matchers", () => {
     it("fails if anything but a path is passed", () => {
       const res = toPlanSuccessfully("not a path");
       expect(res.pass).toBeFalsy();
-      expect(res.message).toMatchInlineSnapshot(
-        `"Expected subject to be a terraform directory: Error: ENOENT: no such file or directory, stat 'not a path'"`,
+      // Node reports the path as given on POSIX but resolves it against cwd on
+      // Windows, so match the message rather than snapshotting the full path.
+      expect(res.message).toMatch(
+        /^Expected subject to be a terraform directory: Error: ENOENT: no such file or directory, stat '.*not a path'$/,
       );
     });
 

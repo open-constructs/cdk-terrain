@@ -5,6 +5,15 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 
+/**
+ * Rewrites native separators to "/" so path assertions can be written once.
+ * `localSourceAbsolutePath` is resolved with `path.resolve`, which yields
+ * backslashes on Windows.
+ */
+function toPosixPath(p: string): string {
+  return p.split(path.sep).join(path.posix.sep);
+}
+
 export async function mkdtemp(closure: (dir: string) => Promise<void>) {
   const workdir = await fs.mkdtemp(path.join(os.tmpdir(), "cdktf."));
   try {
@@ -130,7 +139,9 @@ describe("parseConfig", () => {
         ],
       };
       const parsed: any = parseConfig(JSON.stringify(input));
-      expect(parsed.terraformModules[0].localSourceAbsolutePath).toMatch(
+      expect(
+        toPosixPath(parsed.terraformModules[0].localSourceAbsolutePath),
+      ).toMatch(
         "/packages/@cdktn/commons/foo",
       );
     });
@@ -231,7 +242,9 @@ describe("parseConfig", () => {
       };
 
       const parsed: any = parseConfig(JSON.stringify(input));
-      expect(parsed.terraformModules[0].localSourceAbsolutePath).toMatch(
+      expect(
+        toPosixPath(parsed.terraformModules[0].localSourceAbsolutePath),
+      ).toMatch(
         "/packages/@cdktn/commons/consul",
       );
 
