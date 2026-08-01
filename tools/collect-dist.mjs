@@ -19,13 +19,23 @@ const destDir = join(repoRoot, "dist");
 rmSync(destDir, { recursive: true, force: true });
 mkdirSync(destDir, { recursive: true });
 
-// one absolute path per workspace package
-const packageDirs = execFileSync("pnpm", ["--recursive", "exec", "pwd"], {
-  cwd: repoRoot,
-  encoding: "utf8",
-})
-  .split("\n")
-  .filter(Boolean);
+// One absolute path per workspace package.
+//
+// `pnpm --recursive exec pwd` is not portable: `pwd` is a Unix command with no
+// cmd.exe equivalent, and on Windows pnpm is a .cmd shim that Node cannot spawn
+// without a shell. Ask pnpm for the paths as JSON instead.
+const packageDirs = JSON.parse(
+  execFileSync("pnpm", ["list", "--recursive", "--depth", "-1", "--json"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    // cmd.exe resolves the pnpm shim; harmless no-op on other platforms.
+    shell: process.platform === "win32",
+  }),
+)
+  .map((pkg) => pkg.path)
+  // Skip the workspace root: its `dist/` is the destination we collect into.
+  .filter((dir) => dir && resolve(dir) !== repoRoot);
 
 for (const dir of packageDirs) {
   const src = join(dir, "dist");

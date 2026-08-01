@@ -11,7 +11,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Filename whose presence in a directory marks that directory as a CDKTF project root. */
@@ -94,7 +94,7 @@ function reportError(file, message) {
  */
 const exampleProjects = collectCdktfOrExampleProjectDirs(
   resolve(REPO_ROOT, "examples"),
-).map((p) => p.replace(REPO_ROOT + "/", ""));
+).map((p) => relative(REPO_ROOT, p).split(sep).join("/"));
 
 /**
  * Output of `nx show projects --json` — the name of every workspace project nx can see. Used to cross-check
