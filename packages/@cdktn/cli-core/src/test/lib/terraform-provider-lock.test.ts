@@ -47,7 +47,9 @@ describe("TerraformProviderLock", () => {
     const lock = new TerraformProviderLock("test");
     await lock.providers();
 
-    expect(readFile).toHaveBeenCalledWith(path.join("test", ".terraform.lock.hcl"));
+    expect(readFile).toHaveBeenCalledWith(
+      path.join("test", ".terraform.lock.hcl"),
+    );
   });
 
   it("doesn't read the file twice", async () => {

@@ -141,9 +141,7 @@ describe("parseConfig", () => {
       const parsed: any = parseConfig(JSON.stringify(input));
       expect(
         toPosixPath(parsed.terraformModules[0].localSourceAbsolutePath),
-      ).toMatch(
-        "/packages/@cdktn/commons/foo",
-      );
+      ).toMatch("/packages/@cdktn/commons/foo");
     });
 
     it("parses sub module registry string", async () => {
@@ -244,9 +242,7 @@ describe("parseConfig", () => {
       const parsed: any = parseConfig(JSON.stringify(input));
       expect(
         toPosixPath(parsed.terraformModules[0].localSourceAbsolutePath),
-      ).toMatch(
-        "/packages/@cdktn/commons/consul",
-      );
+      ).toMatch("/packages/@cdktn/commons/consul");
 
       expect(parsed.terraformModules[0].name).toMatch("consul");
     });
