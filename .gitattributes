@@ -1,3 +1,35 @@
+# Normalize all text files to LF in the repository and in the working tree.
+# This repo's tooling assumes LF: nx's pnpm-lock.yaml document splitter matches
+# on "---\n" exactly, and the .sh build scripts are run through bash. A CRLF
+# checkout (e.g. from core.autocrlf=true on Windows) breaks both.
+* text=auto eol=lf
+
+# Batch files are stored byte-for-byte as committed (most of the vendored
+# gradlew.bat files already have CRLF blobs). `-text` disables conversion in
+# both directions -- `text eol=crlf` would instead rewrite those blobs to LF on
+# the next `git add`, silently changing files nothing here needs changed.
+*.bat -text
+*.cmd -text
+
+# Explicitly binary: never touched by line-ending conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.jar binary
+*.wasm binary
+*.exe binary
+*.dll binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
 docs/** linguist-documentation
 website/** linguist-documentation
 
