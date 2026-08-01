@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 import https from "https";
 import querystring from "querystring";
-import { join } from "path";
+// URL paths are always "/"-separated. path.join would use "\" on Windows and
+// produce "https:\app.terraform.io\...", which is not a parseable URL, so the
+// Terraform Cloud/Enterprise endpoints must be composed with the posix variant.
+import { posix } from "path";
 
 const SUCCESS_STATUS_CODES = [200, 201];
 
@@ -165,9 +168,9 @@ async function endpointUrl(tfeHostname: string, path: string) {
   const serviceDiscovery = await discoverService(tfeHostname);
   const url = serviceDiscovery["tfe.v2"];
   if (/^https?:/.test(url)) {
-    return join(url, path);
+    return posix.join(url, path);
   }
-  return `https://${join(tfeHostname, url, path)}`;
+  return `https://${posix.join(tfeHostname, url, path)}`;
 }
 
 export async function getAccountDetails(tfeHostname: string, token: string) {
