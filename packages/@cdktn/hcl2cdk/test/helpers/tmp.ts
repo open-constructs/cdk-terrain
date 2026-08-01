@@ -15,7 +15,22 @@ import * as path from "path";
 export function createTmpHelper(): (prefix: string) => string {
   const dirs: string[] = [];
   afterAll(() => {
-    for (const d of dirs) fs.rmSync(d, { recursive: true, force: true });
+    for (const d of dirs) {
+      try {
+        // Windows frequently holds transient handles on just-written files
+        // (search indexer, AV scanners), which surfaces as EBUSY/EPERM. Retry,
+        // and never let cleanup of a temp directory fail the suite itself --
+        // these live under os.tmpdir() and the OS reclaims them regardless.
+        fs.rmSync(d, {
+          recursive: true,
+          force: true,
+          maxRetries: 5,
+          retryDelay: 100,
+        });
+      } catch (e) {
+        console.warn(`Could not remove temp dir ${d}: ${(e as Error).message}`);
+      }
+    }
   });
   return (prefix: string) => {
     const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));

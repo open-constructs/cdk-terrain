@@ -176,7 +176,12 @@ async function copyBaseProject(baseDir: string, projectDir: string) {
   await fs.symlink(
     path.join(baseDir, "node_modules"),
     path.join(projectDir, "node_modules"),
-    "dir",
+    // A "dir" symlink needs Developer Mode or an elevated shell on Windows and
+    // otherwise fails with EPERM. A junction is created without either and
+    // resolves the same way for reads, which is all this shared, read-only
+    // node_modules is used for. Junctions require an absolute target, which
+    // baseDir always is.
+    process.platform === "win32" ? "junction" : "dir",
   );
 }
 
