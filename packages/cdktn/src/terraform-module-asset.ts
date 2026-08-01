@@ -110,7 +110,15 @@ export class TerraformModuleAsset extends Construct {
   }
 
   public getAssetPathForModule(source: string): string {
-    return `./${path.join(this.asset.path, this.relativeModulePath(source))}`;
+    // Terraform local module sources are always "/"-separated. path.join and
+    // path.relative produce backslashes on Windows, which would emit
+    // `source = "./assets\\...\\module"` into the synthesized configuration
+    // and Terraform would not resolve it.
+    const assetPath = path.join(
+      this.asset.path,
+      this.relativeModulePath(source),
+    );
+    return `./${assetPath.split(path.sep).join(path.posix.sep)}`;
   }
 }
 

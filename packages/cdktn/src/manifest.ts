@@ -59,13 +59,17 @@ export class Manifest implements IManifest {
     const manifest: StackManifest = {
       name,
       constructPath: node.path,
-      workingDirectory: path.join(Manifest.stacksFolder, node.id),
-      synthesizedStackPath: path.join(
+      // These are recorded in manifest.json and are always "/"-separated, so
+      // the manifest reads the same regardless of the host platform. Node
+      // accepts forward slashes in paths on Windows too, so consumers can
+      // still join them onto outdir directly.
+      workingDirectory: path.posix.join(Manifest.stacksFolder, node.id),
+      synthesizedStackPath: path.posix.join(
         Manifest.stacksFolder,
         node.id,
         this.stackFileName,
       ),
-      stackMetadataPath: path.join(
+      stackMetadataPath: path.posix.join(
         Manifest.stacksFolder,
         node.id,
         Manifest.stackMetadataPath,
