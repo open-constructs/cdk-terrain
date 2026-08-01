@@ -7,9 +7,9 @@
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u --maxWorkers=50%",
-    "package": "./package.sh",
+    "package": "bash package.sh",
     "dist-clean": "rm -rf dist",
-    "package:js": "./package.sh"
+    "package:js": "bash package.sh"
   },
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",

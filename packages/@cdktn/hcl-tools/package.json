@@ -21,14 +21,14 @@
     "tags": ["unit-test"]
   },
   "scripts": {
-    "build": "tsc && ./build-go.sh",
+    "build": "tsc && bash build-go.sh",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u --passWithNoTests",
-    "package": "./package.sh",
+    "package": "bash package.sh",
     "dist-clean": "rm -rf dist",
-    "prebuild": "./prebuild.sh",
-    "package:js": "./package.sh"
+    "prebuild": "bash prebuild.sh",
+    "package:js": "bash package.sh"
   },
   "publishConfig": {
     "access": "public"

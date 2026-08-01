@@ -16,8 +16,8 @@
     "watch": "pnpm compile-build-config && node build-config/build.js --watch",
     "watch-preserve-output": "pnpm watch",
     "test:update": "jest -u",
-    "package": "./package.sh",
-    "package:js": "./package.sh",
+    "package": "bash package.sh",
+    "package:js": "bash package.sh",
     "dist-clean": "rm -rf dist"
   },
   "repository": {

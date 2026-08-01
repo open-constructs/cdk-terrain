@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "license": "MPL-2.0",
   "scripts": {
-    "reinstall": "./reinstall.sh",
+    "reinstall": "bash reinstall.sh",
     "build": "cdktn get --show-performance-info",
     "synth": "cdktn synth --show-performance-info"
   }
