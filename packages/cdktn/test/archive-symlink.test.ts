@@ -103,7 +103,7 @@ describe("archiveSync symlink handling (#320)", () => {
     },
   );
 
-  testIfSymlinks("does not crash on circular symlinks (ELOOP)", () => {
+  testIfSymlinksAndUnzip("does not crash on circular symlinks (ELOOP)", () => {
     // pnpm trees legitimately contain self-referential links
     fs.mkdirSync(path.join(srcDir, "pkg"));
     fs.writeFileSync(path.join(srcDir, "pkg", "index.js"), "module");
