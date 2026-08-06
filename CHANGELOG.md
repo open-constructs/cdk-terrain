@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.24.0](https://github.com/open-constructs/cdk-terrain/compare/v0.23.4...v0.24.0) (2026-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lib:** validate Terraform function versions by default ([#362](https://github.com/open-constructs/cdk-terrain/issues/362))
+* **deps:** Require Node 22 minimum ([#345](https://github.com/open-constructs/cdk-terrain/issues/345))
+* **lib:** preserve symlinks in TerraformAsset walkers ([#321](https://github.com/open-constructs/cdk-terrain/issues/321))
+* **cli:** replace node-fetch with undici ([#306](https://github.com/open-constructs/cdk-terrain/issues/306))
+
+### Features
+
+* **lib:** canonical asset hashes behind the canonicalAssetHashes feature flag ([#323](https://github.com/open-constructs/cdk-terrain/issues/323)) ([76dd4ff](https://github.com/open-constructs/cdk-terrain/commit/76dd4ff80a26df3ac2202ce299e416ea430d9685))
+* **lib:** validate Terraform function versions by default ([#362](https://github.com/open-constructs/cdk-terrain/issues/362)) ([4ac0736](https://github.com/open-constructs/cdk-terrain/commit/4ac0736e98bf378144d1f109edb831dc4b166016))
+* support newer provider plugin-protocol features via targetVersions (RFC-04) ([#296](https://github.com/open-constructs/cdk-terrain/issues/296)) ([90322f9](https://github.com/open-constructs/cdk-terrain/commit/90322f97388207362ad6a0a19a312353df213a73))
+
+
+### Bug Fixes
+
+* **cli:** don't downgrade prebuilt providers on a transient registry failure ([#298](https://github.com/open-constructs/cdk-terrain/issues/298)) ([a960c5c](https://github.com/open-constructs/cdk-terrain/commit/a960c5c69e8046481460c8061448dc48567ee1ee))
+* **cli:** include dev dependencies in npm version lookup ([#280](https://github.com/open-constructs/cdk-terrain/issues/280)) ([955204a](https://github.com/open-constructs/cdk-terrain/commit/955204a9d7913aede55b86710a80624ac567ca5f))
+* **docs:** fix stale constructs pin breaking with()/IMixin docs ([#305](https://github.com/open-constructs/cdk-terrain/issues/305)) ([605cf63](https://github.com/open-constructs/cdk-terrain/commit/605cf639c4c021048ee84f8f44daf78d037f4ded))
+* **gha:** Allow pnpm to update the lockfile after package updates ([#318](https://github.com/open-constructs/cdk-terrain/issues/318)) ([a899b7c](https://github.com/open-constructs/cdk-terrain/commit/a899b7c86edefce60803facd9299827a1fffde46))
+* **gha:** Fix pnpm upgrade workflow ([#335](https://github.com/open-constructs/cdk-terrain/issues/335)) ([e1a69fc](https://github.com/open-constructs/cdk-terrain/commit/e1a69fc40410e45d7d686095419e67b60bb8d590))
+* **gha:** flip merged release PR label to autorelease: tagged ([#302](https://github.com/open-constructs/cdk-terrain/issues/302)) ([8d64f6c](https://github.com/open-constructs/cdk-terrain/commit/8d64f6c1194c58d5e06e3b6f69a6fe9562b4e49e))
+* **gha:** mint the Go-publish token from the CDKTN Maintainers app ([#369](https://github.com/open-constructs/cdk-terrain/issues/369)) ([71921ce](https://github.com/open-constructs/cdk-terrain/commit/71921ce974f46d061a4689b91b2114a5b1ee9067))
+* **gha:** mint the Go-publish token from the open-constructs-cdktn App ([#368](https://github.com/open-constructs/cdk-terrain/issues/368)) ([179f10c](https://github.com/open-constructs/cdk-terrain/commit/179f10c13ba7ee226c491e100b84681d554032bb))
+* **gha:** pass the Go-publish App token as x-access-token userinfo ([#370](https://github.com/open-constructs/cdk-terrain/issues/370)) ([4e3ff19](https://github.com/open-constructs/cdk-terrain/commit/4e3ff192355942a55c72350c81b9d9d7348eab21))
+* **lib:** Disallow constructs 10.8 until support can be added ([#363](https://github.com/open-constructs/cdk-terrain/issues/363)) ([8bdae0d](https://github.com/open-constructs/cdk-terrain/commit/8bdae0d90c16429e4bd66a72760e8527b87a5c2f))
+* **lib:** preserve symlinks in TerraformAsset walkers ([#321](https://github.com/open-constructs/cdk-terrain/issues/321)) ([6360e20](https://github.com/open-constructs/cdk-terrain/commit/6360e202c5bd04e81e5d08e4a0511554c46fcb4a))
+* typo in `moveFromId` JSDoc ([#355](https://github.com/open-constructs/cdk-terrain/issues/355)) ([e1cf8ce](https://github.com/open-constructs/cdk-terrain/commit/e1cf8ce03a6beeefa95ffedb0ff5be00831ccd20))
+
+
+### Miscellaneous Chores
+
+* **cli:** replace Ink + React with smaller-tree CLI libraries ([#264](https://github.com/open-constructs/cdk-terrain/issues/264)) ([a6aff7e](https://github.com/open-constructs/cdk-terrain/commit/a6aff7e6cbb9eeca173af898ea1b48b322cc7c16))
+* **cli:** replace node-fetch with undici ([#306](https://github.com/open-constructs/cdk-terrain/issues/306)) ([1317141](https://github.com/open-constructs/cdk-terrain/commit/1317141b81c37a4c1f260050cf2bb6d4781c529a))
+* **deps:** bump glob to 13.0.6 ([#307](https://github.com/open-constructs/cdk-terrain/issues/307)) ([47ee2bb](https://github.com/open-constructs/cdk-terrain/commit/47ee2bb36112ce2c80d1d3dc87a4d14cd23de34f))
+* **deps:** bump the github-actions-backward-compatible group with 2 updates ([#295](https://github.com/open-constructs/cdk-terrain/issues/295)) ([eab2a01](https://github.com/open-constructs/cdk-terrain/commit/eab2a016d08481bec04d83e3d70c7b9dcda5d414))
+* **deps:** replace lerna with nx ([#315](https://github.com/open-constructs/cdk-terrain/issues/315)) ([94999fc](https://github.com/open-constructs/cdk-terrain/commit/94999fc2de2093bdf733adc41f2877bdb38bc126))
+* **deps:** Require Node 22 minimum ([#345](https://github.com/open-constructs/cdk-terrain/issues/345)) ([2bf315d](https://github.com/open-constructs/cdk-terrain/commit/2bf315d763cae0efbc5497d4c8e6630943cd5053))
+* **deps:** update ci-info to 4.4.0 across all packages ([#329](https://github.com/open-constructs/cdk-terrain/issues/329)) ([557a163](https://github.com/open-constructs/cdk-terrain/commit/557a16315aa1e118b530e709db85459c7d60b6c7))
+* **deps:** update fs-extra to 11.3.6 across all packages ([#328](https://github.com/open-constructs/cdk-terrain/issues/328)) ([95753a9](https://github.com/open-constructs/cdk-terrain/commit/95753a93c7edc0b667f0e7e9696ffb86142e25dd))
+* **deps:** update minimatch to 10.2.5 ([#330](https://github.com/open-constructs/cdk-terrain/issues/330)) ([d1c1c53](https://github.com/open-constructs/cdk-terrain/commit/d1c1c53c747a53dbfbcfdfbbe2bf02ca0b2c6668))
+* **deps:** Update sscaff to v2.0.388 ([#331](https://github.com/open-constructs/cdk-terrain/issues/331)) ([38ea0ba](https://github.com/open-constructs/cdk-terrain/commit/38ea0ba85ad6ae6fd4c7207747239478abea2edd))
+* **deps:** Update zod to v4.4.3 ([#332](https://github.com/open-constructs/cdk-terrain/issues/332)) ([c10ee35](https://github.com/open-constructs/cdk-terrain/commit/c10ee352831d11d6a8d26bcc093c238b475ffd18))
+* **deps:** Upgrade dependencies ([#347](https://github.com/open-constructs/cdk-terrain/issues/347)) ([45d3a66](https://github.com/open-constructs/cdk-terrain/commit/45d3a66dae07df574562f2213b384b9ea3ea52ba))
+* remove cdktf from tests ([#277](https://github.com/open-constructs/cdk-terrain/issues/277)) ([dc9a8e9](https://github.com/open-constructs/cdk-terrain/commit/dc9a8e9ee91dbcd8a8cb1ecc8d3cb5f06ee7c743))
+* ship Terraform 1.15.8 in the jsii-terraform image ([#367](https://github.com/open-constructs/cdk-terrain/issues/367)) ([deaa9b0](https://github.com/open-constructs/cdk-terrain/commit/deaa9b092fb1adae2217213351f65c2b8b3e8ca9))
+* Upgrade dependencies for lib ([#348](https://github.com/open-constructs/cdk-terrain/issues/348)) ([d616f17](https://github.com/open-constructs/cdk-terrain/commit/d616f17e5bb1d3071689ef753248ba6af11875e1))
+
 ## [0.23.4](https://github.com/open-constructs/cdk-terrain/compare/v0.23.3...v0.23.4) (2026-07-02)
 
 

@@ -1,6 +1,6 @@
 {
     "name": "root",
-    "version": "0.23.4",
+    "version": "0.24.0",
     "private": true,
     "scripts": {
         "build-and-package": "nx run-many -t build package -p 'cdktn*' '@cdktn/*' && node tools/collect-dist.mjs",
