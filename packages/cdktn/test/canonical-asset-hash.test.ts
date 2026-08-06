@@ -5,7 +5,15 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { Testing, TerraformStack, TerraformAsset, AssetType } from "../src";
+import {
+  Testing,
+  TerraformStack,
+  TerraformAsset,
+  AssetType,
+  AssetHash,
+  AssetHashType,
+  IAsset,
+} from "../src";
 import { CANONICAL_ASSET_HASHES } from "../src/features";
 import { TerraformModuleAsset } from "../src/terraform-module-asset";
 import { archiveSync, hashPath } from "../src/private/fs";
@@ -292,6 +300,217 @@ describe("TerraformAsset with the canonicalAssetHashes flag", () => {
 
     expect(asset.assetHash).toBe(canonicalArchive(srcDir));
     expect(asset.assetHash).not.toBe(canonical(srcDir));
+  });
+
+  // Pins the relationship between AssetHash.of (a packaging-independent
+  // source-tree identity) and TerraformAsset (whose framing depends on type).
+  // The subdirectory matters: it is what makes DIRECTORY and ARCHIVE framing
+  // diverge, since ARCHIVE omits directory records.
+  describe("AssetHash.of relationship to TerraformAsset", () => {
+    beforeEach(() => {
+      fs.mkdirSync(path.join(srcDir, "sub"));
+      fs.writeFileSync(path.join(srcDir, "sub", "b.txt"), "nested");
+    });
+
+    test("equals a DIRECTORY asset hash when the canonical flag is on", () => {
+      const stack = new TerraformStack(
+        Testing.app({ context: { [CANONICAL_ASSET_HASHES]: "true" } }),
+        "on",
+      );
+      const asset = new TerraformAsset(stack, "asset", {
+        path: srcDir,
+        type: AssetType.DIRECTORY,
+      });
+
+      expect(AssetHash.of(srcDir)).toBe(asset.assetHash);
+    });
+
+    test("does not equal an ARCHIVE asset hash (archive omits directory records)", () => {
+      const stack = new TerraformStack(
+        Testing.app({ context: { [CANONICAL_ASSET_HASHES]: "true" } }),
+        "on",
+      );
+      const asset = new TerraformAsset(stack, "asset", {
+        path: srcDir,
+        type: AssetType.ARCHIVE,
+      });
+
+      expect(AssetHash.of(srcDir)).not.toBe(asset.assetHash);
+    });
+
+    test("does not equal a DIRECTORY asset hash on the legacy scheme", () => {
+      // AssetHash.of is always canonical; a project that has not opted into
+      // the flag hashes its TerraformAsset the legacy way, so the two differ.
+      const stack = new TerraformStack(
+        Testing.app({ enableFutureFlags: false }),
+        "off",
+      );
+      const asset = new TerraformAsset(stack, "asset", {
+        path: srcDir,
+        type: AssetType.DIRECTORY,
+      });
+
+      expect(AssetHash.of(srcDir)).not.toBe(asset.assetHash);
+    });
+  });
+});
+
+describe("TerraformAsset assetHashType", () => {
+  let srcDir: string;
+
+  beforeEach(() => {
+    srcDir = createTempDir();
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "content");
+  });
+
+  afterEach(() => {
+    fs.rmSync(srcDir, { recursive: true, force: true });
+  });
+
+  const stack = () =>
+    new TerraformStack(
+      Testing.app({ context: { [CANONICAL_ASSET_HASHES]: "true" } }),
+      "s",
+    );
+
+  test("implements IAsset", () => {
+    const asset: IAsset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+    });
+
+    expect(typeof asset.assetHash).toBe("string");
+  });
+
+  test("SOURCE (the default) hashes the source", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      assetHashType: AssetHashType.SOURCE,
+    });
+
+    expect(asset.assetHash).toBe(hashPath(srcDir, { canonical: true }));
+  });
+
+  test("CUSTOM uses the provided assetHash verbatim", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      assetHash: "my-custom-hash",
+      assetHashType: AssetHashType.CUSTOM,
+    });
+
+    expect(asset.assetHash).toBe("my-custom-hash");
+  });
+
+  test("an explicit assetHash implies CUSTOM without stating the type", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      assetHash: "my-custom-hash",
+    });
+
+    expect(asset.assetHash).toBe("my-custom-hash");
+  });
+
+  test("CUSTOM without an assetHash throws", () => {
+    expect(
+      () =>
+        new TerraformAsset(stack(), "asset", {
+          path: srcDir,
+          type: AssetType.DIRECTORY,
+          assetHashType: AssetHashType.CUSTOM,
+        }),
+    ).toThrow(/CUSTOM.*assetHash|assetHash/i);
+  });
+
+  test("an assetHash with a non-CUSTOM type throws", () => {
+    expect(
+      () =>
+        new TerraformAsset(stack(), "asset", {
+          path: srcDir,
+          type: AssetType.DIRECTORY,
+          assetHash: "my-custom-hash",
+          assetHashType: AssetHashType.SOURCE,
+        }),
+    ).toThrow(/assetHashType.*CUSTOM|CUSTOM/i);
+  });
+
+  test("OUTPUT is rejected until bundling exists", () => {
+    expect(
+      () =>
+        new TerraformAsset(stack(), "asset", {
+          path: srcDir,
+          type: AssetType.DIRECTORY,
+          assetHashType: AssetHashType.OUTPUT,
+        }),
+    ).toThrow(/OUTPUT/);
+  });
+
+  test("an out-of-range hash type throws instead of returning undefined", () => {
+    // Models a value another jsii language could pass that TypeScript's type
+    // system would reject; the switch's default guards it at runtime.
+    expect(
+      () =>
+        new TerraformAsset(stack(), "asset", {
+          path: srcDir,
+          type: AssetType.DIRECTORY,
+          assetHashType: "bogus" as unknown as AssetHashType,
+        }),
+    ).toThrow(/unknown assetHashType/i);
+  });
+});
+
+describe("TerraformAsset artifact layout derives from the packaging", () => {
+  let srcDir: string;
+  let srcFile: string;
+
+  beforeEach(() => {
+    srcDir = createTempDir();
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "content");
+    srcFile = path.join(srcDir, "a.txt");
+  });
+
+  afterEach(() => {
+    fs.rmSync(srcDir, { recursive: true, force: true });
+  });
+
+  const stack = () =>
+    new TerraformStack(
+      Testing.app({ context: { [CANONICAL_ASSET_HASHES]: "true" } }),
+      "s",
+    );
+
+  test("DIRECTORY has no file segment (producesDirectory)", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+    });
+
+    // The path ends at the hash directory, with nothing appended.
+    expect(asset.path.endsWith(asset.assetHash)).toBe(true);
+  });
+
+  test("FILE keeps the source filename (no extension packaging)", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcFile,
+      type: AssetType.FILE,
+    });
+
+    expect(asset.fileName).toBe("a.txt");
+    expect(asset.path.endsWith("/a.txt")).toBe(true);
+  });
+
+  test("ARCHIVE names the artifact from the packaging extension", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.ARCHIVE,
+    });
+
+    // ZipPackaging.extension is ".zip", so the artifact is archive.zip -
+    // unchanged from before the wiring, but now derived rather than hardcoded.
+    expect(asset.fileName).toBe("archive.zip");
+    expect(asset.path.endsWith("/archive.zip")).toBe(true);
   });
 });
 

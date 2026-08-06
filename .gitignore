@@ -34,7 +34,7 @@ bootstrap.json
 cdk-terrain.github-issues
 .idea
 tsconfig.tsbuildinfo
-examples/java/gradle-shared-module/.gradle/
+.gradle/
 
 .nx/
 
