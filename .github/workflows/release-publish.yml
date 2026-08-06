@@ -30,12 +30,13 @@ on:
         required: true
       NUGET_API_KEY:
         required: true
-      # Credentials of the open-constructs-cdktn GitHub App; release_golang
-      # mints a per-run installation token from them. Callers pass these via
-      # `secrets: inherit`.
-      GH_APP_ID:
+      # Credentials of the CDKTN Maintainers GitHub App (the same app
+      # release-please.yml and pnpm-upgrade.yml authenticate with);
+      # release_golang mints a per-run installation token from them. Callers
+      # pass these via `secrets: inherit`.
+      CDKTN_MAINTAINERS_APP_ID:
         required: true
-      GH_APP_PRIVATE_KEY:
+      CDKTN_MAINTAINERS_APP_PRIVATE_KEY:
         required: true
 
 jobs:
@@ -199,17 +200,19 @@ jobs:
         with:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
-      # Minted fresh each run by the open-constructs-cdktn GitHub App, replacing
-      # the TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN user PAT that silently expired
+      # Minted fresh each run by the CDKTN Maintainers GitHub App — the app
+      # release-please.yml already authenticates with — replacing the
+      # TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN user PAT that silently expired
       # and failed every Go publish with git prompting for a password (#66).
       # Scoped to the one repo publib-golang pushes to; expires after an hour,
-      # which comfortably outlives this job.
+      # which comfortably outlives this job. The app's installation must
+      # include cdk-terrain-go or this step 404s at the mint.
       - name: Generate GitHub App token
         id: go-app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
         with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.CDKTN_MAINTAINERS_APP_ID }}
+          private-key: ${{ secrets.CDKTN_MAINTAINERS_APP_PRIVATE_KEY }}
           owner: open-constructs
           repositories: cdk-terrain-go
           # Push access to the Go bindings repo is all publib-golang needs;
