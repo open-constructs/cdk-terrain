@@ -222,6 +222,12 @@ jobs:
       - name: Release
         run: npx --no publib-golang
         env:
-          GITHUB_TOKEN: ${{ steps.go-app-token.outputs.token }}
+          # The x-access-token: prefix is load-bearing: publib embeds this value
+          # as URL userinfo, and App installation tokens only authenticate over
+          # HTTPS as username x-access-token with the token as password. A bare
+          # ghs_ token becomes username-only, GitHub rejects it, and headless
+          # git dies prompting for a password. Same wiring as the
+          # @cdktn/provider-project fleet's release_golang.
+          GITHUB_TOKEN: x-access-token:${{ steps.go-app-token.outputs.token }}
           GIT_USER_NAME: "CDK Terrain Bot"
           GIT_USER_EMAIL: "gh-actions@cdktn.io"
