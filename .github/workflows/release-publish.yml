@@ -194,9 +194,22 @@ jobs:
         with:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
+      # Minted fresh each run by the open-constructs-cdktn GitHub App, replacing
+      # the TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN user PAT that silently expired
+      # and failed every Go publish with git prompting for a password (#66).
+      # Scoped to the one repo publib-golang pushes to; expires after an hour,
+      # which comfortably outlives this job.
+      - name: Generate GitHub App token
+        id: go-app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: open-constructs
+          repositories: cdk-terrain-go
       - name: Release
         run: npx --no publib-golang
         env:
-          GITHUB_TOKEN: ${{ secrets.TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.go-app-token.outputs.token }}
           GIT_USER_NAME: "CDK Terrain Bot"
           GIT_USER_EMAIL: "gh-actions@cdktn.io"
