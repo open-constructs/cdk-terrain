@@ -207,6 +207,10 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: open-constructs
           repositories: cdk-terrain-go
+          # Push access to the Go bindings repo is all publib-golang needs;
+          # without this the token inherits every permission the installation
+          # has (zizmor: github-app).
+          permission-contents: write
       - name: Release
         run: npx --no publib-golang
         env:
