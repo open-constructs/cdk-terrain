@@ -30,7 +30,12 @@ on:
         required: true
       NUGET_API_KEY:
         required: true
-      TERRAFORM_CDK_GO_REPO_GITHUB_TOKEN:
+      # Credentials of the open-constructs-cdktn GitHub App; release_golang
+      # mints a per-run installation token from them. Callers pass these via
+      # `secrets: inherit`.
+      GH_APP_ID:
+        required: true
+      GH_APP_PRIVATE_KEY:
         required: true
 
 jobs:
