@@ -54,8 +54,13 @@ beforeEach(() => {
   mockStreamStop.mockReset();
   mockRenderOutputs.mockReset();
   mockRenderOutputs.mockImplementation(actualFormat.renderOutputs);
-  mockRunCdktfProject.mockImplementation(async () => ({
-    returnValue: outputsByConstructId,
+  // Actually invoke the project callback so `project.fetchOutputs` is exercised: runOutput's
+  // returnValue is whatever that callback resolves to, and a mock that skips it would still pass
+  // if runOutput stopped fetching outputs altogether.
+  mockRunCdktfProject.mockImplementation(async (_opts, projectCallback) => ({
+    returnValue: await projectCallback({
+      fetchOutputs: jest.fn().mockResolvedValue(outputsByConstructId),
+    }),
     project: {},
   }));
 });
