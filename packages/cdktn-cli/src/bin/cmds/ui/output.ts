@@ -40,11 +40,13 @@ function statusBar(status: Status): string {
  * Drive a `cdktn output` invocation. Fetches Terraform outputs (optionally skipping synth/provider-lock), prints them
  * in nested form, and writes them to disk when `outputsPath` is provided.
  *
- * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs before they are printed;
- *                 it may return a promise (e.g. writing --outputs-file to disk), which is awaited and, if it
- *                 rejects, surfaced as a fatal External error (see the matching guard in `runDeploy`).
- * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure. A failure only
- *          *rendering* the fetched outputs is non-fatal and does not cause a rejection.
+ * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs, after they have already
+ *                 been printed; it may return a promise (e.g. writing --outputs-file to disk), which is awaited
+ *                 and, if it rejects, surfaced as a fatal error (see the matching guard in `runDeploy`).
+ * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure. Rejects with a
+ *          Usage error (bad --outputs-file path, e.g. ENOENT/ENOTDIR) or External error (any other
+ *          `onOutputsRetrieved` failure). A failure only *rendering* the fetched outputs is non-fatal and does
+ *          not cause a rejection.
  */
 export async function runOutput({
   outDir,
@@ -82,37 +84,51 @@ export async function runOutput({
 
     stream.clearBar();
 
+    // Render the outputs table first (still non-fatal): the fetch already succeeded, so a
+    // failure here is purely cosmetic, and rendering before the --outputs-file write below means
+    // the user still sees their outputs even if that write fails.
+    let rendered = "";
+    let renderFailed = false;
+    try {
+      rendered = outputs ? renderOutputs(outputs) : "";
+    } catch (e) {
+      // The fetch already succeeded at this point; a failure rendering the outputs table is
+      // purely cosmetic and must not fail the command. Log it so the user still learns something
+      // went wrong, but do not rethrow.
+      console.error(
+        `\nOutputs fetched, but rendering them failed: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      renderFailed = true;
+    }
+
+    if (rendered) {
+      console.log(rendered);
+    } else if (!renderFailed) {
+      console.log("No outputs found.");
+    }
+
     // See runDeploy() in ./deploy.ts for the rationale: a failed --outputs-file write must be
-    // fatal, wrapped as an External error so cdktn.ts's top-level `.fail()` handler prints a
-    // single clean line instead of a stack trace.
+    // fatal, wrapped as a clean error so cdktn.ts's top-level `.fail()` handler prints a single
+    // clean line instead of a stack trace, since the outputs were already rendered above. A bad
+    // path (ENOENT/ENOTDIR) is a usage mistake and reported as Usage, not External.
     try {
       await onOutputsRetrieved(outputs);
     } catch (e) {
-      throw Errors.External(
-        `Failed to write outputs${outputsPath ? ` to ${outputsPath}` : ""}: ${
-          e instanceof Error ? e.message : e
-        }`,
+      const code = (e as NodeJS.ErrnoException)?.code;
+      const ErrorCtor =
+        code === "ENOENT" || code === "ENOTDIR"
+          ? Errors.Usage
+          : Errors.External;
+      throw ErrorCtor(
+        `Failed to write outputs: ${e instanceof Error ? e.message : e}`,
         e instanceof Error ? e : undefined,
       );
     }
 
-    if (outputs && Object.keys(outputs).length > 0) {
-      try {
-        console.log(renderOutputs(outputs));
-      } catch (e) {
-        // The fetch - and the outputs write above - already succeeded at this point; a failure
-        // rendering the outputs table is purely cosmetic and must not fail the command.
-        console.error(
-          `\nOutputs fetched, but rendering them failed: ${
-            e instanceof Error ? e.message : e
-          }`,
-        );
-      }
-      if (outputsPath) {
-        console.log(`The outputs have been written to ${outputsPath}`);
-      }
-    } else {
-      console.log("No outputs found.");
+    if (outputsPath) {
+      console.log(`The outputs have been written to ${outputsPath}`);
     }
   } finally {
     stream.stop();

@@ -276,14 +276,16 @@ describe("runDeploy --outputs-file write failures are fatal", () => {
     }));
   });
 
-  it("rejects with a clean External error when the write rejects asynchronously", async () => {
+  it("rejects with a clean Usage error when the write fails with ENOENT (bad path)", async () => {
     // Mirrors handlers.ts wiring: `onOutputsRetrieved` is `saveOutputs`, an async function. If this
     // call is not awaited, a rejection here becomes a floating, unhandled promise rejection instead
     // of something `runDeploy` itself rejects with - this assertion (runDeploy REJECTS) would fail
     // against code that doesn't await the call, since that code resolves normally instead.
-    const onOutputsRetrieved = jest
-      .fn()
-      .mockRejectedValue(new Error("ENOENT: no such file or directory"));
+    const err: NodeJS.ErrnoException = new Error(
+      "ENOENT: no such file or directory, open '/missing-dir/out.json'",
+    );
+    err.code = "ENOENT";
+    const onOutputsRetrieved = jest.fn().mockRejectedValue(err);
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
     let caught: any;
@@ -298,12 +300,41 @@ describe("runDeploy --outputs-file write failures are fatal", () => {
     }
 
     expect(caught).toBeDefined();
-    // Clean/fatal means typed "External" (see cdktn.ts's `.fail()` handler: External/Usage errors
-    // print just `error.message`, everything else prints message + stack + "Collecting Debug
-    // Information..."), not merely "something was thrown".
-    expect(caught.__type).toBe("External");
+    // A bad --outputs-file path is a usage mistake, not something outside our control: it must be
+    // typed "Usage", not "External" (see cdktn.ts's `.fail()` handler: External/Usage errors print
+    // just `error.message`, everything else prints message + stack + "Collecting Debug
+    // Information..."; Usage errors are also excluded from Sentry crash reporting).
+    expect(caught.__type).toBe("Usage");
     expect(caught.message).toContain("ENOENT: no such file or directory");
+    // The fs error already names the path; the prefix must not repeat it.
+    expect(caught.message).not.toContain("to /missing-dir/out.json:");
     expect(mockStreamStop).toHaveBeenCalledTimes(1);
+
+    logSpy.mockRestore();
+  });
+
+  it("rejects with a clean External error when the write fails with EACCES (permission denied)", async () => {
+    const err: NodeJS.ErrnoException = new Error(
+      "EACCES: permission denied, open '/missing-dir/out.json'",
+    );
+    err.code = "EACCES";
+    const onOutputsRetrieved = jest.fn().mockRejectedValue(err);
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    let caught: any;
+    try {
+      await runDeploy({
+        ...baseConfig,
+        onOutputsRetrieved,
+        outputsPath: "/missing-dir/out.json",
+      } as any);
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(caught).toBeDefined();
+    expect(caught.__type).toBe("External");
+    expect(caught.message).toContain("EACCES: permission denied");
 
     logSpy.mockRestore();
   });
@@ -322,6 +353,28 @@ describe("runDeploy --outputs-file write failures are fatal", () => {
 
     const printed = logSpy.mock.calls.map((call) => call[0]).join("\n");
     expect(printed).not.toContain("The outputs have been written to");
+
+    logSpy.mockRestore();
+  });
+
+  it("still prints the outputs table before rejecting on a write failure", async () => {
+    // The deploy succeeded and the outputs already exist in memory; only persistence failed. The
+    // table must reach the user before the rejection, not be swallowed by the failing write.
+    const onOutputsRetrieved = jest.fn().mockRejectedValue(new Error("boom"));
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(
+      runDeploy({
+        ...baseConfig,
+        onOutputsRetrieved,
+        outputsPath: "/missing-dir/out.json",
+      } as any),
+    ).rejects.toBeDefined();
+
+    const printed = stripAnsi(
+      logSpy.mock.calls.map((call) => call[0]).join("\n"),
+    );
+    expect(printed).toContain("host = db.example.com");
 
     logSpy.mockRestore();
   });
