@@ -195,7 +195,7 @@ export async function runDeploy({
     }
 
     // A failed --outputs-file write is a broken promise to the user and must be fatal: await it
-    // and rethrow as a clean error, which cdktn.ts's top-level `.fail()` handler prints as a
+    // and rethrow as a clean error, which error-handling.ts's `reportFailure` prints as a
     // single clean line rather than a stack trace, since the deploy itself already succeeded (and
     // its outputs were already rendered above, so the write failure below does not hide them).
     // ENOENT/ENOTDIR means the user pointed --outputs-file at a path that doesn't exist - a usage

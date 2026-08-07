@@ -110,7 +110,7 @@ export async function runOutput({
     }
 
     // See runDeploy() in ./deploy.ts for the rationale: a failed --outputs-file write must be
-    // fatal, wrapped as a clean error so cdktn.ts's top-level `.fail()` handler prints a single
+    // fatal, wrapped as a clean error so error-handling.ts's `reportFailure` prints a single
     // clean line instead of a stack trace, since the outputs were already rendered above. A bad
     // path (ENOENT/ENOTDIR) is a usage mistake and reported as Usage, not External.
     try {

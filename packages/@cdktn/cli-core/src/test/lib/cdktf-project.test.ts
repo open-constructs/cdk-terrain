@@ -421,7 +421,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         throw new Error("This error should not be thrown");
       } catch (e) {
         expect(e).toMatchInlineSnapshot(
-          `"Invoking Terraform CLI failed with exit code 1"`
+          `[Error: Invoking Terraform CLI failed with exit code 1]`
         );
       }
 
