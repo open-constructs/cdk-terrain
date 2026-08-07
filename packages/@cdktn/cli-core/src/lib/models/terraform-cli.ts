@@ -455,7 +455,14 @@ export class TerraformCli implements Terraform {
       exitCode !== 0 &&
       !snapshot.context.cancelled // don't fail if we cancelled the run
     ) {
-      throw `Invoking Terraform CLI failed with exit code ${exitCode}`;
+      // Plain Error (not Errors.External): a non-zero terraform exit is
+      // exactly the kind of failure debug collection exists for, and
+      // Errors.External's constructor fires an un-awaited telemetry POST
+      // (see commons/src/errors.ts's reportPrefixedError) that a terraform
+      // failure in this fork has no business sending to HashiCorp.
+      throw new Error(
+        `Invoking Terraform CLI failed with exit code ${exitCode}`,
+      );
     }
 
     return { cancelled: Boolean(snapshot.context.cancelled) };
