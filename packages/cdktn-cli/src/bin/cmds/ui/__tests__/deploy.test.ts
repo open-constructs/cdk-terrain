@@ -264,6 +264,69 @@ describe("runDeploy output rendering is non-fatal", () => {
   });
 });
 
+describe("runDeploy --outputs-file write failures are fatal", () => {
+  const outputsByConstructId = {
+    db: { host: { sensitive: false, type: "string", value: "db.example.com" } },
+  };
+
+  beforeEach(() => {
+    mockRunCdktfProject.mockImplementation(async () => ({
+      returnValue: undefined,
+      project: { outputsByConstructId },
+    }));
+  });
+
+  it("rejects with a clean External error when the write rejects asynchronously", async () => {
+    // Mirrors handlers.ts wiring: `onOutputsRetrieved` is `saveOutputs`, an async function. If this
+    // call is not awaited, a rejection here becomes a floating, unhandled promise rejection instead
+    // of something `runDeploy` itself rejects with - this assertion (runDeploy REJECTS) would fail
+    // against code that doesn't await the call, since that code resolves normally instead.
+    const onOutputsRetrieved = jest
+      .fn()
+      .mockRejectedValue(new Error("ENOENT: no such file or directory"));
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    let caught: any;
+    try {
+      await runDeploy({
+        ...baseConfig,
+        onOutputsRetrieved,
+        outputsPath: "/missing-dir/out.json",
+      } as any);
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(caught).toBeDefined();
+    // Clean/fatal means typed "External" (see cdktn.ts's `.fail()` handler: External/Usage errors
+    // print just `error.message`, everything else prints message + stack + "Collecting Debug
+    // Information..."), not merely "something was thrown".
+    expect(caught.__type).toBe("External");
+    expect(caught.message).toContain("ENOENT: no such file or directory");
+    expect(mockStreamStop).toHaveBeenCalledTimes(1);
+
+    logSpy.mockRestore();
+  });
+
+  it("does not print the 'written to' line when the write fails", async () => {
+    const onOutputsRetrieved = jest.fn().mockRejectedValue(new Error("boom"));
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(
+      runDeploy({
+        ...baseConfig,
+        onOutputsRetrieved,
+        outputsPath: "/missing-dir/out.json",
+      } as any),
+    ).rejects.toBeDefined();
+
+    const printed = logSpy.mock.calls.map((call) => call[0]).join("\n");
+    expect(printed).not.toContain("The outputs have been written to");
+
+    logSpy.mockRestore();
+  });
+});
+
 describe("runDeploy sentinel override routing", () => {
   it("routes an 'override' answer to status.override()", async () => {
     const override = jest.fn();
