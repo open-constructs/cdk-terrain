@@ -24,17 +24,26 @@ function unpackTerraformOutput(
   outputs: NestedTerraformOutputs,
   includeSensitiveOutputs: boolean,
 ): Record<string, string> {
-  return Object.entries(outputs).reduce(
-    (acc, [key, entry]) => ({
+  return Object.entries(outputs).reduce((acc, [key, entry]) => {
+    if (isTerraformOutput(entry)) {
+      return {
+        ...acc,
+        [key]:
+          !entry.sensitive || includeSensitiveOutputs ? entry.value : undefined,
+      };
+    }
+    // Defensive hardening: `entry` comes from externally-sourced data (terraform output metadata
+    // mapped by getConstructIdsForOutputs), and Object.entries() below would throw on a null or
+    // undefined entry. Omit the key rather than recurse into it or retain an undefined/null value -
+    // consistent with how getConstructIdsForOutputs omits unresolved outputs.
+    if (entry === null || typeof entry !== "object") {
+      return acc;
+    }
+    return {
       ...acc,
-      [key]: isTerraformOutput(entry)
-        ? !entry.sensitive || includeSensitiveOutputs
-          ? entry.value
-          : undefined
-        : unpackTerraformOutput(entry, includeSensitiveOutputs),
-    }),
-    {},
-  );
+      [key]: unpackTerraformOutput(entry, includeSensitiveOutputs),
+    };
+  }, {});
 }
 
 export async function saveOutputs(
@@ -227,7 +236,17 @@ export const getConstructIdsForOutputs = (
   const mapOutputs = (value: OutputIdMap): NestedTerraformOutputs => {
     return Object.entries(value).reduce((acc, [key, value]) => {
       if (typeof value === "string") {
-        return { ...acc, [key]: outputs[value] };
+        const resolved = outputs[value];
+        if (resolved === undefined) {
+          // The metadata declares an output that terraform did not return (state drift,
+          // --skip-synth, a renamed/removed output, ...). Omit the key entirely rather than
+          // retaining it with an undefined value, which would later crash the renderer.
+          logger.debug(
+            `Output "${value}" (construct id "${key}") declared in stack metadata but absent from terraform output; omitting it.`,
+          );
+          return acc;
+        }
+        return { ...acc, [key]: resolved };
       }
 
       const mapped = mapOutputs(value);

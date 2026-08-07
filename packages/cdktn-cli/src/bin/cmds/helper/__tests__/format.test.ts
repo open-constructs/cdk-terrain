@@ -56,6 +56,57 @@ describe("renderOutputs", () => {
     expect(out).toContain("  host = example.com");
     expect(out).toContain("  port = 443");
   });
+
+  it("does not throw on a nested group mixing present leaves and an undefined leaf", () => {
+    const out = stripAnsi(
+      renderOutputs({
+        stack: {
+          host: leaf("example.com"),
+          missing: undefined,
+        } as any,
+      }),
+    );
+    expect(out).toContain("stack");
+    expect(out).toContain("  host = example.com");
+  });
+
+  it("does not throw on a group where every leaf is undefined", () => {
+    expect(() =>
+      renderOutputs({
+        stack: {
+          a: undefined,
+          b: undefined,
+        } as any,
+      }),
+    ).not.toThrow();
+  });
+
+  it("omits a group whose leaves all dropped, leaving no stray blank line", () => {
+    const out = stripAnsi(
+      renderOutputs({
+        empty: { x: undefined } as any,
+        db: { host: leaf("db.example.com") } as any,
+      } as any),
+    );
+
+    expect(out).not.toContain("empty");
+    expect(out).toBe("db\n  host = db.example.com");
+  });
+
+  it("does not throw on a top-level stack key whose value is undefined", () => {
+    const out = stripAnsi(
+      renderOutputs({
+        network: undefined,
+        db: {
+          host: leaf("db.example.com"),
+        } as any,
+      } as any),
+    );
+    expect(out).toContain("db");
+    expect(out).toContain("  host = db.example.com");
+    // Regression: a dropped top-level key used to leave a stray leading blank line.
+    expect(out.startsWith("\n")).toBe(false);
+  });
 });
 
 describe("renderProviderTable", () => {
