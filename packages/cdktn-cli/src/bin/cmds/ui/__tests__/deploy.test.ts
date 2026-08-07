@@ -301,8 +301,8 @@ describe("runDeploy --outputs-file write failures are fatal", () => {
 
     expect(caught).toBeDefined();
     // A bad --outputs-file path is a usage mistake, not something outside our control: it must be
-    // typed "Usage", not "External" (see cdktn.ts's `.fail()` handler: External/Usage errors print
-    // just `error.message`, everything else prints message + stack + "Collecting Debug
+    // typed "Usage", not "External" (see error-handling.ts's `reportFailure`: External/Usage errors
+    // print just `error.message`, everything else prints message + stack + "Collecting Debug
     // Information..."; Usage errors are also excluded from Sentry crash reporting).
     expect(caught.__type).toBe("Usage");
     expect(caught.message).toContain("ENOENT: no such file or directory");
