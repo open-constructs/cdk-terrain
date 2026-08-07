@@ -363,7 +363,7 @@ jobs:
             echo "No pull request associated with ${{ github.sha }}, skipping relabel"
             exit 0
           fi
-          gh pr edit "${pr}" --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+          gh pr edit "${pr}" -R "${{ github.repository }}" --remove-label "autorelease: pending" --add-label "autorelease: tagged"
 
   publish_release:
     permissions:
