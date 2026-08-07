@@ -198,6 +198,35 @@ describe("runDeploy output rendering", () => {
   });
 });
 
+describe("runDeploy output rendering when every declared output drops", () => {
+  it("prints 'No outputs found.' instead of a stray blank line when the keys survive but renderOutputs collapses to an empty string", async () => {
+    // outputsByConstructId still has a "network" key, but every output under it is an undefined
+    // leaf (dropped upstream), so renderOutputs(outputs) returns "" even though
+    // Object.keys(outputs).length > 0 - the regression case for the stray-blank-line bug.
+    const outputsByConstructId = {
+      network: {
+        public_ipv4_address: undefined,
+      },
+    };
+    mockRunCdktfProject.mockImplementation(async () => ({
+      returnValue: undefined,
+      project: { outputsByConstructId },
+    }));
+    const onOutputsRetrieved = jest.fn();
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(
+      runDeploy({ ...baseConfig, onOutputsRetrieved } as any),
+    ).resolves.toBeUndefined();
+
+    const printed = logSpy.mock.calls.map((call) => call[0]);
+    expect(printed).toContain("No outputs found.");
+    expect(printed).not.toContain("");
+
+    logSpy.mockRestore();
+  });
+});
+
 describe("runDeploy output rendering is non-fatal", () => {
   const outputsByConstructId = {
     db: { host: { sensitive: false, type: "string", value: "db.example.com" } },

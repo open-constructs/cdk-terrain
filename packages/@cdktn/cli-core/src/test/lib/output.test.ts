@@ -6,6 +6,7 @@ import {
   NestedTerraformOutputs,
 } from "../../lib/output";
 import { TerraformOutput } from "../../lib/models/terraform";
+import { logger } from "@cdktn/commons";
 import * as fs from "fs";
 
 function output(value: string, sensitive = false): TerraformOutput {
@@ -85,6 +86,56 @@ describe("getConstructIdsForOutputs", () => {
     // omitting it.
     expect(result).toEqual({});
     expect(result).not.toHaveProperty("network");
+  });
+
+  it("warns when a user-declared output is absent from terraform output", () => {
+    const warnSpy = jest.spyOn(logger, "warn").mockImplementation(() => {});
+    const debugSpy = jest.spyOn(logger, "debug").mockImplementation(() => {});
+
+    const stackContent = {
+      "//": {
+        outputs: {
+          network: {
+            public_ipv4_address: "public_ipv4_address",
+          },
+        },
+      },
+    };
+    const outputs = {};
+
+    getConstructIdsForOutputs(stackContent, outputs);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain("public_ipv4_address");
+    expect(debugSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    debugSpy.mockRestore();
+  });
+
+  it("only debug-logs (does not warn) when a missing output is generated cross-stack plumbing", () => {
+    const warnSpy = jest.spyOn(logger, "warn").mockImplementation(() => {});
+    const debugSpy = jest.spyOn(logger, "debug").mockImplementation(() => {});
+
+    const stackContent = {
+      "//": {
+        outputs: {
+          network: {
+            "cross-stack-output-db-host": "cross-stack-output-db-host",
+          },
+        },
+      },
+    };
+    const outputs = {};
+
+    getConstructIdsForOutputs(stackContent, outputs);
+
+    expect(debugSpy).toHaveBeenCalledTimes(1);
+    expect(debugSpy.mock.calls[0][0]).toContain("cross-stack-output-db-host");
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    debugSpy.mockRestore();
   });
 
   it("passes outputs through unchanged when there is no metadata (older cdktf versions)", () => {

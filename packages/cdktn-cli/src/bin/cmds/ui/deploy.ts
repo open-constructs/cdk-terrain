@@ -162,23 +162,35 @@ export async function runDeploy({
 
     onOutputsRetrieved(outputs);
 
-    if (outputs && Object.keys(outputs).length > 0) {
-      try {
-        console.log(renderOutputs(outputs));
-      } catch (e) {
-        // The deploy already succeeded at this point; a failure rendering the outputs table is
-        // purely cosmetic and must not fail the deploy. Log it so the user still learns something
-        // went wrong, but do not rethrow.
-        console.error(
-          `\nDeploy succeeded, but rendering the outputs failed: ${
-            e instanceof Error ? e.message : e
-          }`,
-        );
-      }
+    let rendered = "";
+    let renderFailed = false;
+    try {
+      rendered = outputs ? renderOutputs(outputs) : "";
+    } catch (e) {
+      // The deploy already succeeded at this point; a failure rendering the outputs table is
+      // purely cosmetic and must not fail the deploy. Log it so the user still learns something
+      // went wrong, but do not rethrow.
+      console.error(
+        `\nDeploy succeeded, but rendering the outputs failed: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      renderFailed = true;
+    }
+
+    if (rendered) {
+      console.log(rendered);
+    }
+
+    if (rendered || renderFailed) {
       if (outputsPath) {
         console.log(`The outputs have been written to ${outputsPath}`);
       }
     } else {
+      // Either there were no declared outputs at all, or every one of them was dropped upstream
+      // (e.g. all missing from `terraform output`, the empty-group case renderOutputs collapses
+      // to ""). Either way there is nothing to show the user, so say so plainly instead of
+      // printing a stray blank line.
       console.log("No outputs found.");
     }
   } finally {

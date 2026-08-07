@@ -211,6 +211,12 @@ export const parseOutput = (str: string): DeployingResource[] => {
   }, new Array());
 };
 
+// Matches the prefix TerraformStack.registerOutgoingCrossStackReference() uses when it
+// synthesizes an output for a cross-stack dependency (packages/cdktn/src/terraform-stack.ts).
+// There is no shared constant to import for it - the identifier is not exported anywhere - so the
+// prefix is duplicated here.
+const CROSS_STACK_OUTPUT_PREFIX = "cross-stack-output-";
+
 const isObjectEmpty = (obj: Record<string, any>): boolean => {
   if (typeof obj !== "object") {
     return false;
@@ -241,9 +247,18 @@ export const getConstructIdsForOutputs = (
           // The metadata declares an output that terraform did not return (state drift,
           // --skip-synth, a renamed/removed output, ...). Omit the key entirely rather than
           // retaining it with an undefined value, which would later crash the renderer.
-          logger.debug(
-            `Output "${value}" (construct id "${key}") declared in stack metadata but absent from terraform output; omitting it.`,
-          );
+          //
+          // Cross-stack outputs are generated plumbing for stack dependencies rather than
+          // something the user declared directly, and a dependent stack legitimately produces
+          // many of them - warning on each missing one would be noise the user cannot act on.
+          // A directly user-declared output silently going missing is exactly the kind of
+          // condition that made the original crash hard to diagnose, so it gets a warning.
+          const message = `Output "${value}" (construct id "${key}") declared in stack metadata but absent from terraform output; omitting it.`;
+          if (value.startsWith(CROSS_STACK_OUTPUT_PREFIX)) {
+            logger.debug(message);
+          } else {
+            logger.warn(message);
+          }
           return acc;
         }
         return { ...acc, [key]: resolved };
