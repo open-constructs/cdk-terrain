@@ -9,8 +9,10 @@ import {
   sendTo,
   fromCallback,
   assign,
+  ActorRefFrom,
   EventObject,
   InspectionEvent,
+  SnapshotFrom,
 } from "xstate";
 import { Errors, logger } from "@cdktn/commons";
 import { missingVariable } from "../errors";
@@ -232,6 +234,7 @@ export const deployMachine = setup({
   types: {
     context: {} as DeployContext,
     events: {} as DeployEvent,
+    output: {} as { exitCode?: number },
   },
   actors: {
     runTerraformInPty: terraformPtyService,
@@ -260,7 +263,10 @@ export const deployMachine = setup({
         },
       },
       on: {
-        EXITED: "exited",
+        EXITED: {
+          target: "exited",
+          actions: assign(({ event }) => ({ exitCode: event.exitCode })),
+        },
         STOP: ".stopping", // wait for terraform to exit, don't stop immediately (see the "stopping" state)
       },
       initial: "processing",
@@ -333,7 +339,10 @@ export const deployMachine = setup({
         stopping: {
           entry: assign({ cancelled: true }),
           on: {
-            EXITED: "#root.stopped",
+            EXITED: {
+              target: "#root.stopped",
+              actions: assign(({ event }) => ({ exitCode: event.exitCode })),
+            },
           },
         },
       },
@@ -341,7 +350,20 @@ export const deployMachine = setup({
     exited: { type: "final" },
     stopped: { type: "final" },
   },
+  // The machine's output is produced when it reaches a top-level final state (exited/stopped), carrying the
+  // terraform exit code captured into context on the EXITED transition.
+  output: ({ context }) => ({ exitCode: context.exitCode }),
 });
+
+/**
+ * A snapshot of the deploy machine, carrying the current state value and context.
+ */
+export type DeploySnapshot = SnapshotFrom<typeof deployMachine>;
+
+/**
+ * A running actor for the deploy machine, as returned by the createAndStart* factories.
+ */
+export type DeployActor = ActorRefFrom<typeof deployMachine>;
 
 /**
  * Callback invoked for every inspection event on the deploy actor. Consumers use it to observe both the events

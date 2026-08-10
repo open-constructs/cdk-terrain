@@ -19,7 +19,9 @@ import { SynthesizedStack } from "../synth-stack";
 import {
   createAndStartDeployService,
   createAndStartDestroyService,
+  DeployActor,
   DeployInspectionHandler,
+  DeploySnapshot,
   isDeployEvent,
 } from "./deploy-machine";
 import { waitFor } from "xstate";
@@ -348,16 +350,8 @@ export class TerraformCli implements Terraform {
   private async handleService(
     type: "deploy" | "destroy",
     callback: (state: TerraformDeployState) => void,
-    createService: (
-      inspect: DeployInspectionHandler,
-    ) =>
-      | ReturnType<typeof createAndStartDeployService>
-      | ReturnType<typeof createAndStartDestroyService>,
+    createService: (inspect: DeployInspectionHandler) => DeployActor,
   ): Promise<{ cancelled: boolean }> {
-    // Snapshots don't carry the triggering event, so remember the last EXITED exit code (seen via inspection) to
-    // decide whether the run failed once the machine reaches a final state.
-    let exitCode: number | undefined;
-
     // Events reach us through inspection, which fires for the whole actor tree. Filter to the root deploy actor
     // (its sessionId equals the tree's rootId) so we don't react to the invoked pty child's own events. Comparing
     // sessionId rather than the actor ref keeps this self-contained: inspection fires during startup, before the
@@ -374,8 +368,7 @@ export class TerraformCli implements Terraform {
       logger.trace(
         `Terraform CLI state machine event: ${JSON.stringify(event)}`,
       );
-      if (isDeployEvent(event, "EXITED")) exitCode = event.exitCode;
-      else if (isDeployEvent(event, "OUTPUT_RECEIVED"))
+      if (isDeployEvent(event, "OUTPUT_RECEIVED"))
         this.onStdout(type)(event.output);
       else if (isDeployEvent(event, "APPROVED_EXTERNALLY"))
         callback({ type: "external approval reply", approved: true });
@@ -396,8 +389,8 @@ export class TerraformCli implements Terraform {
     const service = createService(inspect);
 
     // Transitions come from the actor's own subscription, which yields typed snapshots for the root actor only.
-    let previousState: ReturnType<typeof service.getSnapshot>["value"] = "idle";
-    service.subscribe((snapshot) => {
+    let previousState: DeploySnapshot["value"] = "idle";
+    const handleSnapshot = (snapshot: DeploySnapshot) => {
       // Only send updates on actual state change; a snapshot is emitted even when only an event happened.
       if (snapshot.matches(previousState)) return;
 
@@ -426,7 +419,10 @@ export class TerraformCli implements Terraform {
         });
       }
       previousState = snapshot.value;
-    });
+    };
+
+    service.subscribe(handleSnapshot);
+    handleSnapshot(service.getSnapshot());
 
     // stop terraform apply if signaled as such from the outside (e.g. via ctrl+c)
     this.abortSignal.addEventListener(
@@ -444,6 +440,9 @@ export class TerraformCli implements Terraform {
         timeout: Infinity,
       },
     );
+
+    // The final state produces the terraform exit code as the machine's output.
+    const exitCode = snapshot.output?.exitCode;
 
     logger.trace(
       `Invoking Terraform CLI for ${type} done (state machine reached final state). Last exit code: ${JSON.stringify(
