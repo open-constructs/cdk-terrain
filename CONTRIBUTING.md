@@ -141,10 +141,21 @@ To build and install `cdk-terrain` locally you need to install:
 
 - An LF working tree. `.gitattributes` pins this, so a fresh clone is correct.
   A clone made earlier with `core.autocrlf=true` will still have CRLF files,
-  which breaks nx's lockfile parsing and every `#!/bin/bash` script. Renormalize
-  an existing clone with:
+  which breaks nx's lockfile parsing and every `#!/bin/bash` script.
+
+  The safest way to get a correct tree is a fresh clone, or a separate
+  `git worktree add`, neither of which touches your existing checkout.
+
+  To convert a clone in place instead:
+
+  > [!WARNING]
+  > `git reset --hard` permanently discards uncommitted changes to tracked
+  > files, and `git rm --cached -r .` stages every file as deleted until it
+  > runs. Commit or `git stash` your work first — including anything currently
+  > staged — and only continue once `git status` reports a clean tree.
 
   ```shell
+  $ git status                     # must report a clean tree before continuing
   $ git config core.autocrlf false
   $ git rm --cached -r .
   $ git reset --hard
