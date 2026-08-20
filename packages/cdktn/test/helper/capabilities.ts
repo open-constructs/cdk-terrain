@@ -66,5 +66,13 @@ export const testIfSymlinksAndUnzip =
 /** `test` that is skipped unless the filesystem has POSIX permission bits. */
 export const testIfPosixPermissions = hasPosixPermissions ? test : test.skip;
 
+/**
+ * `test` that is skipped unless the filesystem has POSIX permission bits and
+ * the system `unzip` is available. Needed by tests that set a mode bit and
+ * then read it back out of the archive with the external extractor.
+ */
+export const testIfPosixPermissionsAndUnzip =
+  hasPosixPermissions && hasUnzip ? test : test.skip;
+
 /** `describe` that is skipped unless symlinks can be created. */
 export const describeIfSymlinks = canCreateSymlinks ? describe : describe.skip;

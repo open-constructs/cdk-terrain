@@ -10,7 +10,7 @@ import * as path from "path";
 import { execSync } from "child_process";
 import { archiveSync, copySync, hashPath } from "../src/private/fs";
 import {
-  testIfPosixPermissions,
+  testIfPosixPermissionsAndUnzip,
   testIfSymlinks,
   testIfSymlinksAndUnzip,
 } from "./helper/capabilities";
@@ -239,7 +239,7 @@ describe("archiveSync zip metadata (#320 follow-ups)", () => {
     fs.rmSync(destDir, { recursive: true, force: true });
   });
 
-  testIfPosixPermissions(
+  testIfPosixPermissionsAndUnzip(
     "preserves the executable bit on regular files",
     () => {
       const script = path.join(srcDir, "run.sh");
