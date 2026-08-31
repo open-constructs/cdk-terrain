@@ -42,7 +42,7 @@
     "cdktn": "workspace:*",
     "codemaker": "1.128.0",
     "constructs": "10.6.0",
-    "fs-extra": "11.3.6",
+    "fs-extra": "11.4.0",
     "glob": "13.0.6",
     "jsii": "~5.9.0",
     "jsii-pacmak": "1.128.0"
