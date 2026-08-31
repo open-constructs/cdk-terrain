@@ -11,5 +11,8 @@ allowBuilds:
   nx: true
   unrs-resolver: true
 
+minimumReleaseAgeExclude:
+  - jsii-rosetta@5.9.64
+
 overrides:
   '@types/react': 18.3.28
