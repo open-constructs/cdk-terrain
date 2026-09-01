@@ -161,10 +161,10 @@ To build and install `cdk-terrain` locally you need to install:
   $ git reset --hard
   ```
 
-Alternatively you can work on the CDK from within a docker container with the image `terraconstructs/jsii-terraform`, e.g.:
+Alternatively you can work on the CDK from within a docker container with the image `ghcr.io/open-constructs/jsii-terraform`, e.g.:
 
 ```shell
-$ docker run -it --rm -w=/home -v (pwd):/home terraconstructs/jsii-terraform
+$ docker run -it --rm -w=/home -v (pwd):/home ghcr.io/open-constructs/jsii-terraform
 ```
 
 or through [Visual Studio Code Remote - Containers](https://code.visualstudio.com/docs/remote/containers).

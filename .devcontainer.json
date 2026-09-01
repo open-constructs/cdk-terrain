@@ -1,6 +1,6 @@
 {
   "name": "Dev Container Definition - Terraform CDK",
-  "image": "terraconstructs/jsii-terraform",
+  "image": "ghcr.io/open-constructs/jsii-terraform",
   "postCreateCommand": "pnpm install && pnpm build",
   "extensions": ["dbaeumer.vscode-eslint@2.1.5"]
 }
