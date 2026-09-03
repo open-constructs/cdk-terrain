@@ -116,7 +116,8 @@ export async function mkdtemp(closure: (dir: string) => Promise<void>) {
  * @param command the executable to spawn
  * @param args arguments passed to the executable
  * @param options spawn options; `noColor: true` strips ANSI escapes from captured output (auto-detected from CLI flags
- *  / `FORCE_COLOR=0` when omitted)
+ *  / `FORCE_COLOR=0` when omitted); `logStderrAsDebug: true` tees stderr to `processLoggerDebug` instead, for runs
+ *  whose diagnostics are not final and would only alarm the reader
  * @param stdout optional per-chunk callback for sanitized stdout
  * @param stderr optional per-chunk callback for sanitized stderr; passing a callback suppresses default terminal echo
  * @param sendToStderr when false, suppresses both the stderr callback invocation and the default terminal echo
@@ -125,7 +126,7 @@ export async function mkdtemp(closure: (dir: string) => Promise<void>) {
 export const exec = async (
   command: string,
   args: string[],
-  options: SpawnOptions & { noColor?: boolean },
+  options: SpawnOptions & { noColor?: boolean; logStderrAsDebug?: boolean },
   stdout?: (chunk: string) => any,
   stderr?: (chunk: string | Uint8Array) => any,
   sendToStderr = true,
@@ -138,7 +139,9 @@ export const exec = async (
 
   // Drop spawn's `signal` option: the child already gets the interrupt via the process group, and a second signal
   // aborts terraform's graceful shutdown. Just wait for its own "close".
-  const { signal: _signal, ...spawnOptions } = options;
+  const { signal: _signal, logStderrAsDebug, ...spawnOptions } = options;
+
+  const logStderr = logStderrAsDebug ? processLoggerDebug : processLoggerError;
 
   return new Promise((ok, ko) => {
     const child = spawn(command, args, spawnOptions);
@@ -167,7 +170,7 @@ export const exec = async (
         const sanitizedChunk = options.noColor
           ? stripAnsi(chunk.toLocaleString())
           : chunk.toLocaleString();
-        processLoggerError(sanitizedChunk);
+        logStderr(sanitizedChunk);
         if (sendToStderr) {
           stderr(sanitizedChunk);
         }
@@ -178,7 +181,7 @@ export const exec = async (
         const sanitizedChunk = options.noColor
           ? stripAnsi(chunk.toLocaleString())
           : chunk.toLocaleString();
-        processLoggerError(sanitizedChunk);
+        logStderr(sanitizedChunk);
         if (sendToStderr) {
           process.stderr.write(sanitizedChunk);
         }

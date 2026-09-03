@@ -30,6 +30,29 @@ exports[`readSchema generates a local json module 1`] = `
 }"
 `;
 
+exports[`readSchema generates a local json module that requires provider configuration aliases 1`] = `
+"{
+  "format_version": "STUBBED VERSION",
+  "local_module": {
+    "inputs": [
+      {
+        "default": "module",
+        "description": "Name of the DigitalOcean static site",
+        "name": "name",
+        "required": false,
+        "type": "any"
+      }
+    ],
+    "name": "local_module",
+    "outputs": [
+      {
+        "name": "uri"
+      }
+    ]
+  }
+}"
+`;
+
 exports[`readSchema generates a local module 1`] = `
 "{
   "format_version": "STUBBED VERSION",
@@ -62,6 +85,29 @@ exports[`readSchema generates a local module 1`] = `
       {
         "description": "Name (id) of the bucket",
         "name": "name"
+      }
+    ]
+  }
+}"
+`;
+
+exports[`readSchema generates a local module that requires provider configuration aliases 1`] = `
+"{
+  "format_version": "STUBBED VERSION",
+  "local_module": {
+    "inputs": [
+      {
+        "description": "Name of the s3 bucket. Must be unique.",
+        "name": "bucket_name",
+        "required": true,
+        "type": "string"
+      }
+    ],
+    "name": "local_module",
+    "outputs": [
+      {
+        "description": "ARN of the bucket",
+        "name": "arn"
       }
     ]
   }

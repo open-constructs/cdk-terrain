@@ -269,13 +269,21 @@ function joinWithAnd(items: string[]): string {
 }
 
 export interface TerraformConfig {
-  provider?: { [name: string]: Record<string, any> };
+  // a list holds several configurations of the same provider, which is how
+  // aliased provider blocks are expressed in JSON syntax
+  provider?: { [name: string]: Record<string, any> | Record<string, any>[] };
   terraform: {
     required_providers?: {
       [name: string]: { source?: string; version?: string };
     };
   };
-  module?: { [name: string]: { source: string; version?: string } };
+  module?: {
+    [name: string]: {
+      source: string;
+      version?: string;
+      providers?: { [localName: string]: string };
+    };
+  };
 }
 
 export async function readProviderSchema(
@@ -431,6 +439,213 @@ export function sanitizeProviderSchema(schema: ProviderSchema): ProviderSchema {
   return schema;
 }
 
+/**
+ * A provider configuration that a module expects to be handed by its caller,
+ * declared as `configuration_aliases` in the module's `required_providers`.
+ */
+export interface ModuleProviderAlias {
+  /** local name the module knows the provider by, e.g. `aws` */
+  localName: string;
+  /** alias part of the reference, e.g. `global_region` */
+  alias: string;
+  /** provider source the module declared for `localName`, if it declared one */
+  source?: string;
+}
+
+const CONFIGURATION_ALIAS = /^([\w-]+)\.([\w-]+)$/;
+
+// hcl2json hands HCL expressions back as interpolations, so a
+// `configuration_aliases = [aws.global_region]` entry arrives as the string
+// "${aws.global_region}". A .tf.json module writes the same reference as a
+// plain string, which hcl2json passes through untouched.
+const unwrapInterpolation = (value: string) =>
+  value.startsWith("${") && value.endsWith("}") ? value.slice(2, -1) : value;
+
+const toArray = <T>(item: T | T[] | undefined | null): T[] => {
+  if (item === undefined || item === null) return [];
+  return Array.isArray(item) ? item : [item];
+};
+
+/**
+ * Collects the provider configurations a module requires its caller to pass
+ * in, from the hcl2json representation of the module's directory.
+ *
+ * hcl2json represents every HCL block as an array (one entry per occurrence
+ * across the module's files), so a module may declare `required_providers` in
+ * more than one `terraform` block; all of them are considered. Blocks read
+ * from a .tf.json module arrive unwrapped instead, and both shapes are
+ * handled here.
+ *
+ * @internal exposed for testing
+ */
+export function collectModuleProviderAliases(
+  parsedModule: any,
+): ModuleProviderAlias[] {
+  const aliases: ModuleProviderAlias[] = [];
+  const seen = new Set<string>();
+
+  for (const terraformBlock of toArray(parsedModule?.terraform)) {
+    for (const requiredProviders of toArray(
+      terraformBlock?.required_providers,
+    )) {
+      for (const declaration of Object.values(requiredProviders || {})) {
+        const provider = unwrapIfArray(declaration as any);
+
+        for (const entry of toArray(provider?.configuration_aliases)) {
+          const match = CONFIGURATION_ALIAS.exec(
+            unwrapInterpolation(String(entry)),
+          );
+          if (!match) continue;
+
+          const [, localName, alias] = match;
+          const key = `${localName}.${alias}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          aliases.push({ localName, alias, source: provider?.source });
+        }
+      }
+    }
+  }
+
+  return aliases;
+}
+
+/**
+ * Declares the provider configurations that `aliases` names on the synthetic
+ * root config and passes them into the module call, which is what Terraform
+ * demands of anyone calling a module with `configuration_aliases`.
+ *
+ * The alias blocks stay empty: `terraform get` only builds the configuration
+ * tree, it never configures or installs a provider. Sources are mirrored from
+ * the module's own `required_providers` so a module referring to, say,
+ * hashicorp/aws under a non-default local name still resolves to the same
+ * provider in the root.
+ *
+ * @internal exposed for testing
+ */
+export function applyModuleProviderAliases(
+  config: TerraformConfig,
+  moduleKey: string,
+  aliases: ModuleProviderAlias[],
+): TerraformConfig {
+  const moduleCall = config.module?.[moduleKey];
+  if (!moduleCall || aliases.length === 0) return config;
+
+  for (const { localName, alias, source } of aliases) {
+    if (source) {
+      config.terraform.required_providers = {
+        ...config.terraform.required_providers,
+        [localName]: { source },
+      };
+    }
+
+    config.provider = config.provider || {};
+    const blocks = toArray(config.provider[localName]);
+    if (!blocks.some((block) => block.alias === alias)) {
+      blocks.push({ alias });
+    }
+    config.provider[localName] = blocks;
+
+    moduleCall.providers = {
+      ...moduleCall.providers,
+      [`${localName}.${alias}`]: `${localName}.${alias}`,
+    };
+  }
+
+  return config;
+}
+
+/**
+ * The `//subdir` portion of a module source, if it has one, mirroring how
+ * Terraform unpacks a package into `.terraform/modules/<key>/<subdir>`.
+ *
+ * @internal exposed for testing
+ */
+export function packageSubdir(source: string): string | undefined {
+  const [withoutQuery] = source.split("?");
+  const withoutGetterPrefix = withoutQuery.replace(/^[A-Za-z0-9]+::/, "");
+  const withoutScheme = withoutGetterPrefix.replace(
+    /^[A-Za-z][A-Za-z0-9+.-]*:\/\/+/,
+    "",
+  );
+
+  const [, ...rest] = withoutScheme.split("//");
+  const subdir = rest.join("//").replace(/^\/+|\/+$/g, "");
+  return subdir || undefined;
+}
+
+/**
+ * Where the module Terraform just fetched ended up on disk.
+ *
+ * The manifest is the authority, but a `terraform get` that installed the
+ * module and then failed to validate the configuration around it leaves no
+ * manifest behind - so fall back to the locations Terraform installs into:
+ * local modules are read where they are, remote packages are unpacked into
+ * `.terraform/modules/<key>`.
+ *
+ * @internal exposed for testing
+ */
+export function fetchedModuleDir(
+  workingDirectory: string,
+  moduleKey: string,
+  source: string,
+  localSourceAbsolutePath?: string,
+): string {
+  const manifestPath = path.join(
+    workingDirectory,
+    ".terraform",
+    "modules",
+    "modules.json",
+  );
+
+  if (fs.existsSync(manifestPath)) {
+    const moduleIndex = JSON.parse(
+      fs.readFileSync(manifestPath, "utf-8"),
+    ) as ModuleIndex;
+    const record = moduleIndex.Modules.find((mod) => mod.Key === moduleKey);
+
+    if (record) {
+      return path.resolve(workingDirectory, record.Dir);
+    }
+  }
+
+  if (localSourceAbsolutePath) {
+    return localSourceAbsolutePath;
+  }
+
+  return path.join(
+    workingDirectory,
+    ".terraform",
+    "modules",
+    moduleKey,
+    packageSubdir(source) || "",
+  );
+}
+
+/**
+ * Runs `terraform get` and hands the failure back instead of throwing it.
+ *
+ * Its diagnostics are not final (see {@link readModuleSchema}), so they go to
+ * the debug log rather than the terminal; the returned error still carries
+ * them on its `stderr` for callers that end up rethrowing it.
+ */
+async function tryTerraformGet(outdir: string): Promise<Error | undefined> {
+  try {
+    await exec(
+      terraformBinaryName,
+      ["get"],
+      { cwd: outdir, logStderrAsDebug: true },
+      undefined,
+      undefined,
+      false,
+    );
+    return undefined;
+  } catch (error: any) {
+    return error;
+  }
+}
+
 export async function readModuleSchema(target: ConstructsMakerModuleTarget) {
   let moduleSchema: Record<string, ModuleSchema> = {};
 
@@ -458,7 +673,38 @@ export async function readModuleSchema(target: ConstructsMakerModuleTarget) {
     const filePath = path.join(outdir, "main.tf.json");
     await fs.writeFile(filePath, JSON.stringify(config));
 
-    await exec(terraformBinaryName, ["get"], { cwd: outdir });
+    // `terraform get` is both our downloader and a full validation of the
+    // synthetic root config wrapped around the module. A module declaring
+    // `configuration_aliases` cannot validate until the root passes those
+    // configurations in, and their names are only knowable once the module is
+    // on disk - so this first run is a fetch we defer judgement on. Terraform
+    // installs the module either way; since 1.15 it just stops short of
+    // writing the module manifest when validation fails (terraform#38217
+    // dropped the error-to-warning downgrade that `terraform get` used to
+    // apply), which is what the second run below restores.
+    const fetchError = await tryTerraformGet(outdir);
+
+    const moduleDir = fetchedModuleDir(
+      outdir,
+      target.moduleKey,
+      source,
+      localSource,
+    );
+    const aliases = fs.existsSync(moduleDir)
+      ? collectModuleProviderAliases(await convertFiles(moduleDir))
+      : [];
+
+    if (aliases.length > 0) {
+      applyModuleProviderAliases(config, target.moduleKey, aliases);
+      await fs.writeFile(filePath, JSON.stringify(config));
+      await exec(terraformBinaryName, ["get"], { cwd: outdir });
+    } else if (fetchError) {
+      // nothing here was salvageable after all, so report the diagnostics that
+      // were held back while the fetch still had a second chance
+      logger.error((fetchError as any).stderr || String(fetchError));
+      throw fetchError;
+    }
+
     if (config.module) {
       moduleSchema = await harvestModuleSchema(
         outdir,

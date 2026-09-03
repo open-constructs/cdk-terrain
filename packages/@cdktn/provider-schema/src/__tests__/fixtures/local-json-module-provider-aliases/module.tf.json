@@ -1,0 +1,21 @@
+{
+  "terraform": {
+    "required_providers": {
+      "null": {
+        "source": "hashicorp/null",
+        "configuration_aliases": ["null.extra"]
+      }
+    }
+  },
+  "variable": {
+    "name": {
+      "default": "module",
+      "description": "Name of the DigitalOcean static site"
+    }
+  },
+  "output": {
+    "uri": {
+      "value": "${digitalocean_app.static_site}"
+    }
+  }
+}
