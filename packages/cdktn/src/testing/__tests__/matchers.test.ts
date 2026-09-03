@@ -1,7 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Testing } from "../index";
-import { TestResource, DockerImage } from "../../../test/helper/resource";
+import {
+  TestResource,
+  DockerImage,
+  NullResource,
+} from "../../../test/helper/resource";
 import {
   toBeValidTerraform,
   toPlanSuccessfully,
@@ -12,7 +16,7 @@ import {
 } from "../matchers";
 import { TestDataSource } from "../../../test/helper/data-source";
 import { TerraformStack } from "../../terraform-stack";
-import { DockerProvider } from "../../../test/helper/provider";
+import { DockerProvider, NullProvider } from "../../../test/helper/provider";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -323,8 +327,8 @@ describe("matchers", () => {
       const app = Testing.app();
       const stack = new TerraformStack(app, "test");
 
-      new DockerProvider(stack, "provider", {});
-      new DockerImage(stack, "test", { name: "test" });
+      new NullProvider(stack, "provider");
+      new NullResource(stack, "test");
 
       const res = toPlanSuccessfully(Testing.fullSynth(stack));
 
@@ -338,8 +342,8 @@ describe("matchers", () => {
       const app = Testing.app();
       const stack = new TerraformStack(app, "test");
 
-      new DockerProvider(stack, "provider", {});
-      new DockerImage(stack, "test", { name: "test" });
+      new NullProvider(stack, "provider");
+      new NullResource(stack, "test");
 
       const result = Testing.fullSynth(stack);
       corruptSynthesizedStack(result);

@@ -476,7 +476,7 @@ it("moves resource to be in composition with foreach using list iterator", () =>
   const synthedStack = JSON.parse(Testing.synth(stack));
   expect(synthedStack.moved[0].from).toEqual("test_resource.simple");
   expect(synthedStack.moved[0].to).toEqual(
-    `test_resource.simple-foreach[\"foo-one\"]`,
+    'test_resource.simple-foreach["foo-one"]',
   );
   expect(Object.keys(synthedStack.resource.test_resource)).toContain(
     "simple-foreach",
@@ -523,7 +523,7 @@ it("moves resource to be in composition with foreach using complex iterator", ()
   const synthedStack = JSON.parse(Testing.synth(stack));
   expect(synthedStack.moved[0].from).toEqual("test_resource.simple");
   expect(synthedStack.moved[0].to).toEqual(
-    `test_resource.simple-foreach[\"simple-foreach-one\"]`,
+    'test_resource.simple-foreach["simple-foreach-one"]',
   );
   expect(Object.keys(synthedStack.resource.test_resource)).toContain(
     "simple-foreach",

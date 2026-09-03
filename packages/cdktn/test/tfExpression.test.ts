@@ -95,7 +95,7 @@ describe("propertyAccess", () => {
   it("for map with an attribute name containing a colon", () => {
     expect(
       resolveExpression(propertyAccess(ref("local.map"), ["My:Key"])),
-    ).toEqual(`\${local.map[\"My:Key\"]}`);
+    ).toEqual('${local.map["My:Key"]}');
   });
 });
 

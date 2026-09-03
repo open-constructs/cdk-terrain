@@ -152,7 +152,7 @@ function getAssertElementWithProperties(
 
     try {
       stack = JSON.parse(stackContent) as SynthesizedStack;
-    } catch (e) {
+    } catch (_e) {
       throw invalidStack(functionName, stackContent);
     }
 
