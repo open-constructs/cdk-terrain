@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.24.1](https://github.com/open-constructs/cdk-terrain/compare/v0.24.0...v0.24.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **gha:** pass -R to gh pr edit in release_github relabel step ([#372](https://github.com/open-constructs/cdk-terrain/issues/372)) ([358edc7](https://github.com/open-constructs/cdk-terrain/commit/358edc7c39b0b380ba89fd31881f0577fe9b6214))
+* **tests:** drop unused ts-jest transform from shared jest preset ([#382](https://github.com/open-constructs/cdk-terrain/issues/382)) ([03f6e16](https://github.com/open-constructs/cdk-terrain/commit/03f6e169a6b9d995e4dd88773a2795d24ed135eb))
+* **tools:** make the workspace build, package, lint and test on Windows ([#364](https://github.com/open-constructs/cdk-terrain/issues/364)) ([8dcddbe](https://github.com/open-constructs/cdk-terrain/commit/8dcddbef29da743107d44591fef52e3be24979f5))
+
+
+### Miscellaneous Chores
+
+* **deps:** Update xstate to v5.32.4 ([#333](https://github.com/open-constructs/cdk-terrain/issues/333)) ([5ebf74f](https://github.com/open-constructs/cdk-terrain/commit/5ebf74fdbb37a74514a30560c4126fb272286384))
+* **gha:** retire Docker Hub publishing of jsii-terraform ([#388](https://github.com/open-constructs/cdk-terrain/issues/388)) ([e53cddf](https://github.com/open-constructs/cdk-terrain/commit/e53cddf6a58c85438f3a77f10c2e3c09ae47a397))
+
 ## [0.24.0](https://github.com/open-constructs/cdk-terrain/compare/v0.23.4...v0.24.0) (2026-08-06)
 
 
