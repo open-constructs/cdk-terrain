@@ -1,5 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import { Errors } from "@cdktn/commons";
 import { NestedTerraformOutputs } from "@cdktn/cli-core";
 import { runCdktfProject, Status } from "../helper/project-runner";
 import { StreamRenderer } from "../helper/tty-stream";
@@ -16,7 +17,7 @@ export interface DeployConfig {
   targetStacks?: string[];
   synthCommand: string;
   autoApprove: boolean;
-  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void;
+  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void | Promise<void>;
   outputsPath?: string;
   ignoreMissingStackDependencies?: boolean;
   parallelism?: number;
@@ -38,10 +39,14 @@ export interface DeployConfig {
  * `status.stop()` so cli-core halts cleanly rather than hanging.
  *
  * @param config - All deploy options, forwarded near-verbatim to `CdktfProject.deploy`. `onOutputsRetrieved` is
- *                 invoked once the run completes (or is stopped) with the final outputs map.
+ *                 invoked once the run completes (or is stopped) with the final outputs map, after the outputs
+ *                 table has already been rendered; it may return a promise (e.g. writing --outputs-file to
+ *                 disk), which is awaited and, if it rejects, surfaced as a fatal error since a broken outputs
+ *                 write is a broken promise to the caller.
  * @returns Promise that resolves when the deploy completes, is stopped, or is dismissed. Rejects with whatever
- *          cli-core rejects with for real failures (terraform error, abort signal, etc.). A failure *rendering*
- *          the fetched outputs is non-fatal and does not cause a rejection.
+ *          cli-core rejects with for real failures (terraform error, abort signal, etc.), or with a Usage error
+ *          (bad --outputs-file path, e.g. ENOENT/ENOTDIR) or External error (any other `onOutputsRetrieved`
+ *          failure). A failure only *rendering* the fetched outputs is non-fatal and does not cause a rejection.
  */
 export async function runDeploy({
   outDir,
@@ -160,8 +165,9 @@ export async function runDeploy({
 
     const outputs = project.outputsByConstructId;
 
-    onOutputsRetrieved(outputs);
-
+    // Render the outputs table first (still non-fatal): the deploy already succeeded, so a
+    // failure here is purely cosmetic, and rendering before the --outputs-file write below means
+    // the user still sees their outputs even if that write fails.
     let rendered = "";
     let renderFailed = false;
     try {
@@ -180,18 +186,37 @@ export async function runDeploy({
 
     if (rendered) {
       console.log(rendered);
-    }
-
-    if (rendered || renderFailed) {
-      if (outputsPath) {
-        console.log(`The outputs have been written to ${outputsPath}`);
-      }
-    } else {
+    } else if (!renderFailed) {
       // Either there were no declared outputs at all, or every one of them was dropped upstream
       // (e.g. all missing from `terraform output`, the empty-group case renderOutputs collapses
       // to ""). Either way there is nothing to show the user, so say so plainly instead of
       // printing a stray blank line.
       console.log("No outputs found.");
+    }
+
+    // A failed --outputs-file write is a broken promise to the user and must be fatal: await it
+    // and rethrow as a clean error, which cdktn.ts's top-level `.fail()` handler prints as a
+    // single clean line rather than a stack trace, since the deploy itself already succeeded (and
+    // its outputs were already rendered above, so the write failure below does not hide them).
+    // ENOENT/ENOTDIR means the user pointed --outputs-file at a path that doesn't exist - a usage
+    // mistake, not something outside our control - so it is reported as a Usage error (excluded
+    // from Sentry crash reporting) rather than External.
+    try {
+      await onOutputsRetrieved(outputs);
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException)?.code;
+      const ErrorCtor =
+        code === "ENOENT" || code === "ENOTDIR"
+          ? Errors.Usage
+          : Errors.External;
+      throw ErrorCtor(
+        `Failed to write outputs: ${e instanceof Error ? e.message : e}`,
+        e instanceof Error ? e : undefined,
+      );
+    }
+
+    if (outputsPath) {
+      console.log(`The outputs have been written to ${outputsPath}`);
     }
   } finally {
     stream.stop();
