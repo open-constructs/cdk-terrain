@@ -78,7 +78,7 @@
     "license": "MPL-2.0",
     "devDependencies": {
         "@types/node": "22.20.1",
-        "@types/semver": "7.7.1",
+        "@types/semver": "7.8.0",
         "constructs": "10.6.0",
         "jsii": "~5.9.0",
         "jsii-pacmak": "1.128.0",
