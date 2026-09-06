@@ -3,12 +3,8 @@
 import { Construct } from "constructs";
 import * as fs from "fs";
 import * as path from "path";
-import {
-  copySync,
-  archiveSync,
-  hashPath,
-  findFileAboveCwd,
-} from "./private/fs";
+import { AssetPackaging, IAssetPackaging } from "./assets";
+import { hashPath, findFileAboveCwd } from "./private/fs";
 import { CANONICAL_ASSET_HASHES } from "./features";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
@@ -36,6 +32,17 @@ export enum AssetType {
 
 const ARCHIVE_NAME = "archive.zip";
 const ASSETS_DIRECTORY = "assets";
+
+/**
+ * How each `AssetType` is actually written to disk at synthesis time.
+ * Internal wiring only: swapping this map's values is how a future format
+ * would be added, without any change to the public `AssetType` surface.
+ */
+const PACKAGING_BY_TYPE: Record<AssetType, IAssetPackaging> = {
+  [AssetType.FILE]: AssetPackaging.FILE,
+  [AssetType.DIRECTORY]: AssetPackaging.DIRECTORY,
+  [AssetType.ARCHIVE]: AssetPackaging.ZIP,
+};
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class TerraformAsset extends Construct {
@@ -152,20 +159,10 @@ export class TerraformAsset extends Construct {
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     }
 
-    switch (this.type) {
-      case AssetType.FILE:
-        fs.copyFileSync(this.sourcePath, targetPath);
-        break;
-
-      case AssetType.DIRECTORY:
-        copySync(this.sourcePath, targetPath);
-        break;
-
-      case AssetType.ARCHIVE:
-        archiveSync(this.sourcePath, targetPath);
-        break;
-      default:
-        throw assetTypeNotImplemented();
+    const packaging = PACKAGING_BY_TYPE[this.type];
+    if (!packaging) {
+      throw assetTypeNotImplemented();
     }
+    packaging.pack({ source: this.sourcePath, target: targetPath });
   }
 }

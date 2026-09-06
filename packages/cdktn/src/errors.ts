@@ -62,6 +62,11 @@ Take one of these values from the AssetType Enum.
 Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets
   `);
 
+export const assetHashConflictingExcludeOptions = () =>
+  new Error(
+    `Both 'exclude' and 'ignoreStrategy' were passed to AssetHash.of(), but 'ignoreStrategy' replaces 'exclude' rather than combining with it. Pass only one.`,
+  );
+
 export const dynamicBlockNotSupported = (_foreachExpression: string) =>
   new Error(
     `We do not support directly resolving a TerraformDynamicBlock. Dynamic blocks are only supported on block attributes of resources, data sources, and providers.

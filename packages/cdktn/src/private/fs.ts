@@ -30,18 +30,47 @@ function zipAttrs(mode: number): number {
   return (mode << 16) >>> 0;
 }
 
+/**
+ * Predicate deciding whether a tree entry is skipped.
+ * `relPath` is always `/`-separated and relative to the walk root, so patterns
+ * behave identically on Windows.
+ */
+export type ExcludePredicate = (relPath: string) => boolean;
+
+export interface CopySyncOptions {
+  /**
+   * Entries for which this returns true are not copied. Excluding a directory
+   * also skips everything below it.
+   *
+   * @default - nothing is excluded
+   */
+  readonly shouldExclude?: ExcludePredicate;
+}
+
 // Full implementation at https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy/copy-sync.js
 /**
  * Copy a file or directory. The directory can have contents and subfolders.
+ * Symlinks are recreated as symlinks rather than dereferenced, which keeps the
+ * copy consistent with {@link hashPath} (it hashes links by their target) and
+ * makes dangling links and link cycles harmless.
  * @param src - source path
  * @param dest - destination path
+ * @param options - copy behaviour, see {@link CopySyncOptions}
  */
-export function copySync(src: string, dest: string) {
+export function copySync(
+  src: string,
+  dest: string,
+  options: CopySyncOptions = {},
+) {
   /**
    * Copies file if present otherwise walks subfolder.
    * @param p - path relative to src/dest
+   * @param relPath - `/`-separated path relative to the copy root
    */
-  function copyItem(p: string) {
+  function copyItem(p: string, relPath: string) {
+    if (options.shouldExclude?.(relPath)) {
+      return;
+    }
     const sourcePath = path.resolve(src, p);
     const stat = fs.lstatSync(sourcePath);
     if (stat.isSymbolicLink()) {
@@ -49,30 +78,36 @@ export function copySync(src: string, dest: string) {
     } else if (stat.isFile()) {
       fs.copyFileSync(sourcePath, path.resolve(dest, p));
     } else if (stat.isDirectory()) {
-      walkSubfolder(p);
+      walkSubfolder(p, relPath);
     }
   }
   /**
    * Copies contents of subfolder.
    * @param p - path relative to src/dest
+   * @param relPath - `/`-separated path relative to the copy root
    */
-  function walkSubfolder(p: string) {
+  function walkSubfolder(p: string, relPath: string) {
     const sourceDir = path.resolve(src, p);
     fs.mkdirSync(path.resolve(dest, p), { recursive: true });
     fs.readdirSync(sourceDir).forEach((item: string) =>
-      copyItem(path.join(p, item)),
+      copyItem(path.join(p, item), relPath ? `${relPath}/${item}` : item),
     );
   }
 
-  walkSubfolder(".");
+  walkSubfolder(".", "");
 }
 
 /**
  * Zips contents at src and places zip archive at dest.
  * @param src - directory to archive
  * @param dest - path to write the resulting zip to
+ * @param shouldExclude - entries to omit, see {@link CopySyncOptions.shouldExclude}
  */
-export function archiveSync(src: string, dest: string) {
+export function archiveSync(
+  src: string,
+  dest: string,
+  shouldExclude?: ExcludePredicate,
+) {
   try {
     const files: Record<string, [Uint8Array, ZipOptions]> = {};
     const walk = (dir: string, prefix: string) => {
@@ -81,6 +116,9 @@ export function archiveSync(src: string, dest: string) {
       for (const entry of fs.readdirSync(dir).sort()) {
         const full = path.join(dir, entry);
         const zipPath = prefix ? `${prefix}/${entry}` : entry;
+        if (shouldExclude?.(zipPath)) {
+          continue;
+        }
         const stat = fs.lstatSync(full);
         if (stat.isSymbolicLink()) {
           // Store the link target as the entry data with S_IFLNK attrs so
@@ -132,6 +170,15 @@ export interface HashPathOptions {
    * the legacy scheme, which never records directories.
    */
   readonly archive?: boolean;
+  /**
+   * Entries for which this returns true are omitted from the digest. Excluding
+   * a directory also omits everything below it. The same predicate must be
+   * given to {@link copySync} so the hash and the emitted artifact describe the
+   * same set of files.
+   *
+   * @default - nothing is excluded
+   */
+  readonly shouldExclude?: ExcludePredicate;
 }
 
 /**
@@ -146,8 +193,8 @@ export interface HashPathOptions {
  */
 export function hashPath(src: string, options: HashPathOptions = {}): string {
   const digest = options.canonical
-    ? canonicalHashPath(src, !options.archive)
-    : legacyHashPath(src);
+    ? canonicalHashPath(src, !options.archive, options.shouldExclude)
+    : legacyHashPath(src, options.shouldExclude);
   return digest.slice(0, HASH_LEN).toUpperCase();
 }
 
@@ -160,8 +207,9 @@ export function hashPath(src: string, options: HashPathOptions = {}): string {
  * bytes, so a file containing `foo` can never collide with a symlink
  * targeting `foo`.
  * @param src - path to a file or directory to hash
+ * @param shouldExclude - entries to omit, see {@link HashPathOptions.shouldExclude}
  */
-function legacyHashPath(src: string): string {
+function legacyHashPath(src: string, shouldExclude?: ExcludePredicate): string {
   const content = crypto.createHash("md5");
   const links = crypto.createHash("md5");
   let linkCount = 0;
@@ -182,12 +230,13 @@ function legacyHashPath(src: string): string {
     } else if (stat.isFile()) {
       content.update(fs.readFileSync(p));
     } else if (stat.isDirectory()) {
-      fs.readdirSync(p).forEach((filename) =>
-        hashRecursion(
-          path.resolve(p, filename),
-          relPath ? `${relPath}/${filename}` : filename,
-        ),
-      );
+      fs.readdirSync(p).forEach((filename) => {
+        const entryRelPath = relPath ? `${relPath}/${filename}` : filename;
+        if (shouldExclude?.(entryRelPath)) {
+          return;
+        }
+        hashRecursion(path.resolve(p, filename), entryRelPath);
+      });
     }
   }
 
@@ -220,8 +269,13 @@ function legacyHashPath(src: string): string {
  * @param src - path to a file or directory to hash
  * @param includeDirectories - record directory entries; false for archive
  * artifacts, where the emitted zip has no directory entries
+ * @param shouldExclude - entries to omit, see {@link HashPathOptions.shouldExclude}
  */
-function canonicalHashPath(src: string, includeDirectories: boolean): string {
+function canonicalHashPath(
+  src: string,
+  includeDirectories: boolean,
+  shouldExclude?: ExcludePredicate,
+): string {
   const hash = crypto.createHash("md5");
 
   /**
@@ -247,16 +301,45 @@ function canonicalHashPath(src: string, includeDirectories: boolean): string {
         hash.update(`D ${relPath}\0`);
       }
       for (const filename of fs.readdirSync(p).sort()) {
-        hashRecursion(
-          path.resolve(p, filename),
-          relPath ? `${relPath}/${filename}` : filename,
-        );
+        const entryRelPath = relPath ? `${relPath}/${filename}` : filename;
+        if (shouldExclude?.(entryRelPath)) {
+          continue;
+        }
+        hashRecursion(path.resolve(p, filename), entryRelPath);
       }
     }
   }
 
   hashRecursion(src, "", true);
   return hash.digest("hex");
+}
+
+/**
+ * Build a predicate matching the exclusion forms documented on
+ * `TerraformAssetConfig.exclude`: an exact relative path, a `*.ext` suffix, or a
+ * directory (with or without a trailing `/`), which also excludes its contents.
+ * Deliberately not a full glob implementation — `**`, `?`, character classes and
+ * `!` negation are not supported, and a pattern is never interpreted as
+ * anchoring to a subdirectory it does not name.
+ * @param exclude - patterns to exclude
+ * @returns predicate over `/`-separated paths relative to the asset root
+ */
+export function excludeMatcher(exclude: string[]): ExcludePredicate {
+  // `/`-separated throughout: relative paths are normalized before matching, so
+  // `dir/child` patterns work the same on Windows.
+  const patterns = exclude.map((p) => p.replace(/\\/g, "/"));
+  return (relativePath: string) => {
+    for (const pattern of patterns) {
+      if (pattern.startsWith("*.") && relativePath.endsWith(pattern.slice(1))) {
+        return true;
+      }
+      const dir = pattern.endsWith("/") ? pattern.slice(0, -1) : pattern;
+      if (relativePath === dir || relativePath.startsWith(`${dir}/`)) {
+        return true;
+      }
+    }
+    return false;
+  };
 }
 
 /**
