@@ -31,7 +31,7 @@
         "integration:java": "cd test && node run-against-dist.mjs pnpm exec jest --runInBand java",
         "integration:go": "cd test && node run-against-dist.mjs pnpm exec jest --runInBand go",
         "release-github": "tools/release-github.sh",
-        "build-docker-jsii": "docker build --platform linux/amd64 --build-arg DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default') --build-arg AVAILABLE_TERRAFORM_VERSIONS=\"$(cat .terraform.versions.json | jq -r '.available | join(\" \")')\" -t ghcr.io/open-constructs/jsii-terraform .",
+        "build-docker-jsii": "docker build --platform linux/amd64 --build-arg DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default') --build-arg AVAILABLE_TERRAFORM_VERSIONS=\"$(cat .terraform.versions.json | jq -r '.available | join(\" \")')\" --build-arg DEFAULT_OPENTOFU_VERSION=$(cat .terraform.versions.json | jq -r '.opentofu.default') --build-arg AVAILABLE_OPENTOFU_VERSIONS=\"$(cat .terraform.versions.json | jq -r '.opentofu.available | join(\" \")')\" -t ghcr.io/open-constructs/jsii-terraform .",
         "push-docker-jsii": "docker push ghcr.io/open-constructs/jsii-terraform",
         "dist-clean": "nx run-many -t dist-clean --output-style=stream && rm -rf dist",
         "prepare": "husky",

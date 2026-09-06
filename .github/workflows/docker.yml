@@ -13,7 +13,10 @@ on:
 
 jobs:
   build-docker-image:
-    if: github.repository == 'open-constructs/cdk-terrain'
+    # The push trigger is already limited to main, but workflow_dispatch accepts
+    # any ref. Without the ref guard a manual dispatch from an arbitrary branch
+    # would publish :latest through this job's packages:write token.
+    if: github.repository == 'open-constructs/cdk-terrain' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,8 +37,12 @@ jobs:
         run: |
           DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default')
           AVAILABLE_TERRAFORM_VERSIONS=$(cat .terraform.versions.json | jq -r '.available | join(" ")')
+          DEFAULT_OPENTOFU_VERSION=$(cat .terraform.versions.json | jq -r '.opentofu.default')
+          AVAILABLE_OPENTOFU_VERSIONS=$(cat .terraform.versions.json | jq -r '.opentofu.available | join(" ")')
           echo "default=$DEFAULT_TERRAFORM_VERSION" >> $GITHUB_OUTPUT
           echo "available=$AVAILABLE_TERRAFORM_VERSIONS" >> $GITHUB_OUTPUT
+          echo "tofu-default=$DEFAULT_OPENTOFU_VERSION" >> $GITHUB_OUTPUT
+          echo "tofu-available=$AVAILABLE_OPENTOFU_VERSIONS" >> $GITHUB_OUTPUT
       - id: cdktn-version
         run: |
           CDKTF_VERSION=$(cat package.json | jq -r '.version')
@@ -62,3 +69,5 @@ jobs:
           build-args: |
             DEFAULT_TERRAFORM_VERSION=${{ steps.tf-versions.outputs.default }}
             AVAILABLE_TERRAFORM_VERSIONS=${{ steps.tf-versions.outputs.available }}
+            DEFAULT_OPENTOFU_VERSION=${{ steps.tf-versions.outputs.tofu-default }}
+            AVAILABLE_OPENTOFU_VERSIONS=${{ steps.tf-versions.outputs.tofu-available }}

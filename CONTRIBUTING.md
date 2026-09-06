@@ -169,6 +169,16 @@ $ docker run -it --rm -w=/home -v (pwd):/home ghcr.io/open-constructs/jsii-terra
 
 or through [Visual Studio Code Remote - Containers](https://code.visualstudio.com/docs/remote/containers).
 
+The image ships every Terraform and OpenTofu version listed in
+`.terraform.versions.json` as a version-suffixed binary (`terraform1.16.1`,
+`tofu1.12.6`, ...), plus bare `terraform` and `tofu` pointing at the
+respective defaults. Select one for a test run with `TERRAFORM_BINARY_NAME`,
+which is how the CI matrix pins a version per job:
+
+```shell
+$ TERRAFORM_BINARY_NAME=tofu1.12.6 pnpm integration:single typescript/synth-app
+```
+
 ## Getting Started
 
 Clone the repository:
