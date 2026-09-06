@@ -22,6 +22,15 @@ repositories {
 dependencies {
     implementation "io.cdktn:cdktn:{{ cdktf_version }}"
     implementation "software.constructs:constructs:{{ constructs_version }}"
+    // jsii-pacmak annotates the generated `imports` sources with
+    // @javax.annotation.Generated and the JetBrains nullability annotations.
+    // Both used to arrive transitively, but jsii 6 publishes them at
+    // "provided" scope, so consumers that compile generated code declare them.
+    // compileOnly is Gradle's analog of "provided": both are compile-time only
+    // (SOURCE and CLASS retention respectively), so they stay off the runtime
+    // classpath and out of the published pom.
+    compileOnly "javax.annotation:javax.annotation-api:1.3.2"
+    compileOnly "org.jetbrains:annotations:19.0.0"
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.junit.jupiter:junit-jupiter:5.8.0"
 }

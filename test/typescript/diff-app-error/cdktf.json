@@ -1,6 +1,6 @@
 {
   "language": "typescript",
-  "app": "npx ts-node main.ts",
+  "app": "npx tsx main.ts",
   "terraformProviders": ["hashicorp/random@~> 3.1.0"],
   "context": {}
 }

@@ -5,6 +5,11 @@
     "experimentalDecorators": true,
     "inlineSourceMap": true,
     "inlineSources": true,
+    // Required for ts-jest on TypeScript 6: its language-service mode reports
+    // `emitSkipped` there, so suites fail to run. This puts it on
+    // transpileModule; `npm run build` still type-checks. Drop once ts-jest
+    // fixes the TS 6 emit path.
+    "isolatedModules": true,
     "lib": [
       "es2018"
     ],
@@ -22,6 +27,11 @@
     "strictPropertyInitialization": true,
     "stripInternal": true,
     "target": "ES2018",
+    // TypeScript 6 no longer picks up ambient @types automatically.
+    "types": [
+      "node",
+      "jest"
+    ],
     "incremental": true,
     "skipLibCheck": true
   },
