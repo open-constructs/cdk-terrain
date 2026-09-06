@@ -29,12 +29,12 @@ exports.post = (ctx) => {
   }
 
   // Mirrors the `constructs` peer dependency range declared by the cdktn
-  // package. 10.8.0 is excluded because it dropped `jsii.tsc.outDir` from its
-  // package.json, which jsii-rosetta needs to map the shipped .d.ts files back
-  // to the symbol ids in the assembly; without it `cdktn convert` emits
-  // unresolved Java/Go imports (`constructs.Construct` instead of
-  // `software.constructs.Construct`). Keep both ranges in sync.
-  installDeps([npm_cdktf, `constructs@>=10.6.0 <10.8.0`], false, silent);
+  // package. The `<10.8.0` exclusion added in #363 is gone: only 10.8.0 itself
+  // was broken (it dropped `jsii.tsc.outDir`, which jsii-rosetta needs to map
+  // the shipped .d.ts files back to symbol ids, so `cdktn convert` emitted
+  // unresolved Java/Go imports). 10.8.1 restored the field, is deprecated-free
+  // and is the higher version, so no range resolver will ever pick 10.8.0.
+  installDeps([npm_cdktf, `constructs@10`], false, silent);
   installDeps(
     ["@types/node", "typescript@5.x", "jest", "@types/jest", "ts-jest", "ts-node"],
     true,

@@ -8,4 +8,11 @@ application {
 dependencies {
     api 'io.cdktn:cdktn:0.0.0'
     api 'software.constructs:constructs:10.0.5'
+    // jsii 6 publishes these at "provided" scope, so they no longer arrive
+    // transitively; the generated `imports` sources still reference them.
+    // Only this module has generated sources (module-a and module-b declare no
+    // providers), and consuming its types needs no annotations, so compileOnly
+    // is enough and keeps them off dependents' classpaths.
+    compileOnly 'javax.annotation:javax.annotation-api:1.3.2'
+    compileOnly 'org.jetbrains:annotations:19.0.0'
 }

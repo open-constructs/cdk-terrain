@@ -52,15 +52,15 @@
     "cli-cursor": "3.1.0",
     "cli-spinners": "2.9.2",
     "cli-table3": "0.6.5",
-    "constructs": "10.6.0",
+    "constructs": "10.8.1",
     "is-ci": "^4.1.0",
     "punycode": "2.3.1",
     "yargs": "17.7.3"
   },
   "peerDependencies": {
     "cdktn": "workspace:*",
-    "jsii": "~5.9.0",
-    "jsii-pacmak": "1.128.0"
+    "jsii": "~6.0.0",
+    "jsii-pacmak": "1.140.0"
   },
   "lint-staged": {
     "src/**/*.ts": [
