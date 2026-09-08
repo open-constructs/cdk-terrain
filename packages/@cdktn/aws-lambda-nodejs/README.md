@@ -44,6 +44,7 @@ The packages currently expose TypeScript/JavaScript APIs, including CommonJS and
 | Dependencies        | Bundled, including installed AWS SDK clients                              |
 | Source maps         | Included, with `--enable-source-maps` in `NODE_OPTIONS`                   |
 | Log retention       | 30 days                                                                   |
+| Log format          | JSON                                                                      |
 | Execution role      | Automatically created, with permissions scoped to the log group's streams |
 | Deployment identity | SHA-256 of the actual ZIP bytes                                           |
 

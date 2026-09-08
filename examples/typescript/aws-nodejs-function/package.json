@@ -1,5 +1,5 @@
 {
-  "name": "aws-nodejs-function",
+  "name": "@examples/typescript-aws-nodejs-function",
   "private": true,
   "version": "0.0.0",
   "type": "module",

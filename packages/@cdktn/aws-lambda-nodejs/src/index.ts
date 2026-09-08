@@ -142,7 +142,7 @@ export class NodejsFunction extends LambdaFunction {
         tags: props.tags,
       });
     this.putLoggingConfig({
-      logFormat: "Text",
+      logFormat: "JSON",
       ...loggingConfig,
       logGroup: this.logGroup.name,
     });

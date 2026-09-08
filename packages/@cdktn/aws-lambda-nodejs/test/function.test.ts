@@ -55,6 +55,9 @@ test("entry alone creates a deployable function, scoped role, log group and matc
     timeout: 10,
     package_type: "Zip",
     handler: "index.handler",
+    logging_config: {
+      log_format: "JSON",
+    },
   });
   expect(lambda.function_name).toMatch(/^test-hello-[a-f0-9]{8}$/);
   expect(log).toMatchObject({
@@ -146,7 +149,7 @@ test("supports existing execution roles and log groups", () => {
     role: "arn:aws:iam::123456789012:role/existing",
     logGroup,
     bundling: { sourceMap: false },
-    loggingConfig: { logFormat: "JSON" },
+    loggingConfig: { logFormat: "Text" },
   });
   const config = JSON.parse(Testing.synth(stack));
   const lambda = resource(config, "aws_lambda_function");
@@ -154,7 +157,7 @@ test("supports existing execution roles and log groups", () => {
   expect(config.resource.aws_iam_role_policy).toBeUndefined();
   expect(lambda.role).toBe("arn:aws:iam::123456789012:role/existing");
   expect(lambda.environment).toBeUndefined();
-  expect(lambda.logging_config.log_format).toBe("JSON");
+  expect(lambda.logging_config.log_format).toBe("Text");
   expect(Object.keys(config.resource.aws_cloudwatch_log_group)).toHaveLength(1);
   expect(fn.executionRole).toBeUndefined();
   expect(() =>
