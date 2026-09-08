@@ -94,7 +94,9 @@ new NodejsFunction(stack, "worker", {
   bundling: {
     format: "esm", // or "cjs"
     minify: true,
+    keepNames: true,
     sourceMap: true,
+    moduleTypes: { ".sql": "text", ".html": "text" },
     tsconfig: "tsconfig.lambda.json",
     define: { "process.env.BUILD_MODE": JSON.stringify("production") },
     copyFiles: [{ from: "templates", to: "templates" }],
@@ -103,9 +105,30 @@ new NodejsFunction(stack, "worker", {
 });
 ```
 
+`keepNames` preserves function and class names for frameworks that inspect them. `moduleTypes` uses Rolldown's [built-in loaders](https://rolldown.rs/reference/InputOptions.moduleTypes): import SQL or HTML as text, binary data as a `Uint8Array`, or a file as an emitted asset. Emitted assets are included in the ZIP automatically.
+
+`sourceMap` accepts `true`, `false`, `"inline"` or `"hidden"`. `tsconfig` accepts a path or a boolean to enable or disable Rolldown's configuration discovery.
+
+Build options must be known during synthesis. Unresolved Terraform values are rejected, including values nested inside `define`, path mappings or copied-file options. For a resource attribute such as an API URL, use `environment: { API_URL: api.url }` and read `process.env.API_URL` in the handler. Wrapping a Terraform token in `JSON.stringify` does not make it a build-time value.
+
 An external package, including its subpaths, must be supplied by a layer or explicitly copied into `node_modules` in the ZIP. Dependencies are never silently externalized when resolution fails. `copyFiles` rejects traversal, collisions, and symlinks; provide a prepared directory containing real files. Native addons must be built for the selected Lambda architecture and Amazon Linux runtime, then supplied this way or through a layer. Automatic native dependency installation and Docker builds are outside this first implementation.
 
-For Rollup-compatible plugins or advanced Rolldown transforms, supply `bundling.configFile` pointing to a JavaScript configuration module:
+Use the typed `rolldownOptions` object for Rolldown's built-in resolver, transforms, tree shaking, optimizations and output settings. `minify` also accepts Rolldown's native minifier options object:
+
+```ts
+new NodejsFunction(stack, "worker", {
+  entry: "src/worker.ts",
+  bundling: {
+    minify: { compress: true, mangle: false },
+    rolldownOptions: {
+      resolve: { conditionNames: ["lambda", "node", "import", "default"] },
+      output: { sourcemapExcludeSources: true },
+    },
+  },
+});
+```
+
+Inline options accept JSON data. For plugins, callbacks or regular expressions, supply `bundling.configFile` pointing to a JavaScript configuration module with the full [Rolldown configuration API](https://rolldown.rs/reference/Interface.RolldownOptions):
 
 ```js
 // rolldown.lambda.config.mjs
@@ -113,11 +136,10 @@ export default {
   plugins: [
     /* Rolldown / compatible Rollup plugins */
   ],
-  output: { keepNames: true },
 };
 ```
 
-The construct controls the entry point, Node platform, target, externals, output paths, format, minification and source maps. Other input/output options are passed through. This configuration module runs at synthesis; handler code does not.
+The construct controls the entry point, Node platform, target, externals, output paths and format. Other input/output options are passed through. Inline settings take precedence over matching configuration-file settings; loader maps, transform settings and output settings are merged. Minification and source maps default to enabled when neither form configures them. This configuration module runs at synthesis; handler code does not.
 
 ## Build and deployment behavior
 
@@ -125,7 +147,9 @@ Bundling happens while constructing the app, because output hashes require the c
 
 The synthesized stack contains the complete artifact. Subsequent Terraform plan/apply can consume that stack directory without source files, Rolldown, Node.js, or a separate packaging provider. Preserve the stack's assets when transferring it to a remote runner.
 
-This implementation uses Lambda's direct ZIP upload path and is subject to its [deployment package limits](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html). S3 publishing for larger artifacts, JSII language bindings, deployment/bootstrap services, and a watch server are not included. It composes with the existing `TerraformAsset` API and does not depend on the pending asset-pipeline PRs ([#380](https://github.com/open-constructs/cdk-terrain/issues/380)).
+This implementation uses Lambda's direct ZIP upload path. Synthesis rejects packages exceeding 50 MiB compressed or 250 MiB uncompressed, reporting the actual byte count and the applicable [deployment package limit](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html). The uncompressed count includes source maps, emitted assets and copied files. Attached layers also count toward Lambda's 250 MiB limit; their sizes are not available locally and are checked by AWS during deployment. `code.compressedSize` and `code.uncompressedSize` expose the ZIP's sizes in bytes without extracting it.
+
+S3 publishing for larger artifacts, JSII language bindings, deployment/bootstrap services, and a watch server are not included. It composes with the existing `TerraformAsset` API and does not depend on the pending asset-pipeline PRs ([#380](https://github.com/open-constructs/cdk-terrain/issues/380)).
 
 ## Development validation
 
@@ -135,4 +159,4 @@ pnpm --filter @cdktn/bundler-nodejs run package:js
 pnpm --filter @cdktn/aws-lambda-nodejs run package:js
 ```
 
-Tests run real native builds and invoke extracted ESM/CommonJS handlers. They cover dependency resolution, TypeScript aliases, lazy imports, top-level await, maps, reproducible ZIP identity, plugin/copy inputs, failure diagnostics, provider aliases, IAM dependencies, existing roles, and VPC permissions.
+Tests run real native builds and invoke extracted ESM/CommonJS handlers. They cover dependency resolution, TypeScript aliases, native loaders and configuration, lazy imports, top-level await, names, maps, reproducible ZIP identity, plugin/copy inputs, unresolved build values, ZIP size accounting and Lambda quota boundaries, provider aliases, IAM dependencies, existing roles, and VPC permissions.

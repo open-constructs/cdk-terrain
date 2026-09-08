@@ -29,42 +29,51 @@ try {
   const { output: customOutput, ...customInput } = custom;
   if (Array.isArray(customOutput))
     throw new Error("The bundling config must have one output options object.");
+  const { output: inlineOutput, ...inlineInput } =
+    request.rolldownOptions ?? {};
+  const tsconfig = request.tsconfig ?? customInput.tsconfig;
   const facade = "\0cdktn-nodejs-entry";
   const external = request.externalModules ?? [];
   const bundle = await rolldown({
     ...customInput,
+    ...inlineInput,
     cwd: request.projectRoot,
     input: facade,
     platform: "node",
     preserveEntrySignatures: "strict",
-    tsconfig: request.tsconfig
-      ? path.resolve(request.projectRoot, request.tsconfig)
-      : undefined,
-    external: (id) =>
-      external.some(
-        (name) =>
-          id === name ||
-          id.startsWith(`${name}/`) ||
-          (name.endsWith("/*") && id.startsWith(name.slice(0, -1))),
-      ),
+    tsconfig:
+      typeof tsconfig === "string"
+        ? path.resolve(request.projectRoot, tsconfig)
+        : tsconfig,
+    // Let the native resolver match package names and subpaths without calling
+    // JavaScript for every import. Escape package names as literal strings.
+    external: external.map((name) => {
+      const wildcard = name.endsWith("/*");
+      const prefix = (wildcard ? name.slice(0, -1) : name).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&",
+      );
+      return new RegExp(`^${prefix}${wildcard ? "" : "(?:/|$)"}`);
+    }),
+    moduleTypes: { ...customInput.moduleTypes, ...request.moduleTypes },
     transform: {
       ...customInput.transform,
+      ...inlineInput.transform,
       target: request.target,
       define: { ...customInput.transform?.define, ...request.define },
     },
     plugins: [
       {
         name: "cdktn-nodejs-entry",
-        resolveId: (id) =>
-          id === facade
-            ? facade
-            : id === "cdktn:user-entry"
-              ? request.entry
-              : null,
-        load: (id) =>
-          id === facade
-            ? `export { ${request.handler} } from "cdktn:user-entry";`
-            : null,
+        resolveId: {
+          filter: { id: /^(?:\0cdktn-nodejs-entry|cdktn:user-entry)$/ },
+          handler: (id) => (id === facade ? facade : request.entry),
+        },
+        load: {
+          filter: { id: /^\0cdktn-nodejs-entry$/ },
+          handler: () =>
+            `export { ${request.handler} } from "cdktn:user-entry";`,
+        },
       },
       ...(customInput.plugins ?? []),
     ],
@@ -80,16 +89,19 @@ try {
   try {
     ({ output } = await bundle.generate({
       ...customOutput,
+      ...inlineOutput,
       dir: request.projectRoot,
       file: undefined,
       format,
       entryFileNames: `index.${extension}`,
       chunkFileNames: `chunks/[name]-[hash].${extension}`,
       assetFileNames: "assets/[name]-[hash][extname]",
-      minify: request.minify ?? true,
-      sourcemap: request.sourceMap ?? true,
+      minify: request.minify ?? customOutput?.minify ?? true,
+      keepNames: request.keepNames ?? customOutput?.keepNames,
+      sourcemap: request.sourceMap ?? customOutput?.sourcemap ?? true,
       sourcemapPathTransform: (source) => source.split(path.sep).join("/"),
-      polyfillRequire: true,
+      polyfillRequire:
+        inlineOutput?.polyfillRequire ?? customOutput?.polyfillRequire ?? true,
     }));
   } finally {
     await bundle.close();

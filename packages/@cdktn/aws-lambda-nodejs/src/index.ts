@@ -17,6 +17,7 @@ export {
   NodejsAsset,
   NodejsAssetProps,
   NodejsBundlingOptions,
+  NodejsRolldownOptions,
   CopyFile,
 } from "@cdktn/bundler-nodejs";
 
@@ -128,6 +129,17 @@ export class NodejsFunction extends LambdaFunction {
       bundling,
       target: `node${runtimeMatch[1]}`,
     });
+    const mebibyte = 1024 * 1024;
+    if (this.code.uncompressedSize > 250 * mebibyte) {
+      throw new Error(
+        `NodejsFunction ${this.node.path}: uncompressed package is ${this.code.uncompressedSize} bytes; Lambda allows at most 250 MiB (${250 * mebibyte} bytes), including layers. Reduce bundled dependencies or copied assets.`,
+      );
+    }
+    if (this.code.compressedSize > 50 * mebibyte) {
+      throw new Error(
+        `NodejsFunction ${this.node.path}: ZIP is ${this.code.compressedSize} bytes; Lambda direct uploads allow at most 50 MiB (${50 * mebibyte} bytes). Reduce the bundle, or use LambdaFunction with an S3 code asset for larger ZIPs.`,
+      );
+    }
     this.filename = this.code.path;
     this.sourceCodeHash = this.code.sourceCodeHash;
     this.handler = this.code.handler;

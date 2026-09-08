@@ -4,7 +4,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
-import { App, TerraformStack, TerraformOutput, Testing } from "cdktn";
+import {
+  App,
+  TerraformStack,
+  TerraformOutput,
+  TerraformVariable,
+  Testing,
+} from "cdktn";
 import { AwsProvider } from "@cdktn/provider-aws/lib/provider/index.js";
 import { CloudwatchLogGroup } from "@cdktn/provider-aws/lib/cloudwatch-log-group/index.js";
 import { NodejsFunction, NodejsFunctionProps } from "../src";
@@ -195,6 +201,34 @@ test("runtime variables change configuration without changing the code digest", 
     environment: { VALUE: "two" },
   });
   expect(first.code.sourceCodeHash).toBe(second.code.sourceCodeHash);
+});
+
+test("deployment-time values remain valid in runtime environment variables", () => {
+  const url = new TerraformVariable(stack, "api_url", { type: "string" })
+    .stringValue;
+  const fn = new NodejsFunction(stack, "runtime", {
+    ...props,
+    environment: { API_URL: url },
+    bundling: {
+      keepNames: true,
+      moduleTypes: { ".sql": "text" },
+      rolldownOptions: { output: { sourcemapExcludeSources: true } },
+    },
+  });
+  fn.addEnvironment("SECOND_URL", url);
+  const lambda = resource(
+    JSON.parse(Testing.synth(stack)),
+    "aws_lambda_function",
+  );
+  expect(lambda.environment.variables.API_URL).toBe("${var.api_url}");
+  expect(lambda.environment.variables.SECOND_URL).toBe("${var.api_url}");
+  expect(
+    () =>
+      new NodejsFunction(stack, "build", {
+        ...props,
+        bundling: { define: { API_URL: JSON.stringify(url) } },
+      }),
+  ).toThrow(/NodejsFunction.environment/);
 });
 
 test("validates options which cannot produce a Node.js function", () => {

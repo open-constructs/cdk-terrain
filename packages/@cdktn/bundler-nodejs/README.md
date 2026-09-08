@@ -18,4 +18,8 @@ const code = new NodejsAsset(stack, "Code", {
 
 For automatic Lambda, IAM and logging setup, use [`NodejsFunction`](../aws-lambda-nodejs/README.md). That guide also documents bundling options, path resolution, reproducibility, plugin configuration, platform requirements and native dependency boundaries.
 
+`bundling.keepNames` preserves function and class names. `bundling.moduleTypes` exposes Rolldown's native loaders, and `bundling.rolldownOptions` exposes its built-in resolution, transform, tree-shaking and output options as typed JSON data. Use `bundling.configFile` for plugins, callbacks and regular expressions. Build options must be concrete during synthesis; unresolved Terraform tokens are rejected.
+
+`compressedSize` is the ZIP's size in bytes; `uncompressedSize` counts all entries, including source maps, emitted assets and copied files. These sizes are read without extracting the archive. `NodejsFunction` enforces Lambda's upload limits; the reusable `NodejsAsset` does not impose AWS-specific limits.
+
 This package uses Rolldown's platform-specific native Rust bindings distributed through npm; it requires no Rust compiler or global bundler installation. Keep optional npm dependencies enabled so the correct binding is installed for the synthesis host. No bundler or build dependencies are included in deployment ZIPs unless the handler itself imports them.
