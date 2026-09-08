@@ -51,6 +51,8 @@ Node.js 24 is the latest stable managed Lambda runtime; Node.js 26 is currently 
 
 ## Configure the function
 
+The class name follows AWS CDK's familiar `NodejsFunction` terminology. This is a CDK Terrain implementation over Terraform's generated `LambdaFunction`, with its own props and defaults; the `@cdktn` package scope identifies the framework.
+
 `NodejsFunction` extends the generated `LambdaFunction`. Its outputs, provider support, lifecycle controls, setters, and Terraform overrides remain available. Packaging inputs are owned by the construct. Define multiple functions with ordinary language loops rather than Terraform `count` or `forEach`.
 
 ```ts
