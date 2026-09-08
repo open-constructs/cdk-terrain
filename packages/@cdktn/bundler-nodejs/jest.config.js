@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) HashiCorp, Inc.
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
 module.exports = {
   displayName: '@cdktn/bundler-nodejs',
   preset: '../../../jest.preset.js',
