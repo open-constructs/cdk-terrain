@@ -19,6 +19,8 @@ CDKTN includes two packages:
 - [cdktn-cli](./packages/cdktn-cli) - A CLI that allows users to run commands to initialize, import, and synthesize CDK Terrain applications.
 - [cdktn](./packages/cdktn) - A library for defining Terraform resources using programming constructs.
 
+First-party TypeScript/JavaScript packages add [Node.js Lambda functions](./packages/@cdktn/aws-lambda-nodejs) and reusable [native Node.js bundle assets](./packages/@cdktn/bundler-nodejs).
+
 ## Get Started
 
 - [Overview](https://cdktn.io/docs)

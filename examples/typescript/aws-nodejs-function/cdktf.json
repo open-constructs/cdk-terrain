@@ -1,0 +1,5 @@
+{
+  "language": "typescript",
+  "app": "node main.ts",
+  "sendCrashReports": "false"
+}
