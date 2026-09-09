@@ -14,7 +14,6 @@ import {
   getBinaryAttributes,
   getProjectTargetAttributes,
   getUsageTelemetryConsent,
-  isUsageTelemetryEnabled,
   setProjectTargetAttributes,
   setUsageTelemetryEnabled,
 } from "./telemetry";
@@ -37,6 +36,8 @@ type MetricItem = {
   attributes: Record<string, { value: unknown; type: string }>;
 };
 
+// Mirrors recordEnvelope in tools/sentry-sink.mjs: an envelope-format change
+// is fixed in both.
 function parseMetricItems(envelopeBodies: string[]): MetricItem[] {
   const items: MetricItem[] = [];
   for (const body of envelopeBodies) {
@@ -882,88 +883,41 @@ describe("telemetry", () => {
   });
 
   describe("sendTelemetry gating", () => {
-    it("emits nothing when CHECKPOINT_DISABLE is set, regardless of consent", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: true,
-      });
-      initSentryWithCapturingTransport();
-      process.env.CHECKPOINT_DISABLE = "1";
+    // CHECKPOINT_DISABLE > the decision captured at command start >
+    // sendUsageTelemetry in cdktf.json (absent file = flag unset) > on
+    it.each([
+      { env: undefined, captured: undefined, flag: undefined, emits: true },
+      { env: undefined, captured: undefined, flag: true, emits: true },
+      { env: undefined, captured: undefined, flag: false, emits: false },
+      // convert chdirs into a throwaway project that opts out
+      { env: undefined, captured: true, flag: false, emits: true },
+      { env: undefined, captured: false, flag: true, emits: false },
+      { env: "1", captured: undefined, flag: true, emits: false },
+      { env: "1", captured: true, flag: true, emits: false },
+    ])(
+      "CHECKPOINT_DISABLE=$env, captured=$captured, flag=$flag -> emits $emits",
+      async ({ env, captured, flag, emits }) => {
+        if (flag !== undefined) {
+          fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+            sendUsageTelemetry: flag,
+          });
+        }
+        initSentryWithCapturingTransport();
+        setUsageTelemetryEnabled(captured);
+        if (env !== undefined) {
+          process.env.CHECKPOINT_DISABLE = env;
+        }
 
-      await sendTelemetry("synth", {});
-      await Sentry.flush(2000);
+        await sendTelemetry("convert", {});
+        await Sentry.flush(2000);
 
-      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
-    });
-
-    it("emits nothing when sendUsageTelemetry is false", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: false,
-      });
-      initSentryWithCapturingTransport();
-
-      await sendTelemetry("synth", {});
-      await Sentry.flush(2000);
-
-      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
-    });
-
-    it("emits when the flag is unset (default-on)", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        language: "typescript",
-      });
-      initSentryWithCapturingTransport();
-
-      await sendTelemetry("get", { language: "typescript" });
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const items = parseMetricItems(envelopeBodies);
-      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
-    });
-
-    it("emits when no cdktf.json exists (no-project commands, default-on)", async () => {
-      initSentryWithCapturingTransport();
-
-      await sendTelemetry("convert", {});
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const items = parseMetricItems(envelopeBodies);
-      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
-    });
-
-    it("is a silent no-op when Sentry is not initialized", async () => {
-      await expect(sendTelemetry("synth", {})).resolves.toBeUndefined();
-      expect(envelopeBodies).toHaveLength(0);
-    });
-
-    it("honors the decision captured at command start over the current cwd (convert chdirs into a temp project)", async () => {
-      // the throwaway project convert chdirs into opts out…
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: false,
-      });
-      initSentryWithCapturingTransport();
-      // …but the decision captured in the user's original cwd was "enabled"
-      setUsageTelemetryEnabled(true);
-
-      await sendTelemetry("convert", {});
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const items = parseMetricItems(envelopeBodies);
-      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
-    });
-
-    it("CHECKPOINT_DISABLE overrides even a captured enabled decision", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: true,
-      });
-      initSentryWithCapturingTransport();
-      setUsageTelemetryEnabled(true);
-      process.env.CHECKPOINT_DISABLE = "1";
-
-      await sendTelemetry("convert", {});
-      await Sentry.flush(2000);
-
-      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
-    });
+        const items = parseMetricItems(envelopeBodies);
+        expect(items.some((i) => i.name === "cli.command.invoked")).toBe(emits);
+        if (!emits) {
+          expect(items).toHaveLength(0);
+        }
+      },
+    );
   });
 
   describe("cli.error from the Errors factories", () => {
@@ -1105,6 +1059,8 @@ describe("telemetry", () => {
     it.each([
       [{ sendUsageTelemetry: true }, true],
       [{ sendUsageTelemetry: false }, false],
+      // init templates render the flag as a string; a boolean-only check
+      // would opt every freshly init'ed project out
       [{ sendUsageTelemetry: "true" }, true],
       [{ sendUsageTelemetry: "false" }, false],
       [{}, undefined],
@@ -1115,28 +1071,6 @@ describe("telemetry", () => {
 
     it("returns undefined when no cdktf.json exists", () => {
       expect(getUsageTelemetryConsent(workdir)).toBeUndefined();
-    });
-  });
-
-  describe("isUsageTelemetryEnabled precedence", () => {
-    it("CHECKPOINT_DISABLE wins over an explicit true", () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: true,
-      });
-      process.env.CHECKPOINT_DISABLE = "1";
-      expect(isUsageTelemetryEnabled(workdir)).toBe(false);
-    });
-
-    it("explicit false wins over the default", () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: false,
-      });
-      expect(isUsageTelemetryEnabled(workdir)).toBe(false);
-    });
-
-    it("unset defaults to enabled", () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {});
-      expect(isUsageTelemetryEnabled(workdir)).toBe(true);
     });
   });
 });

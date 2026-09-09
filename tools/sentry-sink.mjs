@@ -18,6 +18,8 @@ const port = Number(process.argv[2] ?? 9999);
 const items = [];
 const bodies = [];
 
+// Mirrors parseMetricItems in packages/@cdktn/commons/src/telemetry.test.ts:
+// an envelope-format change is fixed in both.
 function recordEnvelope(body) {
   bodies.push(body);
   const lines = body.split("\n").filter(Boolean);

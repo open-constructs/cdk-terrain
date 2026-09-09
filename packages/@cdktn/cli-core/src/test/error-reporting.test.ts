@@ -13,15 +13,9 @@ jest.mock("@sentry/node", () => ({
     setPropagationContext: jest.fn(),
   })),
   setContext: jest.fn(),
-  addBreadcrumb: jest.fn(),
-  captureException: jest.fn(),
+  addBreadcrumb: jest.fn(), // the commons logger records every debug line
   flush: jest.fn().mockResolvedValue(true),
   close: jest.fn().mockResolvedValue(true),
-  metrics: {
-    count: jest.fn(),
-    distribution: jest.fn(),
-    gauge: jest.fn(),
-  },
 }));
 
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
@@ -42,6 +36,8 @@ import {
 // the ci-info mock above replaces the module with a plain mutable object,
 // so tests can flip isCI; the published types declare it readonly
 const ciInfoMock = ciInfo as unknown as { isCI: boolean };
+
+const initOptions = () => (Sentry.init as jest.Mock).mock.calls.at(-1)![0];
 
 describe("consent gating (initializErrorReporting)", () => {
   let workdir: string;
@@ -129,24 +125,57 @@ describe("consent gating (initializErrorReporting)", () => {
     expect(Sentry.init).not.toHaveBeenCalled();
   });
 
-  it("usage unset, non-interactive (no TTY) -> no prompt, usage default-on initializes Sentry", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: false,
-    });
-    setInteractive(false);
-    const crashPrompt = jest.fn();
-    const usagePrompt = jest.fn();
+  // Every condition that makes prompting impossible falls through to the
+  // non-interactive defaults: no prompt, nothing persisted, usage default-on.
+  it.each([
+    ["no TTY", () => setInteractive(false), true],
+    [
+      "TTY but ciInfo.isCI",
+      () => {
+        setInteractive(true);
+        ciInfoMock.isCI = true;
+      },
+      true,
+    ],
+    [
+      "TTY but CI env var",
+      () => {
+        setInteractive(true);
+        process.env.CI = "true";
+      },
+      true,
+    ],
+    [
+      "TTY but no cdktf.json (no-project command)",
+      () => setInteractive(true),
+      false,
+    ],
+  ])(
+    "usage unset, %s -> no prompt, nothing persisted, default-on init",
+    async (_case, arrange, hasProject) => {
+      if (hasProject) {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+          sendCrashReports: false,
+        });
+      }
+      arrange();
+      const crashPrompt = jest.fn();
+      const usagePrompt = jest.fn();
 
-    await initializErrorReporting(crashPrompt, usagePrompt);
+      await initializErrorReporting(crashPrompt, usagePrompt);
 
-    expect(crashPrompt).not.toHaveBeenCalled();
-    expect(usagePrompt).not.toHaveBeenCalled();
-    // nothing persisted without consent
-    expect(
-      fs.readJsonSync(path.join(workdir, "cdktf.json")).sendUsageTelemetry,
-    ).toBeUndefined();
-    expect(Sentry.init).toHaveBeenCalledTimes(1);
-  });
+      expect(crashPrompt).not.toHaveBeenCalled();
+      expect(usagePrompt).not.toHaveBeenCalled();
+      if (hasProject) {
+        expect(
+          fs.readJsonSync(path.join(workdir, "cdktf.json")).sendUsageTelemetry,
+        ).toBeUndefined();
+      } else {
+        expect(fs.existsSync(path.join(workdir, "cdktf.json"))).toBe(false);
+      }
+      expect(Sentry.init).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("pins environment and server name so SENTRY_* env vars never reach the SDK options", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
@@ -159,30 +188,18 @@ describe("consent gating (initializErrorReporting)", () => {
 
     await initializErrorReporting(jest.fn(), jest.fn());
 
-    expect(Sentry.init).toHaveBeenCalledWith(
-      expect.objectContaining({
-        environment: "production",
-        serverName: "cdktn-cli",
-      }),
-    );
+    // the only production-side lock that the hostname never reaches Sentry
+    // (the commons delivery tests set serverName themselves)
+    expect(initOptions()).toMatchObject({
+      environment: "production",
+      serverName: "cdktn-cli",
+    });
     const scope = (Sentry.getCurrentScope as jest.Mock).mock.results[0].value;
     expect(scope.setPropagationContext).toHaveBeenCalledWith(
       expect.objectContaining({
         traceId: expect.not.stringContaining("0af7651916cd43dd"),
       }),
     );
-  });
-
-  it("usage unset, CI (TTY but ciInfo.isCI) -> no prompt, default-on init", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {});
-    setInteractive(true);
-    ciInfoMock.isCI = true;
-    const usagePrompt = jest.fn();
-
-    await initializErrorReporting(jest.fn(), usagePrompt);
-
-    expect(usagePrompt).not.toHaveBeenCalled();
-    expect(Sentry.init).toHaveBeenCalledTimes(1);
   });
 
   it("CHECKPOINT_DISABLE -> no usage prompt, no init when crash is off", async () => {
@@ -209,12 +226,6 @@ describe("consent gating (initializErrorReporting)", () => {
     await initializErrorReporting();
 
     expect(Sentry.init).toHaveBeenCalledTimes(1);
-    // crash consent present -> error events pass beforeSend
-    const beforeSend = (Sentry.init as jest.Mock).mock.calls[0][0].beforeSend;
-    const event = { message: "boom" };
-    expect(
-      await beforeSend(event, { originalException: new Error("boom") }),
-    ).toBe(event);
   });
 
   it("explicit sendUsageTelemetry: false + crash off -> Sentry never initialized", async () => {
@@ -227,42 +238,6 @@ describe("consent gating (initializErrorReporting)", () => {
     await initializErrorReporting();
 
     expect(Sentry.init).not.toHaveBeenCalled();
-  });
-
-  it("usage-only init (crash declined) drops error events in beforeSend", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: false,
-      sendUsageTelemetry: true,
-    });
-    setInteractive(false);
-
-    await initializErrorReporting();
-
-    expect(Sentry.init).toHaveBeenCalledTimes(1);
-    const beforeSend = (Sentry.init as jest.Mock).mock.calls[0][0].beforeSend;
-    expect(
-      await beforeSend(
-        { message: "boom" },
-        { originalException: new Error("boom") },
-      ),
-    ).toBeNull();
-  });
-
-  it("crash-enabled beforeSend still drops Usage Errors", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: true,
-    });
-    setInteractive(false);
-
-    await initializErrorReporting();
-
-    const beforeSend = (Sentry.init as jest.Mock).mock.calls[0][0].beforeSend;
-    expect(
-      await beforeSend(
-        { message: "x" },
-        { originalException: new Error("Usage Error: bad input") },
-      ),
-    ).toBeNull();
   });
 
   it("no SENTRY_DSN -> no init even with consent", async () => {
@@ -278,19 +253,6 @@ describe("consent gating (initializErrorReporting)", () => {
     expect(Sentry.init).not.toHaveBeenCalled();
   });
 
-  it("no cdktf.json (no-project command) -> no prompt, usage default-on init, nothing persisted", async () => {
-    setInteractive(true);
-    const crashPrompt = jest.fn();
-    const usagePrompt = jest.fn();
-
-    await initializErrorReporting(crashPrompt, usagePrompt);
-
-    expect(crashPrompt).not.toHaveBeenCalled();
-    expect(usagePrompt).not.toHaveBeenCalled();
-    expect(fs.existsSync(path.join(workdir, "cdktf.json"))).toBe(false);
-    expect(Sentry.init).toHaveBeenCalledTimes(1);
-  });
-
   it("init options pin release, tracesSampleRate 0 and a fixed serverName", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
@@ -299,10 +261,63 @@ describe("consent gating (initializErrorReporting)", () => {
 
     await initializErrorReporting();
 
-    const options = (Sentry.init as jest.Mock).mock.calls[0][0];
+    const options = initOptions();
     expect(options.release).toMatch(/^cdktn-cli-/);
     expect(options.tracesSampleRate).toBe(0);
     expect(options.serverName).toBe("cdktn-cli");
+  });
+
+  describe("beforeSend", () => {
+    const boom = { message: "boom" };
+
+    it("passes error events through when crash reporting is consented, even under CHECKPOINT_DISABLE", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: true,
+      });
+      setInteractive(false);
+      process.env.CHECKPOINT_DISABLE = "1";
+
+      await initializErrorReporting();
+
+      expect(
+        await initOptions().beforeSend(boom, {
+          originalException: new Error("boom"),
+        }),
+      ).toBe(boom);
+    });
+
+    it("drops error events on a usage-only init (crash declined)", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: false,
+        sendUsageTelemetry: true,
+      });
+      setInteractive(false);
+
+      await initializErrorReporting();
+
+      expect(Sentry.init).toHaveBeenCalledTimes(1);
+      expect(
+        await initOptions().beforeSend(boom, {
+          originalException: new Error("boom"),
+        }),
+      ).toBeNull();
+    });
+
+    it("still drops Usage Errors when crash reporting is enabled", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: true,
+      });
+      setInteractive(false);
+
+      await initializErrorReporting();
+
+      expect(
+        await initOptions().beforeSend(
+          { message: "x" },
+          { originalException: new Error("Usage Error: bad input") },
+        ),
+      ).toBeNull();
+    });
   });
 });
 
@@ -322,6 +337,8 @@ describe("shouldReportCrash tri-state", () => {
     [{ sendCrashReports: false }, false],
     [{ sendCrashReports: "true" }, true],
     [{ sendCrashReports: "false" }, false],
+    // an absent flag once read as false, which made the crash-consent
+    // prompt unreachable; undefined is what triggers it
     [{}, undefined],
   ])("reads %j as %p", (config, expected) => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
