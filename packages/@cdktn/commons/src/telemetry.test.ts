@@ -773,7 +773,8 @@ describe("telemetry", () => {
       const stacks = items
         .filter((i) => i.name === "cli.stack")
         .map(attributeValues);
-      // build metadata is stripped like binary_version; no release, no value
+      // build metadata is stripped like binary_version; a version without a
+      // MAJOR.MINOR.PATCH prefix yields no attribute at all
       expect(stacks[0]).toMatchObject({
         backend: "other",
         library_version: "0.21.0",

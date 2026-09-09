@@ -124,7 +124,8 @@ fs.writeFileSync(
 JS
 
 echo "==> STACK trigger: cdktn synth (hand-written stack)"
-node "$CDKTN" synth --check-code-maker-output=false >/dev/null
+node "$CDKTN" synth --check-code-maker-output=false >/dev/null \
+  || { echo "FAIL: the stack trigger synth exited non-zero; an unrelated synth regression also fails here" >&2; exit 1; }
 
 popd >/dev/null
 rm -rf "$STACK_WORK"
@@ -172,11 +173,14 @@ echo "$RAW" | grep -q 'hashicorp/random' \
   || fail "normalized provider source missing from the stack metrics"
 echo "$RAW" | grep -q 'private-registry' \
   || fail "private-registry provider was not reduced to its kind"
-echo "$ITEMS" | grep -q '"sentry.environment"' && echo "$RAW" | grep -q '"production"' \
+# matched as key/value adjacency inside the metric item, so a "production"
+# elsewhere in the envelope cannot satisfy the check
+echo "$RAW" | grep -q '"sentry.environment":{"value":"production"' \
   || fail "sentry.environment is not the fixed production value"
 for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example leak-org leak-provider LEAK-ENV-SENTRY LEAK-BAGGAGE-SENTRY 0af7651916cd43dd8448eb211c80319c; do
-  echo "$RAW" | grep -q "$secret" \
-    && fail "$secret reached the sink: stack names, resource ids, provider hosts/paths and SENTRY_* env values must never be sent"
+  if echo "$RAW" | grep -q "$secret"; then
+    fail "$secret reached the sink: stack names, resource ids, provider hosts/paths and SENTRY_* env values must never be sent"
+  fi
 done
 echo "$ITEMS" | grep -q '"error_type"' \
   || fail "error_type attribute missing on cli.command.error"
@@ -186,8 +190,9 @@ echo "$ITEMS" | grep -q '{"type":"event"}' \
   || fail "no crash event reached the sink from the entrypoint failure path"
 echo "$CRASH_OUTPUT" | grep -q '^Debug Information:' \
   || fail "the crash trigger did not reach the debug information block"
-echo "$CRASH_OUTPUT" | grep -q 'ERR_UNHANDLED_REJECTION\|PromiseRejectionHandledWarning' \
-  && fail "the crash trigger orphaned a rejection"
+if echo "$CRASH_OUTPUT" | grep -q 'ERR_UNHANDLED_REJECTION\|PromiseRejectionHandledWarning'; then
+  fail "the crash trigger orphaned a rejection"
+fi
 
 # A cheap bundle scan; the sink assertions above are what prove the transport.
 HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"

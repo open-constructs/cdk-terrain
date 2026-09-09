@@ -61,8 +61,8 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
-      # Builds a throwaway bundle pointed at a local sink and runs it with
-      # CHECKPOINT_DISABLE unset; nothing leaves the runner and the packaged
-      # bundle is untouched.
+      # Builds a throwaway bundle pointed at a local sink; the script unsets
+      # the job-level CHECKPOINT_DISABLE=1 for its own child processes so the
+      # metrics flow. Nothing leaves the runner; the packaged bundle is untouched.
       - name: telemetry delivery e2e
         run: tools/validate-sentry-e2e.sh
