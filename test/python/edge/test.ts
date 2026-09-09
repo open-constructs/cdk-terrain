@@ -124,7 +124,7 @@ describe("full integration test", () => {
         "${list_block_resource.list.req[0].reqstr}",
       ]);
       expect(item.numList).toEqual([
-        "${element(list_block_resource.list.req, 0).reqnum)}",
+        "${element(list_block_resource.list.req, 0).reqnum}",
       ]);
     });
 
@@ -168,24 +168,16 @@ describe("full integration test", () => {
       const item = stack.byId("from_map");
 
       // Expands map references
-      expect(item.bool).toEqual(
-        '${lookup(map_resource.map.reqMap, "key1", false)}',
-      );
+      expect(item.bool).toEqual("${map_resource.map.reqMap.key1}");
       expect(item.str).toEqual(
         '${lookup(map_resource.map.optMap, "key1", "missing")}',
       );
-      expect(item.num).toEqual(
-        '${lookup(map_resource.map.computedMap, "key1", 0)}',
-      );
-      expect(item.boolList).toEqual([
-        '${lookup(map_resource.map.reqMap, "key1", false)}',
-      ]);
+      expect(item.num).toEqual("${map_resource.map.computedMap.key1}");
+      expect(item.boolList).toEqual(["${map_resource.map.reqMap.key1}"]);
       expect(item.strList).toEqual([
         '${lookup(map_resource.map.optMap, "key1", "missing")}',
       ]);
-      expect(item.numList).toEqual([
-        '${lookup(map_resource.map.computedMap, "key1", 0)}',
-      ]);
+      expect(item.numList).toEqual(["${map_resource.map.computedMap.key1}"]);
     });
 
     onlyJson("item references a full map", () => {
