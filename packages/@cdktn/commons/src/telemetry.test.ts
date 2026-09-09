@@ -916,6 +916,9 @@ describe("telemetry", () => {
       ["a/b/c", "other"],
       ["", "other"],
       ["registry.terraform.io/hashicorp", "other"],
+      [`${"n".repeat(65)}/aws`, "other"],
+      [`${"n".repeat(64)}/aws`, `${"n".repeat(64)}/aws`],
+      [`${"n".repeat(64)}/${"t".repeat(64)}`, "other"],
     ])("normalizeProviderSource(%s) -> %s", (input, expected) => {
       expect(normalizeProviderSource(input)).toBe(expected);
     });
@@ -944,6 +947,8 @@ describe("telemetry", () => {
       ["localhost:8080/leak-org/mod", "other"],
       ["terraform-aws-modules/vpc/aws//modules/leak-sub", "other"],
       ["not-a-module", "other"],
+      [`${"n".repeat(65)}/vpc/aws`, "other"],
+      [`${"n".repeat(64)}/${"m".repeat(64)}/aws`, "other"],
     ])("classifyModuleSource(%s) -> %s", (input, expected) => {
       expect(classifyModuleSource(input)).toBe(expected);
     });

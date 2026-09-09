@@ -258,6 +258,15 @@ const PUBLIC_PROVIDER_REGISTRIES = [
 const PROVIDER_SEGMENT = /^[a-z0-9][a-z0-9_-]*$/;
 const PROVIDER_HOST = /^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)+)(:\d+)?$/;
 
+// Registry identities are bounded so an over-long hand-written source cannot
+// carry free text through the segment grammar.
+function withinIdentityLimits(segments: string[]): boolean {
+  return (
+    segments.every((segment) => segment.length <= 64) &&
+    segments.join("/").length <= 128
+  );
+}
+
 /**
  * Provider identity for metrics: only public-registry `namespace/type` is sent
  * (`aws`, `hashicorp/aws@~>5`, `registry.terraform.io/hashicorp/aws` are one);
@@ -275,7 +284,8 @@ export function normalizeProviderSource(source: string): string {
     segments.unshift("hashicorp");
   }
   return segments.length === 2 &&
-    segments.every((s) => PROVIDER_SEGMENT.test(s))
+    segments.every((s) => PROVIDER_SEGMENT.test(s)) &&
+    withinIdentityLimits(segments)
     ? segments.join("/")
     : "other";
 }
@@ -349,7 +359,8 @@ export function classifyModuleSource(source: string): string {
   if (segments.length === 4) {
     return "private-registry";
   }
-  return segments.every((segment) => REGISTRY_SEGMENT.test(segment))
+  return segments.every((segment) => REGISTRY_SEGMENT.test(segment)) &&
+    withinIdentityLimits(segments)
     ? segments.join("/")
     : "other";
 }
