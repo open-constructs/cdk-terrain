@@ -23,9 +23,11 @@
     "strictPropertyInitialization": true,
     "stripInternal": true,
     "target": "ES2018",
+    "types": [
+      "node"
+    ],
     "incremental": false,
     "esModuleInterop": true,
-    "baseUrl": ".",
     "paths": {
       "@cdktn/commons": [
         "../../packages/@cdktn/commons/src/provider-schema"

@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "alwaysStrict": true,
-    "baseUrl": ".",
     "declaration": true,
     "declarationMap": true,
     "experimentalDecorators": true,
@@ -25,6 +24,10 @@
     "skipLibCheck": true,
     "stripInternal": true,
     "target": "ES2018",
+    "types": [
+      "node",
+      "jest"
+    ],
     "incremental": false,
     "esModuleInterop": true,
     "rootDir": "./src",

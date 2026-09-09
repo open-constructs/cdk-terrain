@@ -9,7 +9,7 @@
     "cdktn": "bin/cdktn"
   },
   "scripts": {
-    "compile-build-config": "tsc build.ts --outDir build-config",
+    "compile-build-config": "tsc build.ts --outDir build-config --ignoreConfig --module commonjs --target es2022",
     "prebuild": "pnpm run compile-build-config",
     "build": "tsc --noEmit",
     "postbuild": "node build-config/build.js",
@@ -93,6 +93,6 @@
     "semver": "7.8.5",
     "strip-ansi": "6.0.1",
     "tsc-files": "1.1.4",
-    "typescript": "^5.0.4"
+    "typescript": "~6.0.0"
   }
 }

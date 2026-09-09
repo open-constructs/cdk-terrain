@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "alwaysStrict": true,
-    "baseUrl": ".",
     "declaration": true,
     "declarationMap": true,
     "experimentalDecorators": true,

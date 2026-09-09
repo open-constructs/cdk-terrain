@@ -24,6 +24,10 @@
     "stripInternal": true,
     "skipLibCheck": true,
     "target": "ES2018",
+    "types": [
+      "node",
+      "jest"
+    ],
     "incremental": false,
     "esModuleInterop": true,
     "rootDir": "./src",
