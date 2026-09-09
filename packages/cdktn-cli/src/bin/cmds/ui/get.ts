@@ -58,6 +58,9 @@ export async function runGet({
   stream?.start();
   stream?.setBar(`${GetStatus.STARTING}...`, { spinner: true });
 
+  // the generator reports one target at a time; collected into a single
+  // command metric with per-binding counts
+  const generatedTargets: { type: string; source: string }[] = [];
   try {
     await get({
       constraints,
@@ -67,8 +70,14 @@ export async function runGet({
         stream?.setBar(`${status}...`, { spinner: true });
       },
       providerSchemaCachePath,
+      reportTelemetry: async ({ trackingPayload }) => {
+        generatedTargets.push({
+          type: trackingPayload.type,
+          source: trackingPayload.source,
+        });
+      },
     });
-    await sendTelemetry("get", { language });
+    await sendTelemetry("get", { language, targets: generatedTargets });
   } catch (e: any) {
     // not counted here: the entrypoint's failure reporter counts the run
     // once, under the command's scope
