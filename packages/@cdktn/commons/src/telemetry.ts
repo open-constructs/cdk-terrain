@@ -464,38 +464,39 @@ function sendStackTelemetry(
   });
 }
 
-interface GetTarget {
-  type: "provider" | "module";
-  source: string;
+// Payload entries are validated one by one: a throw here would be swallowed
+// by sendTelemetry's catch and skip the command metric for the whole run.
+function sourceOf(entry: unknown): string | undefined {
+  return typeof entry === "string" ? entry : undefined;
 }
 
 // `get` payload: one entry per generated binding, counted per provider and
 // module; only the totals land on the command metric.
-function sendGetTelemetry(targets: GetTarget[], attributes: Attributes): void {
-  const providers = targets.filter((t) => t.type === "provider");
-  const modules = targets.filter((t) => t.type === "module");
+function sendGetTelemetry(targets: unknown[], attributes: Attributes): void {
+  const byType = (type: string) =>
+    targets.flatMap((target: any) => {
+      const source = sourceOf(target?.source);
+      return target?.type === type && source !== undefined ? [source] : [];
+    });
+  const providers = byType("provider");
+  const modules = byType("module");
   attributes.provider_count = providers.length;
   attributes.module_count = modules.length;
-  for (const target of providers) {
+  for (const source of providers) {
     Sentry.metrics.count("cli.get.provider", 1, {
-      attributes: {
-        ...attributes,
-        provider: normalizeProviderSource(target.source),
-      },
+      attributes: { ...attributes, provider: normalizeProviderSource(source) },
     });
   }
-  for (const target of modules) {
+  for (const source of modules) {
     Sentry.metrics.count("cli.get.module", 1, {
-      attributes: {
-        ...attributes,
-        module: classifyModuleSource(target.source),
-      },
+      attributes: { ...attributes, module: classifyModuleSource(source) },
     });
   }
 }
 
 // `init` payload: the providers the new project was created with.
-function sendInitTelemetry(providers: string[], attributes: Attributes): void {
+function sendInitTelemetry(entries: unknown[], attributes: Attributes): void {
+  const providers = entries.flatMap((entry) => sourceOf(entry) ?? []);
   attributes.provider_count = providers.length;
   for (const provider of providers) {
     Sentry.metrics.count("cli.init.provider", 1, {

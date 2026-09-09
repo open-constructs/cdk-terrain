@@ -676,6 +676,8 @@ describe("telemetry", () => {
       expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
     });
 
+    // a throw inside a payload handler is swallowed by sendTelemetry's catch
+    // and would skip the command metric for the whole run
     it("tolerates malformed metadata entries", async () => {
       await sendTelemetry("synth", {
         stackMetadata: [null, "nope", { overrides: "nope", imports: [] }],
@@ -693,7 +695,35 @@ describe("telemetry", () => {
         provider: "hashicorp/aws",
         binding: "generated",
       });
+      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
     });
+
+    it.each([
+      ["init", { addedProviders: [null, 42, "aws"] }, "cli.init.provider"],
+      [
+        "get",
+        {
+          targets: [{ type: "provider" }, null, { type: "module", source: 7 }],
+        },
+        "cli.get.provider",
+      ],
+    ])(
+      "still counts the %s command with malformed %j entries",
+      async (command, payload, metric) => {
+        await sendTelemetry(command, payload);
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const items = parseMetricItems(envelopeBodies);
+        const invoked = items.find((i) => i.name === "cli.command.invoked")!;
+        expect(invoked).toBeDefined();
+        expect(items.filter((i) => i.name === metric)).toHaveLength(
+          command === "init" ? 1 : 0,
+        );
+        expect(attributeValues(invoked).provider_count).toBe(
+          command === "init" ? 1 : 0,
+        );
+      },
+    );
   });
 
   describe("attribute validation", () => {
