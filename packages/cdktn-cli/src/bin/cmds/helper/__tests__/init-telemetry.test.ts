@@ -24,14 +24,14 @@ jest.mock("@cdktn/commons", () => {
   return { ...actual, sendTelemetry: jest.fn().mockResolvedValue(undefined) };
 });
 
-jest.mock("../../../bin/cmds/helper/terraform-check", () => ({
+jest.mock("../terraform-check", () => ({
   getTerraformVersion: jest.fn().mockResolvedValue(undefined),
   terraformCheck: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { initializErrorReporting } from "@cdktn/cli-core";
 import { sendTelemetry, setUsageTelemetryEnabled } from "@cdktn/commons";
-import { runInit } from "../../../bin/cmds/helper/init";
+import { runInit } from "../init";
 
 const callOrder = (mock: unknown) =>
   (mock as jest.Mock).mock.invocationCallOrder[0];

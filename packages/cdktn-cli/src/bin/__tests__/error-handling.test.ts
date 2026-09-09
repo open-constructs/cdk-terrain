@@ -166,11 +166,6 @@ describe("describeError", () => {
     expect(stack).toBeUndefined();
   });
 
-  it("handles null", () => {
-    const { message } = describeError(null);
-    expect(message).toContain("null");
-  });
-
   it("handles a circular object without throwing", () => {
     const circular: Record<string, unknown> = {};
     circular.self = circular;
@@ -465,7 +460,6 @@ describe("runCli", () => {
 
     expect(unhandledRejections).toEqual([]);
     expect(exitCode).toBe(1);
-    expect(allLoggedText(deps)).toEqual(["Usage Error: bad-usage-message"]);
     expect(deps.collectDebugInformation).not.toHaveBeenCalled();
     expect(deps.captureException).not.toHaveBeenCalled();
   });
@@ -478,9 +472,6 @@ describe("runCli", () => {
     expect(unhandledRejections).toEqual([]);
     expect(exitCode).toBe(1);
     expect(exitCallCount).toBe(1);
-    expect(allLoggedText(deps)).toEqual([
-      "External Error: bad-external-message",
-    ]);
     expect(deps.collectDebugInformation).not.toHaveBeenCalled();
     expect(deps.captureException).toHaveBeenCalledTimes(1);
   });

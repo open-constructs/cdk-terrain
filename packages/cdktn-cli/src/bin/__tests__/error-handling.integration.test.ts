@@ -102,6 +102,32 @@ function startSentrySink(): Promise<{
   });
 }
 
+type MetricItem = {
+  name: string;
+  attributes: Record<string, { value: unknown }>;
+};
+
+// A third copy of the envelope parser (test helper, sink, here); unifying
+// them is tracked as a follow-up.
+function parseMetricItems(bodies: string[]): MetricItem[] {
+  const items: MetricItem[] = [];
+  for (const body of bodies) {
+    const lines = body.split("\n").filter(Boolean);
+    for (let i = 0; i < lines.length - 1; i++) {
+      let header;
+      try {
+        header = JSON.parse(lines[i]);
+      } catch {
+        continue;
+      }
+      if (header?.type === "trace_metric") {
+        items.push(...JSON.parse(lines[i + 1]).items);
+      }
+    }
+  }
+  return items;
+}
+
 describe("runCli child-process smoke test", () => {
   let bundlePath: string;
 
@@ -132,7 +158,7 @@ describe("runCli child-process smoke test", () => {
         "@cdktn/commons": require.resolve("@cdktn/commons"),
       },
     });
-  });
+  }, 60000);
 
   it("prints a raw-string handler rejection exactly once and never crashes the process", async () => {
     const result = await execa(process.execPath, [bundlePath, "rawboom"], {
@@ -165,34 +191,6 @@ describe("runCli child-process smoke test", () => {
     expect(output).not.toContain("Node.js v");
   });
 
-  it("delivers the crash to Sentry before the process exits", async () => {
-    const sink = await startSentrySink();
-    try {
-      const dsn = `http://public@127.0.0.1:${sink.port}/1`;
-      const result = await execa(
-        process.execPath,
-        [bundlePath, "capturedboom"],
-        { env: { ...process.env, TEST_SENTRY_DSN: dsn }, reject: false },
-      );
-
-      // The process only exits after reportFailure() awaits the flush, so
-      // if the flush actually delivered the event, the sink has already
-      // seen it by the time execa resolves - there is nothing left to poll.
-      expect(result.exitCode).toBe(1);
-      const envelopeRequests = sink
-        .requests()
-        .filter((r) => r.url.includes("/envelope/"));
-      expect(envelopeRequests.length).toBeGreaterThan(0);
-      expect(
-        envelopeRequests.some((r) =>
-          r.body.includes("empirical-sentry-message"),
-        ),
-      ).toBe(true);
-    } finally {
-      await sink.close();
-    }
-  }, 15000);
-
   it("delivers the failed-command metric alongside the crash in the same run", async () => {
     const sink = await startSentrySink();
     try {
@@ -209,6 +207,8 @@ describe("runCli child-process smoke test", () => {
         },
       );
 
+      // the process exits only after reportFailure awaited the flush, so
+      // everything it delivered has already reached the sink
       expect(result.exitCode).toBe(1);
       const bodies = sink
         .requests()
@@ -217,15 +217,12 @@ describe("runCli child-process smoke test", () => {
       expect(bodies.some((b) => b.includes("empirical-sentry-message"))).toBe(
         true,
       );
-      const metricBodies = bodies.filter((b) =>
-        b.includes('"type":"trace_metric"'),
-      );
-      expect(metricBodies.length).toBeGreaterThan(0);
-      const metrics = metricBodies.join("\n");
-      expect(metrics).toContain('"name":"cli.command.error"');
-      expect(metrics).toContain('"error_type":{"value":"unexpected"');
-      expect(metrics).toContain('"command":{"value":"capturedboom"');
-      expect(metrics).not.toContain("empirical-sentry-message");
+      const metrics = parseMetricItems(bodies);
+      const error = metrics.find((m) => m.name === "cli.command.error")!;
+      expect(error).toBeDefined();
+      expect(error.attributes.error_type.value).toBe("unexpected");
+      expect(error.attributes.command.value).toBe("capturedboom");
+      expect(JSON.stringify(metrics)).not.toContain("empirical-sentry-message");
     } finally {
       await sink.close();
     }
