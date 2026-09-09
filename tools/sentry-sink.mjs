@@ -9,14 +9,17 @@
 //
 // Usage: node tools/sentry-sink.mjs [port=9999]
 //   GET /__items  -> JSON array of recorded items
-//   GET /__reset  -> clears recorded items
+//   GET /__raw    -> every decoded envelope body, concatenated
+//   GET /__reset  -> clears recorded items and bodies
 import * as http from "node:http";
 import * as zlib from "node:zlib";
 
 const port = Number(process.argv[2] ?? 9999);
 const items = [];
+const bodies = [];
 
 function recordEnvelope(body) {
+  bodies.push(body);
   const lines = body.split("\n").filter(Boolean);
   for (let i = 1; i < lines.length; i++) {
     let header;
@@ -47,8 +50,13 @@ const server = http.createServer((req, res) => {
     res.setHeader("content-type", "application/json");
     return res.end(JSON.stringify(items));
   }
+  if (req.method === "GET" && req.url === "/__raw") {
+    res.setHeader("content-type", "text/plain");
+    return res.end(bodies.join("\n"));
+  }
   if (req.method === "GET" && req.url === "/__reset") {
     items.length = 0;
+    bodies.length = 0;
     return res.end("ok");
   }
 
