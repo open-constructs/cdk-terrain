@@ -44,6 +44,8 @@ type MetricItem = {
   attributes: Record<string, { value: unknown; type: string }>;
 };
 
+// Mirrors recordEnvelope in tools/sentry-sink.mjs: an envelope-format change
+// is fixed in both.
 function parseMetricItems(envelopeBodies: string[]): MetricItem[] {
   const items: MetricItem[] = [];
   for (const body of envelopeBodies) {

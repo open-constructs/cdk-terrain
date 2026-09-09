@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+// Copyright (c) HashiCorp, Inc
+// SPDX-License-Identifier: MPL-2.0
+//
+// Minimal local Sentry "sink" for end-to-end validation of the cdktn-cli
+// telemetry pipeline. Accepts Sentry envelopes on POST /api/<project>/envelope/
+// and records every envelope item type (and, for trace_metric, the metric
+// names with their attribute keys and the command they were counted under).
+//
+// Usage: node tools/sentry-sink.mjs [port=0]
+//   port 0 picks a free port; the chosen one is printed on the first line
+//   GET /__items  -> JSON array of recorded items
+//   GET /__raw    -> every decoded envelope body, concatenated
+//   GET /__reset  -> clears recorded items and bodies
+import * as http from "node:http";
+import * as zlib from "node:zlib";
+
+const port = Number(process.argv[2] ?? 0);
+const items = [];
+const bodies = [];
+
+// Mirrors parseMetricItems in packages/@cdktn/commons/src/telemetry.test.ts:
+// an envelope-format change is fixed in both.
+function recordEnvelope(body) {
+  bodies.push(body);
+  const lines = body.split("\n").filter(Boolean);
+  for (let i = 1; i < lines.length; i++) {
+    let header;
+    try {
+      header = JSON.parse(lines[i]);
+    } catch {
+      continue;
+    }
+    if (!header || typeof header.type !== "string") continue;
+    const item = { type: header.type };
+    if (header.type === "trace_metric" && lines[i + 1]) {
+      try {
+        item.metrics = JSON.parse(lines[i + 1]).items.map((m) => ({
+          name: m.name,
+          attributeKeys: Object.keys(m.attributes ?? {}),
+          command: m.attributes?.command?.value,
+        }));
+      } catch {
+        /* ignore malformed payloads */
+      }
+    }
+    items.push(item);
+    console.log(`[sentry-sink] ${JSON.stringify(item)}`);
+  }
+}
+
+const server = http.createServer((req, res) => {
+  if (req.method === "GET" && req.url === "/__items") {
+    res.setHeader("content-type", "application/json");
+    return res.end(JSON.stringify(items));
+  }
+  if (req.method === "GET" && req.url === "/__raw") {
+    res.setHeader("content-type", "text/plain");
+    return res.end(bodies.join("\n"));
+  }
+  if (req.method === "GET" && req.url === "/__reset") {
+    items.length = 0;
+    bodies.length = 0;
+    return res.end("ok");
+  }
+
+  const chunks = [];
+  req.on("data", (c) => chunks.push(c));
+  req.on("end", () => {
+    let body = Buffer.concat(chunks);
+    const encoding = req.headers["content-encoding"];
+    try {
+      if (encoding === "gzip") body = zlib.gunzipSync(body);
+      else if (encoding === "deflate") body = zlib.inflateSync(body);
+      else if (encoding === "br") body = zlib.brotliDecompressSync(body);
+    } catch {
+      /* fall through with the raw body */
+    }
+    console.log(
+      `[sentry-sink] ${req.method} ${req.url} (${body.length} bytes, encoding=${encoding ?? "none"})`,
+    );
+    // the SDK appends auth as a query string: /api/<p>/envelope/?sentry_key=…
+    if (req.method === "POST" && /\/envelope\/?(\?|$)/.test(req.url ?? "")) {
+      recordEnvelope(body.toString("utf8"));
+    }
+    res.statusCode = 200;
+    res.setHeader("content-type", "application/json");
+    res.end("{}");
+  });
+});
+
+server.listen(port, () => {
+  console.log(
+    `[sentry-sink] listening on http://localhost:${server.address().port}`,
+  );
+});
