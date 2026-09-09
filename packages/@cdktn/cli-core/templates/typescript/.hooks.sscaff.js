@@ -28,8 +28,9 @@ exports.post = (ctx) => {
     throw new Error(`missing context "npm_cdktf"`);
   }
 
-  // Mirrors the `constructs` peer dependency range declared by the cdktn
-  // package. Keep both in sync.
+  // `constructs@10` resolves to the newest 10.x, which satisfies the `^10.6.0`
+  // peer range cdktn declares; that peer range is the real constraint, so
+  // only the major here has to follow cdktn's.
   installDeps([npm_cdktf, `constructs@10`], false, silent);
   // Capped below 7.x: that is the native port, which jsii does not support yet.
   installDeps(
