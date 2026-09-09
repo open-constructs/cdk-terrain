@@ -27,9 +27,10 @@ export const projectRootPath = () => {
 
 // deferred require to keep cdktn-cli main entrypoint small (e.g. for fast shell completions)
 export const requireHandlers = () => {
-  // if file exists relative to this file return its file path
-  // otherwise return the file path relative to the project root
-  const filePath = path.join(__dirname, "..", "handlers.js");
+  // the bundle lays out bin/cdktn.js next to bin/cmds/handlers.js, so a
+  // bundle built elsewhere (tools/validate-sentry-e2e.sh) loads its own
+  // handlers; otherwise fall back to the shipped bundle at the project root
+  const filePath = path.join(__dirname, "cmds", "handlers.js");
   if (fs.existsSync(filePath)) {
     return localRequire(filePath);
   }

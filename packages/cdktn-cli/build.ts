@@ -52,11 +52,15 @@ const nativeNodeModulesPlugin = {
   },
 };
 
+// tools/validate-sentry-e2e.sh builds a throwaway copy with a local-sink DSN
+// next to the shipped bundle, which it never touches.
+const outdir = process.env.CDKTN_BUNDLE_OUTDIR || "./bundle";
+
 const config: esbuild.BuildOptions = {
   entryPoints: ["src/bin/cdktn.ts", "src/bin/cmds/handlers.ts"],
   outbase: "src",
   bundle: true,
-  outdir: "./bundle",
+  outdir,
   format: "cjs",
   target: "node22",
   minify: enableWatch ? false : true,
@@ -104,7 +108,7 @@ const config: esbuild.BuildOptions = {
 (async () => {
   console.log("Building…");
   await esbuild.build(config);
-  fs.copySync("../@cdktn/cli-core/templates", "./bundle/templates");
+  fs.copySync("../@cdktn/cli-core/templates", `${outdir}/templates`);
 
   if (enableWatch) {
     const ctx = await esbuild.context(config);
