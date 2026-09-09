@@ -282,6 +282,30 @@ Command output on stdout:
     return stacks;
   }
 
+  /**
+   * The telemetry-relevant slice of the synthesized stacks: the metadata
+   * block and `required_providers`, one entry per stack. Resource config
+   * and outputs stay out of the payload.
+   */
+  public static telemetryPayload(stacks: SynthesizedStack[]): {
+    stackMetadata: unknown[];
+    requiredProviders: unknown[];
+  } {
+    const contents = stacks.map((stack) => {
+      try {
+        return JSON.parse(stack.content);
+      } catch {
+        return {};
+      }
+    });
+    return {
+      stackMetadata: contents.map((c) => c?.["//"]?.metadata ?? {}),
+      requiredProviders: contents.map(
+        (c) => c?.terraform?.required_providers ?? {},
+      ),
+    };
+  }
+
   public static async synthTelemetry(
     totalTime: number,
     stacks: SynthesizedStack[],
@@ -293,13 +317,7 @@ Command output on stdout:
       totalTime: totalTime,
       language: config.language,
       synthOrigin,
-      stackMetadata: stacks.map(
-        (stack) => JSON.parse(stack.content)["//"].metadata,
-      ),
-      requiredProviders: stacks.map(
-        (stack: any) =>
-          JSON.parse(stack.content)["terraform"].required_providers,
-      ),
+      ...SynthStack.telemetryPayload(stacks),
     });
   }
 
