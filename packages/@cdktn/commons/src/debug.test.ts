@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 jest.mock("./terraform", () => ({
-  terraformVersion: Promise.resolve("1.7.5"),
+  terraformVersion: () => Promise.resolve("1.7.5"),
 }));
 
 import { collectDebugInformation } from "./debug";
