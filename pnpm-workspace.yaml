@@ -6,10 +6,14 @@ packages:
   - 'tools/documentation-generation'
 
 allowBuilds:
+  '@parcel/watcher': set this to true or false
   '@swc/core': true
   esbuild: true
   nx: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - knip@6.35.1
 
 overrides:
   '@types/react': 18.3.28
