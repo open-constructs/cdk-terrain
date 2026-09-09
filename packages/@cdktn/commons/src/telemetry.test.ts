@@ -16,6 +16,7 @@ import {
   setUsageTelemetryEnabled,
 } from "./telemetry";
 import { DEFAULT_TARGET_VERSIONS } from "./config";
+import { Errors } from "./errors";
 
 const DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES = {
   target_terraform: DEFAULT_TARGET_VERSIONS.terraform,
@@ -475,6 +476,71 @@ describe("telemetry", () => {
       await Sentry.flush(2000);
 
       expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+  });
+
+  describe("cli.error from the Errors factories", () => {
+    afterEach(() => {
+      Errors.setScope("unknown");
+    });
+
+    it("counts constructed errors by type with the command set at call time", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+
+      Errors.setScope("deploy");
+      Errors.Usage("no stacks selected", undefined, { stackName: "secret" });
+      Errors.External("terraform exited with code 1");
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const errors = parseMetricItems(envelopeBodies).filter(
+        (i) => i.name === "cli.error",
+      );
+      expect(errors).toHaveLength(2);
+      expect(errors.map((e) => e.attributes.type.value)).toEqual([
+        "Usage",
+        "External",
+      ]);
+      for (const error of errors) {
+        expect(error.attributes.command.value).toBe("deploy");
+        expect(error.attributes).not.toHaveProperty("message");
+        expect(error.attributes).not.toHaveProperty("stackName");
+      }
+      expect(JSON.stringify(errors)).not.toContain("secret");
+      expect(JSON.stringify(errors)).not.toContain("no stacks selected");
+    });
+
+    it("is suppressed when usage telemetry is off", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: false,
+      });
+      initSentryWithCapturingTransport();
+
+      Errors.Internal("boom");
+      await Sentry.flush(2000);
+
+      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+
+    it("is suppressed by CHECKPOINT_DISABLE", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+      process.env.CHECKPOINT_DISABLE = "1";
+
+      Errors.Internal("boom");
+      await Sentry.flush(2000);
+
+      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+
+    it("still returns the typed error when Sentry is not initialized", () => {
+      const err = Errors.Usage("plain");
+      expect(err.message).toBe("Usage Error: plain");
+      expect(err.__type).toBe("Usage");
     });
   });
 

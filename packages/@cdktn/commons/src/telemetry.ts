@@ -136,6 +136,23 @@ export async function getBinaryAttributes(
 }
 
 /**
+ * Counts an error constructed through the `Errors` factories as `cli.error`
+ * by type and command, with no message or context (both can carry paths and
+ * user input). Distinct from `cli.command.error`, which counts failed
+ * command runs: a Usage error that is caught and handled still counts here.
+ */
+export function sendErrorTelemetry(type: string, command: string): void {
+  try {
+    if (!isUsageTelemetryEnabled()) {
+      return;
+    }
+    Sentry.metrics.count("cli.error", 1, { attributes: { type, command } });
+  } catch (err) {
+    logger.debug(`Could not send error telemetry: ${err}`);
+  }
+}
+
+/**
  * Bounded flush of buffered telemetry. Call before any explicit
  * `process.exit()` on a path that may have emitted metrics: Sentry buffers
  * asynchronously and a hard exit drops the buffer.
