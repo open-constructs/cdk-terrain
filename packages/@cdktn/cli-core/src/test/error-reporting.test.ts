@@ -4,14 +4,15 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 
+const mockScope = {
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setTransactionName: jest.fn(),
+  setPropagationContext: jest.fn(),
+};
 jest.mock("@sentry/node", () => ({
   init: jest.fn(),
-  getCurrentScope: jest.fn(() => ({
-    setUser: jest.fn(),
-    setTag: jest.fn(),
-    setTransactionName: jest.fn(),
-    setPropagationContext: jest.fn(),
-  })),
+  getCurrentScope: jest.fn(() => mockScope),
   setContext: jest.fn(),
   addBreadcrumb: jest.fn(), // the commons logger records every debug line
   flush: jest.fn().mockResolvedValue(true),
@@ -20,10 +21,17 @@ jest.mock("@sentry/node", () => ({
 
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
-jest.mock("@cdktn/commons", () => ({
-  ...jest.requireActual("@cdktn/commons"),
-  collectDebugInformation: jest.fn().mockResolvedValue({}),
-}));
+// the capture setters call through so the gating cases below observe the
+// real captured state, while init can still be asserted to perform them
+jest.mock("@cdktn/commons", () => {
+  const actual = jest.requireActual("@cdktn/commons");
+  return {
+    ...actual,
+    collectDebugInformation: jest.fn().mockResolvedValue({}),
+    setUsageTelemetryEnabled: jest.fn(actual.setUsageTelemetryEnabled),
+    setProjectTargetAttributes: jest.fn(actual.setProjectTargetAttributes),
+  };
+});
 
 import * as Sentry from "@sentry/node";
 import ciInfo from "ci-info";
@@ -51,8 +59,6 @@ describe("consent gating (initializErrorReporting)", () => {
     CI: process.env.CI,
     SENTRY_DSN: process.env.SENTRY_DSN,
     CHECKPOINT_DISABLE: process.env.CHECKPOINT_DISABLE,
-    SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
-    SENTRY_TRACE: process.env.SENTRY_TRACE,
   };
   const originalIsTTY = process.stdout.isTTY;
 
@@ -184,29 +190,37 @@ describe("consent gating (initializErrorReporting)", () => {
     },
   );
 
-  it("pins environment and server name so SENTRY_* env vars never reach the SDK options", async () => {
+  it("starts a fresh trace so nothing seeded from SENTRY_TRACE/SENTRY_BAGGAGE propagates", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
       sendUsageTelemetry: true,
     });
-    process.env.SENTRY_ENVIRONMENT = "LEAK-ENV-SENTRY";
-    process.env.SENTRY_TRACE =
-      "0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1";
 
     await initializErrorReporting(jest.fn(), jest.fn());
 
-    // the only production-side lock that the hostname never reaches Sentry
-    // (the commons delivery tests set serverName themselves)
-    expect(initOptions()).toMatchObject({
-      environment: "production",
-      serverName: "cdktn-cli",
-    });
-    const scope = (Sentry.getCurrentScope as jest.Mock).mock.results[0].value;
-    expect(scope.setPropagationContext).toHaveBeenCalledWith(
+    expect(mockScope.setPropagationContext).toHaveBeenCalledWith(
       expect.objectContaining({
-        traceId: expect.not.stringContaining("0af7651916cd43dd"),
+        traceId: expect.stringMatching(/^[0-9a-f]{32}$/),
       }),
     );
+  });
+
+  it("captures the usage decision and the project targets while still in the user's cwd", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: false,
+      targetVersions: { terraform: ">=1.9.0" },
+      validateInstalledBinary: true,
+    });
+    setInteractive(false);
+
+    await initializErrorReporting();
+
+    expect(setUsageTelemetryEnabled).toHaveBeenCalledWith(true);
+    expect(setProjectTargetAttributes).toHaveBeenCalledWith({
+      targets_declared: true,
+      validate_installed_binary: true,
+      target_terraform: ">=1.9.0",
+    });
   });
 
   it("CHECKPOINT_DISABLE -> no usage prompt, no init when crash is off", async () => {
@@ -292,7 +306,7 @@ describe("consent gating (initializErrorReporting)", () => {
     },
   );
 
-  it("init options pin release, tracesSampleRate 0 and a fixed serverName", async () => {
+  it("init options pin release, tracesSampleRate 0, a fixed environment and a fixed serverName", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
     });
@@ -300,10 +314,15 @@ describe("consent gating (initializErrorReporting)", () => {
 
     await initializErrorReporting();
 
-    const options = initOptions();
-    expect(options.release).toMatch(/^cdktn-cli-/);
-    expect(options.tracesSampleRate).toBe(0);
-    expect(options.serverName).toBe("cdktn-cli");
+    // fixed values are the production-side lock that neither the hostname
+    // nor SENTRY_ENVIRONMENT reaches Sentry (the commons delivery tests set
+    // their own init options)
+    expect(initOptions()).toMatchObject({
+      release: expect.stringMatching(/^cdktn-cli-/),
+      tracesSampleRate: 0,
+      environment: "production",
+      serverName: "cdktn-cli",
+    });
   });
 
   describe("beforeSend", () => {

@@ -25,8 +25,14 @@ function stack(content: string): SynthesizedStack {
 }
 
 describe("SynthStack.telemetryPayload", () => {
+  // not the privacy boundary: the payload still carries the stack name and
+  // the ids inside imports/moved; sendStackTelemetry reduces it to counts
   it("extracts the metadata block and required providers per stack", () => {
-    const metadata = { version: "0.21.0", backend: "local" };
+    const metadata = {
+      version: "0.21.0",
+      stackName: "prod-vpc",
+      backend: "local",
+    };
     const requiredProviders = { aws: { source: "aws", version: "~> 5.0" } };
     const payload = SynthStack.telemetryPayload([
       stack(
@@ -44,9 +50,12 @@ describe("SynthStack.telemetryPayload", () => {
       stackMetadata: [metadata, metadata],
       requiredProviders: [requiredProviders, {}],
     });
+    expect(payload.stackMetadata[0]).toHaveProperty("stackName");
     expect(JSON.stringify(payload)).not.toContain("aws_s3_bucket");
   });
 
+  // content is read from disk on the failure path before the throw; it must
+  // degrade to {} rather than take down deploy
   it("yields empty entries for content without metadata or unparsable content", () => {
     expect(
       SynthStack.telemetryPayload([stack("{}"), stack("not json")]),
