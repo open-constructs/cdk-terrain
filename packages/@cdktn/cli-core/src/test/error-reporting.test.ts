@@ -10,6 +10,7 @@ jest.mock("@sentry/node", () => ({
     setUser: jest.fn(),
     setTag: jest.fn(),
     setTransactionName: jest.fn(),
+    setPropagationContext: jest.fn(),
   })),
   setContext: jest.fn(),
   addBreadcrumb: jest.fn(),
@@ -49,6 +50,8 @@ describe("consent gating (initializErrorReporting)", () => {
     CI: process.env.CI,
     SENTRY_DSN: process.env.SENTRY_DSN,
     CHECKPOINT_DISABLE: process.env.CHECKPOINT_DISABLE,
+    SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+    SENTRY_TRACE: process.env.SENTRY_TRACE,
   };
   const originalIsTTY = process.stdout.isTTY;
 
@@ -143,6 +146,31 @@ describe("consent gating (initializErrorReporting)", () => {
       fs.readJsonSync(path.join(workdir, "cdktf.json")).sendUsageTelemetry,
     ).toBeUndefined();
     expect(Sentry.init).toHaveBeenCalledTimes(1);
+  });
+
+  it("pins environment and server name so SENTRY_* env vars never reach the SDK options", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: true,
+      sendUsageTelemetry: true,
+    });
+    process.env.SENTRY_ENVIRONMENT = "LEAK-ENV-SENTRY";
+    process.env.SENTRY_TRACE =
+      "0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1";
+
+    await initializErrorReporting(jest.fn(), jest.fn());
+
+    expect(Sentry.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        environment: "production",
+        serverName: "cdktn-cli",
+      }),
+    );
+    const scope = (Sentry.getCurrentScope as jest.Mock).mock.results[0].value;
+    expect(scope.setPropagationContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: expect.not.stringContaining("0af7651916cd43dd"),
+      }),
+    );
   });
 
   it("usage unset, CI (TTY but ciInfo.isCI) -> no prompt, default-on init", async () => {

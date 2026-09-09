@@ -55,12 +55,9 @@ export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
 }
 
 /**
- * Effective usage-telemetry gate, highest precedence first:
- * 1. `CHECKPOINT_DISABLE` set -> disabled
- * 2. the decision captured at command start (`setUsageTelemetryEnabled`)
- * 3. `sendUsageTelemetry` set in `cdktf.json`
- * 4. unset -> enabled
- * Independent of crash reporting (`sendCrashReports`).
+ * Effective usage-telemetry gate: `CHECKPOINT_DISABLE` > the decision captured
+ * at command start > `sendUsageTelemetry` in `cdktf.json` > enabled by
+ * default. Independent of crash reporting (`sendCrashReports`).
  */
 export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
   if (process.env.CHECKPOINT_DISABLE) {
@@ -136,10 +133,9 @@ export async function getBinaryAttributes(
 }
 
 /**
- * Counts an error constructed through the `Errors` factories as `cli.error`
- * by type and command, with no message or context (both can carry paths and
- * user input). Distinct from `cli.command.error`, which counts failed
- * command runs: a Usage error that is caught and handled still counts here.
+ * Counts an error built by the `Errors` factories as `cli.error` by type and
+ * command, never message or context (both can carry paths and user input).
+ * `cli.command.error` counts failed runs; a handled Usage error counts here.
  */
 export function sendErrorTelemetry(type: string, command: string): void {
   try {
@@ -397,14 +393,9 @@ function sendInitTelemetry(providers: string[], attributes: Attributes): void {
 }
 
 /**
- * Sends usage telemetry for a CLI command as Sentry v10 metrics
- * (`cli.command.invoked`, `cli.command.error`, `cli.synth.duration`, the
- * per-stack `cli.stack*` counts and the per-binding `cli.get.*` /
- * `cli.init.provider` counts). Payload fields reach the metric only through
- * the per-command allow-lists above.
- *
- * A silent no-op when usage telemetry is disabled or Sentry is not
- * initialized (no DSN / user opted out).
+ * Emits a command's usage telemetry as Sentry metrics; payload fields reach
+ * the attributes only through the allow-lists above. A silent no-op when
+ * usage telemetry is disabled or Sentry is not initialized.
  */
 export async function sendTelemetry(
   command: string,

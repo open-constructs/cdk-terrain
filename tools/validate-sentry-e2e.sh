@@ -2,21 +2,10 @@
 # Copyright (c) HashiCorp, Inc
 # SPDX-License-Identifier: MPL-2.0
 #
-# End-to-end validation of the cdktn-cli Sentry telemetry pipeline against
-# the real esbuild bundle:
-#   1. rebuilds the bundle with a local-sink DSN baked in (esbuild define)
-#   2. starts tools/sentry-sink.mjs
-#   3. SUCCESS trigger: `cdktn convert` (dependency-free) — proves the
-#      bounded success-path flush delivers a trace_metric envelope
-#   4. ERROR trigger: `cdktn synth --app "node -e process.exit(1)"` —
-#      proves the error path (event + cli.command.error metric)
-#   5. STACK trigger: `cdktn synth --app "node fake-app.js"` where the app
-#      writes a manifest and one cdk.tf.json by hand (no cdktn library
-#      needed) — proves the per-stack cli.stack* metrics and that the
-#      stack name never reaches the wire
-#   6. asserts zero checkpoint-api.hashicorp.com references in the bundle
-#   7. on exit, rebuilds the bundle with the caller's SENTRY_DSN so the
-#      artifact never ships pointing at the local sink
+# End-to-end check of cdktn-cli telemetry on the real esbuild bundle: rebuilds
+# it with a local-sink DSN, runs convert (success), a failing synth (error) and
+# a hand-written stack (per-stack metrics), then asserts on what reached
+# tools/sentry-sink.mjs. On exit the bundle is rebuilt with the caller's DSN.
 set -euo pipefail
 
 PORT="${1:-9999}"
@@ -50,6 +39,10 @@ sleep 0.3
 WORK="$(mktemp -d)"
 pushd "$WORK" >/dev/null
 unset CHECKPOINT_DISABLE
+# Sentry env vars a user or CI may export; none of their values may be sent.
+export SENTRY_ENVIRONMENT="LEAK-ENV-SENTRY"
+export SENTRY_TRACE="0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1"
+export SENTRY_BAGGAGE="sentry-environment=LEAK-BAGGAGE-SENTRY"
 printf '{ "language": "typescript", "app": "true", "projectId": "e2e-validation", "sendCrashReports": true, "sendUsageTelemetry": true }' > cdktf.json
 
 echo "==> SUCCESS trigger: cdktn convert"
@@ -146,14 +139,14 @@ echo "$RAW" | grep -q 'hashicorp/random' \
   || fail "normalized provider source missing from the stack metrics"
 echo "$RAW" | grep -q 'private-registry' \
   || fail "private-registry provider was not reduced to its kind"
-for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example leak-org leak-provider; do
+echo "$ITEMS" | grep -q '"sentry.environment"' && echo "$RAW" | grep -q '"production"' \
+  || fail "sentry.environment is not the fixed production value"
+for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example leak-org leak-provider LEAK-ENV-SENTRY LEAK-BAGGAGE-SENTRY 0af7651916cd43dd8448eb211c80319c; do
   echo "$RAW" | grep -q "$secret" \
-    && fail "$secret reached the sink: stack names, resource ids and provider hosts/paths must never be sent"
+    && fail "$secret reached the sink: stack names, resource ids, provider hosts/paths and SENTRY_* env values must never be sent"
 done
-# The failing-app synth path hard-exits without throwing (graceful=false),
-# so no crash EVENT is expected from these triggers; crash-event delivery
-# is covered by the unit suite (beforeSend pass-through + Sentry.close on
-# the yargs fail path).
+# The failing-app synth hard-exits without throwing, so no crash event is
+# expected here; crash-event delivery is covered by the unit suite.
 
 HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"
 [ "$HASHICORP_REFS" = "0" ] || fail "bundle still references checkpoint-api.hashicorp.com ($HASHICORP_REFS hits)"

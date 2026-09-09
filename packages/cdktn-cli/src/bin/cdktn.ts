@@ -41,10 +41,9 @@ if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
   process.env.TF_PLUGIN_CACHE_DIR = ensurePluginCache();
 }
 
-// Sentry buffers metrics asynchronously, so flush (bounded) before a normal
-// exit, then exit explicitly: an unresponsive ingest endpoint would otherwise
-// keep the transport socket and the process alive. The yargs fail handler
-// below does the same before its exit(1).
+// Sentry buffers metrics asynchronously: flush (bounded) before a normal exit,
+// then exit explicitly, or an unresponsive ingest endpoint keeps the transport
+// socket and the process alive. The yargs fail handler does the same.
 let telemetryFlushStarted = false;
 process.on("beforeExit", async () => {
   if (telemetryFlushStarted) {

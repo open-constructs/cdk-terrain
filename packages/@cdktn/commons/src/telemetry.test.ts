@@ -61,11 +61,13 @@ describe("telemetry", () => {
   let envelopeBodies: string[];
   const originalCwd = process.cwd();
   const originalCheckpointDisable = process.env.CHECKPOINT_DISABLE;
+  const originalSentryEnvironment = process.env.SENTRY_ENVIRONMENT;
 
   function initSentryWithCapturingTransport() {
     Sentry.init({
       dsn: "https://public@example.invalid/1",
       release: "cdktn-cli-test",
+      environment: "production",
       tracesSampleRate: 0,
       serverName: "cdktn-cli",
       // each test inits its own client; process-level integrations would
@@ -84,6 +86,7 @@ describe("telemetry", () => {
     process.chdir(workdir);
     envelopeBodies = [];
     delete process.env.CHECKPOINT_DISABLE;
+    delete process.env.SENTRY_ENVIRONMENT;
   });
 
   afterEach(async () => {
@@ -96,6 +99,11 @@ describe("telemetry", () => {
       delete process.env.CHECKPOINT_DISABLE;
     } else {
       process.env.CHECKPOINT_DISABLE = originalCheckpointDisable;
+    }
+    if (originalSentryEnvironment === undefined) {
+      delete process.env.SENTRY_ENVIRONMENT;
+    } else {
+      process.env.SENTRY_ENVIRONMENT = originalSentryEnvironment;
     }
   });
 
@@ -135,6 +143,7 @@ describe("telemetry", () => {
         targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.8.0" },
         validateInstalledBinary: true,
       });
+      process.env.SENTRY_ENVIRONMENT = "LEAK-ENV-SENTRY";
       initSentryWithCapturingTransport();
 
       await sendTelemetry("synth", { totalTime: 1, language: "typescript" });
@@ -163,6 +172,7 @@ describe("telemetry", () => {
           // the SDK stamps the release set in Sentry.init on every metric,
           // so the CLI version needs no attribute of its own
           "sentry.release": "cdktn-cli-test",
+          "sentry.environment": "production",
         });
         expect(["terraform", "opentofu", "unknown", "missing"]).toContain(
           values.binary,
@@ -180,6 +190,7 @@ describe("telemetry", () => {
         }
       }
       expect(metrics[2].attributes.synth_origin.value).toBe("watch");
+      expect(envelopeBodies.join("\n")).not.toContain("LEAK-ENV-SENTRY");
     });
 
     it("falls back to the default target ranges outside a project", async () => {
