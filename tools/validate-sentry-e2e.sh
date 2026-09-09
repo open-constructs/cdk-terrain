@@ -2,40 +2,57 @@
 # Copyright (c) HashiCorp, Inc
 # SPDX-License-Identifier: MPL-2.0
 #
-# End-to-end check of cdktn-cli telemetry on the real esbuild bundle: rebuilds
-# it with a local-sink DSN, runs convert (success), a failing synth (error), a
-# hand-written stack (per-stack metrics) and a crashing command (entrypoint
-# failure path), then asserts on what reached tools/sentry-sink.mjs. On exit
-# the bundle is rebuilt with the caller's DSN.
+# End-to-end check of cdktn-cli telemetry on the real esbuild bundle: builds a
+# throwaway copy of it with a local-sink DSN, runs convert (success), a failing
+# synth (error), a hand-written stack (per-stack metrics) and a crashing
+# command (entrypoint failure path), then asserts on what reached
+# tools/sentry-sink.mjs. The shipped bundle is never touched.
 set -euo pipefail
 
-PORT="${1:-9999}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DSN="http://cdktn@localhost:${PORT}/1"
-CDKTN="$ROOT/packages/cdktn-cli/bundle/bin/cdktn.js"
-ORIGINAL_DSN="${SENTRY_DSN:-}"
+OUTDIR="$ROOT/packages/cdktn-cli/bundle-e2e"
+CDKTN="$OUTDIR/bin/cdktn.js"
+SINK_LOG="$(mktemp)"
 SINK_PID=""
-
-build_bundle() {
-  (cd "$ROOT/packages/cdktn-cli" && pnpm run compile-build-config >/dev/null && SENTRY_DSN="$1" node build-config/build.js)
-}
 
 cleanup() {
   local status=$?
-  [ -n "$SINK_PID" ] && kill "$SINK_PID" 2>/dev/null || true
-  echo "==> restoring bundle with the caller's SENTRY_DSN"
-  build_bundle "$ORIGINAL_DSN"
+  if [ -n "$SINK_PID" ]; then
+    kill "$SINK_PID" 2>/dev/null || true
+    wait "$SINK_PID" 2>/dev/null || true
+  fi
+  rm -rf "$OUTDIR" "$SINK_LOG"
   exit "$status"
 }
 trap cleanup EXIT
 
-echo "==> building bundle with DSN $DSN baked in"
-build_bundle "$DSN"
-
-echo "==> starting sentry sink on :$PORT"
-node "$ROOT/tools/sentry-sink.mjs" "$PORT" &
+echo "==> starting sentry sink"
+node "$ROOT/tools/sentry-sink.mjs" "${1:-0}" >"$SINK_LOG" 2>&1 &
 SINK_PID=$!
-sleep 0.3
+PORT=""
+for _ in $(seq 1 50); do
+  PORT="$(sed -n 's/.*listening on http:\/\/localhost:\([0-9]*\).*/\1/p' "$SINK_LOG" | head -1)"
+  [ -n "$PORT" ] && break
+  sleep 0.1
+done
+[ -n "$PORT" ] || { cat "$SINK_LOG" >&2; echo "FAIL: sink did not start" >&2; exit 1; }
+DSN="http://cdktn@localhost:${PORT}/1"
+
+echo "==> building a scratch bundle with DSN $DSN baked in"
+(cd "$ROOT/packages/cdktn-cli" && pnpm run compile-build-config >/dev/null && SENTRY_DSN="$DSN" CDKTN_BUNDLE_OUTDIR="$OUTDIR" node build-config/build.js)
+
+# Polls the sink until every pattern was recorded or 10 s pass; the
+# assertions at the end name whatever is still missing.
+await_items() {
+  local i pattern
+  for i in $(seq 1 100); do
+    ITEMS="$(curl -sf "http://localhost:${PORT}/__items" || true)"
+    for pattern in "$@"; do
+      echo "$ITEMS" | grep -q -- "$pattern" || { sleep 0.1; continue 2; }
+    done
+    return 0
+  done
+}
 
 WORK="$(mktemp -d)"
 pushd "$WORK" >/dev/null
@@ -127,7 +144,7 @@ CRASH_OUTPUT="$(node "$CDKTN" output --skip-synth 2>&1 || true)"
 popd >/dev/null
 rm -rf "$CRASH_WORK"
 
-ITEMS="$(curl -sf "http://localhost:${PORT}/__items")"
+await_items 'cli.command.invoked' 'cli.command.error' '"cli.stack.provider"' '{"type":"event"}'
 RAW="$(curl -sf "http://localhost:${PORT}/__raw")"
 echo "==> sink recorded: $ITEMS"
 
@@ -172,7 +189,9 @@ echo "$CRASH_OUTPUT" | grep -q '^Debug Information:' \
 echo "$CRASH_OUTPUT" | grep -q 'ERR_UNHANDLED_REJECTION\|PromiseRejectionHandledWarning' \
   && fail "the crash trigger orphaned a rejection"
 
+# Free while the bundle is at hand; the unit tests and this script's sink
+# assertions are what prove the transport, not this grep.
 HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"
 [ "$HASHICORP_REFS" = "0" ] || fail "bundle still references checkpoint-api.hashicorp.com ($HASHICORP_REFS hits)"
 
-echo "PASS: success-path, error-path, per-stack and entrypoint-failure telemetry delivered to the local sink; zero HashiCorp references in the bundle"
+echo "PASS: success-path, error-path, per-stack and entrypoint-failure telemetry delivered to the local sink"

@@ -7,14 +7,15 @@
 // and records every envelope item type (and, for trace_metric, the metric
 // names with their attribute keys).
 //
-// Usage: node tools/sentry-sink.mjs [port=9999]
+// Usage: node tools/sentry-sink.mjs [port=0]
+//   port 0 picks a free port; the chosen one is printed on the first line
 //   GET /__items  -> JSON array of recorded items
 //   GET /__raw    -> every decoded envelope body, concatenated
 //   GET /__reset  -> clears recorded items and bodies
 import * as http from "node:http";
 import * as zlib from "node:zlib";
 
-const port = Number(process.argv[2] ?? 9999);
+const port = Number(process.argv[2] ?? 0);
 const items = [];
 const bodies = [];
 
@@ -88,5 +89,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`[sentry-sink] listening on http://localhost:${port}`);
+  console.log(
+    `[sentry-sink] listening on http://localhost:${server.address().port}`,
+  );
 });
