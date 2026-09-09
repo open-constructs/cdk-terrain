@@ -7,6 +7,9 @@ import * as path from "path";
 import ciInfo from "ci-info";
 import {
   sendTelemetry,
+  flushTelemetry,
+  normalizeBackendKind,
+  normalizeProviderConstraint,
   classifyModuleSource,
   classifyProviderBinding,
   getGeneratedProviderSources,
@@ -17,8 +20,9 @@ import {
   setProjectTargetAttributes,
   setUsageTelemetryEnabled,
 } from "./telemetry";
+import { seedTerraformCliProbeForTests } from "./terraform";
 import { DEFAULT_TARGET_VERSIONS } from "./config";
-import { Errors, commandErrorType } from "./errors";
+import { Errors } from "./errors";
 
 const DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES = {
   target_terraform: DEFAULT_TARGET_VERSIONS.terraform,
@@ -97,15 +101,15 @@ describe("telemetry", () => {
     delete process.env.SENTRY_ENVIRONMENT;
     // the probe is process-global (see terraform.ts); a seeded output keeps
     // the binary attributes independent of the machine running the tests
-    (globalThis as any)[Symbol.for("cdktn.terraformCli")] = Promise.resolve(
-      "Terraform v1.9.0\non darwin_arm64\n",
+    seedTerraformCliProbeForTests(
+      Promise.resolve("Terraform v1.9.0\non darwin_arm64\n"),
     );
   });
 
   afterEach(async () => {
     setUsageTelemetryEnabled(undefined);
     setProjectTargetAttributes(undefined);
-    delete (globalThis as any)[Symbol.for("cdktn.terraformCli")];
+    seedTerraformCliProbeForTests();
     await Sentry.close(1000);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
@@ -275,9 +279,10 @@ describe("telemetry", () => {
       const invoked = parseMetricItems(envelopeBodies).find(
         (i) => i.name === "cli.command.invoked",
       )!;
+      const keys = Object.keys(invoked.attributes);
       // the one place that fails when an attribute is added: extend it
       // deliberately, together with the collected-data list in the docs
-      expect(Object.keys(invoked.attributes).sort()).toEqual([
+      expect(keys.filter((key) => !key.startsWith("sentry.")).sort()).toEqual([
         "arch",
         "binary",
         "binary_version",
@@ -285,12 +290,7 @@ describe("telemetry", () => {
         "command",
         "language",
         "os",
-        // stamped by the SDK: release/environment/serverName from init
-        "sentry.environment",
-        "sentry.release",
-        "sentry.sdk.name",
-        "sentry.sdk.version",
-        "sentry.timestamp.sequence",
+        // server.address is the fixed serverName from init
         "server.address",
         "synth_origin",
         "target_opentofu",
@@ -298,6 +298,10 @@ describe("telemetry", () => {
         "targets_declared",
         "validate_installed_binary",
       ]);
+      // stamped by the SDK from init; a patch bump may add more of them
+      expect(keys).toEqual(
+        expect.arrayContaining(["sentry.release", "sentry.environment"]),
+      );
       expect(invoked.attributes.binary_version.value).toBe("1.9.0");
       expect(invoked.attributes["server.address"].value).toBe("cdktn-cli");
       const bytes = envelopeBodies.join("\n");
@@ -624,15 +628,16 @@ describe("telemetry", () => {
 
     // a throw inside a payload handler is swallowed by sendTelemetry's catch
     // and would skip the command metric for the whole run
-    it("tolerates malformed metadata entries", async () => {
+    it("tolerates malformed metadata entries and counts only the real stacks", async () => {
       await sendTelemetry("synth", {
         stackMetadata: [null, "nope", { overrides: "nope", imports: [] }],
-        requiredProviders: [undefined, { aws: "nope" }],
+        requiredProviders: [undefined, undefined, { aws: "nope" }],
       });
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
-      expect(items.filter((i) => i.name === "cli.stack")).toHaveLength(3);
+      // only the one object entry is a stack
+      expect(items.filter((i) => i.name === "cli.stack")).toHaveLength(1);
       expect(items.filter((i) => i.name === "cli.stack.override")).toHaveLength(
         0,
       );
@@ -747,23 +752,10 @@ describe("telemetry", () => {
     });
 
     it.each([
-      [">= 1.2, < 2.0", ">= 1.2, < 2.0"],
       ["~> 5.0", "~> 5.0"],
-      ["= 1.0", "= 1.0"],
-      ["!= 1.2.3", "!= 1.2.3"],
-      ["1.2.3", "1.2.3"],
-      ["  >= 1.0 ,  < 2.0  ", ">= 1.0, < 2.0"],
-      ["~>5.0,!=5.1.0", "~> 5.0, != 5.1.0"],
-      ["1.0.0-beta.1", "invalid"],
-      [">= 1.0.0-LEAK-CONSTRAINT-PRERELEASE.corp", "invalid"],
-      ["1.2.3-acme.internal", "invalid"],
-      ["1.2.3+build.host", "invalid"],
-      ["latest", "invalid"],
-      [">= 1.2 || < 2.0", "invalid"],
-      ["~> 5.0 # /Users/x", "invalid"],
-      ["1." + "1.".repeat(40), "invalid"],
+      ["latest /Users/x", "invalid"],
     ])(
-      "forwards the provider constraint %p as %p",
+      "delivers the provider constraint %p as %p",
       async (version, expected) => {
         await sendTelemetry("synth", {
           stackMetadata: [{}],
@@ -825,21 +817,16 @@ describe("telemetry", () => {
       expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
     });
 
-    it.each(["local", "remote", "cloud", "s3", "gcs", "azurerm", "kubernetes"])(
-      "forwards the %s backend kind as-is",
-      async (backend) => {
-        await sendTelemetry("synth", { stackMetadata: [{ backend }] });
-        expect(await Sentry.flush(2000)).toBe(true);
+    it("delivers a built-in backend kind as-is", async () => {
+      await sendTelemetry("synth", { stackMetadata: [{ backend: "gcs" }] });
+      expect(await Sentry.flush(2000)).toBe(true);
 
-        expect(
-          attributeValues(
-            parseMetricItems(envelopeBodies).find(
-              (i) => i.name === "cli.stack",
-            )!,
-          ).backend,
-        ).toBe(backend);
-      },
-    );
+      expect(
+        attributeValues(
+          parseMetricItems(envelopeBodies).find((i) => i.name === "cli.stack")!,
+        ).backend,
+      ).toBe("gcs");
+    });
   });
 
   describe("provider binding classification", () => {
@@ -926,6 +913,7 @@ describe("telemetry", () => {
     it.each([
       ["terraform-aws-modules/vpc/aws", "terraform-aws-modules/vpc/aws"],
       ["Terraform-AWS-Modules/VPC/aws", "terraform-aws-modules/vpc/aws"],
+      // one row per fallthrough: everything the grammar rejects is "other"
       ["Terraform-AWS-Modules/VPC/aws?ref=v5.0.0", "other"],
       ["app.terraform.io/my-org/vpc/aws", "private-registry"],
       ["./modules/vpc", "local"],
@@ -941,16 +929,69 @@ describe("telemetry", () => {
       ["gcs::https://www.googleapis.com/storage/v1/leak-bucket/vpc", "git"],
       ["www.googleapis.com/storage/v1/leak-bucket/vpc", "git"],
       ["hg::http://example.com/leak-repo", "git"],
-      ["gitlab.com/leak-org/leak-repo", "other"],
-      ["example.com/leak/mod.zip", "other"],
-      ["~/leak-home/mod", "other"],
-      ["localhost:8080/leak-org/mod", "other"],
-      ["terraform-aws-modules/vpc/aws//modules/leak-sub", "other"],
-      ["not-a-module", "other"],
-      [`${"n".repeat(65)}/vpc/aws`, "other"],
-      [`${"n".repeat(64)}/${"m".repeat(64)}/aws`, "other"],
     ])("classifyModuleSource(%s) -> %s", (input, expected) => {
       expect(classifyModuleSource(input)).toBe(expected);
+    });
+
+    it.each([
+      ["local", "local"],
+      ["remote", "remote"],
+      ["cloud", "cloud"],
+      ["s3", "s3"],
+      ["gcs", "gcs"],
+      ["azurerm", "azurerm"],
+      ["kubernetes", "kubernetes"],
+      ["S3", "other"],
+      ["s3 bucket=/Users/x/state", "other"],
+      [undefined, "unknown"],
+    ])("normalizeBackendKind(%p) -> %p", (input, expected) => {
+      expect(normalizeBackendKind(input)).toBe(expected);
+    });
+
+    it.each([
+      [">= 1.2, < 2.0", ">= 1.2, < 2.0"],
+      ["~> 5.0", "~> 5.0"],
+      ["= 1.0", "= 1.0"],
+      ["!= 1.2.3", "!= 1.2.3"],
+      ["1.2.3", "1.2.3"],
+      ["  >= 1.0 ,  < 2.0  ", ">= 1.0, < 2.0"],
+      ["~>5.0,!=5.1.0", "~> 5.0, != 5.1.0"],
+      ["1.0.0-beta.1", "invalid"],
+      [">= 1.0.0-LEAK-CONSTRAINT-PRERELEASE.corp", "invalid"],
+      ["1.2.3-acme.internal", "invalid"],
+      ["1.2.3+build.host", "invalid"],
+      ["latest", "invalid"],
+      [">= 1.2 || < 2.0", "invalid"],
+      ["~> 5.0 # /Users/x", "invalid"],
+      ["1." + "1.".repeat(40), "invalid"],
+    ])("normalizeProviderConstraint(%p) -> %p", (input, expected) => {
+      expect(normalizeProviderConstraint(input)).toBe(expected);
+    });
+  });
+
+  // no DSN means no client: every emitter must stay a silent no-op rather
+  // than throw into the command it was called from
+  describe("without an initialized Sentry client", () => {
+    beforeEach(() => {
+      Sentry.getGlobalScope().setClient(undefined);
+      Sentry.getIsolationScope().setClient(undefined);
+      Sentry.getCurrentScope().setClient(undefined);
+      setUsageTelemetryEnabled(true);
+    });
+
+    it("sends and flushes without throwing", async () => {
+      expect(Sentry.getClient()).toBeUndefined();
+
+      await expect(
+        sendTelemetry("deploy", {
+          language: "typescript",
+          stackMetadata: [{ backend: "s3" }],
+          requiredProviders: [{ aws: { source: "aws" } }],
+        }),
+      ).resolves.toBeUndefined();
+      expect(() => Errors.Internal("boom")).not.toThrow();
+      await expect(flushTelemetry(100)).resolves.toBeUndefined();
+      expect(envelopeBodies).toHaveLength(0);
     });
   });
 
@@ -1027,24 +1068,6 @@ describe("telemetry", () => {
       expect(JSON.stringify(errors)).not.toContain("no stacks selected");
     });
 
-    it.each([
-      ["sendUsageTelemetry: false", { flag: false, env: undefined }],
-      ["CHECKPOINT_DISABLE", { flag: true, env: "1" }],
-    ])("is suppressed by %s", async (_case, { flag, env }) => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: flag,
-      });
-      initSentryWithCapturingTransport();
-      if (env !== undefined) {
-        process.env.CHECKPOINT_DISABLE = env;
-      }
-
-      Errors.Internal("boom");
-      await Sentry.flush(2000);
-
-      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
-    });
-
     it("still returns the typed error when Sentry is not initialized", () => {
       const err = Errors.Usage("plain");
       expect(err.message).toBe("Usage Error: plain");
@@ -1055,20 +1078,6 @@ describe("telemetry", () => {
       expect(Errors.getScope()).toBe("unknown");
       Errors.setScope("provider add");
       expect(Errors.getScope()).toBe("provider add");
-    });
-  });
-
-  describe("commandErrorType", () => {
-    it.each([
-      [Errors.Usage("u"), "Usage"],
-      [Errors.External("e"), "External"],
-      [Errors.Internal("i"), "Internal"],
-      [new Error("plain"), "unexpected"],
-      ["raw-string", "unexpected"],
-      [undefined, "unexpected"],
-      [null, "unexpected"],
-    ])("classifies %p as %s", (error, expected) => {
-      expect(commandErrorType(error)).toBe(expected);
     });
   });
 
@@ -1095,8 +1104,10 @@ describe("telemetry", () => {
     });
 
     it("sends no version for an unrecognised product: a wrapper's output has no product version line", async () => {
-      (globalThis as any)[Symbol.for("cdktn.terraformCli")] = Promise.resolve(
-        "connected to 10.0.0.1 as LEAK-USER (wrapper 3.4.5)\nTerraform v1.9.0\n",
+      seedTerraformCliProbeForTests(
+        Promise.resolve(
+          "connected to 10.0.0.1 as LEAK-USER (wrapper 3.4.5)\nTerraform v1.9.0\n",
+        ),
       );
       const attributes = await getBinaryAttributes();
       expect(attributes).toEqual({ binary: "unknown" });

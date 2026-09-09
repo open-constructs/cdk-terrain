@@ -87,6 +87,14 @@ const BACKEND_KINDS = [
   "manta",
 ];
 
+/** Backend kind for metrics: a built-in kind as-is, anything else "other". */
+export function normalizeBackendKind(backend: unknown): string {
+  if (typeof backend !== "string") {
+    return "unknown";
+  }
+  return BACKEND_KINDS.includes(backend) ? backend : "other";
+}
+
 // Terraform resource type grammar; the stack-level override keys (stack,
 // backend, output, local, terraform_remote_state) are identifiers too.
 const RESOURCE_TYPE = /^[a-z][a-z0-9_]*$/;
@@ -105,11 +113,13 @@ function semverRangeOrInvalid(value: string): string {
   return range && !/\d[-+]/.test(value) ? range : "invalid";
 }
 
-// Terraform provider constraint: comma-separated operators over versions,
-// re-joined as "~> 5.0, != 5.1.0" so spacing variants collapse into one
-// value. Constraints are user-authored free text in cdktf.json, so a
-// prerelease identifier or an over-long value rejects the whole constraint.
-function terraformConstraintOrInvalid(value: string): string {
+/**
+ * Terraform provider constraint: comma-separated operators over versions,
+ * re-joined as "~> 5.0, != 5.1.0" so spacing variants collapse into one
+ * value. Constraints are user-authored free text in cdktf.json, so a
+ * prerelease identifier or an over-long value rejects the whole constraint.
+ */
+export function normalizeProviderConstraint(value: string): string {
   if (value.length > 64) {
     return "invalid";
   }
@@ -459,17 +469,16 @@ function sendStackTelemetry(
 ): void {
   const generatedSources = getGeneratedProviderSources();
   stackMetadata.forEach((entry, index) => {
-    const metadata: Record<string, any> =
-      entry && typeof entry === "object" ? entry : {};
+    // a null or non-object entry is not a stack: counting one would inflate
+    // the stack count with metadata the library never wrote
+    if (!entry || typeof entry !== "object") {
+      return;
+    }
+    const metadata = entry as Record<string, any>;
     const overrides = groupSizes(metadata.overrides);
     const stackAttributes: Attributes = {
       ...attributes,
-      backend:
-        typeof metadata.backend === "string"
-          ? BACKEND_KINDS.includes(metadata.backend)
-            ? metadata.backend
-            : "other"
-          : "unknown",
+      backend: normalizeBackendKind(metadata.backend),
       cloud: typeof metadata.cloud === "string",
       override_count: sum(overrides),
       import_count: sum(groupSizes(metadata.imports)),
@@ -506,7 +515,7 @@ function sendStackTelemetry(
         binding: classifyProviderBinding(source, generatedSources),
       };
       if (typeof constraint?.version === "string") {
-        providerAttributes.version_constraint = terraformConstraintOrInvalid(
+        providerAttributes.version_constraint = normalizeProviderConstraint(
           constraint.version,
         );
       }
