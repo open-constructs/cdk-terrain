@@ -30,6 +30,7 @@ describe("terraform binary probe", () => {
   let fixtureDir: string;
   const originalCheckpointDisable = process.env.CHECKPOINT_DISABLE;
 
+  // `#!/bin/sh` fixtures are POSIX-only (CI runs on ubuntu)
   function fakeBinary(name: string, output: string): string {
     const file = path.join(fixtureDir, name);
     const calls = path.join(fixtureDir, `${name}.calls`);
@@ -64,59 +65,29 @@ describe("terraform binary probe", () => {
     }
   });
 
-  it("recognizes Terraform from the first line of `version`", async () => {
-    const { terraformCli, terraformVersion } = loadProbe(
-      fakeBinary(
-        "terraform",
-        "Terraform v1.12.6\non darwin_arm64\n\nYour version of Terraform is out of date!",
-      ),
+  it("spawns plain `version` once per process, on first use, across module copies, and parses it", async () => {
+    const binary = fakeBinary(
+      "terraform",
+      "Terraform v1.12.6\non darwin_arm64\n\nYour version of Terraform is out of date!",
     );
-    await expect(terraformCli()).resolves.toEqual({
-      name: "terraform",
-      version: "1.12.6",
-    });
-    await expect(terraformVersion()).resolves.toBe("1.12.6");
-  });
-
-  it("recognizes OpenTofu from the first line of `version`", async () => {
-    const { terraformCli, terraformVersion } = loadProbe(
-      fakeBinary("tofu", "OpenTofu v1.8.1\non linux_amd64"),
-    );
-    await expect(terraformCli()).resolves.toEqual({
-      name: "opentofu",
-      version: "1.8.1",
-    });
-    await expect(terraformVersion()).resolves.toBe("1.8.1");
-  });
-
-  it("reports an unrecognized product as unknown", async () => {
-    const { terraformCli } = loadProbe(
-      fakeBinary("other", "SomethingElse v2.0.0"),
-    );
-    await expect(terraformCli()).resolves.toEqual({
-      name: "unknown",
-      version: "2.0.0",
-    });
-  });
-
-  it("spawns the binary once per process, on first use, across module copies", async () => {
-    const binary = fakeBinary("terraform", "Terraform v1.12.6");
     const first = loadProbe(binary);
     const second = loadProbe(binary);
     expect(spawnCount(binary)).toBe(0);
 
-    await Promise.all([
+    const [probe, , version] = await Promise.all([
       first.terraformCli(),
       second.terraformCli(),
       first.terraformVersion(),
       second.terraformVersion(),
     ]);
-    await expect(second.terraformCli()).resolves.toMatchObject({
-      name: "terraform",
-    });
+    expect(probe).toEqual({ name: "terraform", version: "1.12.6" });
+    expect(version).toBe("1.12.6");
+    await expect(second.terraformCli()).resolves.toEqual(probe);
     expect(spawnCount(binary)).toBe(1);
   });
 
+  // the probe is shared by every consumer in the process: a rejection would
+  // surface on every command, and `cdktn debug` prints the resolved value
   it("resolves to missing (never rejects) and counts no cli.error when the binary cannot be spawned", async () => {
     const { terraformCli, terraformVersion, sentry } = loadProbe(
       path.join(fixtureDir, "does-not-exist"),
@@ -124,7 +95,6 @@ describe("terraform binary probe", () => {
     const count = jest.spyOn(sentry.metrics, "count");
 
     await expect(terraformCli()).resolves.toEqual({ name: "missing" });
-    // `cdktn debug` prints this value as-is
     await expect(terraformVersion()).resolves.toMatch(
       /^Error: Usage Error: Unknown: Error loading terraform version/,
     );

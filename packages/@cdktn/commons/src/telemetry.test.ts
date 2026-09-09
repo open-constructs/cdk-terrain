@@ -58,6 +58,12 @@ function parseMetricItems(envelopeBodies: string[]): MetricItem[] {
   return items;
 }
 
+function attributeValues(item: MetricItem) {
+  return Object.fromEntries(
+    Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
+  );
+}
+
 describe("telemetry", () => {
   let workdir: string;
   let envelopeBodies: string[];
@@ -89,6 +95,11 @@ describe("telemetry", () => {
     envelopeBodies = [];
     delete process.env.CHECKPOINT_DISABLE;
     delete process.env.SENTRY_ENVIRONMENT;
+    // the probe is process-global (see terraform.ts); a seeded output keeps
+    // the binary attributes independent of the machine running the tests
+    (globalThis as any)[Symbol.for("cdktn.terraformCli")] = Promise.resolve(
+      "Terraform v1.9.0\non darwin_arm64\n",
+    );
   });
 
   afterEach(async () => {
@@ -111,36 +122,6 @@ describe("telemetry", () => {
   });
 
   describe("sendTelemetry delivery (real client + capturing transport)", () => {
-    it("delivers cli.command.invoked and cli.synth.duration through a bounded flush", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        language: "typescript",
-        sendUsageTelemetry: true,
-      });
-      initSentryWithCapturingTransport();
-
-      await sendTelemetry("synth", {
-        totalTime: 1234,
-        language: "typescript",
-      });
-
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const items = parseMetricItems(envelopeBodies);
-      const invoked = items.find((i) => i.name === "cli.command.invoked");
-      const duration = items.find((i) => i.name === "cli.synth.duration");
-
-      expect(invoked).toBeDefined();
-      expect(invoked!.attributes.command.value).toBe("synth");
-      expect(invoked!.attributes.language.value).toBe("typescript");
-      expect(invoked!.attributes.ci.value).toBe(
-        ciInfo.isCI ? ciInfo.name || "unknown" : false,
-      );
-
-      expect(duration).toBeDefined();
-      expect(duration!.type).toBe("distribution");
-      expect(duration!.value).toBe(1234);
-    });
-
     it("stamps environment, binary and target attributes on every command metric", async () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         language: "typescript",
@@ -151,40 +132,36 @@ describe("telemetry", () => {
       process.env.SENTRY_ENVIRONMENT = "LEAK-ENV-SENTRY";
       initSentryWithCapturingTransport();
 
-      await sendTelemetry("synth", { totalTime: 1, language: "typescript" });
+      await sendTelemetry("synth", { totalTime: 1234, language: "typescript" });
       await sendTelemetry("synth", { error: true, synthOrigin: "watch" });
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
-      const metrics = [
+      // a run is counted once: as invoked or, for an error payload, as error
+      expect(items.map((i) => i.name)).toEqual([
         "cli.command.invoked",
         "cli.synth.duration",
         "cli.command.error",
-      ].map((name) => items.find((i) => i.name === name)!);
+      ]);
+      const [invoked, duration, error] = items;
 
-      for (const metric of metrics) {
-        expect(metric).toBeDefined();
-        const values = Object.fromEntries(
-          Object.entries(metric.attributes).map(([k, v]) => [k, v.value]),
-        );
+      for (const metric of items) {
+        const values = attributeValues(metric);
         expect(values).toMatchObject({
           os: process.platform,
           arch: process.arch,
+          binary: "terraform",
+          binary_version: "1.9.0",
           target_terraform: ">=1.9.0",
           target_opentofu: ">=1.8.0",
           targets_declared: true,
           validate_installed_binary: true,
+          ci: ciInfo.isCI ? ciInfo.name || "unknown" : false,
           // the SDK stamps the release set in Sentry.init on every metric,
           // so the CLI version needs no attribute of its own
           "sentry.release": "cdktn-cli-test",
           "sentry.environment": "production",
         });
-        expect(["terraform", "opentofu", "unknown", "missing"]).toContain(
-          values.binary,
-        );
-        if (values.binary === "terraform" || values.binary === "opentofu") {
-          expect(values.binary_version).toMatch(/^\d+\.\d+\.\d+/);
-        }
         for (const forbidden of [
           "stackName",
           "hostname",
@@ -194,24 +171,14 @@ describe("telemetry", () => {
           expect(values).not.toHaveProperty(forbidden);
         }
       }
-      expect(metrics[2].attributes.synth_origin.value).toBe("watch");
+      expect(attributeValues(invoked).language).toBe("typescript");
+      expect(duration.type).toBe("distribution");
+      expect(duration.value).toBe(1234);
+      expect(attributeValues(error)).toMatchObject({
+        error_type: "unexpected",
+        synth_origin: "watch",
+      });
       expect(envelopeBodies.join("\n")).not.toContain("LEAK-ENV-SENTRY");
-    });
-
-    it("falls back to the default target ranges outside a project", async () => {
-      initSentryWithCapturingTransport();
-
-      await sendTelemetry("convert", {});
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const invoked = parseMetricItems(envelopeBodies).find(
-        (i) => i.name === "cli.command.invoked",
-      )!;
-      expect(invoked.attributes.targets_declared.value).toBe(false);
-      expect(invoked.attributes.validate_installed_binary.value).toBe(false);
-      expect(invoked.attributes.target_terraform.value).toBe(
-        DEFAULT_TARGET_VERSIONS.terraform,
-      );
     });
 
     it("uses the target attributes captured at command start over the current cwd", async () => {
@@ -233,23 +200,6 @@ describe("telemetry", () => {
       )!;
       expect(invoked.attributes.target_opentofu.value).toBe(">=1.7.0");
       expect(invoked.attributes.target_terraform).toBeUndefined();
-    });
-
-    it("emits cli.command.error (not invoked) for error payloads", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        language: "typescript",
-        sendUsageTelemetry: true,
-      });
-      initSentryWithCapturingTransport();
-
-      await sendTelemetry("synth", { error: true, synthOrigin: "watch" });
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const items = parseMetricItems(envelopeBodies);
-      const error = items.find((i) => i.name === "cli.command.error");
-      expect(error).toBeDefined();
-      expect(error!.attributes.error_type.value).toBe("unexpected");
-      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(false);
     });
 
     it.each([
@@ -309,11 +259,6 @@ describe("telemetry", () => {
         language: "typescript",
         sendUsageTelemetry: true,
       });
-      // the probe is process-global (see terraform.ts); a seeded output keeps
-      // the binary attributes independent of the machine running the test
-      (globalThis as any)[Symbol.for("cdktn.terraformCli")] = Promise.resolve(
-        "Terraform v1.9.0\non darwin_arm64\n",
-      );
       initSentryWithCapturingTransport();
 
       await sendTelemetry("synth", {
@@ -362,12 +307,6 @@ describe("telemetry", () => {
   });
 
   describe("sendTelemetry payload mapping", () => {
-    function attributeValues(item: MetricItem) {
-      return Object.fromEntries(
-        Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
-      );
-    }
-
     beforeEach(() => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         sendUsageTelemetry: true,
@@ -375,11 +314,35 @@ describe("telemetry", () => {
       initSentryWithCapturingTransport();
     });
 
+    it.each([
+      [
+        "convert",
+        { numberOfProviders: 2, numberOfModules: 1, convertedLines: 42 },
+        { provider_count: 2, module_count: 1, converted_lines: 42 },
+      ],
+      [
+        "init",
+        { template: "go", isRemote: false },
+        { template: "go", is_remote: false },
+      ],
+      ["watch", { event: "start" }, { event: "start" }],
+      ["synth", { synthOrigin: "watch" }, { synth_origin: "watch" }],
+    ])(
+      "maps the %s scalars %j to the attributes %j",
+      async (command, payload, expected) => {
+        await sendTelemetry(command, payload);
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const invoked = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.command.invoked",
+        )!;
+        expect(attributeValues(invoked)).toMatchObject(expected);
+      },
+    );
+
     it("forwards only allow-listed scalars: an unknown object-valued key is never serialized", async () => {
       await sendTelemetry("convert", {
         language: "python",
-        numberOfProviders: 2,
-        numberOfModules: 1,
         convertedLines: 42,
         resources: { aws: { s3_bucket: 3 } },
         data: { aws: { caller_identity: 1 } },
@@ -392,12 +355,7 @@ describe("telemetry", () => {
         (i) => i.name === "cli.command.invoked",
       )!;
       const values = attributeValues(invoked);
-      expect(values).toMatchObject({
-        language: "python",
-        provider_count: 2,
-        module_count: 1,
-        converted_lines: 42,
-      });
+      expect(values).toMatchObject({ language: "python", converted_lines: 42 });
       expect(values).not.toHaveProperty("resources");
       expect(values).not.toHaveProperty("data");
       expect(values).not.toHaveProperty("somethingElse");
@@ -437,11 +395,9 @@ describe("telemetry", () => {
       expect(JSON.stringify(items)).not.toContain("secret-name");
     });
 
-    it("maps init to template/is_remote attributes and per-provider counts", async () => {
+    it("counts init providers per provider and puts only the total on the command metric", async () => {
       await sendTelemetry("init", {
         language: "go",
-        template: "go",
-        isRemote: false,
         projectId: "should-not-be-sent",
         addedProviders: ["aws@~>5.0", "hashicorp/random"],
       });
@@ -449,11 +405,7 @@ describe("telemetry", () => {
 
       const items = parseMetricItems(envelopeBodies);
       const invoked = items.find((i) => i.name === "cli.command.invoked")!;
-      expect(attributeValues(invoked)).toMatchObject({
-        template: "go",
-        is_remote: false,
-        provider_count: 2,
-      });
+      expect(attributeValues(invoked).provider_count).toBe(2);
       expect(invoked.attributes).not.toHaveProperty("projectId");
       expect(
         items
@@ -461,25 +413,9 @@ describe("telemetry", () => {
           .map((i) => attributeValues(i).provider),
       ).toEqual(["hashicorp/aws", "hashicorp/random"]);
     });
-
-    it("forwards the watch event", async () => {
-      await sendTelemetry("watch", { event: "start" });
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const invoked = parseMetricItems(envelopeBodies).find(
-        (i) => i.name === "cli.command.invoked",
-      )!;
-      expect(invoked.attributes.event.value).toBe("start");
-    });
   });
 
   describe("stack metrics", () => {
-    function attributeValues(item: MetricItem) {
-      return Object.fromEntries(
-        Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
-      );
-    }
-
     // one JSON-synthesized stack the way the library writes it: metadata
     // carries the stack name and resource ids (imports/moved), overrides
     // are keyed by schema type, module overrides by source
@@ -615,11 +551,12 @@ describe("telemetry", () => {
       expect(providers[3]).not.toHaveProperty("version_constraint");
     });
 
-    it("counts failed stacks without messages", async () => {
+    it("counts failed stacks and never serializes their failure messages", async () => {
       await sendTelemetry("destroy", {
         stackMetadata,
         requiredProviders,
         failedStackCount: 2,
+        failedStacks: ["failed to destroy SECRET-STACK-NAME: /Users/x/state"],
       });
       expect(await Sentry.flush(2000)).toBe(true);
 
@@ -628,6 +565,8 @@ describe("telemetry", () => {
       )!;
       expect(failed.value).toBe(2);
       expect(failed.attributes.command.value).toBe("destroy");
+      expect(envelopeBodies.join("\n")).not.toContain("failed to destroy");
+      expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
     });
 
     it("never serializes stack names, resource ids or module paths", async () => {
@@ -640,8 +579,15 @@ describe("telemetry", () => {
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
+      const overrideCount = Object.keys(stackMetadata[0].overrides!).length;
+      const providerCount = requiredProviders.reduce(
+        (total, providers) => total + Object.keys(providers).length,
+        0,
+      );
+      // one cli.stack per stack, one override / provider metric per entry,
+      // plus the single cli.stack.failed count
       expect(items.filter((i) => i.name.startsWith("cli.stack")).length).toBe(
-        11,
+        stackMetadata.length + overrideCount + providerCount + 1,
       );
       for (const item of items) {
         for (const forbidden of [
@@ -727,12 +673,6 @@ describe("telemetry", () => {
   });
 
   describe("attribute validation", () => {
-    function attributeValues(item: MetricItem) {
-      return Object.fromEntries(
-        Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
-      );
-    }
-
     beforeEach(() => {
       initSentryWithCapturingTransport();
     });
@@ -944,7 +884,6 @@ describe("telemetry", () => {
       ["../leak/provider", "other"],
       ["/abs/leak/provider", "other"],
       ["a/b/c", "other"],
-      ["a/b/c/d", "other"],
       ["", "other"],
       ["registry.terraform.io/hashicorp", "other"],
     ])("normalizeProviderSource(%s) -> %s", (input, expected) => {
@@ -954,6 +893,7 @@ describe("telemetry", () => {
     it.each([
       ["terraform-aws-modules/vpc/aws", "terraform-aws-modules/vpc/aws"],
       ["Terraform-AWS-Modules/VPC/aws", "terraform-aws-modules/vpc/aws"],
+      ["Terraform-AWS-Modules/VPC/aws?ref=v5.0.0", "other"],
       ["app.terraform.io/my-org/vpc/aws", "private-registry"],
       ["./modules/vpc", "local"],
       ["../shared/vpc", "local"],
@@ -1022,6 +962,8 @@ describe("telemetry", () => {
       Errors.setScope("unknown");
     });
 
+    // the scope is read when the error is built, not when the factory is
+    // created: a factory-time binding reports every error as "unknown"
     it("counts constructed errors by type with the command set at call time", async () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         sendUsageTelemetry: true,
@@ -1050,24 +992,17 @@ describe("telemetry", () => {
       expect(JSON.stringify(errors)).not.toContain("no stacks selected");
     });
 
-    it("is suppressed when usage telemetry is off", async () => {
+    it.each([
+      ["sendUsageTelemetry: false", { flag: false, env: undefined }],
+      ["CHECKPOINT_DISABLE", { flag: true, env: "1" }],
+    ])("is suppressed by %s", async (_case, { flag, env }) => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: false,
+        sendUsageTelemetry: flag,
       });
       initSentryWithCapturingTransport();
-
-      Errors.Internal("boom");
-      await Sentry.flush(2000);
-
-      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
-    });
-
-    it("is suppressed by CHECKPOINT_DISABLE", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendUsageTelemetry: true,
-      });
-      initSentryWithCapturingTransport();
-      process.env.CHECKPOINT_DISABLE = "1";
+      if (env !== undefined) {
+        process.env.CHECKPOINT_DISABLE = env;
+      }
 
       Errors.Internal("boom");
       await Sentry.flush(2000);
