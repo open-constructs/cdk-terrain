@@ -4,7 +4,7 @@ import { QueryableStack, TestDriver, onlyJson } from "../../test-helper";
 import * as path from "path";
 import * as fs from "fs-extra";
 
-describe.skip("full integration test", () => {
+describe("full integration test", () => {
   let driver: TestDriver;
 
   beforeAll(async () => {
