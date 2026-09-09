@@ -132,9 +132,6 @@ jobs:
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/gradle
           echo "gradle=/usr/local/share/.cache/gradle" >> $GITHUB_OUTPUT
-      # Keyed by binary, not version: OpenTofu resolves providers from
-      # registry.opentofu.org into this same directory, so a tofu run must not
-      # share a cache entry with a terraform run.
       - name: Cache terraform
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:

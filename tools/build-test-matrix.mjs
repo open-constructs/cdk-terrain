@@ -37,13 +37,7 @@ const availableVersions = {
 
 /**
  * Tests that opt out of the default `tested` Terraform cross-product and run against an explicit list of runtimes
- * instead. Keyed by path relative to `test/`.
- *
- * This is how a test gets coverage the default matrix cannot give it: a newer Terraform than `tested`, or OpenTofu,
- * without turning either on for all 60+ targets. Pinned entries reuse the whole existing integration job (container,
- * caches, `ci/skip-integration`), so a pin costs one job rather than a new workflow.
- *
- * Every pinned version must be in the matching `available` list, because those are the binaries baked into the image.
+ * instead. Keyed by path relative to `test/`. Pinned versions must be in the matching `available` list.
  *
  * @type {Record<string, Array<{ product: "terraform" | "opentofu", version: string }>>}
  */
@@ -105,10 +99,6 @@ function fileNeedsHclRun(relPath) {
 /**
  * Flattened list of matrix entries consumed by `strategy.matrix.include` in the workflow. Each entry materialises one
  * `linux_integration` job for a given test file against a given CLI in a given synth output mode.
- *
- * `binary` is the name of the version-suffixed binary in the CI image and is what `TERRAFORM_BINARY_NAME` is set to,
- * so it - not `terraform` - is what selects the CLI. `terraform` stays the bare version for cache keys and
- * `TERRAFORM_VERSION`.
  *
  * @type {Array<{ target: string, terraform: string, binary: string, hclOutput: boolean }>}
  */
