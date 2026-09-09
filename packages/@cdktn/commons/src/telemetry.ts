@@ -71,8 +71,12 @@ function boundedToken(value: string, maxLength: number): string {
   return value.length <= maxLength && TOKEN.test(value) ? value : "other";
 }
 
+// Normalized so spacing variants collapse into one value; a prerelease or
+// build identifier is free text and rejects the range (hyphen ranges are
+// written " - ", so a hyphen right after a digit is always a prerelease).
 function semverRangeOrInvalid(value: string): string {
-  return semver.validRange(value) ? value : "invalid";
+  const range = value.length <= 64 ? semver.validRange(value) : null;
+  return range && !/\d[-+]/.test(value) ? range : "invalid";
 }
 
 // Terraform provider constraint: comma-separated operators over versions.

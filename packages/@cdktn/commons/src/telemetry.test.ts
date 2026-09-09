@@ -724,8 +724,27 @@ describe("telemetry", () => {
       });
       expect(getProjectTargetAttributes(workdir)).toMatchObject({
         target_terraform: "invalid",
-        target_opentofu: ">=1.8",
+        target_opentofu: ">=1.8.0",
       });
+    });
+
+    it.each([
+      [">= 1.9.0", ">=1.9.0"],
+      ["~1.8", ">=1.8.0 <1.9.0-0"],
+      ["1.2.3 - 2.0.0", ">=1.2.3 <=2.0.0"],
+      [">=1.0.0 <2.0.0 || 1.2.3", ">=1.0.0 <2.0.0||1.2.3"],
+      [">= 1.0.0-LEAK-TV-PRERELEASE.corp.example.com", "invalid"],
+      ["1.2.3-acme.internal", "invalid"],
+      ["1.2.3+LEAK-TV-BUILD.johns-macbook", "invalid"],
+      [">=1.0.0 <2.0.0 || 1.2.3-LEAK-OR.host", "invalid"],
+      [">=1.0.0 " + "||1.0.0 ".repeat(10), "invalid"],
+    ])("forwards the declared target %p as %p", (range, expected) => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { terraform: range },
+      });
+      expect(getProjectTargetAttributes(workdir).target_terraform).toBe(
+        expected,
+      );
     });
 
     it.each([
@@ -1055,7 +1074,7 @@ describe("telemetry", () => {
       expect(getProjectTargetAttributes(workdir)).toEqual({
         targets_declared: true,
         validate_installed_binary: true,
-        target_opentofu: "~1.8",
+        target_opentofu: ">=1.8.0 <1.9.0-0",
       });
     });
 
