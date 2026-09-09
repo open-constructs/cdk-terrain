@@ -3,8 +3,7 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
-
-const PROBE_KEY = Symbol.for("cdktn.terraformCli");
+import { seedTerraformCliProbeForTests } from "./terraform";
 
 // The binary name is read at import, so every case loads a fresh module with
 // TERRAFORM_BINARY_NAME pointing at a fixture script; the probe itself is
@@ -51,13 +50,13 @@ describe("terraform binary probe", () => {
 
   beforeEach(() => {
     fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-tf-probe-"));
-    delete (globalThis as any)[PROBE_KEY];
+    seedTerraformCliProbeForTests();
     delete process.env.CHECKPOINT_DISABLE;
   });
 
   afterEach(() => {
     fs.removeSync(fixtureDir);
-    delete (globalThis as any)[PROBE_KEY];
+    seedTerraformCliProbeForTests();
     if (originalCheckpointDisable === undefined) {
       delete process.env.CHECKPOINT_DISABLE;
     } else {

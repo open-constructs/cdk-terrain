@@ -34,6 +34,19 @@ export interface TerraformCliProbe {
 // globalThis keeps it to one `version` spawn per process, started on first use.
 const PROBE_KEY = Symbol.for("cdktn.terraformCli");
 
+/**
+ * Test seam for the process-global probe: seeds the raw `version` output the
+ * parsers see, or clears it when called without an argument.
+ */
+export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
+  const globals = globalThis as { [PROBE_KEY]?: Promise<string> };
+  if (output === undefined) {
+    delete globals[PROBE_KEY];
+  } else {
+    globals[PROBE_KEY] = output;
+  }
+}
+
 function versionOutput(): Promise<string> {
   const globals = globalThis as { [PROBE_KEY]?: Promise<string> };
   if (!globals[PROBE_KEY]) {
