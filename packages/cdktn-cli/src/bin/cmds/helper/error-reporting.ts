@@ -12,3 +12,11 @@ export async function askForCrashReportingConsent() {
     default: true,
   });
 }
+
+export async function askForUsageTelemetryConsent() {
+  return await confirm({
+    message:
+      "Do you want to send anonymous usage telemetry (command, language, timing) to the CDKTN team? Refer to https://cdktn.io/docs/telemetry for more information",
+    default: true,
+  });
+}

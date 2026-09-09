@@ -43,6 +43,7 @@ export type InitArgs = {
   projectInfo: Project;
   templatePath: string;
   sendCrashReports: boolean;
+  sendUsageTelemetry: boolean;
   silent?: boolean;
 };
 
@@ -88,6 +89,7 @@ export async function init({
   projectInfo,
   templatePath,
   sendCrashReports,
+  sendUsageTelemetry,
   providers,
   providersForceLocal,
   silent,
@@ -114,6 +116,7 @@ export async function init({
     futureFlags,
     projectId,
     sendCrashReports,
+    sendUsageTelemetry,
     silent,
   };
 

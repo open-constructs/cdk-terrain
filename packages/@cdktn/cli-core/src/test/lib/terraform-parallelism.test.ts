@@ -110,6 +110,7 @@ describeIfDistExists(__dirname)("terraform parallelism", () => {
         Name: projectName,
       },
       sendCrashReports: false,
+      sendUsageTelemetry: false,
       dist: path.join(__dirname, "../../../../../../dist"),
     });
 
