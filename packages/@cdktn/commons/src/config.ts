@@ -301,6 +301,8 @@ interface ConfigBase {
    * `targetVersions` before running it.
    */
   readonly validateInstalledBinary?: boolean;
+  readonly sendCrashReports?: boolean;
+  readonly sendUsageTelemetry?: boolean;
 }
 
 /**
