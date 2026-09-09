@@ -28,6 +28,11 @@ jest.mock("@cdktn/commons", () => ({
 import * as Sentry from "@sentry/node";
 import ciInfo from "ci-info";
 import {
+  isUsageTelemetryEnabled,
+  setProjectTargetAttributes,
+  setUsageTelemetryEnabled,
+} from "@cdktn/commons";
+import {
   initializErrorReporting,
   shouldReportCrash,
   persistSendUsageTelemetryDecision,
@@ -73,6 +78,8 @@ describe("consent gating (initializErrorReporting)", () => {
   });
 
   afterEach(() => {
+    setUsageTelemetryEnabled(undefined);
+    setProjectTargetAttributes(undefined);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
     Object.defineProperty(process.stdout, "isTTY", {
@@ -252,6 +259,38 @@ describe("consent gating (initializErrorReporting)", () => {
 
     expect(Sentry.init).not.toHaveBeenCalled();
   });
+
+  // The resolved decision is captured for the whole run: commands that chdir
+  // into another project (convert) must not re-read that project's flag.
+  it.each([
+    [
+      "CHECKPOINT_DISABLE",
+      { CHECKPOINT_DISABLE: "1" },
+      { sendUsageTelemetry: true },
+      false,
+    ],
+    ["flag unset, no TTY", {}, { sendUsageTelemetry: false }, true],
+  ])(
+    "captures the usage decision at init (%s) for every later project directory",
+    async (_case, env, otherProject, expected) => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: false,
+      });
+      setInteractive(false);
+      Object.assign(process.env, env);
+      const other = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-other-"));
+      fs.writeJsonSync(path.join(other, "cdktf.json"), otherProject);
+
+      try {
+        await initializErrorReporting();
+        delete process.env.CHECKPOINT_DISABLE;
+
+        expect(isUsageTelemetryEnabled(other)).toBe(expected);
+      } finally {
+        fs.removeSync(other);
+      }
+    },
+  );
 
   it("init options pin release, tracesSampleRate 0 and a fixed serverName", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
