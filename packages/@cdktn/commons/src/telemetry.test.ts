@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/node";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import ciInfo from "ci-info";
 import {
   sendTelemetry,
   classifyModuleSource,
@@ -92,6 +93,7 @@ describe("telemetry", () => {
   afterEach(async () => {
     setUsageTelemetryEnabled(undefined);
     setProjectTargetAttributes(undefined);
+    delete (globalThis as any)[Symbol.for("cdktn.terraformCli")];
     await Sentry.close(1000);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
@@ -129,7 +131,9 @@ describe("telemetry", () => {
       expect(invoked).toBeDefined();
       expect(invoked!.attributes.command.value).toBe("synth");
       expect(invoked!.attributes.language.value).toBe("typescript");
-      expect(invoked!.attributes.ci).toBeDefined();
+      expect(invoked!.attributes.ci.value).toBe(
+        ciInfo.isCI ? ciInfo.name || "unknown" : false,
+      );
 
       expect(duration).toBeDefined();
       expect(duration!.type).toBe("distribution");
@@ -273,24 +277,86 @@ describe("telemetry", () => {
       },
     );
 
-    it("never attaches the machine hostname to metrics (serverName constant)", async () => {
+    it("never sends the hostname, username or working directory in any envelope", async () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         sendUsageTelemetry: true,
       });
       initSentryWithCapturingTransport();
 
-      await sendTelemetry("synth", {});
+      await sendTelemetry("synth", { totalTime: 1, language: "typescript" });
       expect(await Sentry.flush(2000)).toBe(true);
 
-      const items = parseMetricItems(envelopeBodies);
-      expect(items.length).toBeGreaterThan(0);
-      for (const item of items) {
-        const serverAddress = item.attributes["server.address"];
-        if (serverAddress) {
-          expect(serverAddress.value).toBe("cdktn-cli");
-          expect(serverAddress.value).not.toBe(os.hostname());
-        }
+      let username: string | undefined;
+      try {
+        username = os.userInfo().username;
+      } catch {
+        username = process.env.USER;
       }
+      expect(envelopeBodies.length).toBeGreaterThan(0);
+      for (const body of envelopeBodies) {
+        expect(body).not.toContain(os.hostname());
+        if (username) {
+          expect(body).not.toContain(username);
+        }
+        expect(body).not.toContain(process.cwd());
+        expect(body).not.toContain(workdir);
+      }
+    });
+
+    it("forwards exactly the allow-listed attribute set and nothing else from the payload", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+        sendUsageTelemetry: true,
+      });
+      // the probe is process-global (see terraform.ts); a seeded output keeps
+      // the binary attributes independent of the machine running the test
+      (globalThis as any)[Symbol.for("cdktn.terraformCli")] = Promise.resolve(
+        "Terraform v1.9.0\non darwin_arm64\n",
+      );
+      initSentryWithCapturingTransport();
+
+      await sendTelemetry("synth", {
+        totalTime: 5,
+        language: "typescript",
+        synthOrigin: "watch",
+        stackMetadata: [{ stackName: "prod-vpc", backend: "s3" }],
+        requiredProviders: [{ aws: { source: "aws" } }],
+        stackName: "prod-vpc",
+        outdir: "/Users/x/secret",
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const invoked = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.invoked",
+      )!;
+      // the one place that fails when an attribute is added: extend it
+      // deliberately, together with the collected-data list in the docs
+      expect(Object.keys(invoked.attributes).sort()).toEqual([
+        "arch",
+        "binary",
+        "binary_version",
+        "ci",
+        "command",
+        "language",
+        "os",
+        // stamped by the SDK: release/environment/serverName from init
+        "sentry.environment",
+        "sentry.release",
+        "sentry.sdk.name",
+        "sentry.sdk.version",
+        "sentry.timestamp.sequence",
+        "server.address",
+        "synth_origin",
+        "target_opentofu",
+        "target_terraform",
+        "targets_declared",
+        "validate_installed_binary",
+      ]);
+      expect(invoked.attributes.binary_version.value).toBe("1.9.0");
+      expect(invoked.attributes["server.address"].value).toBe("cdktn-cli");
+      const bytes = envelopeBodies.join("\n");
+      expect(bytes).not.toContain("prod-vpc");
+      expect(bytes).not.toContain("/Users/x/secret");
     });
   });
 
