@@ -6,7 +6,9 @@ import {
   getProjectId,
   getUserId,
   getUsageTelemetryConsent,
+  getProjectTargetAttributes,
   hasCapturedUsageTelemetryDecision,
+  setProjectTargetAttributes,
   setUsageTelemetryEnabled,
   startCommandTelemetry,
   collectDebugInformation,
@@ -127,6 +129,7 @@ export async function initializErrorReporting(
 
   // captured in the user's cwd; see CommandTelemetryState in commons
   setUsageTelemetryEnabled(usageTelemetryEnabled);
+  setProjectTargetAttributes(getProjectTargetAttributes(projectPath));
 
   if (!crashReportingEnabled && !usageTelemetryEnabled) {
     logger.debug("Error reporting and usage telemetry disabled");

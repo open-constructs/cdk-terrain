@@ -22,11 +22,14 @@ jest.mock("@sentry/node", () => ({
 
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
+// the target setter calls through, so init can be asserted to perform the
+// capture while the real captured state stays in place
 jest.mock("@cdktn/commons", () => {
   const actual = jest.requireActual("@cdktn/commons");
   return {
     ...actual,
     collectDebugInformation: jest.fn().mockResolvedValue({}),
+    setProjectTargetAttributes: jest.fn(actual.setProjectTargetAttributes),
   };
 });
 
@@ -36,6 +39,8 @@ import {
   Errors,
   isUsageTelemetryEnabled,
   resetCommandTelemetry,
+  seedTerraformCliProbeForTests,
+  setProjectTargetAttributes,
   setUsageTelemetryEnabled,
 } from "@cdktn/commons";
 import {
@@ -86,12 +91,16 @@ function useReportingFixture() {
     delete process.env.CHECKPOINT_DISABLE;
     process.env.SENTRY_DSN = "https://public@example.invalid/1";
     ciInfoMock.isCI = false;
+    // the start-of-command metric stamps the binary; keep it off the machine
+    seedTerraformCliProbeForTests(Promise.resolve("Terraform v1.9.0\n"));
   });
 
   afterEach(() => {
     setUsageTelemetryEnabled(undefined);
     resetCommandTelemetry();
     Errors.setScope("unknown");
+    setProjectTargetAttributes(undefined);
+    seedTerraformCliProbeForTests();
     process.chdir(originalCwd);
     fs.removeSync(workdir);
     Object.defineProperty(process.stdout, "isTTY", {
@@ -311,6 +320,22 @@ describe("consent gating (initializErrorReporting)", () => {
       expect(Sentry.init).toHaveBeenCalledTimes(1);
     },
   );
+  it("captures the project targets while still in the user's cwd", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: false,
+      targetVersions: { terraform: ">=1.9.0" },
+      validateInstalledBinary: true,
+    });
+    setInteractive(false);
+
+    await initializErrorReporting();
+
+    expect(setProjectTargetAttributes).toHaveBeenCalledWith({
+      targets_declared: true,
+      validate_installed_binary: true,
+      target_terraform: ">=1.9.0",
+    });
+  });
   it("reads the consent flags of an explicit project path, not the cwd", async () => {
     // init creates the project in a destination directory and initializes
     // reporting against it; the cwd may hold an unrelated (or no) cdktf.json
@@ -323,6 +348,7 @@ describe("consent gating (initializErrorReporting)", () => {
     fs.writeJsonSync(path.join(destination, "cdktf.json"), {
       sendCrashReports: false,
       sendUsageTelemetry: true,
+      targetVersions: { terraform: ">=1.9.0" },
     });
     setInteractive(true);
     const crashPrompt = jest.fn();
@@ -332,6 +358,9 @@ describe("consent gating (initializErrorReporting)", () => {
 
     expect(crashPrompt).not.toHaveBeenCalled();
     expect(usagePrompt).not.toHaveBeenCalled();
+    expect(setProjectTargetAttributes).toHaveBeenCalledWith(
+      expect.objectContaining({ target_terraform: ">=1.9.0" }),
+    );
     expect(isUsageTelemetryEnabled()).toBe(true);
     // usage-only consent: the client exists but drops error events
     await expect(initOptions().beforeSend({}, undefined)).resolves.toBeNull();
