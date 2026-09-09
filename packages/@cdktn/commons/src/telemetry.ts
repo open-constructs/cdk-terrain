@@ -3,9 +3,10 @@
 import * as Sentry from "@sentry/node";
 import * as path from "path";
 import * as fs from "fs-extra";
+import * as semver from "semver";
 import ciInfo from "ci-info";
 import { logger } from "./logging";
-import { DEFAULT_TARGET_VERSIONS, isLocalModule } from "./config";
+import { DEFAULT_TARGET_VERSIONS, LANGUAGES, isLocalModule } from "./config";
 import { isRegistryModule } from "./terraform-module";
 import { terraformCli, TerraformCliProbe } from "./terraform";
 
@@ -60,6 +61,28 @@ export function getUsageTelemetryConsent(
 // re-reading cdktf.json at emission time would consult the wrong project.
 let usageTelemetryEnabledState: boolean | undefined;
 
+// Free-text payload fields are validated before they become attributes so a
+// misconfigured or hand-edited value never carries arbitrary text.
+const TOKEN = /^[A-Za-z0-9_.\-/:]+$/;
+const CONSTRAINT_PART =
+  /^(=|!=|>=|<=|>|<|~>)?\s*\d+(\.\d+){0,2}(-[0-9A-Za-z.-]+)?$/;
+
+function boundedToken(value: string, maxLength: number): string {
+  return value.length <= maxLength && TOKEN.test(value) ? value : "other";
+}
+
+function semverRangeOrInvalid(value: string): string {
+  return semver.validRange(value) ? value : "invalid";
+}
+
+// Terraform provider constraint: comma-separated operators over versions.
+function terraformConstraintOrInvalid(value: string): string {
+  const parts = value.split(",").map((part) => part.trim());
+  return parts.every((part) => CONSTRAINT_PART.test(part)) && value.length <= 64
+    ? value
+    : "invalid";
+}
+
 export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
   usageTelemetryEnabledState = enabled;
 }
@@ -100,10 +123,10 @@ export function getProjectTargetAttributes(
     validate_installed_binary: cdktfJson.validateInstalledBinary === true,
   };
   if (typeof targets.terraform === "string") {
-    attributes.target_terraform = targets.terraform;
+    attributes.target_terraform = semverRangeOrInvalid(targets.terraform);
   }
   if (typeof targets.opentofu === "string") {
-    attributes.target_opentofu = targets.opentofu;
+    attributes.target_opentofu = semverRangeOrInvalid(targets.opentofu);
   }
   return attributes;
 }
@@ -200,8 +223,18 @@ export function normalizeProviderSource(source: string): string {
     : "other";
 }
 
+// Comparison key for generated-vs-prebuilt, never sent: public sources
+// normalize, anything else stays raw so two unrelated private sources (both
+// "private-registry" on the metric) never match each other.
+function providerIdentity(source: string): string {
+  const normalized = normalizeProviderSource(source);
+  return normalized === "private-registry" || normalized === "other"
+    ? source.trim().toLowerCase().split("@")[0]
+    : normalized;
+}
+
 /**
- * Normalized sources of the providers a project generates bindings for
+ * Identities of the providers a project generates bindings for
  * (`terraformProviders` in `cdktf.json`, as `"aws@~>5.0"` strings or
  * `{ name, source }` objects); anything else in a stack is prebuilt.
  */
@@ -214,10 +247,10 @@ export function getGeneratedProviderSources(
   }
   return entries.flatMap((entry) => {
     if (typeof entry === "string") {
-      return [normalizeProviderSource(entry)];
+      return [providerIdentity(entry)];
     }
     const source = entry?.source ?? entry?.name;
-    return typeof source === "string" ? [normalizeProviderSource(source)] : [];
+    return typeof source === "string" ? [providerIdentity(source)] : [];
   });
 }
 
@@ -225,7 +258,7 @@ export function classifyProviderBinding(
   source: string,
   generatedSources: string[],
 ): "generated" | "prebuilt" {
-  return generatedSources.includes(normalizeProviderSource(source))
+  return generatedSources.includes(providerIdentity(source))
     ? "generated"
     : "prebuilt";
 }
@@ -314,14 +347,16 @@ function sendStackTelemetry(
     const stackAttributes: Attributes = {
       ...attributes,
       backend:
-        typeof metadata.backend === "string" ? metadata.backend : "unknown",
+        typeof metadata.backend === "string"
+          ? boundedToken(metadata.backend, 32)
+          : "unknown",
       cloud: typeof metadata.cloud === "string",
       override_count: sum(overrides),
       import_count: sum(groupSizes(metadata.imports)),
       moved_count: sum(groupSizes(metadata.moved)),
     };
     if (typeof metadata.version === "string") {
-      stackAttributes.library_version = metadata.version;
+      stackAttributes.library_version = boundedToken(metadata.version, 32);
     }
     Sentry.metrics.count("cli.stack", 1, { attributes: stackAttributes });
 
@@ -329,7 +364,7 @@ function sendStackTelemetry(
       Sentry.metrics.count("cli.stack.override", 1, {
         attributes: {
           ...attributes,
-          resource_type: overrideResourceType(key),
+          resource_type: boundedToken(overrideResourceType(key), 64),
           override_count: count,
         },
       });
@@ -350,7 +385,9 @@ function sendStackTelemetry(
         binding: classifyProviderBinding(source, generatedSources),
       };
       if (typeof constraint?.version === "string") {
-        providerAttributes.version_constraint = constraint.version.slice(0, 64);
+        providerAttributes.version_constraint = terraformConstraintOrInvalid(
+          constraint.version,
+        );
       }
       Sentry.metrics.count("cli.stack.provider", 1, {
         attributes: providerAttributes,
@@ -426,7 +463,7 @@ export async function sendTelemetry(
       ...(projectTargetAttributes ?? getProjectTargetAttributes()),
       ...(await getBinaryAttributes()),
     };
-    if (typeof payload.language === "string") {
+    if (LANGUAGES.includes(payload.language)) {
       attributes.language = payload.language;
     }
     for (const [key, attribute] of Object.entries(

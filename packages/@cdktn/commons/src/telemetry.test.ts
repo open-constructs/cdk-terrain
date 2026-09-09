@@ -522,7 +522,7 @@ describe("telemetry", () => {
       ]);
     });
 
-    it("counts required providers with normalized source, truncated constraint and binding", async () => {
+    it("counts required providers with normalized source, validated constraint and binding", async () => {
       await sendTelemetry("diff", { stackMetadata, requiredProviders });
       expect(await Sentry.flush(2000)).toBe(true);
 
@@ -544,7 +544,7 @@ describe("telemetry", () => {
         "prebuilt",
       ]);
       expect(providers[0].version_constraint).toBe("~> 5.0");
-      expect(providers[2].version_constraint).toHaveLength(64);
+      expect(providers[2].version_constraint).toBe("invalid");
       expect(providers[3]).not.toHaveProperty("version_constraint");
     });
 
@@ -629,8 +629,98 @@ describe("telemetry", () => {
     });
   });
 
+  describe("attribute validation", () => {
+    function attributeValues(item: MetricItem) {
+      return Object.fromEntries(
+        Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
+      );
+    }
+
+    beforeEach(() => {
+      initSentryWithCapturingTransport();
+    });
+
+    it("omits a language that is not one of the supported ones", async () => {
+      await sendTelemetry("convert", { language: "rust; DROP TABLE" });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const invoked = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.invoked",
+      )!;
+      expect(invoked.attributes).not.toHaveProperty("language");
+      expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
+    });
+
+    it("sends declared targets that are not semver ranges as invalid", () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { terraform: "latest /Users/x", opentofu: ">=1.8" },
+      });
+      expect(getProjectTargetAttributes(workdir)).toMatchObject({
+        target_terraform: "invalid",
+        target_opentofu: ">=1.8",
+      });
+    });
+
+    it.each([
+      [">= 1.2, < 2.0", ">= 1.2, < 2.0"],
+      ["~> 5.0", "~> 5.0"],
+      ["= 1.0", "= 1.0"],
+      ["!= 1.2.3", "!= 1.2.3"],
+      ["1.0.0-beta.1", "1.0.0-beta.1"],
+      ["latest", "invalid"],
+      [">= 1.2 || < 2.0", "invalid"],
+      ["~> 5.0 # /Users/x", "invalid"],
+      ["1." + "1.".repeat(40), "invalid"],
+    ])(
+      "forwards the provider constraint %p as %p",
+      async (version, expected) => {
+        await sendTelemetry("synth", {
+          stackMetadata: [{}],
+          requiredProviders: [{ aws: { source: "aws", version } }],
+        });
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const provider = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.stack.provider",
+        )!;
+        expect(attributeValues(provider).version_constraint).toBe(expected);
+      },
+    );
+
+    it("reduces backend, library version and override keys with free text to other", async () => {
+      await sendTelemetry("synth", {
+        stackMetadata: [
+          {
+            version: "0.21.0+build." + "x".repeat(40),
+            backend: "s3 bucket=/Users/x/state",
+            overrides: {
+              aws_s3_bucket: ["tags"],
+              "resource with spaces /Users/x": ["tags"],
+              ["aws_" + "x".repeat(70)]: ["tags"],
+            },
+          },
+        ],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(
+        attributeValues(items.find((i) => i.name === "cli.stack")!),
+      ).toMatchObject({
+        backend: "other",
+        library_version: "other",
+      });
+      expect(
+        items
+          .filter((i) => i.name === "cli.stack.override")
+          .map((i) => attributeValues(i).resource_type),
+      ).toEqual(["aws_s3_bucket", "other", "other"]);
+      expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
+    });
+  });
+
   describe("provider binding classification", () => {
-    it("reads string and object terraformProviders entries as normalized sources", () => {
+    it("reads string and object terraformProviders entries as identities", () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         terraformProviders: [
           "aws@~>5.0",
@@ -640,6 +730,7 @@ describe("telemetry", () => {
           { name: "azurerm" },
           { version: "1.0.0" },
           42,
+          "TFE.corp.example.com/acme-org/vault@~>3.0",
         ],
       });
       expect(getGeneratedProviderSources(workdir)).toEqual([
@@ -648,6 +739,7 @@ describe("telemetry", () => {
         "kreuzwerker/docker",
         "hashicorp/google",
         "hashicorp/azurerm",
+        "tfe.corp.example.com/acme-org/vault",
       ]);
     });
 
@@ -669,8 +761,17 @@ describe("telemetry", () => {
       ["Hashicorp/AWS", "generated"],
       ["kreuzwerker/docker", "generated"],
       ["hashicorp/google", "prebuilt"],
+      ["tfe.corp.example.com/acme-org/vault", "generated"],
+      // another private source is not the generated one, even though both
+      // reach the metric as "private-registry"
+      ["tfe.corp.example.com/other-org/vault", "prebuilt"],
+      ["./leak-provider", "prebuilt"],
     ])("classifies %s as %s", (source, expected) => {
-      const generated = ["hashicorp/aws", "kreuzwerker/docker"];
+      const generated = [
+        "hashicorp/aws",
+        "kreuzwerker/docker",
+        "tfe.corp.example.com/acme-org/vault",
+      ];
       expect(classifyProviderBinding(source, generated)).toBe(expected);
     });
   });
