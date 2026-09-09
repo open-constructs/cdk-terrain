@@ -8,10 +8,10 @@ import * as os from "os";
 import * as fs from "fs-extra";
 import {
   readCDKTFManifest,
-  flushTelemetry,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
 import { runCli } from "./error-handling";
+import { createBeforeExitFlush } from "./exit-flush";
 import initCmd from "./cmds/init";
 import getCmd from "./cmds/get";
 import convertCmd from "./cmds/convert";
@@ -40,18 +40,7 @@ if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
   process.env.TF_PLUGIN_CACHE_DIR = ensurePluginCache();
 }
 
-// Sentry buffers metrics asynchronously: flush (bounded) before a normal exit,
-// then exit explicitly, or an unresponsive ingest endpoint keeps the transport
-// socket and the process alive. runCli does the same for failures.
-let telemetryFlushStarted = false;
-process.on("beforeExit", async () => {
-  if (telemetryFlushStarted) {
-    return;
-  }
-  telemetryFlushStarted = true;
-  await flushTelemetry();
-  process.exit(process.exitCode ?? 0);
-});
+process.on("beforeExit", createBeforeExitFlush());
 
 const customCompletion = function (
   _current: string,
