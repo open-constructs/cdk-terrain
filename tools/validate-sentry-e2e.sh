@@ -41,17 +41,21 @@ DSN="http://cdktn@localhost:${PORT}/1"
 echo "==> building a scratch bundle with DSN $DSN baked in"
 (cd "$ROOT/packages/cdktn-cli" && pnpm run compile-build-config >/dev/null && SENTRY_DSN="$DSN" CDKTN_BUNDLE_OUTDIR="$OUTDIR" node build-config/build.js)
 
-# Polls the sink until every pattern was recorded or 10 s pass; the
-# assertions at the end name whatever is still missing.
+# Polls the sink until every pattern was recorded or 10 s pass; a timeout
+# names what never arrived instead of leaving it to the assertions below.
 await_items() {
-  local i pattern
+  local i pattern missing
   for i in $(seq 1 100); do
     ITEMS="$(curl -sf "http://localhost:${PORT}/__items" || true)"
+    missing=""
     for pattern in "$@"; do
-      echo "$ITEMS" | grep -q -- "$pattern" || { sleep 0.1; continue 2; }
+      echo "$ITEMS" | grep -q -- "$pattern" || missing="$missing $pattern"
     done
-    return 0
+    [ -z "$missing" ] && return 0
+    sleep 0.1
   done
+  echo "FAIL: timed out waiting for$missing" >&2
+  exit 1
 }
 
 WORK="$(mktemp -d)"
@@ -184,7 +188,7 @@ for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example lea
 done
 echo "$ITEMS" | grep -q '"error_type"' \
   || fail "error_type attribute missing on cli.command.error"
-echo "$RAW" | grep -q '"unexpected"' \
+echo "$RAW" | grep -q '"error_type":{"value":"unexpected"' \
   || fail "the crash trigger was not counted as an unexpected cli.command.error"
 echo "$ITEMS" | grep -q '{"type":"event"}' \
   || fail "no crash event reached the sink from the entrypoint failure path"
