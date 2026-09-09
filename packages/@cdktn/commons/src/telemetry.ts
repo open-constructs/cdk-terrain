@@ -280,25 +280,38 @@ export function classifyProviderBinding(
     : "prebuilt";
 }
 
+// Public registry addresses are `namespace/name/provider` with plain segments;
+// a dot, colon or `~` in a segment marks a hostname, bucket or home path that
+// go-getter would resolve instead.
+const REGISTRY_SEGMENT = /^[a-z0-9][a-z0-9_-]*$/;
+
+// Forced getters, URLs and well-known object-store or forge hosts.
+const REMOTE_SOURCE =
+  /^(?:git|hg|s3|gcs)::|^git@|:\/\/|^github\.com\/|^bitbucket\.org\/|amazonaws\.com\/|googleapis\.com\//i;
+
 /**
  * Module identity for metrics. Only public registry sources are sent as-is;
- * anything else could carry a path, hostname or organization and is reduced
- * to its kind.
+ * anything else could carry a path, hostname, bucket or organization and is
+ * reduced to its kind.
  */
 export function classifyModuleSource(source: string): string {
   const trimmed = source.trim();
   if (isLocalModule(trimmed) || path.isAbsolute(trimmed)) {
     return "local";
   }
-  if (/^git(::|@)|:\/\/|^github\.com\/|^bitbucket\.org\//i.test(trimmed)) {
+  if (REMOTE_SOURCE.test(trimmed)) {
     return "git";
   }
   if (!isRegistryModule(trimmed)) {
     return "other";
   }
-  return trimmed.split("/").length === 4
-    ? "private-registry"
-    : trimmed.toLowerCase();
+  const segments = trimmed.toLowerCase().split("/");
+  if (segments.length === 4) {
+    return "private-registry";
+  }
+  return segments.every((segment) => REGISTRY_SEGMENT.test(segment))
+    ? segments.join("/")
+    : "other";
 }
 
 // Scalar payload fields forwarded as attributes, per command. Anything not

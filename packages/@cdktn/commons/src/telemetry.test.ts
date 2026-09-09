@@ -901,6 +901,17 @@ describe("telemetry", () => {
       ["git@github.com:org/repo.git", "git"],
       ["github.com/org/repo", "git"],
       ["https://example.com/vpc.zip", "git"],
+      ["s3::https://s3-eu-west-1.amazonaws.com/leak-bucket/vpc.zip", "git"],
+      ["s3-eu-west-1.amazonaws.com/leak-bucket/vpc.zip", "git"],
+      ["leak-bucket.s3.amazonaws.com/leak-dir/vpc.zip", "git"],
+      ["gcs::https://www.googleapis.com/storage/v1/leak-bucket/vpc", "git"],
+      ["www.googleapis.com/storage/v1/leak-bucket/vpc", "git"],
+      ["hg::http://example.com/leak-repo", "git"],
+      ["gitlab.com/leak-org/leak-repo", "other"],
+      ["example.com/leak/mod.zip", "other"],
+      ["~/leak-home/mod", "other"],
+      ["localhost:8080/leak-org/mod", "other"],
+      ["terraform-aws-modules/vpc/aws//modules/leak-sub", "other"],
       ["not-a-module", "other"],
     ])("classifyModuleSource(%s) -> %s", (input, expected) => {
       expect(classifyModuleSource(input)).toBe(expected);

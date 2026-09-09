@@ -73,14 +73,12 @@ export async function reportFailure(
     if (message) deps.log(message); // yargs validation text
 
     if (IsErrorType(error, "Usage")) {
-      // cli-core's error-reporting.ts `beforeSend` drops "Usage Error"
-      // exceptions on purpose (it's a user mistake, not a crash) - don't
-      // even bother capturing one just to have it filtered out downstream.
+      // not captured: cli-core's `beforeSend` drops "Usage Error" events
+      // anyway (a user mistake, not a crash)
       deps.logError((error as Error).message); // one line, NO debug info
     } else if (IsErrorType(error, "External")) {
-      // Unlike Usage, External isn't filtered by `beforeSend`, so it's
-      // reported: printing one clean line to the terminal doesn't mean the
-      // failure is uninteresting to us, just that it's not the user's fault.
+      // one clean line for the user, but still captured: `beforeSend`
+      // keeps External errors
       deps.logError((error as Error).message); // one line, NO debug info
       deps.captureException(error);
     } else if (error !== undefined && error !== null) {
@@ -131,13 +129,9 @@ export function runCli(
   let failure: CliFailure | undefined;
 
   y.fail((message, error) => {
-    // MUST stay synchronous: yargs discards this callback's return value
-    // (yargs/build/lib/usage.js -> `fail(msg, err, self)`), so any await here
-    // races Node's unhandled-rejection reporter. See error-handling.test.ts.
-    //
-    // With .exitProcess(false) this does NOT exit; it sets yargs' internal
-    // `hasOutput` flag, which is what prevents the command handler from
-    // running after a validation failure. Keep it, and keep it first.
+    // Must stay synchronous: yargs discards the return value, so an await here
+    // races Node's unhandled-rejection reporter. y.exit does not exit under
+    // .exitProcess(false); it sets hasOutput, which stops the handler running.
     y.exit(1, error as Error);
     if (!failure) failure = { message, error };
   });
@@ -146,10 +140,9 @@ export function runCli(
     try {
       await y.parseAsync();
     } catch (error) {
-      // Async handler rejections reach here too (yargs rethrows out of parse()
-      // after .fail ran) — `failure` is already set, so no double report.
-      // Synchronous handler throws never reach .fail() at all in yargs 17;
-      // this is the only place that catches them.
+      // Async handler rejections land here after .fail already recorded them;
+      // synchronous handler throws bypass .fail entirely, so this is the only
+      // place that catches those.
       if (!failure) failure = { message: null, error };
     }
     if (!failure) return; // success / --help / --version

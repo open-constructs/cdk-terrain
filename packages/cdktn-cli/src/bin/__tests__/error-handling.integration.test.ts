@@ -1,12 +1,9 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 //
-// Child-process smoke test for runCli(): bundles a tiny fixture with esbuild
-// (already a devDependency) and runs it as a real, separate Node process, so
-// this exercises the actual unhandled-rejection behaviour of the runtime
-// rather than a mocked one. Deliberately NOT dist-gated (no prebuilt CLI, no
-// terraform, no network) so it runs in normal CI. Bundling takes well under
-// a second.
+// Bundles a tiny fixture with esbuild and runs it as a separate Node process,
+// so runCli() meets the runtime's real unhandled-rejection behaviour. Not
+// dist-gated: no prebuilt CLI, terraform or network is needed.
 import * as fs from "fs";
 import * as http from "http";
 import type { AddressInfo } from "net";
@@ -120,12 +117,9 @@ describe("runCli child-process smoke test", () => {
       .replace(/\.ts$/, "");
     fs.writeFileSync(fixturePath, fixtureSource(errorHandlingPath));
 
-    // The fixture lives under os.tmpdir(), which has no node_modules
-    // ancestry of its own, so bare-specifier resolution for its direct
-    // imports needs a hand-rolled alias. Everything error-handling.ts itself
-    // imports resolves normally, because that file's real path is inside the
-    // workspace; aliasing here just pins the fixture's copy to the same
-    // resolved module, so there's one Sentry client and one telemetry state.
+    // The fixture sits under os.tmpdir() with no node_modules ancestry, so its
+    // bare imports are aliased to the workspace copies error-handling.ts itself
+    // resolves: one Sentry client, one telemetry state.
     await esbuild.build({
       entryPoints: [fixturePath],
       bundle: true,

@@ -12,10 +12,9 @@ import {
   FailureReporterDeps,
 } from "../error-handling";
 
-// Node schedules the unhandled-rejection bookkeeping for an orphaned promise
-// at the end of the tick in which it is orphaned. Two setImmediate turns land
-// strictly after that tick, which is what makes "was anything ever orphaned"
-// a deterministic observation instead of a timing-dependent one.
+// Node reports an orphaned rejection at the end of the tick that orphaned it;
+// two setImmediate turns land strictly after that, making "was anything
+// orphaned" a deterministic check.
 async function flushMicroAndMacrotasks() {
   await new Promise((r) => setImmediate(r));
   await new Promise((r) => setImmediate(r));
@@ -43,10 +42,8 @@ function makeDeps(): FailureReporterDeps {
   };
 }
 
-// A fresh, isolated yargs instance per test: `yargs(args)` (the "yargs"
-// package's singleton-factory form used by cdktn.ts itself) builds a brand
-// new internal instance and returns it directly, so tests don't leak
-// commands or `.fail()` handlers into one another.
+// `yargs(args)` builds a fresh instance per test, so commands and `.fail()`
+// handlers never leak between cases.
 function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
   return yargs(args)
     .exitProcess(false)
@@ -78,9 +75,8 @@ function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
       "usageboom",
       "throws a Usage error",
       () => {},
-      // async, like real command handlers (e.g. deploy's), so this exercises
-      // the same handler-rejection path as `boom`/`rawboom` rather than the
-      // separate yargs-validation path exercised by `choice` below.
+      // async like real handlers, so this takes the handler-rejection path
+      // rather than the yargs-validation path (`choice` below)
       async () => {
         throw Errors.Usage("bad-usage-message");
       },
@@ -135,9 +131,7 @@ async function runAndCapture(
     process.off("unhandledRejection", onUnhandled);
   }
 
-  // Capture everything the mock recorded BEFORE restoring it: mockRestore()
-  // resets mock.calls (it's mockReset() + putting the real implementation
-  // back), so reading exitSpy.mock.* after this point always reports empty.
+  // read the calls before mockRestore(), which also resets them
   const exitCallCount = exitSpy.mock.calls.length;
   const lastCall = exitSpy.mock.calls[exitCallCount - 1];
   const exitCode = lastCall ? (lastCall[0] as number | undefined) : undefined;
@@ -505,9 +499,8 @@ describe("runCli", () => {
     expect(allLoggedText(deps).some((t) => t.includes("Invalid values"))).toBe(
       true,
     );
-    // yargs' own validation failures pass no `error` object, only a message,
-    // so this never reaches the generic Error branch that captures for
-    // Sentry (there'd be nothing usefully identifying to capture anyway).
+    // a yargs validation failure carries a message but no error, so there is
+    // nothing to capture
     expect(deps.captureException).not.toHaveBeenCalled();
   });
 

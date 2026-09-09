@@ -189,8 +189,7 @@ echo "$CRASH_OUTPUT" | grep -q '^Debug Information:' \
 echo "$CRASH_OUTPUT" | grep -q 'ERR_UNHANDLED_REJECTION\|PromiseRejectionHandledWarning' \
   && fail "the crash trigger orphaned a rejection"
 
-# Free while the bundle is at hand; the unit tests and this script's sink
-# assertions are what prove the transport, not this grep.
+# A cheap bundle scan; the sink assertions above are what prove the transport.
 HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"
 [ "$HASHICORP_REFS" = "0" ] || fail "bundle still references checkpoint-api.hashicorp.com ($HASHICORP_REFS hits)"
 

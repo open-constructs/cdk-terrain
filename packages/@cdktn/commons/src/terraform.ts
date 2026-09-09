@@ -52,9 +52,8 @@ export function terraformCli(): Promise<TerraformCliProbe> {
 }
 
 /**
- * Version string for `cdktn debug`. A missing binary resolves to the error
- * text rather than an `Errors.Usage` value, which would count a phantom
- * `cli.error` metric on every command run without the binary.
+ * Version string for `cdktn debug`; a missing binary resolves to the error
+ * text, since an `Errors.Usage` value would count a phantom `cli.error`.
  */
 export function terraformVersion(): Promise<string | undefined> {
   return versionOutput()

@@ -376,8 +376,8 @@ describe("shouldReportCrash tri-state", () => {
     [{ sendCrashReports: false }, false],
     [{ sendCrashReports: "true" }, true],
     [{ sendCrashReports: "false" }, false],
-    // an absent flag once read as false, which made the crash-consent
-    // prompt unreachable; undefined is what triggers it
+    // undefined, not false, for an absent flag: that is what triggers the
+    // crash-consent prompt
     [{}, undefined],
   ])("reads %j as %p", (config, expected) => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
