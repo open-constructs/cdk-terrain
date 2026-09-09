@@ -64,8 +64,7 @@ let usageTelemetryEnabledState: boolean | undefined;
 // Free-text payload fields are validated before they become attributes so a
 // misconfigured or hand-edited value never carries arbitrary text.
 const TOKEN = /^[A-Za-z0-9_.\-/:]+$/;
-const CONSTRAINT_PART =
-  /^(=|!=|>=|<=|>|<|~>)?\s*\d+(\.\d+){0,2}(-[0-9A-Za-z.-]+)?$/;
+const CONSTRAINT_PART = /^(=|!=|>=|<=|>|<|~>)?\s*(\d+(?:\.\d+){0,2})$/;
 
 function boundedToken(value: string, maxLength: number): string {
   return value.length <= maxLength && TOKEN.test(value) ? value : "other";
@@ -79,12 +78,23 @@ function semverRangeOrInvalid(value: string): string {
   return range && !/\d[-+]/.test(value) ? range : "invalid";
 }
 
-// Terraform provider constraint: comma-separated operators over versions.
+// Terraform provider constraint: comma-separated operators over versions,
+// re-joined as "~> 5.0, != 5.1.0" so spacing variants collapse into one
+// value. A prerelease identifier is free text and rejects the constraint.
 function terraformConstraintOrInvalid(value: string): string {
-  const parts = value.split(",").map((part) => part.trim());
-  return parts.every((part) => CONSTRAINT_PART.test(part)) && value.length <= 64
-    ? value
-    : "invalid";
+  if (value.length > 64) {
+    return "invalid";
+  }
+  const parts: string[] = [];
+  for (const part of value.split(",")) {
+    const match = CONSTRAINT_PART.exec(part.trim());
+    if (!match) {
+      return "invalid";
+    }
+    const [, operator, version] = match;
+    parts.push(operator ? `${operator} ${version}` : version);
+  }
+  return parts.join(", ");
 }
 
 export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
