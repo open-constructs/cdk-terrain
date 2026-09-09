@@ -57,6 +57,14 @@ const isReadme = (file: string) => file.toLowerCase() === "readme.md";
 const isTypescriptTemplate = (name: string) =>
   name === "typescript" || name.startsWith("typescript-");
 
+/**
+ * Template attribute for the init metric: a built-in template by name, any
+ * other (its name is derived from the user-supplied URL) as "remote".
+ */
+export function templateTelemetryName(name: string): string {
+  return templates.includes(name) ? name : "remote";
+}
+
 export function checkForEmptyDirectory(dir: string) {
   if (
     fs
@@ -131,7 +139,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
     template,
     argv.nonInteractive ?? false,
   );
-  telemetryData.template = templateInfo.Name;
+  telemetryData.template = templateTelemetryName(templateInfo.Name);
 
   if (!argv.projectName && argv.nonInteractive) {
     throw Errors.Usage(
