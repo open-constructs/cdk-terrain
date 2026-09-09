@@ -409,7 +409,13 @@ describe("telemetry", () => {
         },
         google: { source: "hashicorp/google", version: "x".repeat(100) },
       },
-      { random: { source: "hashicorp/random" } },
+      {
+        random: { source: "hashicorp/random" },
+        vault: {
+          source: "tfe.corp.example.com/acme-org/vault",
+          version: "~> 3.0",
+        },
+      },
     ];
 
     beforeEach(() => {
@@ -489,10 +495,12 @@ describe("telemetry", () => {
         "kreuzwerker/docker",
         "hashicorp/google",
         "hashicorp/random",
+        "private-registry",
       ]);
       expect(providers.map((p) => p.binding)).toEqual([
         "generated",
         "generated",
+        "prebuilt",
         "prebuilt",
         "prebuilt",
       ]);
@@ -527,7 +535,7 @@ describe("telemetry", () => {
 
       const items = parseMetricItems(envelopeBodies);
       expect(items.filter((i) => i.name.startsWith("cli.stack")).length).toBe(
-        10,
+        11,
       );
       for (const item of items) {
         for (const forbidden of [
@@ -543,6 +551,8 @@ describe("telemetry", () => {
       expect(bytes).not.toContain("SECRET-STACK-NAME");
       expect(bytes).not.toContain("secret-resource-id");
       expect(bytes).not.toContain("secret-path");
+      expect(bytes).not.toContain("tfe.corp.example.com");
+      expect(bytes).not.toContain("acme-org");
     });
 
     it("emits no cli.stack.* metric when usage telemetry is off", async () => {
@@ -634,6 +644,16 @@ describe("telemetry", () => {
       ["registry.terraform.io/hashicorp/aws", "hashicorp/aws"],
       ["registry.opentofu.org/hashicorp/aws", "hashicorp/aws"],
       ["kreuzwerker/docker", "kreuzwerker/docker"],
+      ["tfe.corp.example.com/acme-org/aws", "private-registry"],
+      ["registry.acme.internal/platform/vault@~>3.0", "private-registry"],
+      ["localhost:8080/acme/aws", "private-registry"],
+      ["./leak-provider", "other"],
+      ["../leak/provider", "other"],
+      ["/abs/leak/provider", "other"],
+      ["a/b/c", "other"],
+      ["a/b/c/d", "other"],
+      ["", "other"],
+      ["registry.terraform.io/hashicorp", "other"],
     ])("normalizeProviderSource(%s) -> %s", (input, expected) => {
       expect(normalizeProviderSource(input)).toBe(expected);
     });

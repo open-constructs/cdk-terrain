@@ -87,6 +87,8 @@ fs.writeFileSync(
       required_providers: {
         aws: { source: "aws", version: "~> 5.0" },
         random: { source: "hashicorp/random", version: "3.6.0" },
+        vault: { source: "tfe.leak-host.example/leak-org/vault", version: "~> 3.0" },
+        local: { source: "./leak-provider" },
       },
     },
   }),
@@ -142,9 +144,11 @@ for key in binding library_version override_count import_count resource_type; do
 done
 echo "$RAW" | grep -q 'hashicorp/random' \
   || fail "normalized provider source missing from the stack metrics"
-for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id; do
+echo "$RAW" | grep -q 'private-registry' \
+  || fail "private-registry provider was not reduced to its kind"
+for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example leak-org leak-provider; do
   echo "$RAW" | grep -q "$secret" \
-    && fail "$secret reached the sink: stack names / resource ids must never be sent"
+    && fail "$secret reached the sink: stack names, resource ids and provider hosts/paths must never be sent"
 done
 # The failing-app synth path hard-exits without throwing (graceful=false),
 # so no crash EVENT is expected from these triggers; crash-event delivery

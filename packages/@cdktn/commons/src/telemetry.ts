@@ -165,19 +165,33 @@ export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   }
 }
 
+const PUBLIC_PROVIDER_REGISTRIES = [
+  "registry.terraform.io",
+  "registry.opentofu.org",
+];
+const PROVIDER_SEGMENT = /^[a-z0-9][a-z0-9_-]*$/;
+const PROVIDER_HOST = /^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)+)(:\d+)?$/;
+
 /**
- * Canonical provider identity for metrics: lowercase, registry host and
- * version constraint stripped, implicit `hashicorp/` namespace made explicit
- * so `aws`, `hashicorp/aws@~>5` and `registry.terraform.io/hashicorp/aws`
- * all count as one provider.
+ * Provider identity for metrics: only public-registry `namespace/type` is sent
+ * (`aws`, `hashicorp/aws@~>5`, `registry.terraform.io/hashicorp/aws` are one);
+ * other hosts become "private-registry", paths and malformed input "other".
  */
 export function normalizeProviderSource(source: string): string {
-  let normalized = source.trim().toLowerCase().split("@")[0];
-  normalized = normalized.replace(
-    /^(registry\.terraform\.io|registry\.opentofu\.org)\//,
-    "",
-  );
-  return normalized.includes("/") ? normalized : `hashicorp/${normalized}`;
+  const segments = source.trim().toLowerCase().split("@")[0].split("/");
+  if (segments.length === 3) {
+    const host = segments.shift()!;
+    if (!PUBLIC_PROVIDER_REGISTRIES.includes(host)) {
+      return PROVIDER_HOST.test(host) ? "private-registry" : "other";
+    }
+  }
+  if (segments.length === 1) {
+    segments.unshift("hashicorp");
+  }
+  return segments.length === 2 &&
+    segments.every((s) => PROVIDER_SEGMENT.test(s))
+    ? segments.join("/")
+    : "other";
 }
 
 /**
