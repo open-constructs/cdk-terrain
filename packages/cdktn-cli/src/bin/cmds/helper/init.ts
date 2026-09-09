@@ -125,7 +125,10 @@ This means that your Terraform state file will be stored locally on disk in a fi
     template,
     argv.nonInteractive ?? false,
   );
-  telemetryData.template = templateInfo.Name;
+  // A remote template's Name is derived from the user-supplied URL.
+  telemetryData.template = templates.includes(templateInfo.Name)
+    ? templateInfo.Name
+    : "remote";
 
   if (!argv.projectName && argv.nonInteractive) {
     throw Errors.Usage(
