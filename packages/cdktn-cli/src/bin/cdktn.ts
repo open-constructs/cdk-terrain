@@ -6,11 +6,11 @@ import * as yargs from "yargs";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs-extra";
-import * as Sentry from "@sentry/node";
 import {
   readCDKTFManifest,
   IsErrorType,
   collectDebugInformation,
+  flushTelemetry,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
 import initCmd from "./cmds/init";
@@ -43,15 +43,15 @@ if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
 
 // Sentry buffers metrics asynchronously, so flush (bounded) before a normal
 // exit, then exit explicitly: an unresponsive ingest endpoint would otherwise
-// keep the transport socket and the process alive. The error path flushes
-// via Sentry.close(4000) in the yargs fail handler below.
+// keep the transport socket and the process alive. The yargs fail handler
+// below does the same before its exit(1).
 let telemetryFlushStarted = false;
 process.on("beforeExit", async () => {
   if (telemetryFlushStarted) {
     return;
   }
   telemetryFlushStarted = true;
-  await Sentry.flush(4000).catch(() => undefined);
+  await flushTelemetry();
   process.exit(process.exitCode ?? 0);
 });
 
@@ -195,6 +195,6 @@ yargs
       });
     }
 
-    await Sentry.close(4000);
+    await flushTelemetry();
     process.exit(1);
   }).argv;
