@@ -11,23 +11,36 @@
 #   4. ERROR trigger: `cdktn synth --app "node -e process.exit(1)"` —
 #      proves the error path (event + cli.command.error metric)
 #   5. asserts zero checkpoint-api.hashicorp.com references in the bundle
-#
-# NOTE: leaves the bundle built with the local DSN — rebuild before
-# distributing (`pnpm nx run cdktn-cli:build` with the real SENTRY_DSN).
+#   6. on exit, rebuilds the bundle with the caller's SENTRY_DSN so the
+#      artifact never ships pointing at the local sink
 set -euo pipefail
 
 PORT="${1:-9999}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DSN="http://cdktn@localhost:${PORT}/1"
 CDKTN="$ROOT/packages/cdktn-cli/bundle/bin/cdktn.js"
+ORIGINAL_DSN="${SENTRY_DSN:-}"
+SINK_PID=""
+
+build_bundle() {
+  (cd "$ROOT/packages/cdktn-cli" && pnpm run compile-build-config >/dev/null && SENTRY_DSN="$1" node build-config/build.js)
+}
+
+cleanup() {
+  local status=$?
+  [ -n "$SINK_PID" ] && kill "$SINK_PID" 2>/dev/null || true
+  echo "==> restoring bundle with the caller's SENTRY_DSN"
+  build_bundle "$ORIGINAL_DSN"
+  exit "$status"
+}
+trap cleanup EXIT
 
 echo "==> building bundle with DSN $DSN baked in"
-(cd "$ROOT/packages/cdktn-cli" && pnpm run compile-build-config >/dev/null && SENTRY_DSN="$DSN" node build-config/build.js)
+build_bundle "$DSN"
 
 echo "==> starting sentry sink on :$PORT"
 node "$ROOT/tools/sentry-sink.mjs" "$PORT" &
 SINK_PID=$!
-trap 'kill $SINK_PID 2>/dev/null || true' EXIT
 sleep 0.3
 
 WORK="$(mktemp -d)"
@@ -64,4 +77,3 @@ HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"
 [ "$HASHICORP_REFS" = "0" ] || fail "bundle still references checkpoint-api.hashicorp.com ($HASHICORP_REFS hits)"
 
 echo "PASS: success-path and error-path usage metrics delivered to the local sink; zero HashiCorp references in the bundle"
-echo "NOTE: bundle now contains the local-sink DSN — rebuild before distributing."

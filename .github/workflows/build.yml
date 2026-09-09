@@ -61,3 +61,7 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
+      - name: telemetry delivery e2e
+        run: tools/validate-sentry-e2e.sh
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
