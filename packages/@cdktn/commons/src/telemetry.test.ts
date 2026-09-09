@@ -1017,6 +1017,27 @@ describe("telemetry", () => {
       ).resolves.toEqual({ binary: "missing" });
     });
 
+    it.each([
+      ["1.10.0-alpha20250101", "1.10.0"],
+      ["1.2.3-LEAK-WRAPPER-hostname.corp.example.com+LEAK-BUILD", "1.2.3"],
+      ["9.9.9-LEAK-UNKNOWN/Users/x/LEAK-SECRET-DIR", "9.9.9"],
+    ])(
+      "reduces the probed version %p to its release %p",
+      async (version, release) => {
+        await expect(
+          getBinaryAttributes(Promise.resolve({ name: "unknown", version })),
+        ).resolves.toEqual({ binary: "unknown", binary_version: release });
+      },
+    );
+
+    it("omits binary_version when the probed version has no release prefix", async () => {
+      await expect(
+        getBinaryAttributes(
+          Promise.resolve({ name: "unknown", version: "v1.2" }),
+        ),
+      ).resolves.toEqual({ binary: "unknown" });
+    });
+
     it("reports unknown when the probe does not settle in time", async () => {
       const hung = new Promise<never>(() => {});
       await expect(getBinaryAttributes(hung, 10)).resolves.toEqual({

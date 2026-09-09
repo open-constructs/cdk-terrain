@@ -156,8 +156,11 @@ export async function getBinaryAttributes(
   try {
     const cli = await Promise.race([probe, timeout]);
     const attributes: Attributes = { binary: cli.name };
-    if (cli.version) {
-      attributes.binary_version = cli.version;
+    // MAJOR.MINOR.PATCH only: a wrapper's version line can carry anything
+    // after it, so prerelease and build identifiers are dropped
+    const release = /^\d+\.\d+\.\d+/.exec(cli.version ?? "")?.[0];
+    if (release) {
+      attributes.binary_version = release;
     }
     return attributes;
   } finally {
