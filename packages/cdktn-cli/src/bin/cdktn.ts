@@ -6,13 +6,11 @@ import * as yargs from "yargs";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs-extra";
-import * as Sentry from "@sentry/node";
 import {
   readCDKTFManifest,
-  IsErrorType,
-  collectDebugInformation,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
+import { runCli } from "./error-handling";
 import initCmd from "./cmds/init";
 import getCmd from "./cmds/get";
 import convertCmd from "./cmds/convert";
@@ -83,8 +81,7 @@ const customCompletion = function (
 // for the possible overload (which supports falling back to default completions)
 // https://github.com/yargs/yargs/blob/d33e9972291406490cd8fdad0b3589be234e0f12/lib/completion.ts#L202
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-yargs
+const cli = yargs
   .command(initCmd)
   .command(getCmd)
   .command(convertCmd)
@@ -155,32 +152,6 @@ yargs
       yargs.showHelp();
       process.exit(1);
     },
-  })
-  .fail(async (message, error) => {
-    // will not stop the process, but stops further execution of the handler function
-    // this is called first because yargs is not waiting for this async function
-    yargs.exit(1, error);
+  });
 
-    // set if e.g. the validation of command arguments failed
-    if (message) {
-      console.log(message);
-    }
-
-    // set if e.g. an handler threw an error while being invoked
-    if (IsErrorType(error, "Usage") || IsErrorType(error, "External")) {
-      console.error(error.message);
-    } else if (error) {
-      console.error(error.message);
-      console.error(error.stack);
-      console.error("Collecting Debug Information...");
-      const debugOutput = await collectDebugInformation();
-
-      console.error("Debug Information:");
-      Object.entries(debugOutput).forEach(([key, value]) => {
-        console.log(`${key}: ${value === null ? "null" : value}`);
-      });
-    }
-
-    await Sentry.close(4000);
-    process.exit(1);
-  }).argv;
+void runCli(cli);
