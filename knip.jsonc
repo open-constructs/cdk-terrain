@@ -48,6 +48,13 @@
     "packages/@cdktn/commons": {
       "project": ["src/**/*.ts"]
     },
+    "packages/@cdktn/bundler-nodejs": {
+      "entry": ["runner.mjs"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "packages/@cdktn/aws-lambda-nodejs": {
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
     "packages/@cdktn/hcl-tools": {
       "project": ["src/**/*.ts"]
     },

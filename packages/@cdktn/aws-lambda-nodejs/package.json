@@ -1,0 +1,23 @@
+{
+  "name": "@cdktn/aws-lambda-nodejs",
+  "version": "0.0.0",
+  "description": "Ship Node.js and TypeScript Lambda functions with CDK Terrain",
+  "license": "MPL-2.0",
+  "author": { "name": "OpenConstructs", "url": "https://github.com/open-constructs" },
+  "repository": { "type": "git", "url": "https://github.com/open-constructs/cdk-terrain.git", "directory": "packages/@cdktn/aws-lambda-nodejs" },
+  "publishConfig": { "access": "public" },
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "exports": { ".": { "types": "./build/index.d.ts", "default": "./build/index.js" } },
+  "files": ["build"],
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "build": "tsc",
+    "package": "node ../../../tools/pack-node-package.mjs",
+    "package:js": "node ../../../tools/pack-node-package.mjs"
+  },
+  "nx": { "tags": ["unit-test"] },
+  "dependencies": { "@cdktn/bundler-nodejs": "workspace:*" },
+  "peerDependencies": { "@cdktn/provider-aws": "^25.4.0", "cdktn": "^0.24.0", "constructs": ">=10.6.0 <10.8.0" },
+  "devDependencies": { "@cdktn/provider-aws": "25.4.0", "@types/node": "22.20.1", "cdktn": "workspace:*", "constructs": "10.6.0", "typescript": "^5.0.4" }
+}
