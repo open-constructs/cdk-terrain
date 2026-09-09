@@ -420,21 +420,38 @@ export class CdktfProject {
         e,
       );
     }
-    // emitted ahead of the failure throw so cli.stack.failed can count
+    await this.finishStackRun(
+      "diff",
+      stacks,
+      stack.error ? [stack.stack.name] : [],
+      () =>
+        Errors.External(
+          `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
+          new Error(stack.error),
+        ),
+    );
+  }
+
+  /**
+   * Counts the run, with its failed stacks, before the failure is thrown, so
+   * `cli.stack.failed` is emitted even though the command exits non-zero.
+   */
+  private async finishStackRun(
+    command: "diff" | "deploy" | "destroy",
+    stacks: SynthesizedStack[],
+    failedStacks: string[],
+    failure: (failedStacks: string[]) => Error,
+  ): Promise<void> {
     try {
-      await this.projectTelemetry("diff", {
+      await this.projectTelemetry(command, {
         ...SynthStack.telemetryPayload(stacks),
-        failedStackCount: stack.error ? 1 : 0,
+        failedStackCount: failedStacks.length,
       });
     } catch (e) {
       logger.debug("Failed to send telemetry", e);
     }
-
-    if (stack.error) {
-      throw Errors.External(
-        `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
-        new Error(stack.error),
-      );
+    if (failedStacks.length > 0) {
+      throw failure(failedStacks);
     }
   }
 
@@ -525,27 +542,17 @@ export class CdktfProject {
 
     await this.execute("deploy", next, opts);
 
-    const unprocessedStacks = this.stacksToRun.filter(
-      (executor) => executor.isPending,
+    await this.finishStackRun(
+      "deploy",
+      stacksToRun,
+      this.stacksToRun
+        .filter((executor) => executor.isPending)
+        .map((executor) => executor.stack.name),
+      (failedStacks) =>
+        Errors.External(
+          `Some stacks failed to deploy: ${failedStacks.join(", ")}. Please check the logs for more information.`,
+        ),
     );
-
-    // emitted ahead of the failure throw so cli.stack.failed can count
-    try {
-      await this.projectTelemetry("deploy", {
-        ...SynthStack.telemetryPayload(stacksToRun),
-        failedStackCount: unprocessedStacks.length,
-      });
-    } catch (e) {
-      logger.debug("Failed to send telemetry", e);
-    }
-
-    if (unprocessedStacks.length > 0) {
-      throw Errors.External(
-        `Some stacks failed to deploy: ${unprocessedStacks
-          .map((s) => s.stack.name)
-          .join(", ")}. Please check the logs for more information.`,
-      );
-    }
   }
 
   public async destroy(opts: MutationOptions = {}) {
@@ -597,27 +604,17 @@ export class CdktfProject {
 
     await this.execute("destroy", next, opts);
 
-    const unprocessedStacks = this.stacksToRun.filter(
-      (executor) => executor.isPending,
+    await this.finishStackRun(
+      "destroy",
+      stacksToRun,
+      this.stacksToRun
+        .filter((executor) => executor.isPending)
+        .map((executor) => executor.stack.name),
+      (failedStacks) =>
+        Errors.External(
+          `Some stacks failed to destroy: ${failedStacks.join(", ")}. Please check the logs for more information.`,
+        ),
     );
-
-    // emitted ahead of the failure throw so cli.stack.failed can count
-    try {
-      await this.projectTelemetry("destroy", {
-        ...SynthStack.telemetryPayload(stacksToRun),
-        failedStackCount: unprocessedStacks.length,
-      });
-    } catch (e) {
-      logger.debug("Failed to send telemetry", e);
-    }
-
-    if (unprocessedStacks.length > 0) {
-      throw Errors.External(
-        `Some stacks failed to destroy: ${unprocessedStacks
-          .map((s) => s.stack.name)
-          .join(", ")}. Please check the logs for more information.`,
-      );
-    }
   }
 
   public async projectTelemetry(command: string, payload: any): Promise<void> {
