@@ -95,6 +95,14 @@ function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
       },
     )
     .command(
+      "setcode",
+      "succeeds after setting a non-zero exit code",
+      () => {},
+      () => {
+        process.exitCode = 3;
+      },
+    )
+    .command(
       "choice",
       "has an invalid-choice option",
       (cmdYargs: Argv) =>
@@ -111,12 +119,12 @@ function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
 async function runAndCapture(
   args: string[],
   deps: FailureReporterDeps,
-  handlers: { ok?: jest.Mock } = {},
+  handlers: { ok?: jest.Mock; onExit?: () => void } = {},
 ) {
   const cli = makeCli(args, handlers);
   const exitSpy = jest
     .spyOn(process, "exit")
-    .mockImplementation((() => undefined) as never);
+    .mockImplementation((() => handlers.onExit?.()) as never);
   const unhandledRejections: unknown[] = [];
   const onUnhandled = (reason: unknown) => unhandledRejections.push(reason);
   process.on("unhandledRejection", onUnhandled);
@@ -359,30 +367,74 @@ describe("runCli", () => {
     expect(deps.captureException).not.toHaveBeenCalled();
   });
 
-  it("does not report a failure or exit on success", async () => {
+  it("reports nothing on success, but flushes once (bounded) and then exits 0", async () => {
     const deps = makeDeps();
     const handler = jest.fn();
+    const order: string[] = [];
+    (deps.flushTelemetry as jest.Mock).mockImplementation(async () => {
+      order.push("flush");
+    });
     const { exitCode, exitCallCount, unhandledRejections } =
-      await runAndCapture(["ok"], deps, { ok: handler });
+      await runAndCapture(["ok"], deps, {
+        ok: handler,
+        onExit: () => order.push("exit"),
+      });
 
     expect(handler).toHaveBeenCalled();
     expect(unhandledRejections).toEqual([]);
-    expect(exitCallCount).toBe(0);
-    expect(exitCode).toBeUndefined();
     expect(deps.log).not.toHaveBeenCalled();
     expect(deps.logError).not.toHaveBeenCalled();
+    expect(deps.captureException).not.toHaveBeenCalled();
+    expect(deps.flushTelemetry).toHaveBeenCalledTimes(1);
+    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+    // the explicit exit is what bounds an unresponsive ingest endpoint, so it
+    // must come after the flush, never instead of it
+    expect(order).toEqual(["flush", "exit"]);
+    expect(exitCallCount).toBe(1);
+    expect(exitCode).toBe(0);
   });
 
-  it("does not report a failure or exit on --help", async () => {
+  it("keeps the exit code a handler already set", async () => {
     const deps = makeDeps();
-    const { exitCallCount, unhandledRejections } = await runAndCapture(
-      ["--help"],
-      deps,
+    const originalExitCode = process.exitCode;
+    try {
+      const { exitCode, exitCallCount } = await runAndCapture(
+        ["setcode"],
+        deps,
+      );
+
+      expect(exitCallCount).toBe(1);
+      expect(exitCode).toBe(3);
+      expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+    } finally {
+      process.exitCode = originalExitCode;
+    }
+  });
+
+  it("still exits 0 when the flush itself rejects", async () => {
+    const deps = makeDeps();
+    (deps.flushTelemetry as jest.Mock).mockRejectedValue(
+      new Error("transport exploded"),
     );
+    const { exitCode, exitCallCount, unhandledRejections } =
+      await runAndCapture(["ok"], deps);
 
     expect(unhandledRejections).toEqual([]);
-    expect(exitCallCount).toBe(0);
+    expect(exitCallCount).toBe(1);
+    expect(exitCode).toBe(0);
+  });
+
+  it("treats --help like success: no report, one flush, exit 0", async () => {
+    const deps = makeDeps();
+    const { exitCode, exitCallCount, unhandledRejections } =
+      await runAndCapture(["--help"], deps);
+
+    expect(unhandledRejections).toEqual([]);
     expect(deps.log).not.toHaveBeenCalled();
     expect(deps.logError).not.toHaveBeenCalled();
+    expect(deps.flushTelemetry).toHaveBeenCalledTimes(1);
+    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+    expect(exitCallCount).toBe(1);
+    expect(exitCode).toBe(0);
   });
 });
