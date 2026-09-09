@@ -48,7 +48,8 @@ export function getUsageTelemetryConsent(
   if (!("sendUsageTelemetry" in cdktfJson)) {
     return undefined;
   }
-  // init templates render booleans as the strings "true"/"false"
+  // init templates render booleans as the strings "true"/"false"; a
+  // boolean-only check would opt every freshly init'ed project out
   return typeof cdktfJson.sendUsageTelemetry === "boolean"
     ? cdktfJson.sendUsageTelemetry
     : cdktfJson.sendUsageTelemetry === "true";
@@ -122,7 +123,7 @@ export function setProjectTargetAttributes(
  * delays the command; a timed-out probe reports `binary: "unknown"`.
  */
 export async function getBinaryAttributes(
-  probe: Promise<TerraformCliProbe> = terraformCli,
+  probe: Promise<TerraformCliProbe> = terraformCli(),
   timeoutMs = 1500,
 ): Promise<Attributes> {
   let timer: NodeJS.Timeout | undefined;

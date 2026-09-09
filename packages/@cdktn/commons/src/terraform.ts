@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Errors } from "./errors";
 import { exec } from "./util";
 import {
   parseTerraformCliVersion,
@@ -30,16 +29,38 @@ export interface TerraformCliProbe {
   readonly version?: string;
 }
 
-// One `version` spawn per CLI run feeds both the debug output and the
-// usage telemetry; plain-text output distinguishes Terraform from OpenTofu.
-const versionOutput = exec(terraformBinaryName, ["version"], {});
+// The CLI bundle carries several copies of this module (two esbuild entries
+// plus the commons build behind the external hcl2cdk); keying the probe on
+// globalThis keeps it to one `version` spawn per process, started on first use.
+const PROBE_KEY = Symbol.for("cdktn.terraformCli");
 
-export const terraformCli: Promise<TerraformCliProbe> = versionOutput
-  .then((output) => parseTerraformCliVersion(output))
-  .catch(() => ({ name: "missing" as const }));
+function versionOutput(): Promise<string> {
+  const globals = globalThis as { [PROBE_KEY]?: Promise<string> };
+  if (!globals[PROBE_KEY]) {
+    const output = exec(terraformBinaryName, ["version"], {});
+    output.catch(() => undefined); // the consumers below handle rejection
+    globals[PROBE_KEY] = output;
+  }
+  return globals[PROBE_KEY];
+}
 
-export const terraformVersion = versionOutput
-  .then((output) => parseTerraformCliVersion(output).version)
-  .catch((err) =>
-    Errors.Usage(`Unknown: Error loading terraform version ${err}`, err),
-  );
+/** Binary and version for usage telemetry; never rejects. */
+export function terraformCli(): Promise<TerraformCliProbe> {
+  return versionOutput()
+    .then((output) => parseTerraformCliVersion(output))
+    .catch(() => ({ name: "missing" as const }));
+}
+
+/**
+ * Version string for `cdktn debug`. A missing binary resolves to the error
+ * text rather than an `Errors.Usage` value, which would count a phantom
+ * `cli.error` metric on every command run without the binary.
+ */
+export function terraformVersion(): Promise<string | undefined> {
+  return versionOutput()
+    .then((output) => parseTerraformCliVersion(output).version)
+    .catch(
+      (err) =>
+        `Error: Usage Error: Unknown: Error loading terraform version ${err}`,
+    );
+}

@@ -1,6 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as Sentry from "@sentry/node";
+// telemetry.ts must never import this module: it would close a cycle through
+// terraform.ts and load errors.ts before the factories exist.
 import { CommandErrorType, sendErrorTelemetry } from "./telemetry";
 
 type ErrorType = "Internal" | "External" | "Usage";
