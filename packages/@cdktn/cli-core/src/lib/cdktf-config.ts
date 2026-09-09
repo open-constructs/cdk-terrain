@@ -107,31 +107,6 @@ export class CdktfConfig {
     return targetVersions;
   }
 
-  public get sendUsageTelemetry(): boolean | undefined {
-    const cdktfConfig = this.readCdktfConfig();
-    // undefined means "unset"; the consent gating in error-reporting.ts
-    // resolves the effective value (prompt, or default-on)
-    if (!("sendUsageTelemetry" in cdktfConfig)) {
-      return undefined;
-    }
-    const value = cdktfConfig.sendUsageTelemetry;
-    if (typeof value === "boolean") {
-      return value;
-    }
-    // init templates render booleans as the strings "true"/"false"
-    if (value === "true") {
-      return true;
-    }
-    if (value === "false") {
-      return false;
-    }
-    throw Errors.External(
-      `cdktf.json \`sendUsageTelemetry\` must be a boolean if set, got: ${JSON.stringify(
-        value,
-      )}`,
-    );
-  }
-
   public get terraformProviders(): (TerraformDependencyConstraint | string)[] {
     const providers = this.getProperty("terraformProviders");
     if (!Array.isArray(providers)) return [];
