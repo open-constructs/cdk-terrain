@@ -94,3 +94,27 @@ export class DockerProvider extends TerraformProvider {
     };
   }
 }
+
+// Null provider for testing scenarios that require terraform plan
+// (does not require any external services like Docker)
+export class NullProvider extends TerraformProvider {
+  public static readonly tfResourceType: string = "null";
+  public constructor(scope: Construct, id: string) {
+    super(scope, id, {
+      terraformResourceType: "null",
+      terraformGeneratorMetadata: {
+        providerName: "null",
+        providerVersionConstraint: "~> 3.0",
+      },
+      terraformProviderSource: "hashicorp/null",
+    });
+  }
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {};
+  }
+
+  protected synthesizeHclAttributes(): { [name: string]: any } {
+    return {};
+  }
+}

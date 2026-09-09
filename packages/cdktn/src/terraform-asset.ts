@@ -18,6 +18,9 @@ import {
   assetOutOfScopeOfCDKTFJson,
   assetTypeNotImplemented,
 } from "./errors";
+import { type AssetHashType, FileAssetPackaging } from "./assets";
+import { AssetStaging } from "./asset-staging";
+import { type BundlingOptions } from "./bundling";
 
 export interface TerraformAssetConfig {
   // path to the file or folder configured. If relative, the path is resolved from the location of cdktf.json
@@ -26,6 +29,56 @@ export interface TerraformAssetConfig {
   readonly type?: AssetType;
   // hash value of the asset, if passed will be used as returned assetHash
   readonly assetHash?: string;
+
+  /**
+   * Paths to exclude from the asset, relative to `path` and always
+   * `/`-separated. Each entry may be an exact file path, a `*.ext` suffix
+   * match, or a directory (with or without a trailing `/`), which also excludes
+   * everything inside it.
+   *
+   * This is not full glob syntax: `**`, `?`, character classes and `!`
+   * negation are not supported.
+   *
+   * @default - nothing is excluded
+   */
+  readonly exclude?: string[];
+
+  /**
+   * Extra information to encode into the fingerprint (e.g. build instructions
+   * and other inputs).
+   *
+   * @default - no extra hash
+   */
+  readonly extraHash?: string;
+
+  /**
+   * Bundle the asset by executing a command in a Docker container or a
+   * custom bundling provider.
+   *
+   * The asset path will be mounted at `/asset-input`. The Docker
+   * container is responsible for putting content at `/asset-output`.
+   * The content at `/asset-output` will be zipped and used as the
+   * final asset.
+   *
+   * @default - uploaded as-is to the stack location without bundling
+   */
+  readonly bundling?: BundlingOptions;
+
+  /**
+   * Specify a custom hash for this asset. If `assetHashType` is set it must
+   * be set to `AssetHashType.CUSTOM`. The value is used verbatim as the asset
+   * hash, and because it names the staged asset file it may only contain
+   * letters, digits, `_`, `.` and `-`.
+   *
+   * NOTE: the hash is used in order to identify a specific revision of the asset, and
+   * used for optimizing and caching deployment activities related to this asset such as
+   * packaging, uploading to a container registry, etc. If you chose to customize the hash, you will
+   * need to make sure it is updated every time the asset changes, or otherwise it is
+   * possible that some deployments will not be invalidated.
+   *
+   * @default - based on `assetHashType`
+   */
+  readonly assetHashType?: AssetHashType;
 }
 
 export enum AssetType {
@@ -47,6 +100,12 @@ export class TerraformAsset extends Construct {
   public type: AssetType;
 
   /**
+   * Internal staging helper for advanced features (bundling, exclusions, etc.)
+   * @private
+   */
+  private staging?: AssetStaging;
+
+  /**
    * A Terraform Asset takes a file or directory outside of the CDK Terrain context and moves it into it.
    * Assets copy referenced files into the stacks context for further usage in other resources.
    * @param scope
@@ -58,6 +117,7 @@ export class TerraformAsset extends Construct {
 
     this.stack = TerraformStack.of(this);
 
+    // Resolve source path (relative to cdktf.json if relative, absolute otherwise)
     if (path.isAbsolute(config.path)) {
       this.sourcePath = config.path;
     } else {
@@ -76,27 +136,84 @@ export class TerraformAsset extends Construct {
       }
     }
 
-    const stat = fs.statSync(this.sourcePath);
-    const inferredType = stat.isFile() ? AssetType.FILE : AssetType.DIRECTORY;
-    this.type = config.type ?? inferredType;
-    this.assetHash =
-      config.assetHash ||
-      hashPath(this.sourcePath, {
-        canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
-        archive: this.type === AssetType.ARCHIVE,
+    // Check if advanced features are requested
+    const useAdvancedStaging = !!(
+      config.exclude ||
+      config.extraHash ||
+      config.bundling ||
+      config.assetHashType
+    );
+
+    if (useAdvancedStaging) {
+      // Use AssetStaging for advanced features (bundling, exclusions, etc.)
+      this.staging = new AssetStaging(this, "__staging__", {
+        sourcePath: this.sourcePath,
+        exclude: config.exclude,
+        extraHash: config.extraHash,
+        bundling: config.bundling,
+        assetHash: config.assetHash,
+        assetHashType: config.assetHashType,
       });
 
-    if (stat.isFile() && this.type !== AssetType.FILE) {
-      throw assetExpectsDirectory(id, config.path);
-    }
+      this.assetHash = this.staging.assetHash;
 
-    if (!stat.isFile() && this.type === AssetType.FILE) {
-      throw assetExpectsDirectory(id, config.path);
+      // Map AssetStaging packaging to TerraformAsset type
+      if (this.staging.packaging === FileAssetPackaging.FILE) {
+        this.type = this.staging.isArchive ? AssetType.ARCHIVE : AssetType.FILE;
+      } else {
+        // ZIP_DIRECTORY
+        this.type = AssetType.ARCHIVE;
+      }
+
+      // Override with explicit type if provided
+      if (config.type !== undefined) {
+        this.validateType(id, config.path, config.type);
+        this.type = config.type;
+      }
+    } else {
+      // Use existing simple implementation (BACKWARDS COMPATIBLE)
+      const stat = fs.statSync(this.sourcePath);
+      const inferredType = stat.isFile() ? AssetType.FILE : AssetType.DIRECTORY;
+      this.type = config.type ?? inferredType;
+      this.assetHash =
+        config.assetHash ||
+        hashPath(this.sourcePath, {
+          canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
+          archive: this.type === AssetType.ARCHIVE,
+        });
+
+      // Validation
+      if (stat.isFile() && this.type !== AssetType.FILE) {
+        throw assetExpectsDirectory(id, config.path);
+      }
+
+      if (!stat.isFile() && this.type === AssetType.FILE) {
+        throw assetExpectsDirectory(id, config.path);
+      }
     }
 
     addCustomSynthesis(this, {
       onSynthesize: this._onSynthesize.bind(this),
     });
+  }
+
+  /**
+   * Reject a `type` that the staged asset cannot satisfy, matching the
+   * validation the non-staged path performs. A directory (or anything staged as
+   * a zip) can never be emitted as `AssetType.FILE`, and a single staged file
+   * can never be emitted as `AssetType.DIRECTORY`.
+   */
+  private validateType(id: string, configPath: string, type: AssetType) {
+    const stagedAsDirectory =
+      this.staging!.packaging === FileAssetPackaging.ZIP_DIRECTORY;
+
+    if (stagedAsDirectory && type === AssetType.FILE) {
+      throw assetExpectsDirectory(id, configPath);
+    }
+
+    if (!stagedAsDirectory && type === AssetType.DIRECTORY) {
+      throw assetExpectsDirectory(id, configPath);
+    }
   }
 
   private get namedFolder(): string {
@@ -152,17 +269,28 @@ export class TerraformAsset extends Construct {
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     }
 
+    // Use staged asset if available (from advanced features), otherwise use source
+    const sourceToUse = this.staging?.absoluteStagedPath ?? this.sourcePath;
+
     switch (this.type) {
       case AssetType.FILE:
-        fs.copyFileSync(this.sourcePath, targetPath);
+        fs.copyFileSync(sourceToUse, targetPath);
         break;
 
       case AssetType.DIRECTORY:
-        copySync(this.sourcePath, targetPath);
+        copySync(sourceToUse, targetPath);
         break;
 
       case AssetType.ARCHIVE:
-        archiveSync(this.sourcePath, targetPath);
+        // A staged single file is copied as-is; only a directory can be zipped.
+        if (
+          this.staging &&
+          this.staging.packaging === FileAssetPackaging.FILE
+        ) {
+          fs.copyFileSync(sourceToUse, targetPath);
+        } else {
+          archiveSync(sourceToUse, targetPath);
+        }
         break;
       default:
         throw assetTypeNotImplemented();

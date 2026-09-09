@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
   - 'packages/@cdktn/*'
+  - '!examples/**/cdktf.out/**/'
   - 'examples/**'
   - 'tools/generate-function-bindings'
   - 'tools/documentation-generation'

@@ -14,7 +14,6 @@ import {
 } from "../src/validations";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
-import { terraformBinaryName } from "../src/util";
 
 const tmp = createTmpHelper();
 

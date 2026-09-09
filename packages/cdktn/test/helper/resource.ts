@@ -220,3 +220,21 @@ export class DockerImage extends TerraformResource {
     };
   }
 }
+
+// Null resource for testing scenarios that require terraform plan
+// (does not require any external services like Docker)
+export class NullResource extends TerraformResource {
+  public static readonly tfResourceType: string = "null_resource";
+  public constructor(scope: Construct, id: string) {
+    super(scope, id, {
+      terraformResourceType: "null_resource",
+      terraformGeneratorMetadata: {
+        providerName: "null",
+      },
+    });
+  }
+
+  protected synthesizeAttributes(): { [name: string]: any } {
+    return {};
+  }
+}
