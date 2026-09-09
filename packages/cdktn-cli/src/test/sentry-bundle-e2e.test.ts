@@ -6,12 +6,11 @@ import * as http from "http";
 import * as os from "os";
 import * as path from "path";
 
-// Gated bundle E2E (002-remove-hashicorp-telemetry, quickstart Journey 6):
-// runs the REAL esbuild bundle as a child process and asserts a
-// trace_metric envelope reaches a local Sentry sink — proving the DSN
-// bake-in, consent gating and the bounded success-path flush end to end.
+// Gated bundle E2E: runs the real esbuild bundle as a child process and
+// asserts a trace_metric envelope reaches a local Sentry sink, covering the
+// DSN bake-in, consent gating and the bounded success-path flush.
 //
-// Requires the bundle to be PRE-BUILT with the matching local-sink DSN:
+// Requires the bundle to be pre-built with the matching local-sink DSN:
 //   (cd packages/cdktn-cli && SENTRY_DSN=http://cdktn@localhost:9999/1 \
 //      node build-config/build.js)
 // then run with CDKTN_SENTRY_E2E=1 (port override: CDKTN_SENTRY_E2E_PORT).

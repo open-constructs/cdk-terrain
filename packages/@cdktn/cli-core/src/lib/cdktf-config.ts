@@ -109,9 +109,8 @@ export class CdktfConfig {
 
   public get sendUsageTelemetry(): boolean | undefined {
     const cdktfConfig = this.readCdktfConfig();
-    // No default is applied here: undefined means "unset" and the
-    // consent-gating step resolves the effective value (prompt or
-    // legacy default-on), see error-reporting.ts.
+    // undefined means "unset"; the consent gating in error-reporting.ts
+    // resolves the effective value (prompt, or default-on)
     if (!("sendUsageTelemetry" in cdktfConfig)) {
       return undefined;
     }

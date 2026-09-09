@@ -286,9 +286,7 @@ Command output on stdout:
   ): Promise<void> {
     const config = readConfigSync();
 
-    // Only command/language/ci and the duration are collected (FR-014);
-    // the legacy stackMetadata/requiredProviders payload is no longer
-    // sent anywhere, so it is not computed.
+    // stack contents are deliberately not part of the telemetry payload
     await sendTelemetry("synth", {
       totalTime: totalTime,
       language: config.language,

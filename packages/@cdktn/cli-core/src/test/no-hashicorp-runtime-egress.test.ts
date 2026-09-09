@@ -16,12 +16,9 @@ import * as Sentry from "@sentry/node";
 import { Errors, sendTelemetry } from "@cdktn/commons";
 import { initializErrorReporting } from "../lib/error-reporting";
 
-// Runtime no-egress oracle (quickstart Journey 1, FR-001/SC-001): with all
-// network access disabled by nock, exercise every path that used to POST
-// to checkpoint-api.hashicorp.com (sendTelemetry, the Errors factories,
-// reporting init + flush) and assert no connection to a HashiCorp host is
-// ever attempted. Complements the static source/bundle scan in
-// cdktn-cli/src/test/no-hashicorp-egress.test.ts.
+// With all network access disabled by nock, drive sendTelemetry, the Errors
+// factories and reporting init + flush, and assert nothing connects to a
+// HashiCorp host. The static source/bundle scan lives in cdktn-cli.
 
 describe("runtime no-egress to HashiCorp", () => {
   let workdir: string;
@@ -61,8 +58,8 @@ describe("runtime no-egress to HashiCorp", () => {
   });
 
   it("telemetry and error paths never attempt a HashiCorp connection", async () => {
-    // a canary interceptor: if any code still POSTed to the checkpoint
-    // API, nock would route it here and isDone() would flip to true
+    // canary interceptor: any POST to the checkpoint API is routed here
+    // and flips isDone() to true
     const hashicorp = nock("https://checkpoint-api.hashicorp.com")
       .persist()
       .post(/.*/)
@@ -75,9 +72,8 @@ describe("runtime no-egress to HashiCorp", () => {
       projectId: "egress-test",
     });
 
-    // full pipeline, real @sentry/node: init (capturing transport — no
-    // network), emit usage metrics, construct legacy-reporting errors,
-    // flush before exit
+    // full pipeline with real @sentry/node: init (capturing transport, no
+    // network), emit usage metrics, construct errors, flush
     await initializErrorReporting();
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
@@ -89,7 +85,6 @@ describe("runtime no-egress to HashiCorp", () => {
 
     await sendTelemetry("synth", { totalTime: 12, language: "typescript" });
     await sendTelemetry("synth", { error: true });
-    // the Errors factories fired a checkpoint ReportRequest before 002
     Errors.Internal("boom", new Error("boom"), { command: "synth" });
     Errors.Usage("bad flag", new Error("bad flag"), {});
     await Sentry.flush(2000);

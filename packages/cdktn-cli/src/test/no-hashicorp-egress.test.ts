@@ -3,10 +3,9 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 
-// FR-001 / SC-007 (002-remove-hashicorp-telemetry): no active code may
-// reference the HashiCorp checkpoint endpoint. Copyright headers are fine
-// (they don't contain the hostname); this test scans every TypeScript
-// source in the workspace packages and, when present, the built bundle.
+// No active code may reference the HashiCorp checkpoint endpoint: scans
+// every TypeScript source in the workspace packages and, when present, the
+// built bundle.
 
 const HASHICORP_ENDPOINT = "checkpoint-api.hashicorp.com";
 const packagesRoot = path.resolve(__dirname, "../../..");
@@ -41,8 +40,7 @@ describe("no HashiCorp checkpoint egress", () => {
     const offenders = srcDirs.flatMap(collectSourceFiles).filter(
       (file) =>
         // test files may reference the endpoint to assert its absence
-        // (this file, and cli-core's nock canary); FR-001 is about
-        // active code
+        // (this file, and cli-core's nock canary)
         !/\.test\.(ts|tsx)$/.test(file) &&
         fs.readFileSync(file, "utf8").includes(HASHICORP_ENDPOINT),
     );

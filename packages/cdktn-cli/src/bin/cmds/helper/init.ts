@@ -177,9 +177,8 @@ This means that your Terraform state file will be stored locally on disk in a fi
   }
 
   const ci: string | false = ciDetect();
-  // Per-flag consent: prompts only run for a real user at a terminal;
-  // non-interactive defaults preserve each system's legacy behavior
-  // (crash reporting opt-in/off, usage telemetry on by default).
+  // Prompts only run for a real user at a terminal; non-interactive
+  // defaults are crash reporting off, usage telemetry on.
   const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
   const sendCrashReports =
     argv.enableCrashReporting ??

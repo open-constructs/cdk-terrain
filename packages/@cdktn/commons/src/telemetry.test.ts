@@ -11,10 +11,9 @@ import {
   setUsageTelemetryEnabled,
 } from "./telemetry";
 
-// Delivery oracle (contract C5): a real v10 client with a capturing
-// transport proves the metric envelope actually reaches the transport and
-// survives a bounded flush — a pure @sentry/node mock would pass even if
-// metrics were silently dropped before exit.
+// A real client with a capturing transport proves the metric envelope
+// reaches the transport and survives a bounded flush; a mocked @sentry/node
+// would pass even if metrics were dropped before exit.
 
 type MetricItem = {
   name: string;
@@ -173,7 +172,7 @@ describe("telemetry", () => {
       expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
     });
 
-    it("emits when the flag is unset (legacy default-on)", async () => {
+    it("emits when the flag is unset (default-on)", async () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         language: "typescript",
       });
@@ -186,7 +185,7 @@ describe("telemetry", () => {
       expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
     });
 
-    it("emits when no cdktf.json exists (no-project commands, legacy default-on)", async () => {
+    it("emits when no cdktf.json exists (no-project commands, default-on)", async () => {
       initSentryWithCapturingTransport();
 
       await sendTelemetry("convert", {});

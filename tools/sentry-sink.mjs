@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0
 //
 // Minimal local Sentry "sink" for end-to-end validation of the cdktn-cli
-// telemetry pipeline (see specledger/002-remove-hashicorp-telemetry,
-// quickstart Journey 6). It accepts Sentry envelopes on
-// POST /api/<project>/envelope/ and records every envelope item type (and
-// metric names for trace_metric items).
+// telemetry pipeline. Accepts Sentry envelopes on POST /api/<project>/envelope/
+// and records every envelope item type (and metric names for trace_metric).
 //
 // Usage: node tools/sentry-sink.mjs [port=9999]
 //   GET /__items  -> JSON array of recorded items

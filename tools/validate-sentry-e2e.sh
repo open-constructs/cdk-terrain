@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # End-to-end validation of the cdktn-cli Sentry telemetry pipeline against
-# the REAL esbuild bundle (specledger/002-remove-hashicorp-telemetry,
-# quickstart Journey 6):
+# the real esbuild bundle:
 #   1. rebuilds the bundle with a local-sink DSN baked in (esbuild define)
 #   2. starts tools/sentry-sink.mjs
 #   3. SUCCESS trigger: `cdktn convert` (dependency-free) — proves the

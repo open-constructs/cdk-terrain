@@ -5,7 +5,7 @@ import * as os from "os";
 import * as path from "path";
 import { CdktfConfig } from "../lib/cdktf-config";
 
-describe("CdktfConfig.sendUsageTelemetry (validated typed getter, FR-005)", () => {
+describe("CdktfConfig.sendUsageTelemetry", () => {
   let workdir: string;
 
   const writeConfig = (config: Record<string, unknown>) => {

@@ -108,9 +108,8 @@ export async function initializErrorReporting(
     }
   }
 
-  // Non-interactive defaults preserve each system's legacy behavior:
-  // crash reporting stays opt-in (off), usage telemetry stays on by
-  // default — still subject to the CHECKPOINT_DISABLE override.
+  // Non-interactive defaults: crash reporting is opt-in (off), usage
+  // telemetry is on unless CHECKPOINT_DISABLE is set.
   const crashReportingEnabled = shouldReport === true;
   const usageTelemetryEnabled =
     !process.env.CHECKPOINT_DISABLE && usageConsent !== false;
@@ -134,8 +133,8 @@ export async function initializErrorReporting(
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     release: `cdktn-cli-${DISPLAY_VERSION}`,
-    // Usage metrics are delivered independently of trace sampling (confirmed
-    // against @sentry/node 10.57), so no trace quota is spent.
+    // Usage metrics are delivered independently of trace sampling, so no
+    // trace quota is spent.
     tracesSampleRate: 0,
     // Fixed constant so the machine hostname is never attached to events or
     // metrics (v10 defaults server_name/server.address to the hostname).
