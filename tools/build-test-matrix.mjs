@@ -19,10 +19,52 @@ import { join } from "node:path";
 const repoRoot = process.cwd();
 const testDir = join(repoRoot, "test");
 
-/** Tested Terraform versions from `.terraform.versions.json`. */
-const tfVersions = JSON.parse(
+const versionsConfig = JSON.parse(
   readFileSync(join(repoRoot, ".terraform.versions.json"), "utf8"),
-).tested;
+);
+
+/** Tested Terraform versions from `.terraform.versions.json`. */
+const tfVersions = versionsConfig.tested;
+
+/** Binary name prefix per product. The CI image installs one binary per available version of each. */
+const binaryPrefix = { terraform: "terraform", opentofu: "tofu" };
+
+/** Versions of each product the CI image actually ships, used to validate pins below. */
+const availableVersions = {
+  terraform: versionsConfig.available,
+  opentofu: versionsConfig.opentofu?.available ?? [],
+};
+
+/**
+ * Tests that opt out of the default `tested` Terraform cross-product and run against an explicit list of runtimes
+ * instead. Keyed by path relative to `test/`.
+ *
+ * This is how a test gets coverage the default matrix cannot give it: a newer Terraform than `tested`, or OpenTofu,
+ * without turning either on for all 60+ targets. Pinned entries reuse the whole existing integration job (container,
+ * caches, `ci/skip-integration`), so a pin costs one job rather than a new workflow.
+ *
+ * Every pinned version must be in the matching `available` list, because those are the binaries baked into the image.
+ *
+ * @type {Record<string, Array<{ product: "terraform" | "opentofu", version: string }>>}
+ */
+const pinnedRuntimes = {
+  "typescript/provider-features/test.ts": [
+    { product: "terraform", version: "1.16.1" },
+    { product: "opentofu", version: "1.12.6" },
+  ],
+};
+
+for (const [target, runtimes] of Object.entries(pinnedRuntimes)) {
+  for (const { product, version } of runtimes) {
+    if (!availableVersions[product]?.includes(version)) {
+      throw new Error(
+        `pinnedRuntimes["${target}"] pins ${product} ${version}, which is not in ` +
+          `.terraform.versions.json ${product === "terraform" ? "available" : "opentofu.available"}, ` +
+          `so the CI image has no ${binaryPrefix[product]}${version} binary.`,
+      );
+    }
+  }
+}
 
 /**
  * Absolute paths of every integration test file, as resolved by jest's own config (including `testPathIgnorePatterns`
@@ -62,16 +104,28 @@ function fileNeedsHclRun(relPath) {
 
 /**
  * Flattened list of matrix entries consumed by `strategy.matrix.include` in the workflow. Each entry materialises one
- * `linux_integration` job for a given test file at a given Terraform version in a given synth output mode.
+ * `linux_integration` job for a given test file against a given CLI in a given synth output mode.
  *
- * @type {Array<{ target: string, terraform: string, hclOutput: boolean }>}
+ * `binary` is the name of the version-suffixed binary in the CI image and is what `TERRAFORM_BINARY_NAME` is set to,
+ * so it - not `terraform` - is what selects the CLI. `terraform` stays the bare version for cache keys and
+ * `TERRAFORM_VERSION`.
+ *
+ * @type {Array<{ target: string, terraform: string, binary: string, hclOutput: boolean }>}
  */
 const include = [];
 for (const target of targets) {
   const modes = fileNeedsHclRun(target) ? [false, true] : [false];
-  for (const terraform of tfVersions) {
+  const runtimes =
+    pinnedRuntimes[target] ??
+    tfVersions.map((version) => ({ product: "terraform", version }));
+  for (const { product, version } of runtimes) {
     for (const hclOutput of modes) {
-      include.push({ target, terraform, hclOutput });
+      include.push({
+        target,
+        terraform: version,
+        binary: `${binaryPrefix[product]}${version}`,
+        hclOutput,
+      });
     }
   }
 }

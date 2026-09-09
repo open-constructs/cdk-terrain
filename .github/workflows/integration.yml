@@ -132,13 +132,16 @@ jobs:
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
           mkdir -p /usr/local/share/.cache/gradle
           echo "gradle=/usr/local/share/.cache/gradle" >> $GITHUB_OUTPUT
+      # Keyed by binary, not version: OpenTofu resolves providers from
+      # registry.opentofu.org into this same directory, so a tofu run must not
+      # share a cache entry with a terraform run.
       - name: Cache terraform
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          key: terraform-${{ runner.os }}-${{ matrix.terraform }}-integration
+          key: terraform-${{ runner.os }}-${{ matrix.binary }}-integration
           restore-keys: |
-            terraform-${{ runner.os }}-${{ matrix.terraform }}-
+            terraform-${{ runner.os }}-${{ matrix.binary }}-
       - name: Cache go
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -173,7 +176,7 @@ jobs:
         env:
           TEST_TARGET: ${{ matrix.target }}
           TERRAFORM_CLOUD_TOKEN: ${{ secrets.TERRAFORM_CLOUD_TOKEN }}
-          TERRAFORM_BINARY_NAME: "terraform${{ matrix.terraform }}"
+          TERRAFORM_BINARY_NAME: ${{ matrix.binary }}
           NODE_OPTIONS: "--max-old-space-size=7168"
           TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.terraform }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
@@ -224,6 +227,10 @@ jobs:
           restore-keys: |
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
+      # NOTE: this installs Terraform for every matrix entry, including any
+      # pinned to OpenTofu (see pinnedRuntimes in tools/build-test-matrix.mjs).
+      # Harmless while this job is disabled; re-enabling it means honouring
+      # matrix.binary here too.
       - name: HashiCorp - Setup Terraform
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
         with:
