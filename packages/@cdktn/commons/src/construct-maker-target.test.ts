@@ -3,8 +3,15 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { Language, TerraformModuleConstraint } from "./config";
-import { ConstructsMakerModuleTarget } from "./construct-maker-target";
+import {
+  Language,
+  TerraformModuleConstraint,
+  TerraformProviderConstraint,
+} from "./config";
+import {
+  ConstructsMakerModuleTarget,
+  ConstructsMakerProviderTarget,
+} from "./construct-maker-target";
 
 describe("ConstructsMakerModuleTarget", () => {
   describe.each([
@@ -76,5 +83,37 @@ describe("ConstructsMakerModuleTarget", () => {
         expect(target.srcMakName).toBe(name);
       },
     );
+  });
+});
+
+// `trackingPayload` is read by the `get` telemetry in cdktn-cli (`type` and
+// `source`): a rename here silently drops the per-binding metrics.
+describe("trackingPayload", () => {
+  it("names a module target by its registry source", () => {
+    const target = new ConstructsMakerModuleTarget(
+      new TerraformModuleConstraint("terraform-aws-modules/vpc/aws@5.0.0"),
+      Language.TYPESCRIPT,
+    );
+    expect(target.trackingPayload).toEqual({
+      name: "vpc",
+      fullName: "terraform-aws-modules/vpc/aws",
+      source: "terraform-aws-modules/vpc/aws",
+      version: "5.0.0",
+      type: "module",
+    });
+  });
+
+  it("names a provider target by its source", () => {
+    const target = new ConstructsMakerProviderTarget(
+      new TerraformProviderConstraint("hashicorp/aws@~> 5.0"),
+      Language.TYPESCRIPT,
+    );
+    expect(target.trackingPayload).toEqual({
+      name: "aws",
+      fullName: "hashicorp/aws",
+      source: "hashicorp/aws",
+      version: "~> 5.0",
+      type: "provider",
+    });
   });
 });
