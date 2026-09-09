@@ -127,21 +127,36 @@ function copySourceFiles(sourceFiles) {
  *   --no-package-lock:    don't pollute staging with a fresh lockfile.
  *   --prefer-offline:     use the local npm cache before the network.
  *   --ignore-scripts:     don't run install scripts of bundled deps; bundling needs the tree on disk only.
+ *
+ * A cached packument older than a dependency bump makes --prefer-offline report
+ * ETARGET ("No matching version found") for a version that exists. Outside CI we
+ * retry once with --prefer-online; in CI we let it fail, so a stale cache can
+ * never quietly change what gets packaged.
  */
 function installRuntimeDeps() {
   console.log("Installing runtime deps into staging via npm...");
-  run(
-    "npm",
-    [
-      "install",
-      "--omit=dev",
-      "--omit=optional",
-      "--no-package-lock",
-      "--prefer-offline",
-      "--ignore-scripts",
-    ],
-    { cwd: stagingDir, ...NPM_SPAWN_OPTS },
-  );
+  const args = [
+    "install",
+    "--omit=dev",
+    "--omit=optional",
+    "--no-package-lock",
+    "--ignore-scripts",
+  ];
+  try {
+    run("npm", [...args, "--prefer-offline"], {
+      cwd: stagingDir,
+      ...NPM_SPAWN_OPTS,
+    });
+  } catch (err) {
+    if (process.env.CI) throw err;
+    console.log(
+      "npm install failed with --prefer-offline; retrying with --prefer-online in case the local cache is stale...",
+    );
+    run("npm", [...args, "--prefer-online"], {
+      cwd: stagingDir,
+      ...NPM_SPAWN_OPTS,
+    });
+  }
 }
 
 /**
