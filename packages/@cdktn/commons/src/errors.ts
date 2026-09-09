@@ -1,11 +1,21 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as Sentry from "@sentry/node";
-import { sendErrorTelemetry } from "./telemetry";
+import { CommandErrorType, sendErrorTelemetry } from "./telemetry";
 
 type ErrorType = "Internal" | "External" | "Usage";
 export function IsErrorType(error: any, type: ErrorType): boolean {
   return error && error.__type === type;
+}
+
+/** Metric class of a thrown value: its `Errors` type, "unexpected" otherwise. */
+export function commandErrorType(error: unknown): CommandErrorType {
+  for (const type of ["Usage", "External", "Internal"] as const) {
+    if (IsErrorType(error, type)) {
+      return type;
+    }
+  }
+  return "unexpected";
 }
 
 function reportPrefixedError(type: ErrorType) {
@@ -42,5 +52,9 @@ export const Errors = {
   setScope(scope: string) {
     errorScope = scope;
     Sentry.getCurrentScope().setTransactionName(scope);
+  },
+
+  getScope(): string {
+    return errorScope;
   },
 };

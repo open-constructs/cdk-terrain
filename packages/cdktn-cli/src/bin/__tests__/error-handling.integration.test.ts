@@ -12,6 +12,7 @@ import * as http from "http";
 import type { AddressInfo } from "net";
 import * as os from "os";
 import * as path from "path";
+import * as zlib from "zlib";
 import * as esbuild from "esbuild";
 import execa from "execa";
 
@@ -19,6 +20,7 @@ function fixtureSource(errorHandlingPath: string): string {
   return `
   import yargs from "yargs";
   import * as Sentry from "@sentry/node";
+  import { Errors, setUsageTelemetryEnabled } from "@cdktn/commons";
   import { runCli } from ${JSON.stringify(errorHandlingPath)};
 
   if (process.argv.includes("--with-listener")) {
@@ -33,7 +35,16 @@ function fixtureSource(errorHandlingPath: string): string {
   // the initializErrorReporting() call every real command handler makes
   // (see cli-core's error-reporting.ts) before runCli() can ever report.
   if (process.env.TEST_SENTRY_DSN) {
-    Sentry.init({ dsn: process.env.TEST_SENTRY_DSN, autoSessionTracking: false });
+    Sentry.init({
+      dsn: process.env.TEST_SENTRY_DSN,
+      release: "cdktn-cli-test",
+      environment: "production",
+      tracesSampleRate: 0,
+      serverName: "cdktn-cli",
+    });
+  }
+  if (process.env.TEST_USAGE_TELEMETRY === "1") {
+    setUsageTelemetryEnabled(true);
   }
 
   const cli = yargs(process.argv.slice(2).filter((a) => a !== "--with-listener"))
@@ -51,6 +62,7 @@ function fixtureSource(errorHandlingPath: string): string {
       "throws an async Error that should reach Sentry",
       () => {},
       async () => {
+        Errors.setScope("capturedboom");
         throw new Error("empirical-sentry-message");
       },
     );
@@ -73,10 +85,11 @@ function startSentrySink(): Promise<{
       const chunks: Buffer[] = [];
       req.on("data", (chunk) => chunks.push(chunk));
       req.on("end", () => {
-        requests.push({
-          url: req.url || "",
-          body: Buffer.concat(chunks).toString("utf8"),
-        });
+        let body = Buffer.concat(chunks);
+        if (req.headers["content-encoding"] === "gzip") {
+          body = zlib.gunzipSync(body);
+        }
+        requests.push({ url: req.url || "", body: body.toString("utf8") });
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end("{}");
       });
@@ -109,11 +122,10 @@ describe("runCli child-process smoke test", () => {
 
     // The fixture lives under os.tmpdir(), which has no node_modules
     // ancestry of its own, so bare-specifier resolution for its direct
-    // imports (yargs, @sentry/node) needs a hand-rolled alias. Everything
-    // error-handling.ts itself imports (yargs, @sentry/node, @cdktn/commons)
-    // resolves normally, because that file's real path is inside the
-    // workspace; aliasing both here just pins the fixture's copy to the
-    // same resolved module, so there's one Sentry client instance, not two.
+    // imports needs a hand-rolled alias. Everything error-handling.ts itself
+    // imports resolves normally, because that file's real path is inside the
+    // workspace; aliasing here just pins the fixture's copy to the same
+    // resolved module, so there's one Sentry client and one telemetry state.
     await esbuild.build({
       entryPoints: [fixturePath],
       bundle: true,
@@ -123,6 +135,7 @@ describe("runCli child-process smoke test", () => {
       alias: {
         yargs: require.resolve("yargs"),
         "@sentry/node": require.resolve("@sentry/node"),
+        "@cdktn/commons": require.resolve("@cdktn/commons"),
       },
     });
   });
@@ -168,8 +181,8 @@ describe("runCli child-process smoke test", () => {
         { env: { ...process.env, TEST_SENTRY_DSN: dsn }, reject: false },
       );
 
-      // The process only exits after reportFailure() awaits closeSentry(),
-      // so if the flush actually delivered the event, the sink has already
+      // The process only exits after reportFailure() awaits the flush, so
+      // if the flush actually delivered the event, the sink has already
       // seen it by the time execa resolves - there is nothing left to poll.
       expect(result.exitCode).toBe(1);
       const envelopeRequests = sink
@@ -181,6 +194,44 @@ describe("runCli child-process smoke test", () => {
           r.body.includes("empirical-sentry-message"),
         ),
       ).toBe(true);
+    } finally {
+      await sink.close();
+    }
+  }, 15000);
+
+  it("delivers the failed-command metric alongside the crash in the same run", async () => {
+    const sink = await startSentrySink();
+    try {
+      const dsn = `http://public@127.0.0.1:${sink.port}/1`;
+      // the jest preset sets CHECKPOINT_DISABLE, which would gate the metric
+      const { CHECKPOINT_DISABLE: _disabled, ...env } = process.env;
+      const result = await execa(
+        process.execPath,
+        [bundlePath, "capturedboom"],
+        {
+          env: { ...env, TEST_SENTRY_DSN: dsn, TEST_USAGE_TELEMETRY: "1" },
+          extendEnv: false,
+          reject: false,
+        },
+      );
+
+      expect(result.exitCode).toBe(1);
+      const bodies = sink
+        .requests()
+        .filter((r) => r.url.includes("/envelope/"))
+        .map((r) => r.body);
+      expect(bodies.some((b) => b.includes("empirical-sentry-message"))).toBe(
+        true,
+      );
+      const metricBodies = bodies.filter((b) =>
+        b.includes('"type":"trace_metric"'),
+      );
+      expect(metricBodies.length).toBeGreaterThan(0);
+      const metrics = metricBodies.join("\n");
+      expect(metrics).toContain('"name":"cli.command.error"');
+      expect(metrics).toContain('"error_type":{"value":"unexpected"');
+      expect(metrics).toContain('"command":{"value":"capturedboom"');
+      expect(metrics).not.toContain("empirical-sentry-message");
     } finally {
       await sink.close();
     }

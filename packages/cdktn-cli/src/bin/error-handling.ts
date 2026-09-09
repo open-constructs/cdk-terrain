@@ -2,7 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as yargs from "yargs";
 import * as Sentry from "@sentry/node";
-import { IsErrorType, collectDebugInformation } from "@cdktn/commons";
+import {
+  CommandErrorType,
+  Errors,
+  IsErrorType,
+  collectDebugInformation,
+  commandErrorType,
+  flushTelemetry,
+  sendTelemetry,
+} from "@cdktn/commons";
 
 export type CliFailure = { message?: string | null; error?: unknown };
 
@@ -11,13 +19,18 @@ export interface FailureReporterDeps {
   logError(msg: string): void; // default: console.error
   collectDebugInformation(): Promise<Record<string, unknown>>;
   captureException(error: unknown): void; // default: Sentry.captureException
-  closeSentry(timeoutMs: number): Promise<boolean>; // default: Sentry.close
+  // default: commons sendTelemetry, which applies the usage-telemetry gate
+  sendCommandErrorTelemetry(
+    command: string,
+    errorType: CommandErrorType,
+  ): Promise<void>;
+  flushTelemetry(timeoutMs: number): Promise<void>; // default: commons flushTelemetry
 }
 
-export const SENTRY_FLUSH_TIMEOUT_MS = 4000; // unchanged from the previous cdktn.ts handler
+export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
 
-// Non-Error tolerant. Fixes the `undefined`/`undefined` print that came from
-// terraform-cli.ts's raw-string throw (see terraform-cli.ts:429).
+// Non-Error tolerant: a raw string or object throw still prints a message,
+// never the literal `undefined`.
 export function describeError(e: unknown): { message: string; stack?: string } {
   if (e instanceof Error) return { message: e.message, stack: e.stack };
   if (typeof e === "string") return { message: e };
@@ -39,14 +52,16 @@ export function describeError(e: unknown): { message: string; stack?: string } {
   };
 }
 
-const defaultDeps: FailureReporterDeps = {
+export const defaultDeps: FailureReporterDeps = {
   log: (msg) => console.log(msg),
   logError: (msg) => console.error(msg),
   collectDebugInformation,
   captureException: (error) => {
     Sentry.captureException(error);
   },
-  closeSentry: (timeoutMs) => Sentry.close(timeoutMs),
+  sendCommandErrorTelemetry: (command, errorType) =>
+    sendTelemetry(command, { error: true, errorType }),
+  flushTelemetry,
 };
 
 export async function reportFailure(
@@ -90,10 +105,19 @@ export async function reportFailure(
     deps.logError(`Error while reporting failure: ${describeError(e).message}`);
   }
 
-  // >>> FORWARD COUPLING (#62): the one awaited telemetry emission goes here,
-  // >>> immediately before the Sentry flush. Do not add it in this PR.
+  // The one place a failure that reaches the entrypoint is counted; synth
+  // failures that exit inside cli-core count themselves and never get here.
+  // A yargs validation failure carries a message but no error.
   try {
-    await deps.closeSentry(SENTRY_FLUSH_TIMEOUT_MS);
+    await deps.sendCommandErrorTelemetry(
+      Errors.getScope(),
+      error === undefined || error === null ? "Usage" : commandErrorType(error),
+    );
+  } catch {
+    /* never mask the original error */
+  }
+  try {
+    await deps.flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
   } catch {
     /* never mask the original error */
   }

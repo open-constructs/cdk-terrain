@@ -18,7 +18,7 @@ import {
   setUsageTelemetryEnabled,
 } from "./telemetry";
 import { DEFAULT_TARGET_VERSIONS } from "./config";
-import { Errors } from "./errors";
+import { Errors, commandErrorType } from "./errors";
 
 const DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES = {
   target_terraform: DEFAULT_TARGET_VERSIONS.terraform,
@@ -241,9 +241,37 @@ describe("telemetry", () => {
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
-      expect(items.some((i) => i.name === "cli.command.error")).toBe(true);
+      const error = items.find((i) => i.name === "cli.command.error");
+      expect(error).toBeDefined();
+      expect(error!.attributes.error_type.value).toBe("unexpected");
       expect(items.some((i) => i.name === "cli.command.invoked")).toBe(false);
     });
+
+    it.each([
+      ["Usage", "Usage"],
+      ["External", "External"],
+      ["Internal", "Internal"],
+      ["unexpected", "unexpected"],
+      ["Something Else", "unexpected"],
+      [42, "unexpected"],
+    ])(
+      "stamps error_type %p as %p on cli.command.error",
+      async (errorType, expected) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+          sendUsageTelemetry: true,
+        });
+        initSentryWithCapturingTransport();
+
+        await sendTelemetry("deploy", { error: true, errorType });
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const error = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.command.error",
+        )!;
+        expect(error.attributes.error_type.value).toBe(expected);
+        expect(error.attributes.command.value).toBe("deploy");
+      },
+    );
 
     it("never attaches the machine hostname to metrics (serverName constant)", async () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
@@ -833,6 +861,26 @@ describe("telemetry", () => {
       const err = Errors.Usage("plain");
       expect(err.message).toBe("Usage Error: plain");
       expect(err.__type).toBe("Usage");
+    });
+
+    it("exposes the scope set for the running command", () => {
+      expect(Errors.getScope()).toBe("unknown");
+      Errors.setScope("provider add");
+      expect(Errors.getScope()).toBe("provider add");
+    });
+  });
+
+  describe("commandErrorType", () => {
+    it.each([
+      [Errors.Usage("u"), "Usage"],
+      [Errors.External("e"), "External"],
+      [Errors.Internal("i"), "Internal"],
+      [new Error("plain"), "unexpected"],
+      ["raw-string", "unexpected"],
+      [undefined, "unexpected"],
+      [null, "unexpected"],
+    ])("classifies %p as %s", (error, expected) => {
+      expect(commandErrorType(error)).toBe(expected);
     });
   });
 

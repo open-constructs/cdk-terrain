@@ -12,6 +12,15 @@ import { terraformCli, TerraformCliProbe } from "./terraform";
 type AttributeValue = string | number | boolean;
 type Attributes = Record<string, AttributeValue>;
 
+/** Error class of a failed command run: a typed `Errors` value or "unexpected". */
+export const COMMAND_ERROR_TYPES = [
+  "Usage",
+  "External",
+  "Internal",
+  "unexpected",
+] as const;
+export type CommandErrorType = (typeof COMMAND_ERROR_TYPES)[number];
+
 /**
  * Raw `cdktf.json` read that never throws: telemetry must work outside a
  * project and must not depend on cli-core's typed config (commons cannot
@@ -396,6 +405,7 @@ function sendInitTelemetry(providers: string[], attributes: Attributes): void {
  * Emits a command's usage telemetry as Sentry metrics; payload fields reach
  * the attributes only through the allow-lists above. A silent no-op when
  * usage telemetry is disabled or Sentry is not initialized.
+ * `payload.error` counts the run as `cli.command.error` by `errorType` instead.
  */
 export async function sendTelemetry(
   command: string,
@@ -427,6 +437,9 @@ export async function sendTelemetry(
     }
 
     if (payload.error) {
+      attributes.error_type = COMMAND_ERROR_TYPES.includes(payload.errorType)
+        ? payload.errorType
+        : "unexpected";
       Sentry.metrics.count("cli.command.error", 1, { attributes });
       return;
     }

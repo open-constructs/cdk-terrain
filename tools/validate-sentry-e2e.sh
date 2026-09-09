@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # End-to-end check of cdktn-cli telemetry on the real esbuild bundle: rebuilds
-# it with a local-sink DSN, runs convert (success), a failing synth (error) and
-# a hand-written stack (per-stack metrics), then asserts on what reached
-# tools/sentry-sink.mjs. On exit the bundle is rebuilt with the caller's DSN.
+# it with a local-sink DSN, runs convert (success), a failing synth (error), a
+# hand-written stack (per-stack metrics) and a crashing command (entrypoint
+# failure path), then asserts on what reached tools/sentry-sink.mjs. On exit
+# the bundle is rebuilt with the caller's DSN.
 set -euo pipefail
 
 PORT="${1:-9999}"
@@ -111,6 +112,21 @@ node "$CDKTN" synth --check-code-maker-output=false >/dev/null
 popd >/dev/null
 rm -rf "$STACK_WORK"
 
+# A corrupt synthesized stack read with --skip-synth is an unexpected error
+# that reaches runCli's failure reporter: crash event + cli.command.error.
+CRASH_WORK="$(mktemp -d)"
+pushd "$CRASH_WORK" >/dev/null
+mkdir -p cdktf.out/stacks/broken
+printf '{ "language": "typescript", "app": "true", "projectId": "e2e-validation", "sendCrashReports": true, "sendUsageTelemetry": true }' > cdktf.json
+printf '{ "version": "0.0.0-e2e", "stacks": { "broken": { "name": "broken", "constructPath": "broken", "workingDirectory": "stacks/broken", "synthesizedStackPath": "stacks/broken/cdk.tf.json", "stackMetadataPath": "stacks/broken/metadata.json", "annotations": [], "dependencies": [] } } }' > cdktf.out/manifest.json
+printf '{ not json' > cdktf.out/stacks/broken/cdk.tf.json
+
+echo "==> CRASH trigger: cdktn output --skip-synth (corrupt cdk.tf.json)"
+CRASH_OUTPUT="$(node "$CDKTN" output --skip-synth 2>&1 || true)"
+
+popd >/dev/null
+rm -rf "$CRASH_WORK"
+
 ITEMS="$(curl -sf "http://localhost:${PORT}/__items")"
 RAW="$(curl -sf "http://localhost:${PORT}/__raw")"
 echo "==> sink recorded: $ITEMS"
@@ -145,10 +161,18 @@ for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example lea
   echo "$RAW" | grep -q "$secret" \
     && fail "$secret reached the sink: stack names, resource ids, provider hosts/paths and SENTRY_* env values must never be sent"
 done
-# The failing-app synth hard-exits without throwing, so no crash event is
-# expected here; crash-event delivery is covered by the unit suite.
+echo "$ITEMS" | grep -q '"error_type"' \
+  || fail "error_type attribute missing on cli.command.error"
+echo "$RAW" | grep -q '"unexpected"' \
+  || fail "the crash trigger was not counted as an unexpected cli.command.error"
+echo "$ITEMS" | grep -q '{"type":"event"}' \
+  || fail "no crash event reached the sink from the entrypoint failure path"
+echo "$CRASH_OUTPUT" | grep -q '^Debug Information:' \
+  || fail "the crash trigger did not reach the debug information block"
+echo "$CRASH_OUTPUT" | grep -q 'ERR_UNHANDLED_REJECTION\|PromiseRejectionHandledWarning' \
+  && fail "the crash trigger orphaned a rejection"
 
 HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"
 [ "$HASHICORP_REFS" = "0" ] || fail "bundle still references checkpoint-api.hashicorp.com ($HASHICORP_REFS hits)"
 
-echo "PASS: success-path, error-path and per-stack usage metrics delivered to the local sink; zero HashiCorp references in the bundle"
+echo "PASS: success-path, error-path, per-stack and entrypoint-failure telemetry delivered to the local sink; zero HashiCorp references in the bundle"
