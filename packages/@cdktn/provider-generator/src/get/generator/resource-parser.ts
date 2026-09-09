@@ -82,8 +82,17 @@ export function sanitizeClassOrNamespaceName(
   isProvider = false,
 ) {
   const resourceIsNamedProvider = !isProvider && baseName === "provider";
+  // A resource named `<provider>_provider_functions` maps to the same
+  // providers/<provider>/provider-functions/ directory that the provider's
+  // functions submodule is emitted to, and would silently overwrite it.
+  const resourceIsNamedProviderFunctions =
+    !isProvider && baseName === "provider_functions";
 
-  if (isReservedClassOrNamespaceName(baseName) || resourceIsNamedProvider) {
+  if (
+    isReservedClassOrNamespaceName(baseName) ||
+    resourceIsNamedProvider ||
+    resourceIsNamedProviderFunctions
+  ) {
     return `${baseName}_resource`;
   } else {
     return baseName;

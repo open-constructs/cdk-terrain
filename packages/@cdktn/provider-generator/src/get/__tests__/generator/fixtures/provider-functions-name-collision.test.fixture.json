@@ -1,0 +1,42 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/example": {
+      "resource_schemas": {
+        "example_provider_functions": {
+          "version": 0,
+          "block": {
+            "attributes": {
+              "id": {
+                "type": "string",
+                "description_kind": "plain",
+                "computed": true
+              },
+              "name": {
+                "type": "string",
+                "description_kind": "plain",
+                "optional": true
+              }
+            }
+          }
+        }
+      },
+      "functions": {
+        "sum": {
+          "description": "Adds up two numbers.",
+          "summary": "Sum numbers",
+          "return_type": "number",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "number"
+            },
+            {
+              "name": "b",
+              "type": "number"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
