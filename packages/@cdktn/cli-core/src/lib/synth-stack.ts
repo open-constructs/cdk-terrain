@@ -11,7 +11,14 @@ import {
   TerraformStackMetadata,
 } from "cdktn";
 import { performance } from "perf_hooks";
-import { logger, readConfigSync, sendTelemetry, shell } from "@cdktn/commons";
+import {
+  commandErrorType,
+  flushTelemetry,
+  logger,
+  readConfigSync,
+  sendTelemetry,
+  shell,
+} from "@cdktn/commons";
 import { CdktfConfig } from "./cdktf-config";
 import { format } from "@cdktn/hcl-tools";
 
@@ -164,12 +171,15 @@ Command output on stdout:
 `
     : ""
 }`;
-      await this.synthErrorTelemetry(synthOrigin);
       if (graceful) {
         e.errorOutput = errorOutput;
         throw e;
       }
       console.error(`ERROR: ${errorOutput}`);
+      // hard exit skips the entrypoint's failure reporter and flush, so
+      // count and flush the failed run here (bounded)
+      await this.synthErrorTelemetry(e, synthOrigin);
+      await flushTelemetry();
       process.exit(1);
     }
 
@@ -190,6 +200,8 @@ Command output on stdout:
         throw new Error(errorMessage);
       }
       logger.error(errorMessage);
+      await this.synthErrorTelemetry(e, synthOrigin);
+      await flushTelemetry();
       process.exit(1);
     }
 
@@ -290,8 +302,20 @@ Command output on stdout:
     });
   }
 
-  public static async synthErrorTelemetry(synthOrigin?: SynthOrigin) {
-    await sendTelemetry("synth", { error: true, synthOrigin });
+  /**
+   * One `cli.command.error` per failed run: counted here only on the paths
+   * above that exit the process themselves; anything thrown is counted by
+   * the CLI entrypoint's failure reporter instead.
+   */
+  public static async synthErrorTelemetry(
+    error: unknown,
+    synthOrigin?: SynthOrigin,
+  ) {
+    await sendTelemetry("synth", {
+      error: true,
+      errorType: commandErrorType(error),
+      synthOrigin,
+    });
   }
 }
 
