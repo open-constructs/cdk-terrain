@@ -16,6 +16,7 @@ import {
   Project,
   CdktfConfig,
   getAllPrebuiltProviders,
+  initializErrorReporting,
 } from "@cdktn/cli-core";
 import {
   convertProject,
@@ -34,6 +35,7 @@ import {
   logFileName,
   logger,
   Errors,
+  hasCapturedUsageTelemetryDecision,
   sendTelemetry,
   ConstructsMakerProviderTarget,
 } from "@cdktn/commons";
@@ -298,6 +300,17 @@ This means that your Terraform state file will be stored locally on disk in a fi
 
   if (providers?.length) {
     telemetryData.addedProviders = providers;
+  }
+
+  // The consent answers are now persisted in the new project's cdktf.json;
+  // reporting is initialized against it so the init metric honours them.
+  // convert drives init inside a throwaway project and already captured its own.
+  if (!hasCapturedUsageTelemetryDecision()) {
+    await initializErrorReporting(
+      undefined,
+      undefined,
+      path.resolve(destination),
+    );
   }
 
   await sendTelemetry("init", {

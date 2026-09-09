@@ -223,6 +223,54 @@ describe("consent gating (initializErrorReporting)", () => {
     });
   });
 
+  it("reads and persists against an explicit project path, not the cwd", async () => {
+    // init creates the project in a destination directory and initializes
+    // reporting against it; the cwd may hold an unrelated (or no) cdktf.json
+    const destination = path.join(workdir, "new-project");
+    fs.mkdirpSync(destination);
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: true,
+      sendUsageTelemetry: false,
+    });
+    fs.writeJsonSync(path.join(destination, "cdktf.json"), {
+      sendCrashReports: false,
+      sendUsageTelemetry: true,
+      targetVersions: { terraform: ">=1.9.0" },
+    });
+    setInteractive(true);
+    const crashPrompt = jest.fn();
+    const usagePrompt = jest.fn();
+
+    await initializErrorReporting(crashPrompt, usagePrompt, destination);
+
+    expect(crashPrompt).not.toHaveBeenCalled();
+    expect(usagePrompt).not.toHaveBeenCalled();
+    expect(setUsageTelemetryEnabled).toHaveBeenCalledWith(true);
+    expect(setProjectTargetAttributes).toHaveBeenCalledWith(
+      expect.objectContaining({ target_terraform: ">=1.9.0" }),
+    );
+    expect(isUsageTelemetryEnabled()).toBe(true);
+    // usage-only consent: the client exists but drops error events
+    await expect(initOptions().beforeSend({}, undefined)).resolves.toBeNull();
+  });
+
+  it("prompts into the explicit project path when its flags are unset", async () => {
+    const destination = path.join(workdir, "new-project");
+    fs.mkdirpSync(destination);
+    fs.writeJsonSync(path.join(destination, "cdktf.json"), {});
+    setInteractive(true);
+    const crashPrompt = jest.fn().mockResolvedValue(true);
+    const usagePrompt = jest.fn().mockResolvedValue(false);
+
+    await initializErrorReporting(crashPrompt, usagePrompt, destination);
+
+    expect(fs.readJsonSync(path.join(destination, "cdktf.json"))).toEqual({
+      sendCrashReports: true,
+      sendUsageTelemetry: false,
+    });
+    expect(fs.existsSync(path.join(workdir, "cdktf.json"))).toBe(false);
+  });
+
   it("CHECKPOINT_DISABLE -> no usage prompt, no init when crash is off", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: false,

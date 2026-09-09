@@ -80,12 +80,17 @@ function isPromise(p: any): p is Promise<any> {
   );
 }
 
+/**
+ * `projectPath` is the project whose consent flags apply: the cwd for every
+ * command, the freshly created project for `init`.
+ */
 export async function initializErrorReporting(
   runCrashConsentPrompt?: () => Promise<boolean>,
   runUsageTelemetryConsentPrompt?: () => Promise<boolean>,
+  projectPath = process.cwd(),
 ) {
-  let shouldReport = shouldReportCrash();
-  let usageConsent = getUsageTelemetryConsent();
+  let shouldReport = shouldReportCrash(projectPath);
+  let usageConsent = getUsageTelemetryConsent(projectPath);
 
   // Prompting requires a real user at a terminal (TTY and not CI) and a
   // cdktf.json to persist the decision into; otherwise fall through to
@@ -94,12 +99,12 @@ export async function initializErrorReporting(
     Boolean(process.stdout.isTTY) &&
     !ciInfo.isCI &&
     !process.env.CI &&
-    fs.existsSync(path.resolve(process.cwd(), "cdktf.json"));
+    fs.existsSync(path.resolve(projectPath, "cdktf.json"));
 
   if (canPrompt) {
     if (shouldReport === undefined && runCrashConsentPrompt) {
       shouldReport = await runCrashConsentPrompt();
-      persistReportCrashReportDecision(shouldReport);
+      persistReportCrashReportDecision(shouldReport, projectPath);
     }
     if (
       usageConsent === undefined &&
@@ -107,7 +112,7 @@ export async function initializErrorReporting(
       !process.env.CHECKPOINT_DISABLE
     ) {
       usageConsent = await runUsageTelemetryConsentPrompt();
-      persistSendUsageTelemetryDecision(usageConsent);
+      persistSendUsageTelemetryDecision(usageConsent, projectPath);
     }
   }
 
@@ -121,7 +126,7 @@ export async function initializErrorReporting(
   // directory: some commands (convert) chdir into a temporary project
   // before sendTelemetry runs and must not consult that project's flags.
   setUsageTelemetryEnabled(usageTelemetryEnabled);
-  setProjectTargetAttributes(getProjectTargetAttributes());
+  setProjectTargetAttributes(getProjectTargetAttributes(projectPath));
 
   if (!crashReportingEnabled && !usageTelemetryEnabled) {
     logger.debug("Error reporting and usage telemetry disabled");
