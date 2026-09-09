@@ -10,6 +10,7 @@ import {
 import { logger } from "@cdktn/commons";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { randomUUID } from "node:crypto";
 import ciInfo from "ci-info";
 
 export function shouldReportCrash(
@@ -82,9 +83,16 @@ export async function initializErrorReporting(
   logger.debug("Initializing error reporting");
 
   Sentry.init({
-    autoSessionTracking: true,
     dsn: process.env.SENTRY_DSN,
     release: `cdktn-cli-${DISPLAY_VERSION}`,
+    // Fixed so the SDK never falls back to the user's SENTRY_ENVIRONMENT.
+    environment: "production",
+    // Usage metrics are delivered independently of trace sampling, so no
+    // trace quota is spent.
+    tracesSampleRate: 0,
+    // Fixed constant so the machine hostname is never attached to events or
+    // metrics (v10 defaults server_name/server.address to the hostname).
+    serverName: "cdktn-cli",
     async beforeSend(event, hint) {
       if (!hint) {
         return event;
@@ -113,12 +121,17 @@ export async function initializErrorReporting(
     },
   });
 
-  Sentry.configureScope(function (scope) {
-    scope.setUser({
-      id: getUserId(),
-    });
-    scope.setTag("projectId", getProjectId());
+  const scope = Sentry.getCurrentScope();
+  // The SDK seeds the trace from SENTRY_TRACE/SENTRY_BAGGAGE; start a fresh
+  // one so nothing from the user's environment propagates.
+  scope.setPropagationContext({
+    traceId: randomUUID().replace(/-/g, ""),
+    sampleRand: Math.random(),
   });
+  scope.setUser({
+    id: getUserId(),
+  });
+  scope.setTag("projectId", getProjectId());
 
   logger.debug("Collecting environment information for error reporting");
   collectDebugInformation().then((debugOutput) => {
