@@ -7,6 +7,8 @@ import * as path from "path";
 import {
   sendTelemetry,
   classifyModuleSource,
+  classifyProviderBinding,
+  getGeneratedProviderSources,
   normalizeProviderSource,
   getBinaryAttributes,
   getProjectTargetAttributes,
@@ -362,6 +364,265 @@ describe("telemetry", () => {
         (i) => i.name === "cli.command.invoked",
       )!;
       expect(invoked.attributes.event.value).toBe("start");
+    });
+  });
+
+  describe("stack metrics", () => {
+    function attributeValues(item: MetricItem) {
+      return Object.fromEntries(
+        Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
+      );
+    }
+
+    // one JSON-synthesized stack the way the library writes it: metadata
+    // carries the stack name and resource ids (imports/moved), overrides
+    // are keyed by schema type, module overrides by source
+    const stackMetadata = [
+      {
+        version: "0.21.0",
+        stackName: "SECRET-STACK-NAME",
+        backend: "s3",
+        overrides: {
+          stack: ["terraform.required_version"],
+          aws_s3_bucket: ["tags", "region"],
+          "module.../secret-path/vpc": ["providers"],
+        },
+        imports: { aws_s3_bucket: ["secret-resource-id"] },
+        moved: {
+          aws_s3_bucket: ["secret-resource-id"],
+          aws_iam_role: ["secret-resource-id"],
+        },
+      },
+      {
+        version: "0.21.0",
+        stackName: "SECRET-STACK-NAME-2",
+        backend: "remote",
+        cloud: "tfc",
+      },
+    ];
+    const requiredProviders = [
+      {
+        aws: { source: "aws", version: "~> 5.0" },
+        docker: {
+          source: "registry.terraform.io/kreuzwerker/docker",
+          version: "3.0.2",
+        },
+        google: { source: "hashicorp/google", version: "x".repeat(100) },
+      },
+      { random: { source: "hashicorp/random" } },
+    ];
+
+    beforeEach(() => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+        terraformProviders: [
+          "aws@~>5.0",
+          { name: "docker", source: "kreuzwerker/docker", version: "3.0.2" },
+        ],
+      });
+      initSentryWithCapturingTransport();
+    });
+
+    it("counts one cli.stack per stack with backend, cloud, library version and group sizes", async () => {
+      await sendTelemetry("deploy", {
+        language: "typescript",
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 0,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const stacks = items
+        .filter((i) => i.name === "cli.stack")
+        .map(attributeValues);
+      expect(stacks).toHaveLength(2);
+      expect(stacks[0]).toMatchObject({
+        command: "deploy",
+        language: "typescript",
+        backend: "s3",
+        cloud: false,
+        library_version: "0.21.0",
+        override_count: 4,
+        import_count: 1,
+        moved_count: 2,
+        os: process.platform,
+        "sentry.release": "cdktn-cli-test",
+      });
+      expect(stacks[1]).toMatchObject({
+        backend: "remote",
+        cloud: true,
+        override_count: 0,
+        import_count: 0,
+        moved_count: 0,
+      });
+      expect(items.some((i) => i.name === "cli.stack.failed")).toBe(false);
+      expect(items.some((i) => i.name === "cli.command.invoked")).toBe(true);
+    });
+
+    it("counts overrides per resource type, reducing module sources to their kind", async () => {
+      await sendTelemetry("synth", { stackMetadata, requiredProviders });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const overrides = parseMetricItems(envelopeBodies)
+        .filter((i) => i.name === "cli.stack.override")
+        .map((i) => {
+          const { resource_type, override_count } = attributeValues(i);
+          return [resource_type, override_count];
+        });
+      expect(overrides).toEqual([
+        ["stack", 1],
+        ["aws_s3_bucket", 2],
+        ["module.local", 1],
+      ]);
+    });
+
+    it("counts required providers with normalized source, truncated constraint and binding", async () => {
+      await sendTelemetry("diff", { stackMetadata, requiredProviders });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const providers = parseMetricItems(envelopeBodies)
+        .filter((i) => i.name === "cli.stack.provider")
+        .map(attributeValues);
+      expect(providers.map((p) => p.provider)).toEqual([
+        "hashicorp/aws",
+        "kreuzwerker/docker",
+        "hashicorp/google",
+        "hashicorp/random",
+      ]);
+      expect(providers.map((p) => p.binding)).toEqual([
+        "generated",
+        "generated",
+        "prebuilt",
+        "prebuilt",
+      ]);
+      expect(providers[0].version_constraint).toBe("~> 5.0");
+      expect(providers[2].version_constraint).toHaveLength(64);
+      expect(providers[3]).not.toHaveProperty("version_constraint");
+    });
+
+    it("counts failed stacks without messages", async () => {
+      await sendTelemetry("destroy", {
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 2,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const failed = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.stack.failed",
+      )!;
+      expect(failed.value).toBe(2);
+      expect(failed.attributes.command.value).toBe("destroy");
+    });
+
+    it("never serializes stack names, resource ids or module paths", async () => {
+      await sendTelemetry("deploy", {
+        language: "typescript",
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 1,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.filter((i) => i.name.startsWith("cli.stack")).length).toBe(
+        10,
+      );
+      for (const item of items) {
+        for (const forbidden of [
+          "stackName",
+          "stack_name",
+          "imports",
+          "moved",
+        ]) {
+          expect(item.attributes).not.toHaveProperty(forbidden);
+        }
+      }
+      const bytes = envelopeBodies.join("\n");
+      expect(bytes).not.toContain("SECRET-STACK-NAME");
+      expect(bytes).not.toContain("secret-resource-id");
+      expect(bytes).not.toContain("secret-path");
+    });
+
+    it("emits no cli.stack.* metric when usage telemetry is off", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: false,
+      });
+
+      await sendTelemetry("deploy", {
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 1,
+      });
+      await Sentry.flush(2000);
+
+      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+
+    it("tolerates malformed metadata entries", async () => {
+      await sendTelemetry("synth", {
+        stackMetadata: [null, "nope", { overrides: "nope", imports: [] }],
+        requiredProviders: [undefined, { aws: "nope" }],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.filter((i) => i.name === "cli.stack")).toHaveLength(3);
+      expect(items.filter((i) => i.name === "cli.stack.override")).toHaveLength(
+        0,
+      );
+      const provider = items.find((i) => i.name === "cli.stack.provider")!;
+      expect(attributeValues(provider)).toMatchObject({
+        provider: "hashicorp/aws",
+        binding: "generated",
+      });
+    });
+  });
+
+  describe("provider binding classification", () => {
+    it("reads string and object terraformProviders entries as normalized sources", () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        terraformProviders: [
+          "aws@~>5.0",
+          "hashicorp/random@3.6.0",
+          "registry.terraform.io/kreuzwerker/docker",
+          { name: "google", source: "hashicorp/google", version: "~> 5.0" },
+          { name: "azurerm" },
+          { version: "1.0.0" },
+          42,
+        ],
+      });
+      expect(getGeneratedProviderSources(workdir)).toEqual([
+        "hashicorp/aws",
+        "hashicorp/random",
+        "kreuzwerker/docker",
+        "hashicorp/google",
+        "hashicorp/azurerm",
+      ]);
+    });
+
+    it.each([[{}], [{ terraformProviders: "aws" }]])(
+      "returns no sources for %j",
+      (config) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
+        expect(getGeneratedProviderSources(workdir)).toEqual([]);
+      },
+    );
+
+    it("returns no sources without a cdktf.json", () => {
+      expect(getGeneratedProviderSources(workdir)).toEqual([]);
+    });
+
+    it.each([
+      ["aws", "generated"],
+      ["registry.terraform.io/hashicorp/aws", "generated"],
+      ["Hashicorp/AWS", "generated"],
+      ["kreuzwerker/docker", "generated"],
+      ["hashicorp/google", "prebuilt"],
+    ])("classifies %s as %s", (source, expected) => {
+      const generated = ["hashicorp/aws", "kreuzwerker/docker"];
+      expect(classifyProviderBinding(source, generated)).toBe(expected);
     });
   });
 

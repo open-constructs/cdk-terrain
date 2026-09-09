@@ -181,6 +181,36 @@ export function normalizeProviderSource(source: string): string {
 }
 
 /**
+ * Normalized sources of the providers a project generates bindings for
+ * (`terraformProviders` in `cdktf.json`, as `"aws@~>5.0"` strings or
+ * `{ name, source }` objects); anything else in a stack is prebuilt.
+ */
+export function getGeneratedProviderSources(
+  projectPath = process.cwd(),
+): string[] {
+  const entries = readRawCdktfJson(projectPath).terraformProviders;
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+  return entries.flatMap((entry) => {
+    if (typeof entry === "string") {
+      return [normalizeProviderSource(entry)];
+    }
+    const source = entry?.source ?? entry?.name;
+    return typeof source === "string" ? [normalizeProviderSource(source)] : [];
+  });
+}
+
+export function classifyProviderBinding(
+  source: string,
+  generatedSources: string[],
+): "generated" | "prebuilt" {
+  return generatedSources.includes(normalizeProviderSource(source))
+    ? "generated"
+    : "prebuilt";
+}
+
+/**
  * Module identity for metrics. Only public registry sources are sent as-is;
  * anything else could carry a path, hostname or organization and is reduced
  * to its kind.
@@ -220,6 +250,93 @@ function isScalar(value: unknown): value is AttributeValue {
     typeof value === "number" ||
     typeof value === "boolean"
   );
+}
+
+// Number of entries per key of a metadata group such as
+// `overrides: { aws_s3_bucket: ["tags", "region"] }`.
+function groupSizes(group: unknown): Record<string, number> {
+  const sizes: Record<string, number> = {};
+  if (group && typeof group === "object" && !Array.isArray(group)) {
+    for (const [key, entries] of Object.entries(group)) {
+      sizes[key] = Array.isArray(entries) ? entries.length : 0;
+    }
+  }
+  return sizes;
+}
+
+function sum(sizes: Record<string, number>): number {
+  return Object.values(sizes).reduce((total, size) => total + size, 0);
+}
+
+// Override keys are provider schema names, except module overrides which
+// carry the module source and are reduced to its kind.
+function overrideResourceType(key: string): string {
+  return key.startsWith("module.")
+    ? `module.${classifyModuleSource(key.slice("module.".length))}`
+    : key;
+}
+
+/**
+ * Per-stack metrics for synth/diff/deploy/destroy from the stack metadata
+ * block and `required_providers`: backend and library version, override /
+ * import / moved counts and the providers used, never names or ids.
+ */
+function sendStackTelemetry(
+  stackMetadata: unknown[],
+  requiredProviders: unknown[],
+  attributes: Attributes,
+): void {
+  const generatedSources = getGeneratedProviderSources();
+  stackMetadata.forEach((entry, index) => {
+    const metadata: Record<string, any> =
+      entry && typeof entry === "object" ? entry : {};
+    const overrides = groupSizes(metadata.overrides);
+    const stackAttributes: Attributes = {
+      ...attributes,
+      backend:
+        typeof metadata.backend === "string" ? metadata.backend : "unknown",
+      cloud: typeof metadata.cloud === "string",
+      override_count: sum(overrides),
+      import_count: sum(groupSizes(metadata.imports)),
+      moved_count: sum(groupSizes(metadata.moved)),
+    };
+    if (typeof metadata.version === "string") {
+      stackAttributes.library_version = metadata.version;
+    }
+    Sentry.metrics.count("cli.stack", 1, { attributes: stackAttributes });
+
+    for (const [key, count] of Object.entries(overrides)) {
+      Sentry.metrics.count("cli.stack.override", 1, {
+        attributes: {
+          ...attributes,
+          resource_type: overrideResourceType(key),
+          override_count: count,
+        },
+      });
+    }
+
+    const providers = requiredProviders[index];
+    if (!providers || typeof providers !== "object") {
+      return;
+    }
+    for (const [type, constraint] of Object.entries(
+      providers as Record<string, any>,
+    )) {
+      const source =
+        typeof constraint?.source === "string" ? constraint.source : type;
+      const providerAttributes: Attributes = {
+        ...attributes,
+        provider: normalizeProviderSource(source),
+        binding: classifyProviderBinding(source, generatedSources),
+      };
+      if (typeof constraint?.version === "string") {
+        providerAttributes.version_constraint = constraint.version.slice(0, 64);
+      }
+      Sentry.metrics.count("cli.stack.provider", 1, {
+        attributes: providerAttributes,
+      });
+    }
+  });
 }
 
 interface GetTarget {
@@ -267,9 +384,10 @@ function sendInitTelemetry(providers: string[], attributes: Attributes): void {
 
 /**
  * Sends usage telemetry for a CLI command as Sentry v10 metrics
- * (`cli.command.invoked`, `cli.command.error`, `cli.synth.duration`, plus
- * the per-binding `cli.get.*` / `cli.init.provider` counts). Payload fields
- * reach the metric only through the per-command allow-lists above.
+ * (`cli.command.invoked`, `cli.command.error`, `cli.synth.duration`, the
+ * per-stack `cli.stack*` counts and the per-binding `cli.get.*` /
+ * `cli.init.provider` counts). Payload fields reach the metric only through
+ * the per-command allow-lists above.
  *
  * A silent no-op when usage telemetry is disabled or Sentry is not
  * initialized (no DSN / user opted out).
@@ -313,6 +431,23 @@ export async function sendTelemetry(
     }
     if (command === "init" && Array.isArray(payload.addedProviders)) {
       sendInitTelemetry(payload.addedProviders, attributes);
+    }
+    if (Array.isArray(payload.stackMetadata)) {
+      sendStackTelemetry(
+        payload.stackMetadata,
+        Array.isArray(payload.requiredProviders)
+          ? payload.requiredProviders
+          : [],
+        attributes,
+      );
+    }
+    if (
+      typeof payload.failedStackCount === "number" &&
+      payload.failedStackCount > 0
+    ) {
+      Sentry.metrics.count("cli.stack.failed", payload.failedStackCount, {
+        attributes,
+      });
     }
 
     Sentry.metrics.count("cli.command.invoked", 1, { attributes });
