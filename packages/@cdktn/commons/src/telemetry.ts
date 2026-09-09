@@ -354,25 +354,58 @@ export function classifyModuleSource(source: string): string {
     : "other";
 }
 
-// Scalar payload fields forwarded as attributes, per command. Anything not
-// listed here (and every array/object) stays out of the metric.
-const SCALAR_ATTRIBUTES: Record<string, Record<string, string>> = {
-  synth: { synthOrigin: "synth_origin" },
-  init: { template: "template", isRemote: "is_remote" },
-  convert: {
-    numberOfModules: "module_count",
-    numberOfProviders: "provider_count",
-    convertedLines: "converted_lines",
-  },
-  watch: { event: "event" },
+// The synth origins the CLI passes through; see SynthOrigin in cli-core.
+const SYNTH_ORIGINS = ["watch"];
+// The watch lifecycle events reported today.
+const WATCH_EVENTS = ["start"];
+
+type ScalarAttribute = {
+  attribute: string;
+  type: "string" | "number" | "boolean";
+  /** Enumerated values; a value outside the set is dropped. */
+  values?: string[];
 };
 
-function isScalar(value: unknown): value is AttributeValue {
-  return (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  );
+// Scalar payload fields forwarded as attributes, per command, each with the
+// type (and where enumerable, the values) it must have. Anything not listed
+// here, of the wrong type or off the value set stays out of the metric.
+const SCALAR_ATTRIBUTES: Record<string, Record<string, ScalarAttribute>> = {
+  synth: {
+    synthOrigin: {
+      attribute: "synth_origin",
+      type: "string",
+      values: SYNTH_ORIGINS,
+    },
+  },
+  init: {
+    // reduced to a built-in template name or "remote" by templateTelemetryName
+    template: { attribute: "template", type: "string" },
+    isRemote: { attribute: "is_remote", type: "boolean" },
+  },
+  convert: {
+    numberOfModules: { attribute: "module_count", type: "number" },
+    numberOfProviders: { attribute: "provider_count", type: "number" },
+    convertedLines: { attribute: "converted_lines", type: "number" },
+  },
+  watch: {
+    event: { attribute: "event", type: "string", values: WATCH_EVENTS },
+  },
+};
+
+function scalarAttributeValue(
+  value: unknown,
+  spec: ScalarAttribute,
+): AttributeValue | undefined {
+  if (typeof value !== spec.type) {
+    return undefined;
+  }
+  if (spec.type === "number" && !Number.isFinite(value)) {
+    return undefined;
+  }
+  if (spec.values && !spec.values.includes(value as string)) {
+    return undefined;
+  }
+  return value as AttributeValue;
 }
 
 // Number of entries per key of a metadata group such as
@@ -544,11 +577,12 @@ export async function sendTelemetry(
     if (LANGUAGES.includes(payload.language)) {
       attributes.language = payload.language;
     }
-    for (const [key, attribute] of Object.entries(
+    for (const [key, spec] of Object.entries(
       SCALAR_ATTRIBUTES[command] ?? {},
     )) {
-      if (isScalar(payload[key])) {
-        attributes[attribute] = payload[key];
+      const value = scalarAttributeValue(payload[key], spec);
+      if (value !== undefined) {
+        attributes[spec.attribute] = value;
       }
     }
 

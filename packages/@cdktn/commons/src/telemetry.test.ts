@@ -688,6 +688,35 @@ describe("telemetry", () => {
       expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
     });
 
+    it.each([
+      ["synth", { synthOrigin: "watch" }, "synth_origin", "watch"],
+      ["synth", { synthOrigin: "/Users/x" }, "synth_origin", undefined],
+      ["watch", { event: "start" }, "event", "start"],
+      ["watch", { event: "stopped-by-user" }, "event", undefined],
+      ["init", { isRemote: true }, "is_remote", true],
+      ["init", { isRemote: "true" }, "is_remote", undefined],
+      ["init", { template: "go" }, "template", "go"],
+      ["init", { template: 7 }, "template", undefined],
+      ["convert", { convertedLines: 42 }, "converted_lines", 42],
+      ["convert", { convertedLines: "42" }, "converted_lines", undefined],
+      ["convert", { convertedLines: NaN }, "converted_lines", undefined],
+    ])(
+      "%s: %j forwards %s as %j",
+      async (command, payload, attribute, expected) => {
+        await sendTelemetry(command, payload);
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const invoked = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.command.invoked",
+        )!;
+        if (expected === undefined) {
+          expect(invoked.attributes).not.toHaveProperty(attribute);
+        } else {
+          expect(attributeValues(invoked)[attribute]).toBe(expected);
+        }
+      },
+    );
+
     it("sends declared targets that are not semver ranges as invalid", () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         targetVersions: { terraform: "latest /Users/x", opentofu: ">=1.8" },
