@@ -26,8 +26,7 @@ export type TerraformIndexTraversalPart = TerraformTraversalPartCommon & {
 };
 
 export type TerraformTraversalPart =
-  | TerraformNameTraversalPart
-  | TerraformIndexTraversalPart;
+  TerraformNameTraversalPart | TerraformIndexTraversalPart;
 
 // Expression Meta Types
 export type ExpressionMeta = {

@@ -66,11 +66,7 @@ const scope: ProgramScope = {
 };
 
 type Thing =
-  | FunctionCall
-  | TemplateWrap
-  | Template
-  | ScopeTraversal
-  | LiteralValue;
+  FunctionCall | TemplateWrap | Template | ScopeTraversal | LiteralValue;
 
 // '${replace(module.foo.output, "-", var.bar)}'
 // from https://github.com/hashicorp/terraform-cdk/pull/2729

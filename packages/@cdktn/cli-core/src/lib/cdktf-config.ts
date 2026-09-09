@@ -91,8 +91,7 @@ export class CdktfConfig {
 
   public get targetVersions(): TerraformTargetVersions | undefined {
     const targetVersions = this.getProperty("targetVersions") as
-      | TerraformTargetVersions
-      | undefined;
+      TerraformTargetVersions | undefined;
 
     const problems = validateTargetVersions(targetVersions);
     if (problems.length > 0) {

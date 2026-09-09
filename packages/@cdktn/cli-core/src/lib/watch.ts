@@ -34,12 +34,8 @@ function getOrWriteDefaultWatchConfig(projectPath = process.cwd()) {
     return cdktfJson.watchPattern;
   }
   const language:
-    | "typescript"
-    | "python"
-    | "java"
-    | "csharp"
-    | "go"
-    | undefined = cdktfJson.language;
+    "typescript" | "python" | "java" | "csharp" | "go" | undefined =
+    cdktfJson.language;
 
   if (!language) {
     throw Errors.Usage(

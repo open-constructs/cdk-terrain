@@ -92,12 +92,8 @@ export async function initializErrorReporting(
 
       // The promise character is not documented, but it happens
       const originalException:
-        | Promise<Error>
-        | Error
-        | string
-        | null
-        | undefined
-        | unknown = hint.originalException;
+        Promise<Error> | Error | string | null | undefined | unknown =
+        hint.originalException;
       let error: Error | string | null | undefined | unknown;
       if (isPromise(originalException)) {
         (originalException as unknown as Promise<Error>).catch(

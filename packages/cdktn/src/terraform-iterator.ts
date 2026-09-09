@@ -43,10 +43,7 @@ export interface ITerraformIterator {
 }
 
 type ListType =
-  | Array<string>
-  | Array<number>
-  | Array<boolean | IResolvable>
-  | IResolvable; // e.g. array of booleans
+  Array<string> | Array<number> | Array<boolean | IResolvable> | IResolvable; // e.g. array of booleans
 
 type ComplexListType =
   | ComplexList

@@ -18,10 +18,7 @@ type TokenFragment = { type: "token"; token: IResolvable };
 type IntrinsicFragment = { type: "intrinsic"; value: any };
 type EscapeFragment = { type: "escape"; kind: "open" | "close" };
 type Fragment =
-  | LiteralFragment
-  | TokenFragment
-  | IntrinsicFragment
-  | EscapeFragment;
+  LiteralFragment | TokenFragment | IntrinsicFragment | EscapeFragment;
 
 /**
  * Fragments of a concatenated string containing stringified Tokens

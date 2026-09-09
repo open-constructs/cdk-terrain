@@ -215,8 +215,7 @@ export interface CollectionAttributeTypeModel extends AttributeTypeModel {
   // into the nearest typed "Any"-wrapper. undefined only defensively - see
   // resolveStoredClassName in supported-stored-classes.ts.
   readonly resolvedStoredClass:
-    | { name: string; collapsed: boolean }
-    | undefined;
+    { name: string; collapsed: boolean } | undefined;
 }
 
 export class ListAttributeTypeModel implements CollectionAttributeTypeModel {

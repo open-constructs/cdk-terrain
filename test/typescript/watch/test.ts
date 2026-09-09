@@ -69,8 +69,7 @@ const screenOutput = (
   ) => Promise<string>;
 } => {
   let subscriber:
-    | ((line: string | undefined, exit: boolean) => void)
-    | undefined;
+    ((line: string | undefined, exit: boolean) => void) | undefined;
   let lines: string[] = [];
   let exited: boolean = false;
 

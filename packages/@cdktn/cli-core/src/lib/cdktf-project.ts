@@ -47,8 +47,7 @@ type MultiStackSentinelOverrideUpdate = {
 };
 
 export type MultiStackUpdate =
-  | MultiStackApprovalUpdate
-  | MultiStackSentinelOverrideUpdate;
+  MultiStackApprovalUpdate | MultiStackSentinelOverrideUpdate;
 
 export type ProjectUpdate =
   | {
@@ -133,8 +132,7 @@ export function isWaitingForUserInputUpdate(
 }
 
 export type ProjectEvent =
-  | Buffered<ProjectUpdate, "projectUpdate">
-  | Buffered<LogMessage, "logMessage">;
+  Buffered<ProjectUpdate, "projectUpdate"> | Buffered<LogMessage, "logMessage">;
 export type CdktfProjectOptions = {
   synthCommand: string;
   outDir: string;

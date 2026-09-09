@@ -86,8 +86,7 @@ export type StackUpdate =
     };
 
 export type StackUserInputUpdate =
-  | StackApprovalUpdate
-  | StackSentinelOverrideUpdate;
+  StackApprovalUpdate | StackSentinelOverrideUpdate;
 
 export type StackApprovalUpdate = {
   type: "waiting for stack approval";
