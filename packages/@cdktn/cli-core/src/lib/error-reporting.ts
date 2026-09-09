@@ -5,6 +5,8 @@ import {
   getProjectId,
   getUserId,
   getUsageTelemetryConsent,
+  getProjectTargetAttributes,
+  setProjectTargetAttributes,
   setUsageTelemetryEnabled,
   collectDebugInformation,
   DISPLAY_VERSION,
@@ -118,6 +120,7 @@ export async function initializErrorReporting(
   // directory: some commands (convert) chdir into a temporary project
   // before sendTelemetry runs and must not consult that project's flags.
   setUsageTelemetryEnabled(usageTelemetryEnabled);
+  setProjectTargetAttributes(getProjectTargetAttributes());
 
   if (!crashReportingEnabled && !usageTelemetryEnabled) {
     logger.debug("Error reporting and usage telemetry disabled");

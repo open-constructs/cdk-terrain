@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 import { Errors } from "./errors";
 import { exec } from "./util";
+import {
+  parseTerraformCliVersion,
+  TerraformCliName,
+} from "cdktn/lib/validations";
 
 export const terraformBinaryName =
   process.env.TERRAFORM_BINARY_NAME || "terraform";
@@ -16,12 +20,26 @@ export type {
   TerraformCliName,
 } from "cdktn/lib/validations";
 
-export const terraformVersion = exec(
-  terraformBinaryName,
-  ["version", "-json"],
-  {},
-)
-  .then((versionString) => JSON.parse(versionString).terraform_version)
+/**
+ * Outcome of probing the configured Terraform-compatible binary:
+ * `missing` when it could not be spawned, `unknown` when its version output
+ * was not recognized.
+ */
+export interface TerraformCliProbe {
+  readonly name: TerraformCliName | "missing";
+  readonly version?: string;
+}
+
+// One `version` spawn per CLI run feeds both the debug output and the
+// usage telemetry; plain-text output distinguishes Terraform from OpenTofu.
+const versionOutput = exec(terraformBinaryName, ["version"], {});
+
+export const terraformCli: Promise<TerraformCliProbe> = versionOutput
+  .then((output) => parseTerraformCliVersion(output))
+  .catch(() => ({ name: "missing" as const }));
+
+export const terraformVersion = versionOutput
+  .then((output) => parseTerraformCliVersion(output).version)
   .catch((err) =>
     Errors.Usage(`Unknown: Error loading terraform version ${err}`, err),
   );

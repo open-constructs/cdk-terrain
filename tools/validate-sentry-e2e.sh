@@ -66,6 +66,8 @@ echo "$ITEMS" | grep -q '"trace_metric"' \
   || fail "no trace_metric envelope reached the sink — the success-path flush is missing/broken"
 echo "$ITEMS" | grep -q 'cli.command.invoked' \
   || fail "cli.command.invoked metric missing"
+echo "$ITEMS" | grep -q '"binary"' \
+  || fail "binary attribute missing on the command metrics"
 echo "$ITEMS" | grep -q 'cli.command.error' \
   || fail "cli.command.error metric missing (error trigger)"
 # The failing-app synth path hard-exits without throwing (graceful=false),

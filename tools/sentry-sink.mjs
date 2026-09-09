@@ -4,7 +4,8 @@
 //
 // Minimal local Sentry "sink" for end-to-end validation of the cdktn-cli
 // telemetry pipeline. Accepts Sentry envelopes on POST /api/<project>/envelope/
-// and records every envelope item type (and metric names for trace_metric).
+// and records every envelope item type (and, for trace_metric, the metric
+// names with their attribute keys).
 //
 // Usage: node tools/sentry-sink.mjs [port=9999]
 //   GET /__items  -> JSON array of recorded items
@@ -28,7 +29,10 @@ function recordEnvelope(body) {
     const item = { type: header.type };
     if (header.type === "trace_metric" && lines[i + 1]) {
       try {
-        item.metricNames = JSON.parse(lines[i + 1]).items.map((m) => m.name);
+        item.metrics = JSON.parse(lines[i + 1]).items.map((m) => ({
+          name: m.name,
+          attributeKeys: Object.keys(m.attributes ?? {}),
+        }));
       } catch {
         /* ignore malformed payloads */
       }

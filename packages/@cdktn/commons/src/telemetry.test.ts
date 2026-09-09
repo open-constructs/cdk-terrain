@@ -6,10 +6,19 @@ import * as os from "os";
 import * as path from "path";
 import {
   sendTelemetry,
+  getBinaryAttributes,
+  getProjectTargetAttributes,
   getUsageTelemetryConsent,
   isUsageTelemetryEnabled,
+  setProjectTargetAttributes,
   setUsageTelemetryEnabled,
 } from "./telemetry";
+import { DEFAULT_TARGET_VERSIONS } from "./config";
+
+const DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES = {
+  target_terraform: DEFAULT_TARGET_VERSIONS.terraform,
+  target_opentofu: DEFAULT_TARGET_VERSIONS.opentofu,
+};
 
 // A real client with a capturing transport proves the metric envelope
 // reaches the transport and survives a bounded flush; a mocked @sentry/node
@@ -54,6 +63,9 @@ describe("telemetry", () => {
       release: "cdktn-cli-test",
       tracesSampleRate: 0,
       serverName: "cdktn-cli",
+      // each test inits its own client; process-level integrations would
+      // pile up listeners across tests and are irrelevant to metrics
+      defaultIntegrations: false,
       transport: (options) =>
         Sentry.createTransport(options, async (request) => {
           envelopeBodies.push(request.body as string);
@@ -71,6 +83,7 @@ describe("telemetry", () => {
 
   afterEach(async () => {
     setUsageTelemetryEnabled(undefined);
+    setProjectTargetAttributes(undefined);
     await Sentry.close(1000);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
@@ -108,6 +121,97 @@ describe("telemetry", () => {
       expect(duration).toBeDefined();
       expect(duration!.type).toBe("distribution");
       expect(duration!.value).toBe(1234);
+    });
+
+    it("stamps environment, binary and target attributes on every command metric", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+        sendUsageTelemetry: true,
+        targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.8.0" },
+        validateInstalledBinary: true,
+      });
+      initSentryWithCapturingTransport();
+
+      await sendTelemetry("synth", { totalTime: 1, language: "typescript" });
+      await sendTelemetry("synth", { error: true, synthOrigin: "watch" });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const metrics = [
+        "cli.command.invoked",
+        "cli.synth.duration",
+        "cli.command.error",
+      ].map((name) => items.find((i) => i.name === name)!);
+
+      for (const metric of metrics) {
+        expect(metric).toBeDefined();
+        const values = Object.fromEntries(
+          Object.entries(metric.attributes).map(([k, v]) => [k, v.value]),
+        );
+        expect(values).toMatchObject({
+          os: process.platform,
+          arch: process.arch,
+          target_terraform: ">=1.9.0",
+          target_opentofu: ">=1.8.0",
+          targets_declared: true,
+          validate_installed_binary: true,
+          // the SDK stamps the release set in Sentry.init on every metric,
+          // so the CLI version needs no attribute of its own
+          "sentry.release": "cdktn-cli-test",
+        });
+        expect(["terraform", "opentofu", "unknown", "missing"]).toContain(
+          values.binary,
+        );
+        if (values.binary === "terraform" || values.binary === "opentofu") {
+          expect(values.binary_version).toMatch(/^\d+\.\d+\.\d+/);
+        }
+        for (const forbidden of [
+          "stackName",
+          "hostname",
+          "message",
+          "projectId",
+        ]) {
+          expect(values).not.toHaveProperty(forbidden);
+        }
+      }
+      expect(metrics[2].attributes.synth_origin.value).toBe("watch");
+    });
+
+    it("falls back to the default target ranges outside a project", async () => {
+      initSentryWithCapturingTransport();
+
+      await sendTelemetry("convert", {});
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const invoked = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.invoked",
+      )!;
+      expect(invoked.attributes.targets_declared.value).toBe(false);
+      expect(invoked.attributes.validate_installed_binary.value).toBe(false);
+      expect(invoked.attributes.target_terraform.value).toBe(
+        DEFAULT_TARGET_VERSIONS.terraform,
+      );
+    });
+
+    it("uses the target attributes captured at command start over the current cwd", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { terraform: ">=1.0.0" },
+      });
+      initSentryWithCapturingTransport();
+      setProjectTargetAttributes({
+        targets_declared: true,
+        validate_installed_binary: false,
+        target_opentofu: ">=1.7.0",
+      });
+
+      await sendTelemetry("convert", {});
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const invoked = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.invoked",
+      )!;
+      expect(invoked.attributes.target_opentofu.value).toBe(">=1.7.0");
+      expect(invoked.attributes.target_terraform).toBeUndefined();
     });
 
     it("emits cli.command.error (not invoked) for error payloads", async () => {
@@ -228,6 +332,56 @@ describe("telemetry", () => {
       await Sentry.flush(2000);
 
       expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+  });
+
+  describe("getBinaryAttributes", () => {
+    it("maps the probe result to binary and binary_version", async () => {
+      await expect(
+        getBinaryAttributes(
+          Promise.resolve({ name: "opentofu", version: "1.8.1" }),
+        ),
+      ).resolves.toEqual({ binary: "opentofu", binary_version: "1.8.1" });
+      await expect(
+        getBinaryAttributes(Promise.resolve({ name: "missing" })),
+      ).resolves.toEqual({ binary: "missing" });
+    });
+
+    it("reports unknown when the probe does not settle in time", async () => {
+      const hung = new Promise<never>(() => {});
+      await expect(getBinaryAttributes(hung, 10)).resolves.toEqual({
+        binary: "unknown",
+      });
+    });
+  });
+
+  describe("getProjectTargetAttributes", () => {
+    it("reads declared targets and the validation flag", () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { opentofu: "~1.8" },
+        validateInstalledBinary: true,
+      });
+      expect(getProjectTargetAttributes(workdir)).toEqual({
+        targets_declared: true,
+        validate_installed_binary: true,
+        target_opentofu: "~1.8",
+      });
+    });
+
+    it.each([[{}], [{ targetVersions: "nope" }], [{ targetVersions: [] }]])(
+      "falls back to the defaults for %j",
+      (config) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
+        expect(getProjectTargetAttributes(workdir)).toEqual({
+          targets_declared: false,
+          validate_installed_binary: false,
+          ...DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES,
+        });
+      },
+    );
+
+    it("does not throw without a cdktf.json", () => {
+      expect(getProjectTargetAttributes(workdir).targets_declared).toBe(false);
     });
   });
 
