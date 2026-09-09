@@ -401,7 +401,7 @@ export async function collectDebugInformation() {
     debugOutput["constructs"] = (await constructs) ?? null;
     debugOutput["jsii"] = (await jsii) ?? null;
   }
-  debugOutput["terraform"] = await terraformVersion;
+  debugOutput["terraform"] = (await terraformVersion()) ?? null;
   debugOutput["arch"] = os.arch();
   debugOutput["os"] = `${os.platform()} ${os.release()}`;
 
