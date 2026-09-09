@@ -145,7 +145,6 @@ This means that your Terraform state file will be stored locally on disk in a fi
     argv.projectDescription,
   );
   const projectId = randomUUID();
-  telemetryData.projectId = projectId;
 
   let fromTerraformProject = argv.fromTerraformProject || undefined;
   if (!fromTerraformProject) {
@@ -243,7 +242,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
   });
 
   if (convertResult && importPath) {
-    const { code, cdktfJson, stats } = convertResult;
+    const { code, cdktfJson } = convertResult;
 
     const mainTs = fs.readFileSync(
       path.resolve(destination, "main.ts"),
@@ -281,8 +280,6 @@ This means that your Terraform state file will be stored locally on disk in a fi
       }
       execSync("npm run get", { cwd: destination });
     }
-
-    telemetryData.conversionStats = stats;
   }
 
   if (templateInfo.cleanupTemporaryFiles) {

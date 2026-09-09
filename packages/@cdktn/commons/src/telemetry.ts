@@ -5,7 +5,8 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import ciInfo from "ci-info";
 import { logger } from "./logging";
-import { DEFAULT_TARGET_VERSIONS } from "./config";
+import { DEFAULT_TARGET_VERSIONS, isLocalModule } from "./config";
+import { isRegistryModule } from "./terraform-module";
 import { terraformCli, TerraformCliProbe } from "./terraform";
 
 type AttributeValue = string | number | boolean;
@@ -147,6 +148,42 @@ export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   }
 }
 
+/**
+ * Canonical provider identity for metrics: lowercase, registry host and
+ * version constraint stripped, implicit `hashicorp/` namespace made explicit
+ * so `aws`, `hashicorp/aws@~>5` and `registry.terraform.io/hashicorp/aws`
+ * all count as one provider.
+ */
+export function normalizeProviderSource(source: string): string {
+  let normalized = source.trim().toLowerCase().split("@")[0];
+  normalized = normalized.replace(
+    /^(registry\.terraform\.io|registry\.opentofu\.org)\//,
+    "",
+  );
+  return normalized.includes("/") ? normalized : `hashicorp/${normalized}`;
+}
+
+/**
+ * Module identity for metrics. Only public registry sources are sent as-is;
+ * anything else could carry a path, hostname or organization and is reduced
+ * to its kind.
+ */
+export function classifyModuleSource(source: string): string {
+  const trimmed = source.trim();
+  if (isLocalModule(trimmed) || path.isAbsolute(trimmed)) {
+    return "local";
+  }
+  if (/^git(::|@)|:\/\/|^github\.com\/|^bitbucket\.org\//i.test(trimmed)) {
+    return "git";
+  }
+  if (!isRegistryModule(trimmed)) {
+    return "other";
+  }
+  return trimmed.split("/").length === 4
+    ? "private-registry"
+    : trimmed.toLowerCase();
+}
+
 // Scalar payload fields forwarded as attributes, per command. Anything not
 // listed here (and every array/object) stays out of the metric.
 const SCALAR_ATTRIBUTES: Record<string, Record<string, string>> = {
@@ -168,9 +205,54 @@ function isScalar(value: unknown): value is AttributeValue {
   );
 }
 
+interface GetTarget {
+  type: "provider" | "module";
+  source: string;
+}
+
+// `get` payload: one entry per generated binding, counted per provider and
+// module; only the totals land on the command metric.
+function sendGetTelemetry(targets: GetTarget[], attributes: Attributes): void {
+  const providers = targets.filter((t) => t.type === "provider");
+  const modules = targets.filter((t) => t.type === "module");
+  attributes.provider_count = providers.length;
+  attributes.module_count = modules.length;
+  for (const target of providers) {
+    Sentry.metrics.count("cli.get.provider", 1, {
+      attributes: {
+        ...attributes,
+        provider: normalizeProviderSource(target.source),
+      },
+    });
+  }
+  for (const target of modules) {
+    Sentry.metrics.count("cli.get.module", 1, {
+      attributes: {
+        ...attributes,
+        module: classifyModuleSource(target.source),
+      },
+    });
+  }
+}
+
+// `init` payload: the providers the new project was created with.
+function sendInitTelemetry(providers: string[], attributes: Attributes): void {
+  attributes.provider_count = providers.length;
+  for (const provider of providers) {
+    Sentry.metrics.count("cli.init.provider", 1, {
+      attributes: {
+        ...attributes,
+        provider: normalizeProviderSource(provider),
+      },
+    });
+  }
+}
+
 /**
  * Sends usage telemetry for a CLI command as Sentry v10 metrics
- * (`cli.command.invoked`, `cli.command.error`, `cli.synth.duration`).
+ * (`cli.command.invoked`, `cli.command.error`, `cli.synth.duration`, plus
+ * the per-binding `cli.get.*` / `cli.init.provider` counts). Payload fields
+ * reach the metric only through the per-command allow-lists above.
  *
  * A silent no-op when usage telemetry is disabled or Sentry is not
  * initialized (no DSN / user opted out).
@@ -207,6 +289,13 @@ export async function sendTelemetry(
     if (payload.error) {
       Sentry.metrics.count("cli.command.error", 1, { attributes });
       return;
+    }
+
+    if (command === "get" && Array.isArray(payload.targets)) {
+      sendGetTelemetry(payload.targets, attributes);
+    }
+    if (command === "init" && Array.isArray(payload.addedProviders)) {
+      sendInitTelemetry(payload.addedProviders, attributes);
     }
 
     Sentry.metrics.count("cli.command.invoked", 1, { attributes });

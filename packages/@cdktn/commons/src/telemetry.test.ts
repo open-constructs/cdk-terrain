@@ -6,6 +6,8 @@ import * as os from "os";
 import * as path from "path";
 import {
   sendTelemetry,
+  classifyModuleSource,
+  normalizeProviderSource,
   getBinaryAttributes,
   getProjectTargetAttributes,
   getUsageTelemetryConsent,
@@ -247,6 +249,147 @@ describe("telemetry", () => {
           expect(serverAddress.value).not.toBe(os.hostname());
         }
       }
+    });
+  });
+
+  describe("sendTelemetry payload mapping", () => {
+    function attributeValues(item: MetricItem) {
+      return Object.fromEntries(
+        Object.entries(item.attributes).map(([k, v]) => [k, v.value]),
+      );
+    }
+
+    beforeEach(() => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+    });
+
+    it("forwards only allow-listed scalars: an unknown object-valued key is never serialized", async () => {
+      await sendTelemetry("convert", {
+        language: "python",
+        numberOfProviders: 2,
+        numberOfModules: 1,
+        convertedLines: 42,
+        resources: { aws: { s3_bucket: 3 } },
+        data: { aws: { caller_identity: 1 } },
+        somethingElse: "not listed",
+        error: false,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const invoked = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.invoked",
+      )!;
+      const values = attributeValues(invoked);
+      expect(values).toMatchObject({
+        language: "python",
+        provider_count: 2,
+        module_count: 1,
+        converted_lines: 42,
+      });
+      expect(values).not.toHaveProperty("resources");
+      expect(values).not.toHaveProperty("data");
+      expect(values).not.toHaveProperty("somethingElse");
+      expect(values).not.toHaveProperty("error");
+      expect(JSON.stringify(values)).not.toContain("s3_bucket");
+    });
+
+    it("counts get targets per provider/module and puts only totals on the command metric", async () => {
+      await sendTelemetry("get", {
+        language: "typescript",
+        targets: [
+          { type: "provider", source: "registry.terraform.io/hashicorp/aws" },
+          { type: "provider", source: "Kreuzwerker/Docker" },
+          { type: "module", source: "terraform-aws-modules/vpc/aws" },
+          { type: "module", source: "./modules/secret-name" },
+        ],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const invoked = items.find((i) => i.name === "cli.command.invoked")!;
+      expect(attributeValues(invoked)).toMatchObject({
+        provider_count: 2,
+        module_count: 2,
+      });
+      expect(invoked.attributes).not.toHaveProperty("targets");
+
+      const providers = items
+        .filter((i) => i.name === "cli.get.provider")
+        .map((i) => attributeValues(i).provider);
+      expect(providers).toEqual(["hashicorp/aws", "kreuzwerker/docker"]);
+
+      const modules = items
+        .filter((i) => i.name === "cli.get.module")
+        .map((i) => attributeValues(i).module);
+      expect(modules).toEqual(["terraform-aws-modules/vpc/aws", "local"]);
+      expect(JSON.stringify(items)).not.toContain("secret-name");
+    });
+
+    it("maps init to template/is_remote attributes and per-provider counts", async () => {
+      await sendTelemetry("init", {
+        language: "go",
+        template: "go",
+        isRemote: false,
+        projectId: "should-not-be-sent",
+        addedProviders: ["aws@~>5.0", "hashicorp/random"],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const invoked = items.find((i) => i.name === "cli.command.invoked")!;
+      expect(attributeValues(invoked)).toMatchObject({
+        template: "go",
+        is_remote: false,
+        provider_count: 2,
+      });
+      expect(invoked.attributes).not.toHaveProperty("projectId");
+      expect(
+        items
+          .filter((i) => i.name === "cli.init.provider")
+          .map((i) => attributeValues(i).provider),
+      ).toEqual(["hashicorp/aws", "hashicorp/random"]);
+    });
+
+    it("forwards the watch event", async () => {
+      await sendTelemetry("watch", { event: "start" });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const invoked = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.invoked",
+      )!;
+      expect(invoked.attributes.event.value).toBe("start");
+    });
+  });
+
+  describe("source normalization", () => {
+    it.each([
+      ["aws", "hashicorp/aws"],
+      ["aws@~>5.0", "hashicorp/aws"],
+      ["Hashicorp/AWS@5.1.0", "hashicorp/aws"],
+      ["registry.terraform.io/hashicorp/aws", "hashicorp/aws"],
+      ["registry.opentofu.org/hashicorp/aws", "hashicorp/aws"],
+      ["kreuzwerker/docker", "kreuzwerker/docker"],
+    ])("normalizeProviderSource(%s) -> %s", (input, expected) => {
+      expect(normalizeProviderSource(input)).toBe(expected);
+    });
+
+    it.each([
+      ["terraform-aws-modules/vpc/aws", "terraform-aws-modules/vpc/aws"],
+      ["Terraform-AWS-Modules/VPC/aws", "terraform-aws-modules/vpc/aws"],
+      ["app.terraform.io/my-org/vpc/aws", "private-registry"],
+      ["./modules/vpc", "local"],
+      ["../shared/vpc", "local"],
+      ["/abs/path/vpc", "local"],
+      ["git::https://github.com/org/repo.git", "git"],
+      ["git@github.com:org/repo.git", "git"],
+      ["github.com/org/repo", "git"],
+      ["https://example.com/vpc.zip", "git"],
+      ["not-a-module", "other"],
+    ])("classifyModuleSource(%s) -> %s", (input, expected) => {
+      expect(classifyModuleSource(input)).toBe(expected);
     });
   });
 
