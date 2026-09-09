@@ -63,11 +63,38 @@ let usageTelemetryEnabledState: boolean | undefined;
 
 // Free-text payload fields are validated before they become attributes so a
 // misconfigured or hand-edited value never carries arbitrary text.
-const TOKEN = /^[A-Za-z0-9_.\-/:]+$/;
 const CONSTRAINT_PART = /^(=|!=|>=|<=|>|<|~>)?\s*(\d+(?:\.\d+){0,2})$/;
+const RELEASE_VERSION = /^\d+\.\d+\.\d+/;
 
-function boundedToken(value: string, maxLength: number): string {
-  return value.length <= maxLength && TOKEN.test(value) ? value : "other";
+// Terraform's built-in backend kinds; anything else (a typo, a hand-edited
+// value) is reduced to "other".
+const BACKEND_KINDS = [
+  "local",
+  "remote",
+  "cloud",
+  "s3",
+  "gcs",
+  "azurerm",
+  "http",
+  "consul",
+  "kubernetes",
+  "pg",
+  "oss",
+  "cos",
+  "etcdv3",
+  "artifactory",
+  "swift",
+  "manta",
+];
+
+// Terraform resource type grammar; the stack-level override keys (stack,
+// backend, output, local, terraform_remote_state) are identifiers too.
+const RESOURCE_TYPE = /^[a-z][a-z0-9_]*$/;
+
+// MAJOR.MINOR.PATCH only: prerelease and build identifiers are free text
+// (a wrapper's version line or a locally built library can carry anything).
+function releaseVersion(value: string | undefined): string | undefined {
+  return RELEASE_VERSION.exec(value ?? "")?.[0];
 }
 
 // Normalized so spacing variants collapse into one value; a prerelease or
@@ -80,7 +107,8 @@ function semverRangeOrInvalid(value: string): string {
 
 // Terraform provider constraint: comma-separated operators over versions,
 // re-joined as "~> 5.0, != 5.1.0" so spacing variants collapse into one
-// value. A prerelease identifier is free text and rejects the constraint.
+// value. Constraints are user-authored free text in cdktf.json, so a
+// prerelease identifier or an over-long value rejects the whole constraint.
 function terraformConstraintOrInvalid(value: string): string {
   if (value.length > 64) {
     return "invalid";
@@ -170,9 +198,12 @@ export async function getBinaryAttributes(
   try {
     const cli = await Promise.race([probe, timeout]);
     const attributes: Attributes = { binary: cli.name };
-    // MAJOR.MINOR.PATCH only: a wrapper's version line can carry anything
-    // after it, so prerelease and build identifiers are dropped
-    const release = /^\d+\.\d+\.\d+/.exec(cli.version ?? "")?.[0];
+    // an unrecognised product's version is the first version-like token of
+    // its output, which can be anything (a wrapper's "connected to 10.0.0.1")
+    const release =
+      cli.name === "terraform" || cli.name === "opentofu"
+        ? releaseVersion(cli.version)
+        : undefined;
     if (release) {
       attributes.binary_version = release;
     }
@@ -354,9 +385,13 @@ function sum(sizes: Record<string, number>): number {
 // Override keys are provider schema names, except module overrides which
 // carry the module source and are reduced to its kind.
 function overrideResourceType(key: string): string {
-  return key.startsWith("module.")
+  const resourceType = key.startsWith("module.")
     ? `module.${classifyModuleSource(key.slice("module.".length))}`
     : key;
+  return resourceType.length <= 64 &&
+    (RESOURCE_TYPE.test(resourceType) || resourceType.startsWith("module."))
+    ? resourceType
+    : "other";
 }
 
 /**
@@ -378,15 +413,18 @@ function sendStackTelemetry(
       ...attributes,
       backend:
         typeof metadata.backend === "string"
-          ? boundedToken(metadata.backend, 32)
+          ? BACKEND_KINDS.includes(metadata.backend)
+            ? metadata.backend
+            : "other"
           : "unknown",
       cloud: typeof metadata.cloud === "string",
       override_count: sum(overrides),
       import_count: sum(groupSizes(metadata.imports)),
       moved_count: sum(groupSizes(metadata.moved)),
     };
-    if (typeof metadata.version === "string") {
-      stackAttributes.library_version = boundedToken(metadata.version, 32);
+    const libraryVersion = releaseVersion(metadata.version);
+    if (libraryVersion) {
+      stackAttributes.library_version = libraryVersion;
     }
     Sentry.metrics.count("cli.stack", 1, { attributes: stackAttributes });
 
@@ -394,7 +432,7 @@ function sendStackTelemetry(
       Sentry.metrics.count("cli.stack.override", 1, {
         attributes: {
           ...attributes,
-          resource_type: boundedToken(overrideResourceType(key), 64),
+          resource_type: overrideResourceType(key),
           override_count: count,
         },
       });

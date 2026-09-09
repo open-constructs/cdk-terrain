@@ -779,7 +779,7 @@ describe("telemetry", () => {
       },
     );
 
-    it("reduces backend, library version and override keys with free text to other", async () => {
+    it("reduces a backend outside the built-in kinds and override keys outside the type grammar to other", async () => {
       await sendTelemetry("synth", {
         stackMetadata: [
           {
@@ -787,28 +787,59 @@ describe("telemetry", () => {
             backend: "s3 bucket=/Users/x/state",
             overrides: {
               aws_s3_bucket: ["tags"],
+              terraform_remote_state: ["backend"],
+              "module.terraform-aws-modules/vpc/aws": ["providers"],
               "resource with spaces /Users/x": ["tags"],
+              AWS_S3_Bucket: ["tags"],
               ["aws_" + "x".repeat(70)]: ["tags"],
             },
           },
+          { version: "dev-/Users/x", backend: "S3" },
         ],
       });
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
-      expect(
-        attributeValues(items.find((i) => i.name === "cli.stack")!),
-      ).toMatchObject({
+      const stacks = items
+        .filter((i) => i.name === "cli.stack")
+        .map(attributeValues);
+      // build metadata is stripped like binary_version; no release, no value
+      expect(stacks[0]).toMatchObject({
         backend: "other",
-        library_version: "other",
+        library_version: "0.21.0",
       });
+      expect(stacks[1]).toMatchObject({ backend: "other" });
+      expect(stacks[1]).not.toHaveProperty("library_version");
       expect(
         items
           .filter((i) => i.name === "cli.stack.override")
           .map((i) => attributeValues(i).resource_type),
-      ).toEqual(["aws_s3_bucket", "other", "other"]);
+      ).toEqual([
+        "aws_s3_bucket",
+        "terraform_remote_state",
+        "module.terraform-aws-modules/vpc/aws",
+        "other",
+        "other",
+        "other",
+      ]);
       expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
     });
+
+    it.each(["local", "remote", "cloud", "s3", "gcs", "azurerm", "kubernetes"])(
+      "forwards the %s backend kind as-is",
+      async (backend) => {
+        await sendTelemetry("synth", { stackMetadata: [{ backend }] });
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        expect(
+          attributeValues(
+            parseMetricItems(envelopeBodies).find(
+              (i) => i.name === "cli.stack",
+            )!,
+          ).backend,
+        ).toBe(backend);
+      },
+    );
   });
 
   describe("provider binding classification", () => {
@@ -1042,17 +1073,6 @@ describe("telemetry", () => {
   });
 
   describe("getBinaryAttributes", () => {
-    it("maps the probe result to binary and binary_version", async () => {
-      await expect(
-        getBinaryAttributes(
-          Promise.resolve({ name: "opentofu", version: "1.8.1" }),
-        ),
-      ).resolves.toEqual({ binary: "opentofu", binary_version: "1.8.1" });
-      await expect(
-        getBinaryAttributes(Promise.resolve({ name: "missing" })),
-      ).resolves.toEqual({ binary: "missing" });
-    });
-
     it.each([
       ["1.10.0-alpha20250101", "1.10.0"],
       ["1.2.3-LEAK-WRAPPER-hostname.corp.example.com+LEAK-BUILD", "1.2.3"],
@@ -1061,20 +1081,31 @@ describe("telemetry", () => {
       "reduces the probed version %p to its release %p",
       async (version, release) => {
         await expect(
-          getBinaryAttributes(Promise.resolve({ name: "unknown", version })),
-        ).resolves.toEqual({ binary: "unknown", binary_version: release });
+          getBinaryAttributes(Promise.resolve({ name: "terraform", version })),
+        ).resolves.toEqual({ binary: "terraform", binary_version: release });
       },
     );
 
     it("omits binary_version when the probed version has no release prefix", async () => {
       await expect(
         getBinaryAttributes(
-          Promise.resolve({ name: "unknown", version: "v1.2" }),
+          Promise.resolve({ name: "opentofu", version: "v1.2" }),
         ),
-      ).resolves.toEqual({ binary: "unknown" });
+      ).resolves.toEqual({ binary: "opentofu" });
+    });
+
+    it("sends no version for an unrecognised product: a wrapper's output has no product version line", async () => {
+      (globalThis as any)[Symbol.for("cdktn.terraformCli")] = Promise.resolve(
+        "connected to 10.0.0.1 as LEAK-USER (wrapper 3.4.5)\nTerraform v1.9.0\n",
+      );
+      const attributes = await getBinaryAttributes();
+      expect(attributes).toEqual({ binary: "unknown" });
+      expect(JSON.stringify(attributes)).not.toContain("10.0.0");
     });
 
     it("reports unknown when the probe does not settle in time", async () => {
+      // a hung or interactive `terraform version` must never delay a
+      // command; the race has a 1500 ms ceiling in production
       const hung = new Promise<never>(() => {});
       await expect(getBinaryAttributes(hung, 10)).resolves.toEqual({
         binary: "unknown",
