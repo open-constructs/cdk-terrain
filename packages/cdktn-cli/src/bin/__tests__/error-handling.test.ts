@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 import yargs, { Argv } from "yargs";
 import * as Sentry from "@sentry/node";
-import { Errors, collectDebugInformation } from "@cdktn/commons";
+import {
+  Errors,
+  collectDebugInformation,
+  setUsageTelemetryEnabled,
+} from "@cdktn/commons";
 import { runCli } from "../error-handling";
 
 jest.mock("@sentry/node", () => ({
@@ -281,5 +285,87 @@ describe("runCli", () => {
     }
     // the drain's one-shot listener was consumed by the emitted 'error'
     expect(process.stdout.listenerCount("error")).toBe(errorListeners);
+  });
+
+  describe("failed-command metric", () => {
+    const originalCheckpointDisable = process.env.CHECKPOINT_DISABLE;
+    let count: jest.SpyInstance;
+
+    beforeEach(() => {
+      // the jest preset disables usage telemetry process-wide
+      delete process.env.CHECKPOINT_DISABLE;
+      count = jest.spyOn(Sentry.metrics, "count").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      count.mockRestore();
+      setUsageTelemetryEnabled(undefined);
+      Errors.setScope("unknown");
+      if (originalCheckpointDisable === undefined) {
+        delete process.env.CHECKPOINT_DISABLE;
+      } else {
+        process.env.CHECKPOINT_DISABLE = originalCheckpointDisable;
+      }
+    });
+
+    const commandErrors = () =>
+      count.mock.calls.filter(([name]) => name === "cli.command.error");
+
+    it.each<[string, string, string[], (() => unknown)?]>([
+      [
+        "a Usage error",
+        "Usage",
+        ["boom"],
+        () => Errors.Usage("bad-usage-message"),
+      ],
+      [
+        "an External error",
+        "External",
+        ["boom"],
+        () => Errors.External("bad-external-message"),
+      ],
+      [
+        "an Internal error",
+        "Internal",
+        ["boom"],
+        () => Errors.Internal("bad-internal-message"),
+      ],
+      ["a plain Error", "unexpected", ["boom"], () => new Error("boom")],
+      ["a raw string", "unexpected", ["boom"], () => "raw-string-message"],
+      [
+        "a yargs validation failure (message, no error)",
+        "Usage",
+        ["choice", "--language=nope"],
+      ],
+    ])(
+      "counts %s once as %s under the command scope",
+      async (_case, errorType, args, makeThrown) => {
+        setUsageTelemetryEnabled(true);
+        Errors.setScope("deploy");
+
+        await run(args, makeThrown?.());
+
+        expect(commandErrors()).toEqual([
+          [
+            "cli.command.error",
+            1,
+            {
+              attributes: expect.objectContaining({
+                command: "deploy",
+                error_type: errorType,
+              }),
+            },
+          ],
+        ]);
+      },
+    );
+
+    it("emits nothing when usage telemetry is off", async () => {
+      setUsageTelemetryEnabled(false);
+
+      await run(["boom"], new Error("boom"));
+
+      expect(count).not.toHaveBeenCalled();
+    });
   });
 });

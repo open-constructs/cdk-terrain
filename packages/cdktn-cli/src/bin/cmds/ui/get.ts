@@ -67,13 +67,11 @@ export async function runGet({
         stream?.setBar(`${status}...`, { spinner: true });
       },
       providerSchemaCachePath,
-      reportTelemetry: async (payload) =>
-        sendTelemetry("get", {
-          language: payload.targetLanguage,
-          ...payload.trackingPayload,
-        }),
     });
+    await sendTelemetry("get", { language });
   } catch (e: any) {
+    // not counted here: the entrypoint's failure reporter counts the run
+    // once, under the command's scope
     stream?.stop();
     if (!IsErrorType(e, "Usage")) {
       console.error(e);
