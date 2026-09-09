@@ -98,6 +98,18 @@ export async function reportFailure(
   return 1;
 }
 
+// process.exit drops stdio writes still queued behind a slow pipe reader (a
+// full 64 KiB pipe truncates `cdktn convert | less` on macOS); a zero-length
+// write's callback runs only once everything queued before it has gone out.
+async function drainStdio(): Promise<void> {
+  await Promise.all(
+    [process.stdout, process.stderr].map(
+      (stream) =>
+        new Promise<void>((resolve) => stream.write("", () => resolve())),
+    ),
+  );
+}
+
 export function runCli(
   y: yargs.Argv,
   deps: FailureReporterDeps = defaultDeps,
@@ -121,8 +133,20 @@ export function runCli(
       // place that catches those.
       if (!failure) failure = { message: null, error };
     }
-    if (!failure) return; // success / --help / --version
-    process.exit(await reportFailure(failure, deps));
+    if (failure) {
+      process.exit(await reportFailure(failure, deps));
+    } else {
+      // success / --help / --version: Sentry buffers asynchronously, so flush
+      // (bounded) and exit explicitly, or an unresponsive ingest endpoint
+      // keeps the transport socket and the process alive.
+      try {
+        await deps.flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
+      } catch {
+        /* never block the exit */
+      }
+      await drainStdio();
+      process.exit(process.exitCode ?? 0);
+    }
   })().catch((e) => {
     // belt-and-braces: runCli itself must never reject
     console.error(

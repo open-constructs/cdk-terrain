@@ -57,6 +57,15 @@ function fixtureSource(errorHandlingPath: string): string {
       async () => {
         throw new Error("empirical-sentry-message");
       },
+    )
+    .command(
+      "capturedok",
+      "succeeds after queueing an event, like a usage metric would",
+      () => {},
+      async () => {
+        Sentry.captureMessage("empirical-success-message");
+        console.log("capturedok-done");
+      },
     );
 
   void runCli(cli);
@@ -95,6 +104,42 @@ function startSentrySink(): Promise<{
       });
     });
   });
+}
+
+// A sink that accepts the envelope connection and never answers: the
+// transport's request then keeps the event loop alive until something exits
+// the process explicitly.
+function startSilentSentrySink(): Promise<{
+  port: number;
+  connections: () => number;
+  close: () => Promise<void>;
+}> {
+  let connections = 0;
+  return new Promise((resolve) => {
+    const server = http.createServer(() => {
+      connections += 1;
+    });
+    server.listen(0, "127.0.0.1", () => {
+      const { port } = server.address() as AddressInfo;
+      resolve({
+        port,
+        connections: () => connections,
+        close: () =>
+          new Promise((res) => {
+            server.closeAllConnections();
+            server.close(() => res());
+          }),
+      });
+    });
+  });
+}
+
+function expectNoRuntimeNoise(output: string) {
+  expect(output).not.toContain("ERR_UNHANDLED_REJECTION");
+  expect(output).not.toContain("UnhandledPromiseRejection");
+  expect(output).not.toContain("PromiseRejectionHandledWarning");
+  expect(output).not.toContain("Warning:");
+  expect(output).not.toContain("Node.js v");
 }
 
 describe("runCli child-process smoke test", () => {
@@ -180,6 +225,53 @@ describe("runCli child-process smoke test", () => {
       expect(bodies.some((b) => b.includes("empirical-sentry-message"))).toBe(
         true,
       );
+    } finally {
+      await sink.close();
+    }
+  }, 15000);
+
+  it("exits 0 within the flush bound when the ingest endpoint never answers on the success path", async () => {
+    const sink = await startSilentSentrySink();
+    try {
+      const dsn = `http://public@127.0.0.1:${sink.port}/1`;
+      const started = Date.now();
+      const result = await execa(process.execPath, [bundlePath, "capturedok"], {
+        env: { ...process.env, TEST_SENTRY_DSN: dsn },
+        reject: false,
+      });
+      const elapsedMs = Date.now() - started;
+      const output = `${result.stdout}\n${result.stderr}`;
+
+      // the hung request would keep the loop alive forever; the bounded
+      // flush (4 s) plus the explicit exit is what ends the process
+      expect(result.exitCode).toBe(0);
+      expect(elapsedMs).toBeLessThan(8000);
+      expect(sink.connections()).toBeGreaterThan(0);
+      expect(result.stdout).toContain("capturedok-done");
+      expectNoRuntimeNoise(output);
+    } finally {
+      await sink.close();
+    }
+  }, 15000);
+
+  it("exits 1 within the flush bound when the ingest endpoint never answers on the failure path", async () => {
+    const sink = await startSilentSentrySink();
+    try {
+      const dsn = `http://public@127.0.0.1:${sink.port}/1`;
+      const started = Date.now();
+      const result = await execa(
+        process.execPath,
+        [bundlePath, "capturedboom"],
+        { env: { ...process.env, TEST_SENTRY_DSN: dsn }, reject: false },
+      );
+      const elapsedMs = Date.now() - started;
+      const output = `${result.stdout}\n${result.stderr}`;
+
+      expect(result.exitCode).toBe(1);
+      expect(elapsedMs).toBeLessThan(8000);
+      expect(sink.connections()).toBeGreaterThan(0);
+      expect(output).toContain("empirical-sentry-message");
+      expectNoRuntimeNoise(output);
     } finally {
       await sink.close();
     }
