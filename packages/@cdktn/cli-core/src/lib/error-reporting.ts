@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as Sentry from "@sentry/node";
 import {
+  Errors,
   getProjectId,
   getUserId,
   getUsageTelemetryConsent,
   setUsageTelemetryEnabled,
+  startCommandTelemetry,
   collectDebugInformation,
   DISPLAY_VERSION,
 } from "@cdktn/commons";
@@ -202,6 +204,10 @@ export async function initializErrorReporting(
       Sentry.setContext("environment", debugOutput);
     });
   }
+
+  // The run is counted as started here, under the command scope every
+  // command sets before it initializes reporting.
+  await startCommandTelemetry(Errors.getScope(), projectPath);
 }
 
 export function captureException({

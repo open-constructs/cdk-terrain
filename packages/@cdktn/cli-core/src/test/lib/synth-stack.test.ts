@@ -3,6 +3,7 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import { Errors } from "@cdktn/commons";
 import { SynthStack } from "../../lib/synth-stack";
 
 jest.mock("@cdktn/commons", () => ({
@@ -37,20 +38,23 @@ describe("SynthStack.synth failure paths count the run before exiting", () => {
     exitSpy.mockRestore();
     errorSpy.mockRestore();
     fs.removeSync(outdir);
+    Errors.setScope("unknown");
   });
 
   it.each([
     ["the app exits non-zero", 'node -e "process.exit(1)"'],
     ["the app never writes a manifest", 'node -e ""'],
   ])(
-    "emits one cli.command.error, flushes, then exits 1 when %s",
+    "emits one cli.command.error under the running command, flushes, then exits 1 when %s",
     async (_case, app) => {
+      // a deploy's synth: the deploy is the run that failed
+      Errors.setScope("deploy");
       await expect(
         SynthStack.synth(new AbortController().signal, app, outdir),
       ).rejects.toThrow("exit 1");
 
       expect(commons.sendTelemetry).toHaveBeenCalledTimes(1);
-      expect(commons.sendTelemetry).toHaveBeenCalledWith("synth", {
+      expect(commons.sendTelemetry).toHaveBeenCalledWith("deploy", {
         error: true,
         errorType: "unexpected",
         synthOrigin: undefined,

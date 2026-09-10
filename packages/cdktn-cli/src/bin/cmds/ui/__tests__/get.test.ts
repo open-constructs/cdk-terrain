@@ -68,7 +68,7 @@ describe("runGet telemetry", () => {
     expect(mockSendTelemetry).not.toHaveBeenCalled();
   });
 
-  it("a failing get run yields exactly one cli.command.error and no cli.command.invoked", async () => {
+  it("a failing get run yields exactly one cli.command.error and no cli.command.completed", async () => {
     mockGet.mockRejectedValue(Errors.External("schema fetch failed"));
     const cli = yargs(["get"])
       .exitProcess(false)
