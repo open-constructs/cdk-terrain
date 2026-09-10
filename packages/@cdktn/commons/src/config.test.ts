@@ -1,6 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { parseConfig } from "./config";
+import { logger } from "./logging";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
@@ -723,6 +724,44 @@ describe("parseConfig", () => {
           ],
         }
       `);
+    });
+  });
+
+  describe("consent flags", () => {
+    it.each([
+      [true, true],
+      [false, false],
+      // the init templates render the flags as strings
+      ["true", true],
+      ["false", false],
+      ["yes", undefined],
+      [1, undefined],
+      [null, undefined],
+    ])("normalises %p to %p", (value, expected) => {
+      const config = parseConfig(
+        JSON.stringify({ sendCrashReports: value, sendUsageTelemetry: value }),
+      );
+      expect(config.sendCrashReports).toBe(expected);
+      expect(config.sendUsageTelemetry).toBe(expected);
+      expect("sendUsageTelemetry" in config).toBe(expected !== undefined);
+    });
+
+    it("leaves an absent flag absent", () => {
+      const config = parseConfig(JSON.stringify({ sendCrashReports: true }));
+      expect(config.sendCrashReports).toBe(true);
+      expect("sendUsageTelemetry" in config).toBe(false);
+    });
+
+    it("logs a rejected value at debug level", () => {
+      const debug = jest.spyOn(logger, "debug").mockImplementation(() => {});
+      try {
+        parseConfig(JSON.stringify({ sendUsageTelemetry: "yes" }));
+        expect(debug).toHaveBeenCalledWith(
+          expect.stringContaining("Ignoring sendUsageTelemetry"),
+        );
+      } finally {
+        debug.mockRestore();
+      }
     });
   });
 
