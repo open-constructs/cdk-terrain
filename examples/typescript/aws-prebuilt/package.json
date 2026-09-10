@@ -14,7 +14,7 @@
     "cdktn-cli": "workspace:*",
     "jest": "^30.3.0",
     "tsx": "4.23.13",
-    "typescript": "^5.0.0"
+    "typescript": "~6.0.0"
   },
   "dependencies": {
     "@cdktn/provider-aws": "24.1.0",

@@ -14,6 +14,10 @@
     "strict": false,
     "stripInternal": true,
     "target": "ES2018",
+    "types": [
+      "node",
+      "jest"
+    ],
     "incremental": true,
     "paths": {
       "@cdktn/provider-aws/lib/*": ["./.gen/providers/aws/*/index.ts"],
