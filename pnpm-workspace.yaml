@@ -11,5 +11,9 @@ allowBuilds:
   nx: true
   unrs-resolver: true
 
+# Keep ncu's --cooldown in .github/workflows/pnpm-upgrade.yml above this window.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+
 overrides:
   '@types/react': 18.3.28

@@ -51,10 +51,10 @@ jobs:
       - name: Run "ncu -u"
         run: |-
           # Upgrade dependencies at repository root
-          ncu --upgrade --filter=@types/node,@types/fs-extra --target=minor --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
-          ncu --upgrade --filter=typescript --target=patch --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+          ncu --upgrade --filter=@types/node,@types/fs-extra --target=minor --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
+          ncu --upgrade --filter=typescript --target=patch --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
           ncu --upgrade --reject=@types/node,@types/fs-extra,constructs,typescript,@types/prettier --target=minor \
-            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
 
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       # strictDepBuilds is relaxed so an unapproved dep build does not kill the PR (see #399)
@@ -209,16 +209,16 @@ jobs:
 
           ncu --upgrade "${workspace_args[@]}" --no-root \
             --filter=@types/node,@types/fs-extra --target=minor \
-            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
 
           ncu --upgrade "${workspace_args[@]}" --no-root \
             --filter=typescript --target=patch \
-            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
 
           ncu --upgrade "${workspace_args[@]}" --no-root \
             --reject='@types/node,@types/fs-extra,constructs,typescript,graphology-types,jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,${{ steps.list-packages.outputs.list }}' \
             --target=minor \
-            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
 
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       # strictDepBuilds is relaxed so an unapproved dep build does not kill the PR (see #399)
@@ -301,7 +301,7 @@ jobs:
           ncu --upgrade --workspaces --root \
             --filter='jsii,jsii-pacmak,jsii-rosetta,jsii-docgen,codemaker,constructs' \
             --target=minor \
-            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated
+            --packageManager pnpm --dep prod,dev,optional,peer --no-deprecated --cooldown 25h
       # Refresh the lockfile after the ncu edits above (necessary for "pnpm update" to run)
       # strictDepBuilds is relaxed so an unapproved dep build does not kill the PR (see #399)
       - name: Run "pnpm install"
