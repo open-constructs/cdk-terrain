@@ -437,4 +437,33 @@ describe("runCli", () => {
     expect(exitCallCount).toBe(1);
     expect(exitCode).toBe(0);
   });
+
+  it("still exits 0 when the stdout reader closed early and the drain write gets EPIPE", async () => {
+    // What Node does for `cdktn --help | head -1`: the write callback gets
+    // EPIPE, then 'error' is emitted on the stream; unhandled, that throws.
+    const epipe = Object.assign(new Error("write EPIPE"), { code: "EPIPE" });
+    const errorListeners = process.stdout.listenerCount("error");
+    const writeSpy = jest.spyOn(process.stdout, "write").mockImplementation(((
+      ...args: unknown[]
+    ) => {
+      const cb = args.find((a) => typeof a === "function") as
+        ((err?: Error) => void) | undefined;
+      cb?.(epipe);
+      process.nextTick(() => process.stdout.emit("error", epipe));
+      return false;
+    }) as never);
+    try {
+      const deps = makeDeps();
+      const { exitCode, exitCallCount, unhandledRejections } =
+        await runAndCapture(["ok"], deps);
+
+      expect(unhandledRejections).toEqual([]);
+      expect(exitCallCount).toBe(1);
+      expect(exitCode).toBe(0);
+    } finally {
+      writeSpy.mockRestore();
+    }
+    // the drain's one-shot listener was consumed by the emitted 'error'
+    expect(process.stdout.listenerCount("error")).toBe(errorListeners);
+  });
 });
