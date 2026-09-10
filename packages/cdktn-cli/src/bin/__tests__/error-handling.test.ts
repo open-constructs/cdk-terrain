@@ -116,6 +116,38 @@ function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
     );
 }
 
+// The shape cdktn.ts registers: a fallback completion function that
+// answers asynchronously (there: after reading the manifest) for `diff`.
+function makeCompletingCli(args: string[]) {
+  const customCompletion = function (
+    _current: string,
+    argv: { _: (string | number)[] },
+    completionsFilter: (
+      done?: (err: unknown, defaultCompletions: string[]) => void,
+    ) => void,
+    done: (completions: string[]) => void,
+  ) {
+    if (argv._.includes("diff")) {
+      completionsFilter(async (_err, defaults) => {
+        await new Promise((r) => setImmediate(r));
+        done([...defaults, 'alpha:target stack "alpha"']);
+      });
+    } else {
+      completionsFilter();
+    }
+  } as unknown as yargs.AsyncCompletionFunction;
+  return yargs(args)
+    .exitProcess(false)
+    .command(
+      "diff [stack]",
+      "diffs a stack",
+      (cmdYargs: Argv) =>
+        cmdYargs.positional("stack", { type: "string", desc: "the stack" }),
+      () => {},
+    )
+    .completion("completion", customCompletion);
+}
+
 async function runAndCapture(
   args: string[],
   deps: FailureReporterDeps,
@@ -436,6 +468,42 @@ describe("runCli", () => {
     expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
     expect(exitCallCount).toBe(1);
     expect(exitCode).toBe(0);
+  });
+
+  it("lets an asynchronous completion function print before the process ends", async () => {
+    // yargs never awaits the completion callback, so parseAsync resolves
+    // before an async completion function has printed anything; an explicit
+    // exit at that point would swallow `cdktn diff <TAB>` entirely.
+    const deps = makeDeps();
+    const printed: string[] = [];
+    const logSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation((line: string) => {
+        printed.push(line);
+      });
+    try {
+      const exitSpy = jest
+        .spyOn(process, "exit")
+        .mockImplementation((() => {}) as never);
+      try {
+        await runCli(
+          makeCompletingCli(["--get-yargs-completions", "cdktn", "diff", ""]),
+          deps,
+        );
+        const printedWhenRunCliResolved = printed.length;
+        await flushMicroAndMacrotasks();
+
+        expect(printedWhenRunCliResolved).toBe(0);
+        expect(printed).toContain('alpha:target stack "alpha"');
+        expect(exitSpy).not.toHaveBeenCalled();
+      } finally {
+        exitSpy.mockRestore();
+      }
+    } finally {
+      logSpy.mockRestore();
+    }
+    expect(deps.flushTelemetry).not.toHaveBeenCalled();
+    expect(deps.logError).not.toHaveBeenCalled();
   });
 
   it("still exits 0 when the stdout reader closed early and the drain write gets EPIPE", async () => {

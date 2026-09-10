@@ -16,6 +16,11 @@ export interface FailureReporterDeps {
 
 export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
 
+// yargs' hard-coded flag for a shell completion request (`cdktn diff <TAB>`
+// runs `cdktn --get-yargs-completions cdktn diff ""`); its parsed value is
+// whatever word follows it, so only presence counts (as yargs itself checks).
+const YARGS_COMPLETION_KEY = "get-yargs-completions";
+
 // Non-Error tolerant: a raw string or object throw still prints a message,
 // never the literal `undefined`.
 export function describeError(e: unknown): { message: string; stack?: string } {
@@ -135,8 +140,10 @@ export function runCli(
   });
 
   return (async () => {
+    let completionRequest = false;
     try {
-      await y.parseAsync();
+      const argv = await y.parseAsync();
+      completionRequest = YARGS_COMPLETION_KEY in argv;
     } catch (error) {
       // Async handler rejections land here after .fail already recorded them;
       // synchronous handler throws bypass .fail entirely, so this is the only
@@ -145,6 +152,12 @@ export function runCli(
     }
     if (failure) {
       process.exit(await reportFailure(failure, deps));
+    } else if (completionRequest) {
+      // yargs does not await the completion callback, so an asynchronous
+      // completion function (cdktn.ts reads the manifest) prints only after
+      // parseAsync resolved; no handler ran, so there is nothing to flush and
+      // the loop drains on its own.
+      return;
     } else {
       // success / --help / --version: Sentry buffers asynchronously, so flush
       // (bounded) and exit explicitly, or an unresponsive ingest endpoint
