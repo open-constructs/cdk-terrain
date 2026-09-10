@@ -491,10 +491,9 @@ export async function synth(argv: any) {
       checkCodeMakerOutput &&
       !(await fs.pathExists(config.codeMakerOutput))
     ) {
-      console.error(
-        `ERROR: synthesis failed, run "cdktn get" to generate providers in ${config.codeMakerOutput}`,
+      throw Errors.Usage(
+        `synthesis failed, run "cdktn get" to generate providers in ${config.codeMakerOutput}`,
       );
-      process.exit(1);
     }
 
     await terraformCheck();
@@ -523,10 +522,9 @@ export async function watch(argv: any) {
   const parallelism = argv.parallelism;
 
   if (!autoApprove) {
-    console.error(
-      chalkColour`{redBright ERROR: The watch command always automatically deploys and approves changes. To make this behaviour explicit the --auto-approve flag must be set}`,
+    throw Errors.Usage(
+      "The watch command always automatically deploys and approves changes. To make this behaviour explicit the --auto-approve flag must be set",
     );
-    process.exit(1);
   }
 
   await terraformCheck();
