@@ -53,8 +53,22 @@ const ciInfoMock = ciInfo as unknown as { isCI: boolean };
 
 const initOptions = () => (Sentry.init as jest.Mock).mock.calls.at(-1)![0];
 
-describe("Sentry init hardening", () => {
-  let workdir: string;
+const setInteractive = (interactive: boolean) => {
+  Object.defineProperty(process.stdout, "isTTY", {
+    value: interactive,
+    configurable: true,
+  });
+  if (interactive) {
+    delete process.env.CI;
+    ciInfoMock.isCI = false;
+  }
+};
+
+let workdir: string;
+
+// Shared by every describe below: a temp project as cwd, an interactive-
+// capable terminal and a DSN, restored after each case.
+function useReportingFixture() {
   const originalCwd = process.cwd();
   const originalEnv = {
     CI: process.env.CI,
@@ -62,17 +76,6 @@ describe("Sentry init hardening", () => {
     CHECKPOINT_DISABLE: process.env.CHECKPOINT_DISABLE,
   };
   const originalIsTTY = process.stdout.isTTY;
-
-  const setInteractive = (interactive: boolean) => {
-    Object.defineProperty(process.stdout, "isTTY", {
-      value: interactive,
-      configurable: true,
-    });
-    if (interactive) {
-      delete process.env.CI;
-      ciInfoMock.isCI = false;
-    }
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -102,6 +105,100 @@ describe("Sentry init hardening", () => {
       }
     }
   });
+}
+
+describe("Sentry init hardening", () => {
+  useReportingFixture();
+
+  it("starts a fresh trace so nothing seeded from SENTRY_TRACE/SENTRY_BAGGAGE propagates", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: true,
+      sendUsageTelemetry: true,
+    });
+
+    await initializErrorReporting(jest.fn(), jest.fn());
+
+    expect(mockScope.setPropagationContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: expect.stringMatching(/^[0-9a-f]{32}$/),
+      }),
+    );
+  });
+  it("init options pin release, tracesSampleRate 0, a fixed environment, a fixed serverName and enableMetrics", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: true,
+    });
+    setInteractive(false);
+
+    await initializErrorReporting();
+
+    // fixed values are the production-side lock that neither the hostname
+    // nor SENTRY_ENVIRONMENT reaches Sentry (the commons delivery tests set
+    // their own init options)
+    expect(initOptions()).toMatchObject({
+      release: expect.stringMatching(/^cdktn-cli-/),
+      tracesSampleRate: 0,
+      environment: "production",
+      serverName: "cdktn-cli",
+      enableMetrics: true,
+    });
+  });
+  describe("beforeSend", () => {
+    const boom = { message: "boom" };
+
+    it("passes error events through when crash reporting is consented, even under CHECKPOINT_DISABLE", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: true,
+      });
+      setInteractive(false);
+      process.env.CHECKPOINT_DISABLE = "1";
+
+      await initializErrorReporting();
+
+      expect(
+        await initOptions().beforeSend(boom, {
+          originalException: new Error("boom"),
+        }),
+      ).toBe(boom);
+    });
+
+    it("drops error events on a usage-only init (crash declined)", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: false,
+        sendUsageTelemetry: true,
+      });
+      setInteractive(false);
+
+      await initializErrorReporting();
+
+      expect(Sentry.init).toHaveBeenCalledTimes(1);
+      expect(
+        await initOptions().beforeSend(boom, {
+          originalException: new Error("boom"),
+        }),
+      ).toBeNull();
+    });
+
+    it("still drops Usage Errors when crash reporting is enabled", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: true,
+      });
+      setInteractive(false);
+
+      await initializErrorReporting();
+
+      expect(
+        await initOptions().beforeSend(
+          { message: "x" },
+          { originalException: new Error("Usage Error: bad input") },
+        ),
+      ).toBeNull();
+    });
+  });
+});
+
+describe("consent gating (initializErrorReporting)", () => {
+  useReportingFixture();
 
   it("upgrade path: crash set, usage unset, interactive -> prompts ONCE for usage only and persists", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
@@ -121,7 +218,6 @@ describe("Sentry init hardening", () => {
     });
     expect(Sentry.init).toHaveBeenCalledTimes(1);
   });
-
   it("both unset, interactive -> prompts for each flag and persists both", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {});
     setInteractive(true);
@@ -191,22 +287,6 @@ describe("Sentry init hardening", () => {
       expect(Sentry.init).toHaveBeenCalledTimes(1);
     },
   );
-
-  it("starts a fresh trace so nothing seeded from SENTRY_TRACE/SENTRY_BAGGAGE propagates", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: true,
-      sendUsageTelemetry: true,
-    });
-
-    await initializErrorReporting(jest.fn(), jest.fn());
-
-    expect(mockScope.setPropagationContext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        traceId: expect.stringMatching(/^[0-9a-f]{32}$/),
-      }),
-    );
-  });
-
   it("captures the usage decision while still in the user's cwd", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: false,
@@ -217,7 +297,6 @@ describe("Sentry init hardening", () => {
 
     expect(setUsageTelemetryEnabled).toHaveBeenCalledWith(true);
   });
-
   it("reads and persists against an explicit project path, not the cwd", async () => {
     // init creates the project in a destination directory and initializes
     // reporting against it; the cwd may hold an unrelated (or no) cdktf.json
@@ -244,7 +323,6 @@ describe("Sentry init hardening", () => {
     // usage-only consent: the client exists but drops error events
     await expect(initOptions().beforeSend({}, undefined)).resolves.toBeNull();
   });
-
   it("prompts into the explicit project path when its flags are unset", async () => {
     const destination = path.join(workdir, "new-project");
     fs.mkdirpSync(destination);
@@ -261,7 +339,6 @@ describe("Sentry init hardening", () => {
     });
     expect(fs.existsSync(path.join(workdir, "cdktf.json"))).toBe(false);
   });
-
   it("CHECKPOINT_DISABLE -> no usage prompt, no init when crash is off", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: false,
@@ -275,7 +352,6 @@ describe("Sentry init hardening", () => {
     expect(usagePrompt).not.toHaveBeenCalled();
     expect(Sentry.init).not.toHaveBeenCalled();
   });
-
   it("CHECKPOINT_DISABLE does NOT affect crash reporting", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
@@ -287,7 +363,6 @@ describe("Sentry init hardening", () => {
 
     expect(Sentry.init).toHaveBeenCalledTimes(1);
   });
-
   it("explicit sendUsageTelemetry: false + crash off -> Sentry never initialized", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: false,
@@ -299,7 +374,6 @@ describe("Sentry init hardening", () => {
 
     expect(Sentry.init).not.toHaveBeenCalled();
   });
-
   it("no SENTRY_DSN -> no init even with consent", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
@@ -344,158 +418,85 @@ describe("Sentry init hardening", () => {
       }
     },
   );
+});
 
-  it("init options pin release, tracesSampleRate 0, a fixed environment, a fixed serverName and enableMetrics", async () => {
+describe("start-of-command metric (initializErrorReporting)", () => {
+  useReportingFixture();
+
+  const invokedCalls = () =>
+    (Sentry.metrics.count as jest.Mock).mock.calls.filter(
+      ([name]) => name === "cli.command.invoked",
+    );
+
+  it("counts the run once as cli.command.invoked under the command scope, after init", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: true,
+      language: "python",
+      sendCrashReports: false,
     });
     setInteractive(false);
+    Errors.setScope("deploy");
+
+    await initializErrorReporting();
+    // init runs get, which initializes reporting again
+    await initializErrorReporting();
+
+    expect(invokedCalls()).toHaveLength(1);
+    expect(invokedCalls()[0][2]).toEqual(
+      expect.objectContaining({
+        attributes: expect.objectContaining({
+          command: "deploy",
+          language: "python",
+        }),
+      }),
+    );
+    expect((Sentry.init as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+      (Sentry.metrics.count as jest.Mock).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("reads the language from the explicit project path", async () => {
+    const destination = path.join(workdir, "new-project");
+    fs.mkdirpSync(destination);
+    fs.writeJsonSync(path.join(destination, "cdktf.json"), {
+      language: "go",
+      sendCrashReports: false,
+    });
+    setInteractive(false);
+    Errors.setScope("init");
+
+    await initializErrorReporting(undefined, undefined, destination);
+
+    expect(invokedCalls()[0][2]).toEqual(
+      expect.objectContaining({
+        attributes: expect.objectContaining({
+          command: "init",
+          language: "go",
+        }),
+      }),
+    );
+  });
+
+  it.each([
+    ["usage telemetry declined", { sendUsageTelemetry: false }, {}],
+    ["CHECKPOINT_DISABLE", {}, { CHECKPOINT_DISABLE: "1" }],
+    ["no SENTRY_DSN", {}, { SENTRY_DSN: undefined }],
+  ])("emits nothing when %s", async (_case, flags, env) => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: true,
+      ...flags,
+    });
+    setInteractive(false);
+    for (const [key, value] of Object.entries(env)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
 
     await initializErrorReporting();
 
-    // fixed values are the production-side lock that neither the hostname
-    // nor SENTRY_ENVIRONMENT reaches Sentry (the commons delivery tests set
-    // their own init options)
-    expect(initOptions()).toMatchObject({
-      release: expect.stringMatching(/^cdktn-cli-/),
-      tracesSampleRate: 0,
-      environment: "production",
-      serverName: "cdktn-cli",
-      enableMetrics: true,
-    });
-  });
-
-  describe("start-of-command metric", () => {
-    const invokedCalls = () =>
-      (Sentry.metrics.count as jest.Mock).mock.calls.filter(
-        ([name]) => name === "cli.command.invoked",
-      );
-
-    it("counts the run once as cli.command.invoked under the command scope, after init", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        language: "python",
-        sendCrashReports: false,
-      });
-      setInteractive(false);
-      Errors.setScope("deploy");
-
-      await initializErrorReporting();
-      // init runs get, which initializes reporting again
-      await initializErrorReporting();
-
-      expect(invokedCalls()).toHaveLength(1);
-      expect(invokedCalls()[0][2]).toEqual(
-        expect.objectContaining({
-          attributes: expect.objectContaining({
-            command: "deploy",
-            language: "python",
-          }),
-        }),
-      );
-      expect(
-        (Sentry.init as jest.Mock).mock.invocationCallOrder[0],
-      ).toBeLessThan(
-        (Sentry.metrics.count as jest.Mock).mock.invocationCallOrder[0],
-      );
-    });
-
-    it("reads the language from the explicit project path", async () => {
-      const destination = path.join(workdir, "new-project");
-      fs.mkdirpSync(destination);
-      fs.writeJsonSync(path.join(destination, "cdktf.json"), {
-        language: "go",
-        sendCrashReports: false,
-      });
-      setInteractive(false);
-      Errors.setScope("init");
-
-      await initializErrorReporting(undefined, undefined, destination);
-
-      expect(invokedCalls()[0][2]).toEqual(
-        expect.objectContaining({
-          attributes: expect.objectContaining({
-            command: "init",
-            language: "go",
-          }),
-        }),
-      );
-    });
-
-    it.each([
-      ["usage telemetry declined", { sendUsageTelemetry: false }, {}],
-      ["CHECKPOINT_DISABLE", {}, { CHECKPOINT_DISABLE: "1" }],
-      ["no SENTRY_DSN", {}, { SENTRY_DSN: undefined }],
-    ])("emits nothing when %s", async (_case, flags, env) => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendCrashReports: true,
-        ...flags,
-      });
-      setInteractive(false);
-      for (const [key, value] of Object.entries(env)) {
-        if (value === undefined) {
-          delete process.env[key];
-        } else {
-          process.env[key] = value;
-        }
-      }
-
-      await initializErrorReporting();
-
-      expect(Sentry.metrics.count).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("beforeSend", () => {
-    const boom = { message: "boom" };
-
-    it("passes error events through when crash reporting is consented, even under CHECKPOINT_DISABLE", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendCrashReports: true,
-      });
-      setInteractive(false);
-      process.env.CHECKPOINT_DISABLE = "1";
-
-      await initializErrorReporting();
-
-      expect(
-        await initOptions().beforeSend(boom, {
-          originalException: new Error("boom"),
-        }),
-      ).toBe(boom);
-    });
-
-    it("drops error events on a usage-only init (crash declined)", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendCrashReports: false,
-        sendUsageTelemetry: true,
-      });
-      setInteractive(false);
-
-      await initializErrorReporting();
-
-      expect(Sentry.init).toHaveBeenCalledTimes(1);
-      expect(
-        await initOptions().beforeSend(boom, {
-          originalException: new Error("boom"),
-        }),
-      ).toBeNull();
-    });
-
-    it("still drops Usage Errors when crash reporting is enabled", async () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        sendCrashReports: true,
-      });
-      setInteractive(false);
-
-      await initializErrorReporting();
-
-      expect(
-        await initOptions().beforeSend(
-          { message: "x" },
-          { originalException: new Error("Usage Error: bad input") },
-        ),
-      ).toBeNull();
-    });
+    expect(Sentry.metrics.count).not.toHaveBeenCalled();
   });
 });
 
