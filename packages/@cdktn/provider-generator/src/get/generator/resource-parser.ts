@@ -27,6 +27,7 @@ import {
   SkippedAttributeTypeModel,
 } from "./models";
 import { detectAttributeLoops } from "./loop-detection";
+import { deduplicateStructs } from "./struct-dedup";
 import { shouldSkipAttribute } from "./skipped-attributes";
 
 // Can't be used in expressions like "export * as <keyword> from ... "
@@ -270,6 +271,14 @@ class Parser {
         disposeStructs(previousAttribute);
       },
     );
+
+    // Merge structurally identical structs that the ancestor-only recursion
+    // pass above cannot see (sibling branches). Behind a flag while the naming
+    // strategy is settled -- unset, output is byte-identical to today.
+    if (process.env.CDKTN_STRUCT_DEDUP === "1") {
+      const removedStructs = deduplicateStructs(attributes);
+      this.structs = this.structs.filter((s) => !removedStructs.has(s));
+    }
 
     attributes = deduplicateAttributesWithSameName(attributes);
 
