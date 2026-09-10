@@ -105,7 +105,17 @@ async function drainStdio(): Promise<void> {
   await Promise.all(
     [process.stdout, process.stderr].map(
       (stream) =>
-        new Promise<void>((resolve) => stream.write("", () => resolve())),
+        new Promise<void>((resolve) => {
+          // A reader that already closed (`cdktn --help | head -1`) reports
+          // EPIPE to the callback and then emits 'error'; console.log swallows
+          // it, this listener does the same (kept only while an error is due).
+          const onError = () => resolve();
+          stream.once("error", onError);
+          stream.write("", (err) => {
+            if (!err) stream.off("error", onError);
+            resolve();
+          });
+        }),
     ),
   );
 }
