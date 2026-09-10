@@ -301,8 +301,28 @@ interface ConfigBase {
    * `targetVersions` before running it.
    */
   readonly validateInstalledBinary?: boolean;
+  // On disk either flag may be the string "true"/"false" (the init templates
+  // render it that way); parseConfig normalises both to a boolean.
   readonly sendCrashReports?: boolean;
   readonly sendUsageTelemetry?: boolean;
+}
+
+const CONSENT_FLAGS = ["sendCrashReports", "sendUsageTelemetry"] as const;
+
+function normalizeConsentFlag(
+  key: (typeof CONSENT_FLAGS)[number],
+  value: unknown,
+): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (value === "true" || value === "false") {
+    return value === "true";
+  }
+  logger.debug(
+    `Ignoring ${key} in ${CONFIG_FILE}: expected a boolean, got ${JSON.stringify(value)}`,
+  );
+  return undefined;
 }
 
 /**
@@ -406,6 +426,18 @@ export const parseConfig = (configJSON?: string) => {
     config.terraformProviders = config.terraformProviders?.map(
       (provider) => new TerraformProviderConstraint(provider),
     );
+  }
+
+  const flags = config as unknown as Record<string, unknown>;
+  for (const key of CONSENT_FLAGS) {
+    if (key in flags) {
+      const normalized = normalizeConsentFlag(key, flags[key]);
+      if (normalized === undefined) {
+        delete flags[key];
+      } else {
+        flags[key] = normalized;
+      }
+    }
   }
 
   const targetVersionProblems = validateTargetVersions(config.targetVersions);
