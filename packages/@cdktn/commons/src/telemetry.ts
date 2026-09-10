@@ -68,7 +68,8 @@ type CommandTelemetryState = {
   language?: unknown;
 };
 
-// Set by the entrypoint's bundle copy, read by the handlers' copy.
+// Shared by both bundle copies: the handlers' copy captures the decision and
+// starts the run, the entrypoint's copy counts the failure.
 const state = processState<CommandTelemetryState>(
   "cdktn.commandTelemetry",
   () => ({}),
