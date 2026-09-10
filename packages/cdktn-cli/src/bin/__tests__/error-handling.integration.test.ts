@@ -41,8 +41,29 @@ function fixtureSource(errorHandlingPath: string): string {
     });
   }
 
+  // cdktn.ts' completion function, minus the manifest: answers for "diff"
+  // only after a turn of the event loop
+  const customCompletion = function (_current, argv, completionsFilter, done) {
+    if (argv._.includes("diff")) {
+      completionsFilter(async (_err, defaults) => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        done([...defaults, 'alpha:target stack "alpha"']);
+      });
+    } else {
+      completionsFilter();
+    }
+  };
+
   const cli = yargs(process.argv.slice(2).filter((a) => a !== "--with-listener"))
     .exitProcess(false)
+    .completion("completion", customCompletion)
+    .command(
+      "diff [stack]",
+      "diffs a stack",
+      (cmdYargs) =>
+        cmdYargs.positional("stack", { type: "string", desc: "the stack" }),
+      () => {},
+    )
     .command(
       "rawboom",
       "throws an async raw string",
@@ -293,6 +314,21 @@ describe("runCli child-process smoke test", () => {
     expect(exitCode).toBe(0);
     expect(stderr).not.toContain("EPIPE");
     expectNoRuntimeNoise(stderr);
+  }, 15000);
+
+  it("prints the completions of an asynchronous completion function", async () => {
+    // `cdktn diff <TAB>`: yargs does not await the completion callback, so
+    // parseAsync resolves before an async completion function has printed
+    const result = await execa(
+      process.execPath,
+      [bundlePath, "--get-yargs-completions", "fixture", "diff", ""],
+      { reject: false },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('alpha:target stack "alpha"');
+    expect(result.stdout).toContain("--help");
+    expectNoRuntimeNoise(`${result.stdout}\n${result.stderr}`);
   }, 15000);
 
   it("exits 1 within the flush bound when the ingest endpoint never answers on the failure path", async () => {
