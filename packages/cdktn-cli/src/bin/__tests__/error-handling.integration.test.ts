@@ -4,6 +4,7 @@
 // Bundles a tiny fixture with esbuild and runs it as a separate Node process,
 // so runCli() meets the runtime's real unhandled-rejection behaviour. Not
 // dist-gated: no prebuilt CLI, terraform or network is needed.
+import { spawn } from "child_process";
 import * as fs from "fs";
 import * as http from "http";
 import type { AddressInfo } from "net";
@@ -65,6 +66,20 @@ function fixtureSource(errorHandlingPath: string): string {
       async () => {
         Sentry.captureMessage("empirical-success-message");
         console.log("capturedok-done");
+      },
+    )
+    .command(
+      "pipedok",
+      "prints one line, then waits for stdin to end before returning",
+      () => {},
+      async () => {
+        console.log("pipedok-first-line");
+        // lets the test close its end of the stdout pipe before the success
+        // path drains stdio
+        await new Promise((resolve) => {
+          process.stdin.once("end", resolve);
+          process.stdin.resume();
+        });
       },
     );
 
@@ -252,6 +267,32 @@ describe("runCli child-process smoke test", () => {
     } finally {
       await sink.close();
     }
+  }, 15000);
+
+  it("exits 0 when the stdout reader closes before the success path drains stdio", async () => {
+    // `cdktn --help | head -1`: the reader is gone by the time the drain
+    // writes, so that write gets EPIPE and Node emits 'error' on stdout
+    const child = spawn(process.execPath, [bundlePath, "pipedok"], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk: string) => (stderr += chunk));
+    const firstChunk = await new Promise<string>((resolve) => {
+      child.stdout.setEncoding("utf8");
+      child.stdout.once("data", resolve);
+    });
+    child.stdout.destroy(); // closes the read end: every later write is EPIPE
+    child.stdin.end(); // only now may the handler return and the drain run
+    const [exitCode] = await new Promise<[number | null, string | null]>(
+      (resolve) =>
+        child.once("close", (code, signal) => resolve([code, signal])),
+    );
+
+    expect(firstChunk).toContain("pipedok-first-line");
+    expect(exitCode).toBe(0);
+    expect(stderr).not.toContain("EPIPE");
+    expectNoRuntimeNoise(stderr);
   }, 15000);
 
   it("exits 1 within the flush bound when the ingest endpoint never answers on the failure path", async () => {
