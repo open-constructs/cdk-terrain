@@ -99,7 +99,7 @@ describe("consent gating (initializErrorReporting)", () => {
     );
   });
 
-  it("init options pin release, tracesSampleRate 0, a fixed environment and a fixed serverName", async () => {
+  it("init options pin release, tracesSampleRate 0, a fixed environment, a fixed serverName and enableMetrics", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
     });
@@ -115,6 +115,7 @@ describe("consent gating (initializErrorReporting)", () => {
       tracesSampleRate: 0,
       environment: "production",
       serverName: "cdktn-cli",
+      enableMetrics: true,
     });
   });
 });

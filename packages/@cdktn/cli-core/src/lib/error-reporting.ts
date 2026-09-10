@@ -93,6 +93,9 @@ export async function initializErrorReporting(
     // Fixed constant so the machine hostname is never attached to events or
     // metrics (v10 defaults server_name/server.address to the hostname).
     serverName: "cdktn-cli",
+    // Usage metrics ride on the SDK's metrics pipeline; explicit so a future
+    // SDK default flip cannot silently stop delivery.
+    enableMetrics: true,
     async beforeSend(event, hint) {
       if (!hint) {
         return event;
