@@ -8,7 +8,7 @@ import {
 } from "./cdktf-project";
 import * as fs from "fs";
 import * as chokidar from "chokidar";
-import { logger, Errors, sendTelemetry } from "@cdktn/commons";
+import { logger, Errors } from "@cdktn/commons";
 import { CdktfStack } from "./cdktf-stack";
 
 // In this very first iteration we will find out which files to watch by asking the user to provide the files
@@ -210,6 +210,5 @@ export async function watch(
   // initially run once
   onFileChange();
 
-  // Awaited together so a run failing during the report is still observed.
-  await Promise.all([sendTelemetry("watch", { event: "start" }), session]);
+  await session;
 }

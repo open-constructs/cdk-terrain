@@ -17,6 +17,7 @@ jest.mock("@sentry/node", () => ({
   addBreadcrumb: jest.fn(), // the commons logger records every debug line
   flush: jest.fn().mockResolvedValue(true),
   close: jest.fn().mockResolvedValue(true),
+  metrics: { count: jest.fn(), distribution: jest.fn() },
 }));
 
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
@@ -35,7 +36,9 @@ jest.mock("@cdktn/commons", () => {
 import * as Sentry from "@sentry/node";
 import ciInfo from "ci-info";
 import {
+  Errors,
   isUsageTelemetryEnabled,
+  resetCommandTelemetry,
   setUsageTelemetryEnabled,
 } from "@cdktn/commons";
 import {
@@ -83,6 +86,8 @@ describe("Sentry init hardening", () => {
 
   afterEach(() => {
     setUsageTelemetryEnabled(undefined);
+    resetCommandTelemetry();
+    Errors.setScope("unknown");
     process.chdir(originalCwd);
     fs.removeSync(workdir);
     Object.defineProperty(process.stdout, "isTTY", {
@@ -357,6 +362,86 @@ describe("Sentry init hardening", () => {
       environment: "production",
       serverName: "cdktn-cli",
       enableMetrics: true,
+    });
+  });
+
+  describe("start-of-command metric", () => {
+    const invokedCalls = () =>
+      (Sentry.metrics.count as jest.Mock).mock.calls.filter(
+        ([name]) => name === "cli.command.invoked",
+      );
+
+    it("counts the run once as cli.command.invoked under the command scope, after init", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "python",
+        sendCrashReports: false,
+      });
+      setInteractive(false);
+      Errors.setScope("deploy");
+
+      await initializErrorReporting();
+      // init runs get, which initializes reporting again
+      await initializErrorReporting();
+
+      expect(invokedCalls()).toHaveLength(1);
+      expect(invokedCalls()[0][2]).toEqual(
+        expect.objectContaining({
+          attributes: expect.objectContaining({
+            command: "deploy",
+            language: "python",
+          }),
+        }),
+      );
+      expect(
+        (Sentry.init as jest.Mock).mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        (Sentry.metrics.count as jest.Mock).mock.invocationCallOrder[0],
+      );
+    });
+
+    it("reads the language from the explicit project path", async () => {
+      const destination = path.join(workdir, "new-project");
+      fs.mkdirpSync(destination);
+      fs.writeJsonSync(path.join(destination, "cdktf.json"), {
+        language: "go",
+        sendCrashReports: false,
+      });
+      setInteractive(false);
+      Errors.setScope("init");
+
+      await initializErrorReporting(undefined, undefined, destination);
+
+      expect(invokedCalls()[0][2]).toEqual(
+        expect.objectContaining({
+          attributes: expect.objectContaining({
+            command: "init",
+            language: "go",
+          }),
+        }),
+      );
+    });
+
+    it.each([
+      ["usage telemetry declined", { sendUsageTelemetry: false }, {}],
+      ["CHECKPOINT_DISABLE", {}, { CHECKPOINT_DISABLE: "1" }],
+      ["no SENTRY_DSN", {}, { SENTRY_DSN: undefined }],
+    ])("emits nothing when %s", async (_case, flags, env) => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendCrashReports: true,
+        ...flags,
+      });
+      setInteractive(false);
+      for (const [key, value] of Object.entries(env)) {
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+
+      await initializErrorReporting();
+
+      expect(Sentry.metrics.count).not.toHaveBeenCalled();
     });
   });
 

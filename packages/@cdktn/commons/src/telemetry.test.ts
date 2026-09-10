@@ -7,6 +7,8 @@ import * as path from "path";
 import ciInfo from "ci-info";
 import {
   sendTelemetry,
+  startCommandTelemetry,
+  resetCommandTelemetry,
   flushTelemetry,
   getUsageTelemetryConsent,
   setUsageTelemetryEnabled,
@@ -85,6 +87,7 @@ describe("telemetry", () => {
 
   afterEach(async () => {
     setUsageTelemetryEnabled(undefined);
+    resetCommandTelemetry();
     await Sentry.close(1000);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
@@ -109,18 +112,19 @@ describe("telemetry", () => {
       process.env.SENTRY_ENVIRONMENT = "LEAK-ENV-SENTRY";
       initSentryWithCapturingTransport();
 
+      await startCommandTelemetry("synth");
       await sendTelemetry("synth", { totalTime: 1234, language: "typescript" });
       await sendTelemetry("synth", { error: true });
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
-      // a run is counted once: as invoked or, for an error payload, as error
       expect(items.map((i) => i.name)).toEqual([
         "cli.command.invoked",
+        "cli.command.completed",
         "cli.synth.duration",
         "cli.command.error",
       ]);
-      const [invoked, duration, error] = items;
+      const [invoked, completed, duration, error] = items;
 
       for (const metric of items) {
         const values = attributeValues(metric);
@@ -141,7 +145,10 @@ describe("telemetry", () => {
           expect(values).not.toHaveProperty(forbidden);
         }
       }
+      // the language comes from cdktf.json at start and from the payload
+      // at the end
       expect(attributeValues(invoked).language).toBe("typescript");
+      expect(attributeValues(completed).language).toBe("typescript");
       expect(duration.type).toBe("distribution");
       expect(duration.value).toBe(1234);
       expect(attributeValues(error)).toMatchObject({
@@ -212,11 +219,87 @@ describe("telemetry", () => {
       await sendTelemetry("convert", { language: "rust; DROP TABLE" });
       expect(await Sentry.flush(2000)).toBe(true);
 
+      const completed = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.completed",
+      )!;
+      expect(completed.attributes).not.toHaveProperty("language");
+      expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
+    });
+
+    it("omits an unsupported language read from cdktf.json at start", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "rust; DROP TABLE",
+      });
+
+      await startCommandTelemetry("synth");
+      expect(await Sentry.flush(2000)).toBe(true);
+
       const invoked = parseMetricItems(envelopeBodies).find(
         (i) => i.name === "cli.command.invoked",
       )!;
       expect(invoked.attributes).not.toHaveProperty("language");
       expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
+    });
+  });
+
+  describe("run lifecycle", () => {
+    beforeEach(() => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "python",
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+    });
+
+    it("counts the run once as invoked at start, even when reporting is initialized again", async () => {
+      await startCommandTelemetry("init");
+      // init runs get, which initializes reporting a second time
+      await startCommandTelemetry("get");
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.map((i) => i.name)).toEqual(["cli.command.invoked"]);
+      expect(attributeValues(items[0])).toMatchObject({
+        command: "init",
+        language: "python",
+      });
+    });
+
+    it("counts only the run's own command as completed; a nested operation adds its own metrics", async () => {
+      await startCommandTelemetry("deploy");
+      // the synth a deploy drives, then the deploy itself
+      await sendTelemetry("synth", { totalTime: 42, language: "python" });
+      await sendTelemetry("deploy", { language: "python" });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.map((i) => [i.name, attributeValues(i).command])).toEqual([
+        ["cli.command.invoked", "deploy"],
+        ["cli.synth.duration", "synth"],
+        ["cli.command.completed", "deploy"],
+      ]);
+    });
+
+    it("counts a failed run once as error, never as completed", async () => {
+      await startCommandTelemetry("synth");
+      await sendTelemetry("synth", { error: true, errorType: "External" });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      expect(parseMetricItems(envelopeBodies).map((i) => i.name)).toEqual([
+        "cli.command.invoked",
+        "cli.command.error",
+      ]);
+    });
+
+    it("emits nothing at start when usage telemetry is off, and stays a no-op afterwards", async () => {
+      setUsageTelemetryEnabled(false);
+
+      await startCommandTelemetry("synth");
+      setUsageTelemetryEnabled(true);
+      await startCommandTelemetry("synth");
+      await Sentry.flush(2000);
+
+      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
     });
   });
 
@@ -268,11 +351,15 @@ describe("telemetry", () => {
           process.env.CHECKPOINT_DISABLE = env;
         }
 
+        await startCommandTelemetry("convert");
         await sendTelemetry("convert", {});
         await Sentry.flush(2000);
 
         const items = parseMetricItems(envelopeBodies);
         expect(items.some((i) => i.name === "cli.command.invoked")).toBe(emits);
+        expect(items.some((i) => i.name === "cli.command.completed")).toBe(
+          emits,
+        );
         if (!emits) {
           expect(items).toHaveLength(0);
         }

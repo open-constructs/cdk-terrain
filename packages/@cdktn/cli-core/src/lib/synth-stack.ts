@@ -12,6 +12,7 @@ import {
 } from "cdktn";
 import { performance } from "perf_hooks";
 import {
+  Errors,
   commandErrorType,
   flushTelemetry,
   logger,
@@ -303,15 +304,15 @@ Command output on stdout:
   }
 
   /**
-   * One `cli.command.error` per failed run: counted here only on the paths
-   * above that exit the process themselves; anything thrown is counted by
-   * the CLI entrypoint's failure reporter instead.
+   * One `cli.command.error` per failed run, under the running command (a
+   * deploy's synth fails the deploy). Only the self-exiting paths above count
+   * here; anything thrown is counted by the entrypoint's failure reporter.
    */
   public static async synthErrorTelemetry(
     error: unknown,
     synthOrigin?: SynthOrigin,
   ) {
-    await sendTelemetry("synth", {
+    await sendTelemetry(Errors.getScope(), {
       error: true,
       errorType: commandErrorType(error),
       synthOrigin,
