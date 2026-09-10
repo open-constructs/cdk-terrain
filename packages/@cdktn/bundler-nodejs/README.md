@@ -1,6 +1,21 @@
-# Native Node.js bundle assets
+# Native Node.js bundles and assets
 
-`NodejsAsset` bundles TypeScript or JavaScript with Rolldown and produces a deterministic ZIP through CDK Terrain's `TerraformAsset` staging API.
+`NodejsBundler` bundles TypeScript or JavaScript with Rolldown and produces a deterministic ZIP without requiring an app, stack, provider or staging lifecycle.
+
+```ts
+import { NodejsBundler } from "@cdktn/bundler-nodejs";
+
+const bundle = new NodejsBundler().bundle({
+  entry: "src/handler.ts",
+  projectRoot: process.cwd(),
+  target: "node24",
+});
+
+// bundle.archive contains the deployment ZIP.
+// bundle.handler, assetHash and sourceCodeHash describe the exact ZIP bytes.
+```
+
+`NodejsAsset` is the CDK Terrain adapter that stages the result through the existing `TerraformAsset` API.
 
 ```ts
 import { NodejsAsset } from "@cdktn/bundler-nodejs";

@@ -93,33 +93,40 @@ export interface NodejsBundlingOptions {
   readonly copyFiles?: CopyFile[];
 }
 
-/** Source code to bundle into a deployable Node.js asset. */
-export interface NodejsAssetProps {
+/** Inputs for one provider-independent Node.js bundle operation. */
+export interface NodejsBundleProps {
   /** TypeScript or JavaScript entry file, relative to projectRoot. */
   readonly entry: string;
   /** Export to expose from the bundle. @default "handler" */
   readonly handler?: string;
-  /** Root for relative paths. @default directory containing cdktf.json, or cwd */
-  readonly projectRoot?: string;
+  /** Root for entry, configuration and copied-file paths. */
+  readonly projectRoot: string;
   /** Node.js syntax target. @default "node24" */
   readonly target?: string;
   readonly bundling?: NodejsBundlingOptions;
 }
 
-/** A deterministic ZIP built by Rolldown and staged by TerraformAsset. */
-export class NodejsAsset extends TerraformAsset {
+/** The deterministic output of a Node.js bundle operation. */
+export interface NodejsBundle {
+  /** Complete deployment ZIP. */
+  readonly archive: Uint8Array;
   /** Lambda-compatible module and export, for example "index.handler". */
-  public readonly handler: string;
-  /** Base64 SHA-256 of the exact ZIP bytes, suitable for source_code_hash. */
-  public readonly sourceCodeHash: string;
+  readonly handler: string;
+  /** Hexadecimal SHA-256 of the exact ZIP bytes. */
+  readonly assetHash: string;
+  /** Base64 SHA-256 of the exact ZIP bytes. */
+  readonly sourceCodeHash: string;
   /** Size of the complete ZIP in bytes. */
-  public readonly compressedSize: number;
-  /** Total size of all ZIP entries in bytes, including source maps and copied files. */
-  public readonly uncompressedSize: number;
+  readonly compressedSize: number;
+  /** Total size of all ZIP entries in bytes. */
+  readonly uncompressedSize: number;
+}
 
-  constructor(scope: Construct, id: string, props: NodejsAssetProps) {
+/** Builds deterministic Node.js ZIPs without a construct or staging lifecycle. */
+export class NodejsBundler {
+  public bundle(props: NodejsBundleProps): NodejsBundle {
     validateBuildInput(props, "options");
-    const projectRoot = resolveProjectRoot(scope, props.projectRoot);
+    const projectRoot = path.resolve(props.projectRoot);
     const entry = path.resolve(projectRoot, props.entry);
     const handler = props.handler ?? "handler";
     if (!fs.existsSync(entry)) {
@@ -137,8 +144,6 @@ export class NodejsAsset extends TerraformAsset {
       throw new Error(`Invalid Node.js target: ${props.target}`);
     }
 
-    // Output hashing needs a real build. Never reuse a source-only cache: imports,
-    // lockfiles, package exports, plugins and copied files can all change output.
     const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-nodejs-"));
     let archive: Buffer;
     try {
@@ -173,7 +178,6 @@ export class NodejsAsset extends TerraformAsset {
     }
 
     let uncompressedSize = 0;
-    // Read the ZIP directory without allocating or inflating the file contents.
     unzipSync(archive, {
       filter: (file) => {
         uncompressedSize += file.originalSize;
@@ -181,22 +185,72 @@ export class NodejsAsset extends TerraformAsset {
       },
     });
     const digest = createHash("sha256").update(archive).digest();
-    const assetHash = digest.toString("hex");
+    return {
+      archive,
+      handler: `index.${handler}`,
+      assetHash: digest.toString("hex"),
+      sourceCodeHash: digest.toString("base64"),
+      compressedSize: archive.byteLength,
+      uncompressedSize,
+    };
+  }
+}
+
+/** Source code to bundle into a deployable Node.js asset. */
+export interface NodejsAssetProps {
+  /** TypeScript or JavaScript entry file, relative to projectRoot. */
+  readonly entry: string;
+  /** Export to expose from the bundle. @default "handler" */
+  readonly handler?: string;
+  /** Root for relative paths. @default directory containing cdktf.json, or cwd */
+  readonly projectRoot?: string;
+  /** Node.js syntax target. @default "node24" */
+  readonly target?: string;
+  readonly bundling?: NodejsBundlingOptions;
+}
+
+/** A deterministic ZIP built by Rolldown and staged by TerraformAsset. */
+export class NodejsAsset extends TerraformAsset {
+  /** Lambda-compatible module and export, for example "index.handler". */
+  public readonly handler: string;
+  /** Base64 SHA-256 of the exact ZIP bytes, suitable for source_code_hash. */
+  public readonly sourceCodeHash: string;
+  /** Size of the complete ZIP in bytes. */
+  public readonly compressedSize: number;
+  /** Total size of all ZIP entries in bytes, including source maps and copied files. */
+  public readonly uncompressedSize: number;
+
+  constructor(scope: Construct, id: string, props: NodejsAssetProps) {
+    const projectRoot = resolveProjectRoot(scope, props.projectRoot);
+    validateBuildInput(props, "options", new Set(), (value) =>
+      Token.isUnresolved(value),
+    );
+    const bundle = new NodejsBundler().bundle({
+      entry: props.entry,
+      handler: props.handler,
+      projectRoot,
+      target: props.target,
+      bundling: props.bundling,
+    });
     // Keep immutable source artifacts within the app output, so repeated synths
     // can use TerraformAsset's normal staging without leaked temporary trees.
     const sourcePath = path.resolve(
       App.of(scope).outdir,
       ".nodejs-assets",
-      assetHash,
+      bundle.assetHash,
       "archive.zip",
     );
     fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
-    fs.writeFileSync(sourcePath, archive);
-    super(scope, id, { path: sourcePath, type: AssetType.FILE, assetHash });
-    this.handler = `index.${handler}`;
-    this.sourceCodeHash = digest.toString("base64");
-    this.compressedSize = archive.byteLength;
-    this.uncompressedSize = uncompressedSize;
+    fs.writeFileSync(sourcePath, bundle.archive);
+    super(scope, id, {
+      path: sourcePath,
+      type: AssetType.FILE,
+      assetHash: bundle.assetHash,
+    });
+    this.handler = bundle.handler;
+    this.sourceCodeHash = bundle.sourceCodeHash;
+    this.compressedSize = bundle.compressedSize;
+    this.uncompressedSize = bundle.uncompressedSize;
   }
 }
 
@@ -204,10 +258,11 @@ function validateBuildInput(
   value: unknown,
   name: string,
   parents = new Set<object>(),
+  isUnresolved: (value: unknown) => boolean = () => false,
 ): void {
-  if (Token.isUnresolved(value)) {
+  if (isUnresolved(value)) {
     throw new Error(
-      `Node.js build option ${name} contains an unresolved Terraform value. Build inputs must be known during synthesis. Pass deployment-time values through NodejsFunction.environment instead.`,
+      `Node.js build option ${name} contains an unresolved Terraform value. Build inputs must be known during synthesis. Pass deployment-time values to the consuming construct or resource instead.`,
     );
   }
   if (value === null || value === undefined) return;
@@ -231,8 +286,8 @@ function validateBuildInput(
     );
   parents.add(value);
   for (const [key, child] of Object.entries(value)) {
-    validateBuildInput(key, `${name} key`, parents);
-    validateBuildInput(child, `${name}.${key}`, parents);
+    validateBuildInput(key, `${name} key`, parents, isUnresolved);
+    validateBuildInput(child, `${name}.${key}`, parents, isUnresolved);
   }
   parents.delete(value);
 }

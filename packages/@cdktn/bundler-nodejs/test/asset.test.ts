@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { unzipSync } from "fflate";
 import { App, TerraformStack, TerraformVariable } from "cdktn";
-import { NodejsAsset, NodejsAssetProps } from "../src";
+import { NodejsAsset, NodejsAssetProps, NodejsBundler } from "../src";
 
 let root: string;
 beforeEach(() => {
@@ -64,6 +64,32 @@ function invoke(
     ),
   );
 }
+
+test("bundles without a construct or staging lifecycle", () => {
+  write(
+    "src/handler.ts",
+    "export const handler = ({name}: {name: string}) => `Hello ${name}`;",
+  );
+  const bundle = new NodejsBundler().bundle({
+    entry: "src/handler.ts",
+    projectRoot: root,
+    target: "node24",
+  });
+  const files = unzipSync(bundle.archive);
+
+  expect(invoke(files)).toBe("Hello Ada");
+  expect(bundle.handler).toBe("index.handler");
+  expect(bundle.assetHash).toBe(
+    createHash("sha256").update(bundle.archive).digest("hex"),
+  );
+  expect(bundle.sourceCodeHash).toBe(
+    createHash("sha256").update(bundle.archive).digest("base64"),
+  );
+  expect(bundle.compressedSize).toBe(bundle.archive.byteLength);
+  expect(bundle.uncompressedSize).toBe(
+    Object.values(files).reduce((total, file) => total + file.byteLength, 0),
+  );
+});
 
 test("bundles TypeScript, JSON, path aliases, CommonJS dependencies and Node builtins into an executable ESM ZIP", () => {
   write("package.json", '{"type":"module"}');
@@ -453,7 +479,9 @@ test.each<[string, (token: string) => Partial<NodejsAssetProps>]>([
     expect(() => synth(options(token))).toThrow(
       `Node.js build option options.${name} contains an unresolved Terraform value.`,
     );
-    expect(() => synth(options(token))).toThrow(/NodejsFunction.environment/);
+    expect(() => synth(options(token))).toThrow(
+      /consuming construct or resource/,
+    );
   },
 );
 

@@ -228,7 +228,7 @@ test("deployment-time values remain valid in runtime environment variables", () 
         ...props,
         bundling: { define: { API_URL: JSON.stringify(url) } },
       }),
-  ).toThrow(/NodejsFunction.environment/);
+  ).toThrow(/consuming construct or resource/);
 });
 
 test("validates options which cannot produce a Node.js function", () => {
