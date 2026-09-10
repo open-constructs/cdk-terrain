@@ -93,7 +93,12 @@ export async function convert({
   stack,
   experimentalProviderSchemaCachePath,
 }: any) {
-  await initializErrorReporting();
+  // Consent is read and persisted against the user's project before the
+  // conversion chdirs into a throwaway one.
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   await displayVersionMessage();
 
   const pkg = readPackageJson();
