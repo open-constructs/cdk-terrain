@@ -1,6 +1,6 @@
 {
   "language": "typescript",
-  "app": "npx ts-node main.ts",
+  "app": "npx tsx main.ts",
   "sendCrashReports": "false",
   "terraformProviders": [
     "aws@~> 5.0"

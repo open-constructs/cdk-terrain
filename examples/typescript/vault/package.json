@@ -30,7 +30,7 @@
     "@types/node": "22.20.1",
     "cdktn-cli": "workspace:*",
     "jest": "^30.3.0",
-    "ts-node": "10.9.1",
+    "tsx": "4.23.13",
     "typescript": "^5.0.0"
   }
 }
