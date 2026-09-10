@@ -306,8 +306,8 @@ describe("telemetry", () => {
     });
   });
 
-  // the bundle has one copy of this module per entry point: bin/cdktn.js
-  // captures the decision and starts the run, bin/cmds/handlers.js emits
+  // the bundle has one copy of this module per entry point: bin/cmds/handlers.js
+  // captures the decision and starts the run, bin/cdktn.js counts the failure
   describe("shared across module copies", () => {
     type Telemetry = typeof import("./telemetry");
     let second: Telemetry;
