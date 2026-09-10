@@ -12,8 +12,5 @@ allowBuilds:
   nx: true
   unrs-resolver: true
 
-minimumReleaseAgeExclude:
-  - knip@6.35.1
-
 overrides:
   '@types/react': 18.3.28
