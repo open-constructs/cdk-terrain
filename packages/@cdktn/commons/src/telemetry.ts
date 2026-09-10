@@ -58,6 +58,11 @@ export function getUsageTelemetryConsent(
 // re-reading cdktf.json at emission time would consult the wrong project.
 let usageTelemetryEnabledState: boolean | undefined;
 
+// The command this run was started as; set once by startCommandTelemetry so
+// a second reporting init (init runs get, provider add runs get) and the
+// operations a command drives (a deploy's synth) never count as runs.
+let startedCommand: string | undefined;
+
 export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
   usageTelemetryEnabledState = enabled;
 }
@@ -115,11 +120,59 @@ export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   }
 }
 
+// A run counts once as cli.command.invoked at start, then once as either
+// cli.command.completed (with the scalars known only at the end) or
+// cli.command.error; a nested operation (a deploy's synth) adds only its own.
+function commandAttributes(command: string, language: unknown): Attributes {
+  const ci: string | false = ciInfo.isCI ? ciInfo.name || "unknown" : false;
+  const attributes: Attributes = {
+    command,
+    ci: ci === false ? false : ci,
+  };
+  if (LANGUAGES.includes(language as any)) {
+    attributes.language = language as string;
+  }
+  return attributes;
+}
+
 /**
- * Emits a command's usage telemetry as Sentry metrics; payload fields reach
- * the attributes only through the allow-lists above. A silent no-op when
- * usage telemetry is disabled or Sentry is not initialized.
- * `payload.error` counts the run as `cli.command.error` by `errorType` instead.
+ * Counts the run as `cli.command.invoked` (an attempt, whatever its outcome).
+ * Called once consent is captured and Sentry initialized; later calls in the
+ * same process are no-ops.
+ */
+export async function startCommandTelemetry(
+  command: string,
+  projectPath = process.cwd(),
+): Promise<void> {
+  if (startedCommand !== undefined) {
+    return;
+  }
+  startedCommand = command;
+  try {
+    if (!isUsageTelemetryEnabled()) {
+      return;
+    }
+    const attributes = commandAttributes(
+      command,
+      readRawCdktfJson(projectPath).language,
+    );
+    Sentry.metrics.count("cli.command.invoked", 1, { attributes });
+  } catch (err) {
+    logger.debug(`Could not send telemetry data: ${err}`);
+  }
+}
+
+/** Forgets the started run; tests run many commands in one process. */
+export function resetCommandTelemetry(): void {
+  startedCommand = undefined;
+}
+
+/**
+ * Emits the usage telemetry of a finished command or operation as Sentry
+ * metrics; payload fields reach the attributes only through the allow-lists
+ * above. A silent no-op when usage telemetry is disabled or Sentry is not
+ * initialized. `payload.error` counts the run as `cli.command.error` by
+ * `errorType` instead.
  */
 export async function sendTelemetry(
   command: string,
@@ -130,14 +183,7 @@ export async function sendTelemetry(
       return;
     }
 
-    const ci: string | false = ciInfo.isCI ? ciInfo.name || "unknown" : false;
-    const attributes: Attributes = {
-      command,
-      ci: ci === false ? false : ci,
-    };
-    if (LANGUAGES.includes(payload.language)) {
-      attributes.language = payload.language;
-    }
+    const attributes = commandAttributes(command, payload.language);
 
     if (payload.error) {
       attributes.error_type = COMMAND_ERROR_TYPES.includes(payload.errorType)
@@ -147,7 +193,9 @@ export async function sendTelemetry(
       return;
     }
 
-    Sentry.metrics.count("cli.command.invoked", 1, { attributes });
+    if (startedCommand === undefined || startedCommand === command) {
+      Sentry.metrics.count("cli.command.completed", 1, { attributes });
+    }
     if (typeof payload.totalTime === "number") {
       Sentry.metrics.distribution("cli.synth.duration", payload.totalTime, {
         unit: "millisecond",
