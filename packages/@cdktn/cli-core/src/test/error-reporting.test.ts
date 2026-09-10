@@ -39,7 +39,7 @@ const ciInfoMock = ciInfo as unknown as { isCI: boolean };
 
 const initOptions = () => (Sentry.init as jest.Mock).mock.calls.at(-1)![0];
 
-describe("consent gating (initializErrorReporting)", () => {
+describe("Sentry init hardening", () => {
   let workdir: string;
   const originalCwd = process.cwd();
   const originalEnv = {
