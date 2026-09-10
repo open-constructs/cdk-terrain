@@ -11,6 +11,8 @@ import {
   resetCommandTelemetry,
   flushTelemetry,
   getUsageTelemetryConsent,
+  hasCapturedUsageTelemetryDecision,
+  isUsageTelemetryEnabled,
   setUsageTelemetryEnabled,
 } from "./telemetry";
 import { Errors } from "./errors";
@@ -146,13 +148,14 @@ describe("telemetry", () => {
         }
       }
       // the language comes from cdktf.json at start and from the payload
-      // at the end
+      // at the end; the error metric has no payload and reuses the start read
       expect(attributeValues(invoked).language).toBe("typescript");
       expect(attributeValues(completed).language).toBe("typescript");
       expect(duration.type).toBe("distribution");
       expect(duration.value).toBe(1234);
       expect(attributeValues(error)).toMatchObject({
         error_type: "unexpected",
+        language: "typescript",
       });
       expect(envelopeBodies.join("\n")).not.toContain("LEAK-ENV-SENTRY");
     });
@@ -300,6 +303,61 @@ describe("telemetry", () => {
       await Sentry.flush(2000);
 
       expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+  });
+
+  // the bundle has one copy of this module per entry point: bin/cdktn.js
+  // captures the decision and starts the run, bin/cmds/handlers.js emits
+  describe("shared across module copies", () => {
+    type Telemetry = typeof import("./telemetry");
+    let second: Telemetry;
+
+    beforeEach(() => {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        second = require("./telemetry");
+      });
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "go",
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+    });
+
+    it("observes the captured decision of the other copy", () => {
+      expect(second.hasCapturedUsageTelemetryDecision()).toBe(false);
+
+      setUsageTelemetryEnabled(false);
+      expect(second.hasCapturedUsageTelemetryDecision()).toBe(true);
+      expect(second.isUsageTelemetryEnabled()).toBe(false);
+
+      second.setUsageTelemetryEnabled(true);
+      expect(hasCapturedUsageTelemetryDecision()).toBe(true);
+      expect(isUsageTelemetryEnabled()).toBe(true);
+    });
+
+    it("observes the started command and its language from the other copy", async () => {
+      await startCommandTelemetry("deploy");
+      // the handlers' copy: a nested start is a no-op, only the run's own
+      // command completes, and the error carries the language read at start
+      await second.startCommandTelemetry("synth");
+      await second.sendTelemetry("synth", { language: "go" });
+      await second.sendTelemetry("deploy", { error: true, errorType: "Usage" });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.map((i) => [i.name, attributeValues(i).command])).toEqual([
+        ["cli.command.invoked", "deploy"],
+        ["cli.command.error", "deploy"],
+      ]);
+      expect(attributeValues(items[1]).language).toBe("go");
+
+      second.resetCommandTelemetry();
+      await startCommandTelemetry("get");
+      expect(await Sentry.flush(2000)).toBe(true);
+      expect(
+        parseMetricItems(envelopeBodies).map((i) => attributeValues(i).command),
+      ).toEqual(["deploy", "deploy", "get"]);
     });
   });
 

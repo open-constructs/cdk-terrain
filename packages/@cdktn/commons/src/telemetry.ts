@@ -6,6 +6,7 @@ import * as fs from "fs-extra";
 import ciInfo from "ci-info";
 import { logger } from "./logging";
 import { LANGUAGES } from "./config";
+import { processState } from "./process-state";
 
 type AttributeValue = string | number | boolean;
 type Attributes = Record<string, AttributeValue>;
@@ -53,18 +54,28 @@ export function getUsageTelemetryConsent(
     : cdktfJson.sendUsageTelemetry === "true";
 }
 
-// Captured by initializErrorReporting (cli-core) while still in the user's
-// cwd: `convert` chdirs into a throwaway project before emitting, so
-// re-reading cdktf.json at emission time would consult the wrong project.
-let usageTelemetryEnabledState: boolean | undefined;
+type CommandTelemetryState = {
+  // Captured by initializErrorReporting (cli-core) while still in the user's
+  // cwd: `convert` chdirs into a throwaway project before emitting, so
+  // re-reading cdktf.json at emission time would consult the wrong project.
+  usageTelemetryEnabled?: boolean;
+  // The command this run was started as; set once by startCommandTelemetry so
+  // a second reporting init (init runs get, provider add runs get) and the
+  // operations a command drives (a deploy's synth) never count as runs.
+  startedCommand?: string;
+  // The raw `language` of the project the run started in, so every metric of
+  // the run (the error metric has no payload) carries the one `invoked` did.
+  language?: unknown;
+};
 
-// The command this run was started as; set once by startCommandTelemetry so
-// a second reporting init (init runs get, provider add runs get) and the
-// operations a command drives (a deploy's synth) never count as runs.
-let startedCommand: string | undefined;
+// Set by the entrypoint's bundle copy, read by the handlers' copy.
+const state = processState<CommandTelemetryState>(
+  "cdktn.commandTelemetry",
+  () => ({}),
+);
 
 export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
-  usageTelemetryEnabledState = enabled;
+  state.usageTelemetryEnabled = enabled;
 }
 
 /**
@@ -73,7 +84,7 @@ export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
  * decision of a command (`convert`) that drives it inside a throwaway project.
  */
 export function hasCapturedUsageTelemetryDecision(): boolean {
-  return usageTelemetryEnabledState !== undefined;
+  return state.usageTelemetryEnabled !== undefined;
 }
 
 /**
@@ -85,8 +96,8 @@ export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
   if (process.env.CHECKPOINT_DISABLE) {
     return false;
   }
-  if (usageTelemetryEnabledState !== undefined) {
-    return usageTelemetryEnabledState;
+  if (state.usageTelemetryEnabled !== undefined) {
+    return state.usageTelemetryEnabled;
   }
   return getUsageTelemetryConsent(projectPath) !== false;
 }
@@ -144,18 +155,16 @@ export async function startCommandTelemetry(
   command: string,
   projectPath = process.cwd(),
 ): Promise<void> {
-  if (startedCommand !== undefined) {
+  if (state.startedCommand !== undefined) {
     return;
   }
-  startedCommand = command;
+  state.startedCommand = command;
+  state.language = readRawCdktfJson(projectPath).language;
   try {
     if (!isUsageTelemetryEnabled()) {
       return;
     }
-    const attributes = commandAttributes(
-      command,
-      readRawCdktfJson(projectPath).language,
-    );
+    const attributes = commandAttributes(command, state.language);
     Sentry.metrics.count("cli.command.invoked", 1, { attributes });
   } catch (err) {
     logger.debug(`Could not send telemetry data: ${err}`);
@@ -164,7 +173,8 @@ export async function startCommandTelemetry(
 
 /** Forgets the started run; tests run many commands in one process. */
 export function resetCommandTelemetry(): void {
-  startedCommand = undefined;
+  state.startedCommand = undefined;
+  state.language = undefined;
 }
 
 /**
@@ -183,7 +193,10 @@ export async function sendTelemetry(
       return;
     }
 
-    const attributes = commandAttributes(command, payload.language);
+    const attributes = commandAttributes(
+      command,
+      payload.language ?? state.language,
+    );
 
     if (payload.error) {
       attributes.error_type = COMMAND_ERROR_TYPES.includes(payload.errorType)
@@ -193,7 +206,10 @@ export async function sendTelemetry(
       return;
     }
 
-    if (startedCommand === undefined || startedCommand === command) {
+    if (
+      state.startedCommand === undefined ||
+      state.startedCommand === command
+    ) {
       Sentry.metrics.count("cli.command.completed", 1, { attributes });
     }
     if (typeof payload.totalTime === "number") {

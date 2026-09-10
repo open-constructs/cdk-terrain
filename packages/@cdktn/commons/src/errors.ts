@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/node";
 // telemetry.ts must never import this module: it would close a cycle through
 // terraform.ts and load errors.ts before the factories exist.
 import { CommandErrorType, sendErrorTelemetry } from "./telemetry";
+import { processState } from "./process-state";
 
 type ErrorType = "Internal" | "External" | "Usage";
 export function IsErrorType(error: any, type: ErrorType): boolean {
@@ -34,20 +35,17 @@ function reportPrefixedError(type: ErrorType) {
     err.stack = originalError.stack;
     // the scope is read here, not when the factory is created, so the
     // command set by setScope is the one counted
-    sendErrorTelemetry(type, scopeStore().scope);
+    sendErrorTelemetry(type, scopeState.scope);
     return err;
   };
 }
 
 // The CLI only deals with one command at a time, so we can just use the same
-// scope for all errors and set it once during initialization. The bundle
-// carries one copy of this module per entry point (bin/cdktn.js sets the
-// scope, bin/cmds/handlers.js counts under it), so it lives on globalThis.
-const SCOPE_KEY = Symbol.for("cdktn.errorScope");
-function scopeStore(): { scope: string } {
-  const globals = globalThis as { [SCOPE_KEY]?: { scope: string } };
-  return (globals[SCOPE_KEY] ??= { scope: "unknown" });
-}
+// scope for all errors and set it once during initialization (bin/cdktn.js
+// sets it, the bundle copy in bin/cmds/handlers.js counts under it).
+const scopeState = processState("cdktn.errorScope", () => ({
+  scope: "unknown",
+}));
 export const Errors = {
   // Error within our control
   Internal: reportPrefixedError("Internal"),
@@ -58,11 +56,11 @@ export const Errors = {
 
   // Set the scope for all errors
   setScope(scope: string) {
-    scopeStore().scope = scope;
+    scopeState.scope = scope;
     Sentry.getCurrentScope().setTransactionName(scope);
   },
 
   getScope(): string {
-    return scopeStore().scope;
+    return scopeState.scope;
   },
 };
