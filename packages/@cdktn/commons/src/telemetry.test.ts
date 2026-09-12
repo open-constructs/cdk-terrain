@@ -10,12 +10,22 @@ import {
   startCommandTelemetry,
   resetCommandTelemetry,
   flushTelemetry,
+  getBinaryAttributes,
+  getProjectTargetAttributes,
   getUsageTelemetryConsent,
   hasCapturedUsageTelemetryDecision,
   isUsageTelemetryEnabled,
+  setProjectTargetAttributes,
   setUsageTelemetryEnabled,
 } from "./telemetry";
+import { seedTerraformCliProbeForTests } from "./terraform";
+import { DEFAULT_TARGET_VERSIONS } from "./config";
 import { Errors } from "./errors";
+
+const DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES = {
+  target_terraform: DEFAULT_TARGET_VERSIONS.terraform,
+  target_opentofu: DEFAULT_TARGET_VERSIONS.opentofu,
+};
 
 // A real client with a capturing transport proves the metric envelope
 // reaches the transport and survives a bounded flush; a mocked @sentry/node
@@ -85,11 +95,18 @@ describe("telemetry", () => {
     envelopeBodies = [];
     delete process.env.CHECKPOINT_DISABLE;
     delete process.env.SENTRY_ENVIRONMENT;
+    // the probe is process-global (see terraform.ts); a seeded output keeps
+    // the binary attributes independent of the machine running the tests
+    seedTerraformCliProbeForTests(
+      Promise.resolve("Terraform v1.9.0\non darwin_arm64\n"),
+    );
   });
 
   afterEach(async () => {
     setUsageTelemetryEnabled(undefined);
     resetCommandTelemetry();
+    setProjectTargetAttributes(undefined);
+    seedTerraformCliProbeForTests();
     await Sentry.close(1000);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
@@ -106,10 +123,12 @@ describe("telemetry", () => {
   });
 
   describe("sendTelemetry delivery (real client + capturing transport)", () => {
-    it("stamps environment attributes on every command metric", async () => {
+    it("stamps environment, binary and target attributes on every command metric", async () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         language: "typescript",
         sendUsageTelemetry: true,
+        targetVersions: { terraform: ">=1.9.0", opentofu: ">=1.8.0" },
+        validateInstalledBinary: true,
       });
       process.env.SENTRY_ENVIRONMENT = "LEAK-ENV-SENTRY";
       initSentryWithCapturingTransport();
@@ -131,7 +150,14 @@ describe("telemetry", () => {
       for (const metric of items) {
         const values = attributeValues(metric);
         expect(values).toMatchObject({
-          command: "synth",
+          os: process.platform,
+          arch: process.arch,
+          binary: "terraform",
+          binary_version: "1.9.0",
+          target_terraform: ">=1.9.0",
+          target_opentofu: ">=1.8.0",
+          targets_declared: true,
+          validate_installed_binary: true,
           ci: ciInfo.isCI ? ciInfo.name || "unknown" : false,
           // the SDK stamps the release set in Sentry.init on every metric,
           // so the CLI version needs no attribute of its own
@@ -158,6 +184,32 @@ describe("telemetry", () => {
         language: "typescript",
       });
       expect(envelopeBodies.join("\n")).not.toContain("LEAK-ENV-SENTRY");
+    });
+
+    it("uses the target attributes captured at command start over the current cwd", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { terraform: ">=1.0.0" },
+      });
+      initSentryWithCapturingTransport();
+      setProjectTargetAttributes({
+        targets_declared: true,
+        validate_installed_binary: false,
+        target_opentofu: ">=1.7.0",
+      });
+
+      await startCommandTelemetry("convert");
+      await sendTelemetry("convert", {});
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.map((i) => i.name)).toEqual([
+        "cli.command.invoked",
+        "cli.command.completed",
+      ]);
+      for (const metric of items) {
+        expect(metric.attributes.target_opentofu.value).toBe(">=1.7.0");
+        expect(metric.attributes.target_terraform).toBeUndefined();
+      }
     });
 
     it.each([
@@ -211,6 +263,60 @@ describe("telemetry", () => {
         expect(body).not.toContain(workdir);
       }
     });
+
+    it("forwards exactly the allow-listed attribute set and nothing else from the payload", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+
+      await startCommandTelemetry("synth");
+      await sendTelemetry("synth", {
+        totalTime: 5,
+        language: "typescript",
+        stackMetadata: [{ stackName: "prod-vpc", backend: "s3" }],
+        requiredProviders: [{ aws: { source: "aws" } }],
+        stackName: "prod-vpc",
+        outdir: "/Users/x/secret",
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const invoked = items.find((i) => i.name === "cli.command.invoked")!;
+      const completed = items.find((i) => i.name === "cli.command.completed")!;
+      const keys = Object.keys(invoked.attributes);
+      // the start and end metrics carry the same base set
+      expect(Object.keys(completed.attributes).sort()).toEqual(
+        [...keys].sort(),
+      );
+      // the one place that fails when an attribute is added: extend it
+      // deliberately, together with the collected-data list in the docs
+      expect(keys.filter((key) => !key.startsWith("sentry.")).sort()).toEqual([
+        "arch",
+        "binary",
+        "binary_version",
+        "ci",
+        "command",
+        "language",
+        "os",
+        // server.address is the fixed serverName from init
+        "server.address",
+        "target_opentofu",
+        "target_terraform",
+        "targets_declared",
+        "validate_installed_binary",
+      ]);
+      // stamped by the SDK from init; a patch bump may add more of them
+      expect(keys).toEqual(
+        expect.arrayContaining(["sentry.release", "sentry.environment"]),
+      );
+      expect(invoked.attributes.binary_version.value).toBe("1.9.0");
+      expect(invoked.attributes["server.address"].value).toBe("cdktn-cli");
+      const bytes = envelopeBodies.join("\n");
+      expect(bytes).not.toContain("prod-vpc");
+      expect(bytes).not.toContain("/Users/x/secret");
+    });
   });
 
   describe("attribute validation", () => {
@@ -242,6 +348,35 @@ describe("telemetry", () => {
       )!;
       expect(invoked.attributes).not.toHaveProperty("language");
       expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
+    });
+
+    it("sends declared targets that are not semver ranges as invalid", () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { terraform: "latest /Users/x", opentofu: ">=1.8" },
+      });
+      expect(getProjectTargetAttributes(workdir)).toMatchObject({
+        target_terraform: "invalid",
+        target_opentofu: ">=1.8.0",
+      });
+    });
+
+    it.each([
+      [">= 1.9.0", ">=1.9.0"],
+      ["~1.8", ">=1.8.0 <1.9.0-0"],
+      ["1.2.3 - 2.0.0", ">=1.2.3 <=2.0.0"],
+      [">=1.0.0 <2.0.0 || 1.2.3", ">=1.0.0 <2.0.0||1.2.3"],
+      [">= 1.0.0-LEAK-TV-PRERELEASE.corp.example.com", "invalid"],
+      ["1.2.3-acme.internal", "invalid"],
+      ["1.2.3+LEAK-TV-BUILD.johns-macbook", "invalid"],
+      [">=1.0.0 <2.0.0 || 1.2.3-LEAK-OR.host", "invalid"],
+      [">=1.0.0 " + "||1.0.0 ".repeat(10), "invalid"],
+    ])("forwards the declared target %p as %p", (range, expected) => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { terraform: range },
+      });
+      expect(getProjectTargetAttributes(workdir).target_terraform).toBe(
+        expected,
+      );
     });
   });
 
@@ -359,6 +494,25 @@ describe("telemetry", () => {
         parseMetricItems(envelopeBodies).map((i) => attributeValues(i).command),
       ).toEqual(["deploy", "deploy", "get"]);
     });
+
+    it("stamps the target attributes captured by the other copy", async () => {
+      setProjectTargetAttributes({
+        targets_declared: true,
+        validate_installed_binary: true,
+        target_opentofu: ">=1.7.0",
+      });
+      await second.sendTelemetry("convert", {});
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const [completed] = parseMetricItems(envelopeBodies);
+      expect(attributeValues(completed)).toMatchObject({
+        command: "convert",
+        targets_declared: true,
+        validate_installed_binary: true,
+        target_opentofu: ">=1.7.0",
+      });
+      expect(completed.attributes.target_terraform).toBeUndefined();
+    });
   });
 
   // no DSN means no client: every emitter must stay a silent no-op rather
@@ -375,7 +529,9 @@ describe("telemetry", () => {
       expect(Sentry.getClient()).toBeUndefined();
 
       await expect(
-        sendTelemetry("deploy", { language: "typescript" }),
+        sendTelemetry("deploy", {
+          requiredProviders: [{ aws: { source: "aws" } }],
+        }),
       ).resolves.toBeUndefined();
       expect(() => Errors.Internal("boom")).not.toThrow();
       await expect(flushTelemetry(100)).resolves.toBeUndefined();
@@ -470,6 +626,79 @@ describe("telemetry", () => {
       expect(Errors.getScope()).toBe("unknown");
       Errors.setScope("provider add");
       expect(Errors.getScope()).toBe("provider add");
+    });
+  });
+
+  describe("getBinaryAttributes", () => {
+    it.each([
+      ["1.10.0-alpha20250101", "1.10.0"],
+      ["1.2.3-LEAK-WRAPPER-hostname.corp.example.com+LEAK-BUILD", "1.2.3"],
+      ["9.9.9-LEAK-UNKNOWN/Users/x/LEAK-SECRET-DIR", "9.9.9"],
+    ])(
+      "reduces the probed version %p to its release %p",
+      async (version, release) => {
+        await expect(
+          getBinaryAttributes(Promise.resolve({ name: "terraform", version })),
+        ).resolves.toEqual({ binary: "terraform", binary_version: release });
+      },
+    );
+
+    it("omits binary_version when the probed version has no release prefix", async () => {
+      await expect(
+        getBinaryAttributes(
+          Promise.resolve({ name: "opentofu", version: "v1.2" }),
+        ),
+      ).resolves.toEqual({ binary: "opentofu" });
+    });
+
+    it("sends no version for an unrecognised product: a wrapper's output has no product version line", async () => {
+      seedTerraformCliProbeForTests(
+        Promise.resolve(
+          "connected to 10.0.0.1 as LEAK-USER (wrapper 3.4.5)\nTerraform v1.9.0\n",
+        ),
+      );
+      const attributes = await getBinaryAttributes();
+      expect(attributes).toEqual({ binary: "unknown" });
+      expect(JSON.stringify(attributes)).not.toContain("10.0.0");
+    });
+
+    it("reports unknown when the probe does not settle in time", async () => {
+      // a hung or interactive `terraform version` must never delay a
+      // command; the race has a 1500 ms ceiling in production
+      const hung = new Promise<never>(() => {});
+      await expect(getBinaryAttributes(hung, 10)).resolves.toEqual({
+        binary: "unknown",
+      });
+    });
+  });
+
+  describe("getProjectTargetAttributes", () => {
+    it("reads declared targets and the validation flag", () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        targetVersions: { opentofu: "~1.8" },
+        validateInstalledBinary: true,
+      });
+      expect(getProjectTargetAttributes(workdir)).toEqual({
+        targets_declared: true,
+        validate_installed_binary: true,
+        target_opentofu: ">=1.8.0 <1.9.0-0",
+      });
+    });
+
+    it.each([[{}], [{ targetVersions: "nope" }], [{ targetVersions: [] }]])(
+      "falls back to the defaults for %j",
+      (config) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
+        expect(getProjectTargetAttributes(workdir)).toEqual({
+          targets_declared: false,
+          validate_installed_binary: false,
+          ...DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES,
+        });
+      },
+    );
+
+    it("does not throw without a cdktf.json", () => {
+      expect(getProjectTargetAttributes(workdir).targets_declared).toBe(false);
     });
   });
 
