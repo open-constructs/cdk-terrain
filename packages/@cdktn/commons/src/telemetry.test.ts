@@ -10,6 +10,12 @@ import {
   startCommandTelemetry,
   resetCommandTelemetry,
   flushTelemetry,
+  normalizeBackendKind,
+  normalizeProviderConstraint,
+  classifyModuleSource,
+  classifyProviderBinding,
+  getGeneratedProviderSources,
+  normalizeProviderSource,
   getBinaryAttributes,
   getProjectTargetAttributes,
   getUsageTelemetryConsent,
@@ -135,7 +141,7 @@ describe("telemetry", () => {
 
       await startCommandTelemetry("synth");
       await sendTelemetry("synth", { totalTime: 1234, language: "typescript" });
-      await sendTelemetry("synth", { error: true });
+      await sendTelemetry("synth", { error: true, synthOrigin: "watch" });
       expect(await Sentry.flush(2000)).toBe(true);
 
       const items = parseMetricItems(envelopeBodies);
@@ -182,6 +188,7 @@ describe("telemetry", () => {
       expect(attributeValues(error)).toMatchObject({
         error_type: "unexpected",
         language: "typescript",
+        synth_origin: "watch",
       });
       expect(envelopeBodies.join("\n")).not.toContain("LEAK-ENV-SENTRY");
     });
@@ -275,6 +282,7 @@ describe("telemetry", () => {
       await sendTelemetry("synth", {
         totalTime: 5,
         language: "typescript",
+        synthOrigin: "watch",
         stackMetadata: [{ stackName: "prod-vpc", backend: "s3" }],
         requiredProviders: [{ aws: { source: "aws" } }],
         stackName: "prod-vpc",
@@ -285,10 +293,11 @@ describe("telemetry", () => {
       const items = parseMetricItems(envelopeBodies);
       const invoked = items.find((i) => i.name === "cli.command.invoked")!;
       const completed = items.find((i) => i.name === "cli.command.completed")!;
-      const keys = Object.keys(invoked.attributes);
-      // the start and end metrics carry the same base set
-      expect(Object.keys(completed.attributes).sort()).toEqual(
-        [...keys].sort(),
+      const keys = Object.keys(completed.attributes);
+      // the start metric carries the base set; the end-of-run scalars ride
+      // on completed only
+      expect(Object.keys(invoked.attributes).sort()).toEqual(
+        keys.filter((key) => key !== "synth_origin").sort(),
       );
       // the one place that fails when an attribute is added: extend it
       // deliberately, together with the collected-data list in the docs
@@ -302,6 +311,7 @@ describe("telemetry", () => {
         "os",
         // server.address is the fixed serverName from init
         "server.address",
+        "synth_origin",
         "target_opentofu",
         "target_terraform",
         "targets_declared",
@@ -311,12 +321,381 @@ describe("telemetry", () => {
       expect(keys).toEqual(
         expect.arrayContaining(["sentry.release", "sentry.environment"]),
       );
-      expect(invoked.attributes.binary_version.value).toBe("1.9.0");
-      expect(invoked.attributes["server.address"].value).toBe("cdktn-cli");
+      expect(completed.attributes.binary_version.value).toBe("1.9.0");
+      expect(completed.attributes["server.address"].value).toBe("cdktn-cli");
       const bytes = envelopeBodies.join("\n");
       expect(bytes).not.toContain("prod-vpc");
       expect(bytes).not.toContain("/Users/x/secret");
     });
+  });
+
+  describe("sendTelemetry payload mapping", () => {
+    beforeEach(() => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+      });
+      initSentryWithCapturingTransport();
+    });
+
+    it.each([
+      [
+        "convert",
+        { numberOfProviders: 2, numberOfModules: 1, convertedLines: 42 },
+        { provider_count: 2, module_count: 1, converted_lines: 42 },
+      ],
+      [
+        "init",
+        { template: "go", isRemote: false },
+        { template: "go", is_remote: false },
+      ],
+      ["synth", { synthOrigin: "watch" }, { synth_origin: "watch" }],
+    ])(
+      "maps the %s scalars %j to the attributes %j of cli.command.completed",
+      async (command, payload, expected) => {
+        await sendTelemetry(command, payload);
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const completed = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.command.completed",
+        )!;
+        expect(attributeValues(completed)).toMatchObject(expected);
+      },
+    );
+
+    it("forwards only allow-listed scalars: an unknown object-valued key is never serialized", async () => {
+      await sendTelemetry("convert", {
+        language: "python",
+        convertedLines: 42,
+        resources: { aws: { s3_bucket: 3 } },
+        data: { aws: { caller_identity: 1 } },
+        somethingElse: "not listed",
+        error: false,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const completed = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.completed",
+      )!;
+      const values = attributeValues(completed);
+      expect(values).toMatchObject({ language: "python", converted_lines: 42 });
+      expect(values).not.toHaveProperty("resources");
+      expect(values).not.toHaveProperty("data");
+      expect(values).not.toHaveProperty("somethingElse");
+      expect(values).not.toHaveProperty("error");
+      expect(JSON.stringify(values)).not.toContain("s3_bucket");
+    });
+
+    it("counts get targets per provider/module and puts only totals on the command metric", async () => {
+      await sendTelemetry("get", {
+        language: "typescript",
+        targets: [
+          { type: "provider", source: "registry.terraform.io/hashicorp/aws" },
+          { type: "provider", source: "Kreuzwerker/Docker" },
+          { type: "module", source: "terraform-aws-modules/vpc/aws" },
+          { type: "module", source: "./modules/secret-name" },
+        ],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const completed = items.find((i) => i.name === "cli.command.completed")!;
+      expect(attributeValues(completed)).toMatchObject({
+        provider_count: 2,
+        module_count: 2,
+      });
+      expect(completed.attributes).not.toHaveProperty("targets");
+
+      const providers = items
+        .filter((i) => i.name === "cli.get.provider")
+        .map((i) => attributeValues(i).provider);
+      expect(providers).toEqual(["hashicorp/aws", "kreuzwerker/docker"]);
+
+      const modules = items
+        .filter((i) => i.name === "cli.get.module")
+        .map((i) => attributeValues(i).module);
+      expect(modules).toEqual(["terraform-aws-modules/vpc/aws", "local"]);
+      expect(JSON.stringify(items)).not.toContain("secret-name");
+    });
+
+    it("counts init providers per provider and puts only the total on the command metric", async () => {
+      await sendTelemetry("init", {
+        language: "go",
+        projectId: "should-not-be-sent",
+        addedProviders: ["aws@~>5.0", "hashicorp/random"],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const completed = items.find((i) => i.name === "cli.command.completed")!;
+      expect(attributeValues(completed).provider_count).toBe(2);
+      expect(completed.attributes).not.toHaveProperty("projectId");
+      expect(
+        items
+          .filter((i) => i.name === "cli.init.provider")
+          .map((i) => attributeValues(i).provider),
+      ).toEqual(["hashicorp/aws", "hashicorp/random"]);
+    });
+  });
+
+  describe("stack metrics", () => {
+    // one JSON-synthesized stack the way the library writes it: metadata
+    // carries the stack name and resource ids (imports/moved), overrides
+    // are keyed by schema type, module overrides by source
+    const stackMetadata = [
+      {
+        version: "0.21.0",
+        stackName: "SECRET-STACK-NAME",
+        backend: "s3",
+        overrides: {
+          stack: ["terraform.required_version"],
+          aws_s3_bucket: ["tags", "region"],
+          "module.../secret-path/vpc": ["providers"],
+        },
+        imports: { aws_s3_bucket: ["secret-resource-id"] },
+        moved: {
+          aws_s3_bucket: ["secret-resource-id"],
+          aws_iam_role: ["secret-resource-id"],
+        },
+      },
+      {
+        version: "0.21.0",
+        stackName: "SECRET-STACK-NAME-2",
+        backend: "remote",
+        cloud: "tfc",
+      },
+    ];
+    const requiredProviders = [
+      {
+        aws: { source: "aws", version: "~> 5.0" },
+        docker: {
+          source: "registry.terraform.io/kreuzwerker/docker",
+          version: "3.0.2",
+        },
+        google: { source: "hashicorp/google", version: "x".repeat(100) },
+      },
+      {
+        random: { source: "hashicorp/random" },
+        vault: {
+          source: "tfe.corp.example.com/acme-org/vault",
+          version: "~> 3.0",
+        },
+      },
+    ];
+
+    beforeEach(() => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: true,
+        terraformProviders: [
+          "aws@~>5.0",
+          { name: "docker", source: "kreuzwerker/docker", version: "3.0.2" },
+        ],
+      });
+      initSentryWithCapturingTransport();
+    });
+
+    it("counts one cli.stack per stack with backend, cloud, library version and group sizes", async () => {
+      await sendTelemetry("deploy", {
+        language: "typescript",
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 0,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const stacks = items
+        .filter((i) => i.name === "cli.stack")
+        .map(attributeValues);
+      expect(stacks).toHaveLength(2);
+      expect(stacks[0]).toMatchObject({
+        command: "deploy",
+        language: "typescript",
+        backend: "s3",
+        cloud: false,
+        library_version: "0.21.0",
+        override_count: 4,
+        import_count: 1,
+        moved_count: 2,
+        os: process.platform,
+        "sentry.release": "cdktn-cli-test",
+      });
+      expect(stacks[1]).toMatchObject({
+        backend: "remote",
+        cloud: true,
+        override_count: 0,
+        import_count: 0,
+        moved_count: 0,
+      });
+      expect(items.some((i) => i.name === "cli.stack.failed")).toBe(false);
+      expect(items.some((i) => i.name === "cli.command.completed")).toBe(true);
+    });
+
+    it("counts overrides per resource type, reducing module sources to their kind", async () => {
+      await sendTelemetry("synth", { stackMetadata, requiredProviders });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const overrides = parseMetricItems(envelopeBodies)
+        .filter((i) => i.name === "cli.stack.override")
+        .map((i) => {
+          const { resource_type, override_count } = attributeValues(i);
+          return [resource_type, override_count];
+        });
+      expect(overrides).toEqual([
+        ["stack", 1],
+        ["aws_s3_bucket", 2],
+        ["module.local", 1],
+      ]);
+    });
+
+    it("counts required providers with normalized source, validated constraint and binding", async () => {
+      await sendTelemetry("diff", { stackMetadata, requiredProviders });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const providers = parseMetricItems(envelopeBodies)
+        .filter((i) => i.name === "cli.stack.provider")
+        .map(attributeValues);
+      expect(providers.map((p) => p.provider)).toEqual([
+        "hashicorp/aws",
+        "kreuzwerker/docker",
+        "hashicorp/google",
+        "hashicorp/random",
+        "private-registry",
+      ]);
+      expect(providers.map((p) => p.binding)).toEqual([
+        "generated",
+        "generated",
+        "prebuilt",
+        "prebuilt",
+        "prebuilt",
+      ]);
+      expect(providers[0].version_constraint).toBe("~> 5.0");
+      expect(providers[2].version_constraint).toBe("invalid");
+      expect(providers[3]).not.toHaveProperty("version_constraint");
+    });
+
+    it("counts failed stacks and never serializes their failure messages", async () => {
+      await sendTelemetry("destroy", {
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 2,
+        failedStacks: ["failed to destroy SECRET-STACK-NAME: /Users/x/state"],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const failed = items.find((i) => i.name === "cli.stack.failed")!;
+      expect(failed.value).toBe(2);
+      expect(failed.attributes.command.value).toBe("destroy");
+      // the failure thrown next is counted as cli.command.error, not here
+      expect(items.some((i) => i.name === "cli.command.completed")).toBe(false);
+      expect(envelopeBodies.join("\n")).not.toContain("failed to destroy");
+      expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
+    });
+
+    it("never serializes stack names, resource ids or module paths", async () => {
+      await sendTelemetry("deploy", {
+        language: "typescript",
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 1,
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const overrideCount = Object.keys(stackMetadata[0].overrides!).length;
+      const providerCount = requiredProviders.reduce(
+        (total, providers) => total + Object.keys(providers).length,
+        0,
+      );
+      // one cli.stack per stack, one override / provider metric per entry,
+      // plus the single cli.stack.failed count
+      expect(items.filter((i) => i.name.startsWith("cli.stack")).length).toBe(
+        stackMetadata.length + overrideCount + providerCount + 1,
+      );
+      for (const item of items) {
+        for (const forbidden of [
+          "stackName",
+          "stack_name",
+          "imports",
+          "moved",
+        ]) {
+          expect(item.attributes).not.toHaveProperty(forbidden);
+        }
+      }
+      const bytes = envelopeBodies.join("\n");
+      expect(bytes).not.toContain("SECRET-STACK-NAME");
+      expect(bytes).not.toContain("secret-resource-id");
+      expect(bytes).not.toContain("secret-path");
+      expect(bytes).not.toContain("tfe.corp.example.com");
+      expect(bytes).not.toContain("acme-org");
+    });
+
+    it("emits no cli.stack.* metric when usage telemetry is off", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: false,
+      });
+
+      await sendTelemetry("deploy", {
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 1,
+      });
+      await Sentry.flush(2000);
+
+      expect(parseMetricItems(envelopeBodies)).toHaveLength(0);
+    });
+
+    // a throw inside a payload handler is swallowed by sendTelemetry's catch
+    // and would skip the command metric for the whole run
+    it("tolerates malformed metadata entries and counts only the real stacks", async () => {
+      await sendTelemetry("synth", {
+        stackMetadata: [null, "nope", { overrides: "nope", imports: [] }],
+        requiredProviders: [undefined, undefined, { aws: "nope" }],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      // only the one object entry is a stack
+      expect(items.filter((i) => i.name === "cli.stack")).toHaveLength(1);
+      expect(items.filter((i) => i.name === "cli.stack.override")).toHaveLength(
+        0,
+      );
+      const provider = items.find((i) => i.name === "cli.stack.provider")!;
+      expect(attributeValues(provider)).toMatchObject({
+        provider: "hashicorp/aws",
+        binding: "generated",
+      });
+      expect(items.some((i) => i.name === "cli.command.completed")).toBe(true);
+    });
+
+    it.each([
+      ["init", { addedProviders: [null, 42, "aws"] }, "cli.init.provider"],
+      [
+        "get",
+        {
+          targets: [{ type: "provider" }, null, { type: "module", source: 7 }],
+        },
+        "cli.get.provider",
+      ],
+    ])(
+      "still counts the %s command with malformed %j entries",
+      async (command, payload, metric) => {
+        await sendTelemetry(command, payload);
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const items = parseMetricItems(envelopeBodies);
+        const completed = items.find(
+          (i) => i.name === "cli.command.completed",
+        )!;
+        expect(completed).toBeDefined();
+        expect(items.filter((i) => i.name === metric)).toHaveLength(
+          command === "init" ? 1 : 0,
+        );
+        expect(attributeValues(completed).provider_count).toBe(
+          command === "init" ? 1 : 0,
+        );
+      },
+    );
   });
 
   describe("attribute validation", () => {
@@ -350,6 +729,33 @@ describe("telemetry", () => {
       expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
     });
 
+    it.each([
+      ["synth", { synthOrigin: "watch" }, "synth_origin", "watch"],
+      ["synth", { synthOrigin: "/Users/x" }, "synth_origin", undefined],
+      ["init", { isRemote: true }, "is_remote", true],
+      ["init", { isRemote: "true" }, "is_remote", undefined],
+      ["init", { template: "go" }, "template", "go"],
+      ["init", { template: 7 }, "template", undefined],
+      ["convert", { convertedLines: 42 }, "converted_lines", 42],
+      ["convert", { convertedLines: "42" }, "converted_lines", undefined],
+      ["convert", { convertedLines: NaN }, "converted_lines", undefined],
+    ])(
+      "%s: %j forwards %s as %j",
+      async (command, payload, attribute, expected) => {
+        await sendTelemetry(command, payload);
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const completed = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.command.completed",
+        )!;
+        if (expected === undefined) {
+          expect(completed.attributes).not.toHaveProperty(attribute);
+        } else {
+          expect(attributeValues(completed)[attribute]).toBe(expected);
+        }
+      },
+    );
+
     it("sends declared targets that are not semver ranges as invalid", () => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
         targetVersions: { terraform: "latest /Users/x", opentofu: ">=1.8" },
@@ -377,6 +783,223 @@ describe("telemetry", () => {
       expect(getProjectTargetAttributes(workdir).target_terraform).toBe(
         expected,
       );
+    });
+
+    it.each([
+      ["~> 5.0", "~> 5.0"],
+      ["latest /Users/x", "invalid"],
+    ])(
+      "delivers the provider constraint %p as %p",
+      async (version, expected) => {
+        await sendTelemetry("synth", {
+          stackMetadata: [{}],
+          requiredProviders: [{ aws: { source: "aws", version } }],
+        });
+        expect(await Sentry.flush(2000)).toBe(true);
+
+        const provider = parseMetricItems(envelopeBodies).find(
+          (i) => i.name === "cli.stack.provider",
+        )!;
+        expect(attributeValues(provider).version_constraint).toBe(expected);
+      },
+    );
+
+    it("reduces a backend outside the built-in kinds and override keys outside the type grammar to other", async () => {
+      await sendTelemetry("synth", {
+        stackMetadata: [
+          {
+            version: "0.21.0+build." + "x".repeat(40),
+            backend: "s3 bucket=/Users/x/state",
+            overrides: {
+              aws_s3_bucket: ["tags"],
+              terraform_remote_state: ["backend"],
+              "module.terraform-aws-modules/vpc/aws": ["providers"],
+              "resource with spaces /Users/x": ["tags"],
+              AWS_S3_Bucket: ["tags"],
+              ["aws_" + "x".repeat(70)]: ["tags"],
+            },
+          },
+          { version: "dev-/Users/x", backend: "S3" },
+        ],
+      });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      const stacks = items
+        .filter((i) => i.name === "cli.stack")
+        .map(attributeValues);
+      // build metadata is stripped like binary_version; a version without a
+      // MAJOR.MINOR.PATCH prefix yields no attribute at all
+      expect(stacks[0]).toMatchObject({
+        backend: "other",
+        library_version: "0.21.0",
+      });
+      expect(stacks[1]).toMatchObject({ backend: "other" });
+      expect(stacks[1]).not.toHaveProperty("library_version");
+      expect(
+        items
+          .filter((i) => i.name === "cli.stack.override")
+          .map((i) => attributeValues(i).resource_type),
+      ).toEqual([
+        "aws_s3_bucket",
+        "terraform_remote_state",
+        "module.terraform-aws-modules/vpc/aws",
+        "other",
+        "other",
+        "other",
+      ]);
+      expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
+    });
+
+    it("delivers a built-in backend kind as-is", async () => {
+      await sendTelemetry("synth", { stackMetadata: [{ backend: "gcs" }] });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      expect(
+        attributeValues(
+          parseMetricItems(envelopeBodies).find((i) => i.name === "cli.stack")!,
+        ).backend,
+      ).toBe("gcs");
+    });
+  });
+
+  describe("provider binding classification", () => {
+    it("reads string and object terraformProviders entries as identities", () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        terraformProviders: [
+          "aws@~>5.0",
+          "hashicorp/random@3.6.0",
+          "registry.terraform.io/kreuzwerker/docker",
+          { name: "google", source: "hashicorp/google", version: "~> 5.0" },
+          { name: "azurerm" },
+          { version: "1.0.0" },
+          42,
+          "TFE.corp.example.com/acme-org/vault@~>3.0",
+        ],
+      });
+      expect(getGeneratedProviderSources(workdir)).toEqual([
+        "hashicorp/aws",
+        "hashicorp/random",
+        "kreuzwerker/docker",
+        "hashicorp/google",
+        "hashicorp/azurerm",
+        "tfe.corp.example.com/acme-org/vault",
+      ]);
+    });
+
+    it.each([[{}], [{ terraformProviders: "aws" }]])(
+      "returns no sources for %j",
+      (config) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
+        expect(getGeneratedProviderSources(workdir)).toEqual([]);
+      },
+    );
+
+    it("returns no sources without a cdktf.json", () => {
+      expect(getGeneratedProviderSources(workdir)).toEqual([]);
+    });
+
+    it.each([
+      ["aws", "generated"],
+      ["registry.terraform.io/hashicorp/aws", "generated"],
+      ["Hashicorp/AWS", "generated"],
+      ["kreuzwerker/docker", "generated"],
+      ["hashicorp/google", "prebuilt"],
+      ["tfe.corp.example.com/acme-org/vault", "generated"],
+      // another private source is not the generated one, even though both
+      // reach the metric as "private-registry"
+      ["tfe.corp.example.com/other-org/vault", "prebuilt"],
+      ["./leak-provider", "prebuilt"],
+    ])("classifies %s as %s", (source, expected) => {
+      const generated = [
+        "hashicorp/aws",
+        "kreuzwerker/docker",
+        "tfe.corp.example.com/acme-org/vault",
+      ];
+      expect(classifyProviderBinding(source, generated)).toBe(expected);
+    });
+  });
+
+  describe("source normalization", () => {
+    it.each([
+      ["aws", "hashicorp/aws"],
+      ["aws@~>5.0", "hashicorp/aws"],
+      ["Hashicorp/AWS@5.1.0", "hashicorp/aws"],
+      ["registry.terraform.io/hashicorp/aws", "hashicorp/aws"],
+      ["registry.opentofu.org/hashicorp/aws", "hashicorp/aws"],
+      ["kreuzwerker/docker", "kreuzwerker/docker"],
+      ["tfe.corp.example.com/acme-org/aws", "private-registry"],
+      ["registry.acme.internal/platform/vault@~>3.0", "private-registry"],
+      ["localhost:8080/acme/aws", "private-registry"],
+      ["./leak-provider", "other"],
+      ["../leak/provider", "other"],
+      ["/abs/leak/provider", "other"],
+      ["a/b/c", "other"],
+      ["", "other"],
+      ["registry.terraform.io/hashicorp", "other"],
+      [`${"n".repeat(65)}/aws`, "other"],
+      [`${"n".repeat(64)}/aws`, `${"n".repeat(64)}/aws`],
+      [`${"n".repeat(64)}/${"t".repeat(64)}`, "other"],
+    ])("normalizeProviderSource(%s) -> %s", (input, expected) => {
+      expect(normalizeProviderSource(input)).toBe(expected);
+    });
+
+    it.each([
+      ["terraform-aws-modules/vpc/aws", "terraform-aws-modules/vpc/aws"],
+      ["Terraform-AWS-Modules/VPC/aws", "terraform-aws-modules/vpc/aws"],
+      // one row per fallthrough: everything the grammar rejects is "other"
+      ["Terraform-AWS-Modules/VPC/aws?ref=v5.0.0", "other"],
+      ["app.terraform.io/my-org/vpc/aws", "private-registry"],
+      ["./modules/vpc", "local"],
+      ["../shared/vpc", "local"],
+      ["/abs/path/vpc", "local"],
+      ["git::https://github.com/org/repo.git", "git"],
+      ["git@github.com:org/repo.git", "git"],
+      ["github.com/org/repo", "git"],
+      ["https://example.com/vpc.zip", "git"],
+      ["s3::https://s3-eu-west-1.amazonaws.com/leak-bucket/vpc.zip", "git"],
+      ["s3-eu-west-1.amazonaws.com/leak-bucket/vpc.zip", "git"],
+      ["leak-bucket.s3.amazonaws.com/leak-dir/vpc.zip", "git"],
+      ["gcs::https://www.googleapis.com/storage/v1/leak-bucket/vpc", "git"],
+      ["www.googleapis.com/storage/v1/leak-bucket/vpc", "git"],
+      ["hg::http://example.com/leak-repo", "git"],
+    ])("classifyModuleSource(%s) -> %s", (input, expected) => {
+      expect(classifyModuleSource(input)).toBe(expected);
+    });
+
+    it.each([
+      ["local", "local"],
+      ["remote", "remote"],
+      ["cloud", "cloud"],
+      ["s3", "s3"],
+      ["gcs", "gcs"],
+      ["azurerm", "azurerm"],
+      ["kubernetes", "kubernetes"],
+      ["S3", "other"],
+      ["s3 bucket=/Users/x/state", "other"],
+      [undefined, "unknown"],
+    ])("normalizeBackendKind(%p) -> %p", (input, expected) => {
+      expect(normalizeBackendKind(input)).toBe(expected);
+    });
+
+    it.each([
+      [">= 1.2, < 2.0", ">= 1.2, < 2.0"],
+      ["~> 5.0", "~> 5.0"],
+      ["= 1.0", "= 1.0"],
+      ["!= 1.2.3", "!= 1.2.3"],
+      ["1.2.3", "1.2.3"],
+      ["  >= 1.0 ,  < 2.0  ", ">= 1.0, < 2.0"],
+      ["~>5.0,!=5.1.0", "~> 5.0, != 5.1.0"],
+      ["1.0.0-beta.1", "invalid"],
+      [">= 1.0.0-LEAK-CONSTRAINT-PRERELEASE.corp", "invalid"],
+      ["1.2.3-acme.internal", "invalid"],
+      ["1.2.3+build.host", "invalid"],
+      ["latest", "invalid"],
+      [">= 1.2 || < 2.0", "invalid"],
+      ["~> 5.0 # /Users/x", "invalid"],
+      ["1." + "1.".repeat(40), "invalid"],
+    ])("normalizeProviderConstraint(%p) -> %p", (input, expected) => {
+      expect(normalizeProviderConstraint(input)).toBe(expected);
     });
   });
 
@@ -530,6 +1153,8 @@ describe("telemetry", () => {
 
       await expect(
         sendTelemetry("deploy", {
+          language: "typescript",
+          stackMetadata: [{ backend: "s3" }],
           requiredProviders: [{ aws: { source: "aws" } }],
         }),
       ).resolves.toBeUndefined();
