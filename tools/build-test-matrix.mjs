@@ -48,6 +48,17 @@ const pinnedRuntimes = {
   ],
 };
 
+/**
+ * Targets that only ever run under Terraform. Checked against the resolved runtimes below, so a pin and a future
+ * non-Terraform default axis both trip it.
+ *
+ * @type {Set<string>}
+ */
+const terraformOnly = new Set([
+  // HCP Terraform's workspace API pins a Terraform version and has no OpenTofu equivalent.
+  "typescript/terraform-cloud/test.ts",
+]);
+
 for (const [target, runtimes] of Object.entries(pinnedRuntimes)) {
   for (const { product, version } of runtimes) {
     if (!availableVersions[product]?.includes(version)) {
@@ -77,6 +88,15 @@ const testDirPrefix = `${testDir}/`;
 const targets = absoluteTargets
   .map((p) => (p.startsWith(testDirPrefix) ? p.slice(testDirPrefix.length) : p))
   .sort();
+
+// A key that matches no target would make the guards below silently inert.
+for (const key of [...Object.keys(pinnedRuntimes), ...terraformOnly]) {
+  if (!targets.includes(key)) {
+    throw new Error(
+      `"${key}" is configured in pinnedRuntimes or terraformOnly but is not a discovered test target.`,
+    );
+  }
+}
 
 /**
  * Matches test files that exercise the HCL synth path with real assertions. Keep in sync with the HCL-positive
@@ -109,6 +129,11 @@ for (const target of targets) {
     pinnedRuntimes[target] ??
     tfVersions.map((version) => ({ product: "terraform", version }));
   for (const { product, version } of runtimes) {
+    if (product !== "terraform" && terraformOnly.has(target)) {
+      throw new Error(
+        `${target} is Terraform-only, but the matrix resolved it to ${product} ${version}.`,
+      );
+    }
     for (const hclOutput of modes) {
       include.push({
         target,
