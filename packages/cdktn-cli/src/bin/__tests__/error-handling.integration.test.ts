@@ -18,6 +18,7 @@ function fixtureSource(errorHandlingPath: string): string {
   return `
   import yargs from "yargs";
   import * as Sentry from "@sentry/node";
+  import { Errors, setUsageTelemetryEnabled } from "@cdktn/commons";
   import { runCli } from ${JSON.stringify(errorHandlingPath)};
 
   if (process.argv.includes("--with-listener")) {
@@ -39,6 +40,9 @@ function fixtureSource(errorHandlingPath: string): string {
       tracesSampleRate: 0,
       serverName: "cdktn-cli",
     });
+  }
+  if (process.env.TEST_USAGE_TELEMETRY === "1") {
+    setUsageTelemetryEnabled(true);
   }
 
   // cdktn.ts' completion function, minus the manifest: answers for "diff"
@@ -77,6 +81,7 @@ function fixtureSource(errorHandlingPath: string): string {
       "throws an async Error that should reach Sentry",
       () => {},
       async () => {
+        Errors.setScope("capturedboom");
         throw new Error("empirical-sentry-message");
       },
     )
@@ -178,6 +183,32 @@ function expectNoRuntimeNoise(output: string) {
   expect(output).not.toContain("Node.js v");
 }
 
+type MetricItem = {
+  name: string;
+  attributes: Record<string, { value: unknown }>;
+};
+
+// A third copy of the envelope parser (test helper, sink, here); unifying
+// them is tracked as a follow-up.
+function parseMetricItems(bodies: string[]): MetricItem[] {
+  const items: MetricItem[] = [];
+  for (const body of bodies) {
+    const lines = body.split("\n").filter(Boolean);
+    for (let i = 0; i < lines.length - 1; i++) {
+      let header;
+      try {
+        header = JSON.parse(lines[i]);
+      } catch {
+        continue;
+      }
+      if (header?.type === "trace_metric") {
+        items.push(...JSON.parse(lines[i + 1]).items);
+      }
+    }
+  }
+  return items;
+}
+
 describe("runCli child-process smoke test", () => {
   let bundlePath: string;
 
@@ -195,7 +226,7 @@ describe("runCli child-process smoke test", () => {
 
     // The fixture sits under os.tmpdir() with no node_modules ancestry, so its
     // bare imports are aliased to the workspace copies error-handling.ts itself
-    // resolves: one Sentry client.
+    // resolves: one Sentry client, one telemetry state.
     await esbuild.build({
       entryPoints: [fixturePath],
       bundle: true,
@@ -205,6 +236,7 @@ describe("runCli child-process smoke test", () => {
       alias: {
         yargs: require.resolve("yargs"),
         "@sentry/node": require.resolve("@sentry/node"),
+        "@cdktn/commons": require.resolve("@cdktn/commons"),
       },
     });
   }, 60000);
@@ -240,14 +272,20 @@ describe("runCli child-process smoke test", () => {
     expect(output).not.toContain("Node.js v");
   });
 
-  it("delivers the crash to Sentry before the process exits", async () => {
+  it("delivers the failed-command metric alongside the crash in the same run", async () => {
     const sink = await startSentrySink();
     try {
       const dsn = `http://public@127.0.0.1:${sink.port}/1`;
+      // the jest preset sets CHECKPOINT_DISABLE, which would gate the metric
+      const { CHECKPOINT_DISABLE: _disabled, ...env } = process.env;
       const result = await execa(
         process.execPath,
         [bundlePath, "capturedboom"],
-        { env: { ...process.env, TEST_SENTRY_DSN: dsn }, reject: false },
+        {
+          env: { ...env, TEST_SENTRY_DSN: dsn, TEST_USAGE_TELEMETRY: "1" },
+          extendEnv: false,
+          reject: false,
+        },
       );
 
       // the process exits only after reportFailure awaited the flush, so
@@ -257,10 +295,15 @@ describe("runCli child-process smoke test", () => {
         .requests()
         .filter((r) => r.url.includes("/envelope/"))
         .map((r) => r.body);
-      expect(bodies.length).toBeGreaterThan(0);
       expect(bodies.some((b) => b.includes("empirical-sentry-message"))).toBe(
         true,
       );
+      const metrics = parseMetricItems(bodies);
+      const error = metrics.find((m) => m.name === "cli.command.error")!;
+      expect(error).toBeDefined();
+      expect(error.attributes.error_type.value).toBe("unexpected");
+      expect(error.attributes.command.value).toBe("capturedboom");
+      expect(JSON.stringify(metrics)).not.toContain("empirical-sentry-message");
     } finally {
       await sink.close();
     }

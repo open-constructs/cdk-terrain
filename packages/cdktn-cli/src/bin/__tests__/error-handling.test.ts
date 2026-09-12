@@ -1,8 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import yargs, { Argv } from "yargs";
-import { Errors } from "@cdktn/commons";
+import * as Sentry from "@sentry/node";
+import { Errors, setUsageTelemetryEnabled } from "@cdktn/commons";
 import {
+  defaultDeps,
   describeError,
   reportFailure,
   runCli,
@@ -35,6 +37,7 @@ function makeDeps(): FailureReporterDeps {
           new Promise((resolve) => setImmediate(() => resolve({ node: "24" }))),
       ),
     captureException: jest.fn(),
+    sendCommandErrorTelemetry: jest.fn().mockResolvedValue(undefined),
     flushTelemetry: jest.fn().mockResolvedValue(undefined),
   };
 }
@@ -311,6 +314,139 @@ describe("reportFailure", () => {
 
     expect(code).toBe(1);
     expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+  });
+});
+
+describe("reportFailure failed-command metric", () => {
+  afterEach(() => {
+    Errors.setScope("unknown");
+  });
+
+  it.each([
+    ["Usage", () => Errors.Usage("bad-usage-message")],
+    ["External", () => Errors.External("bad-external-message")],
+    ["Internal", () => Errors.Internal("bad-internal-message")],
+    ["unexpected", () => new Error("boom-message")],
+    ["unexpected", () => "raw-string-message"],
+  ])(
+    "counts the failure once as %s under the command scope",
+    async (errorType, makeError) => {
+      const deps = makeDeps();
+      Errors.setScope("deploy");
+      await reportFailure({ message: null, error: makeError() }, deps);
+
+      expect(deps.sendCommandErrorTelemetry).toHaveBeenCalledTimes(1);
+      expect(deps.sendCommandErrorTelemetry).toHaveBeenCalledWith(
+        "deploy",
+        errorType,
+      );
+    },
+  );
+
+  it("counts a yargs validation failure (message, no error) as Usage", async () => {
+    const deps = makeDeps();
+    await reportFailure({ message: "Invalid values: nope" }, deps);
+
+    expect(deps.sendCommandErrorTelemetry).toHaveBeenCalledTimes(1);
+    expect(deps.sendCommandErrorTelemetry).toHaveBeenCalledWith(
+      "unknown",
+      "Usage",
+    );
+  });
+
+  it("counts the failure before the flush, after the crash capture", async () => {
+    const deps = makeDeps();
+    const order: string[] = [];
+    (deps.captureException as jest.Mock).mockImplementation(() =>
+      order.push("capture"),
+    );
+    (deps.sendCommandErrorTelemetry as jest.Mock).mockImplementation(
+      async () => {
+        order.push("metric");
+      },
+    );
+    (deps.flushTelemetry as jest.Mock).mockImplementation(async () => {
+      order.push("flush");
+    });
+    await reportFailure({ message: null, error: new Error("boom") }, deps);
+
+    expect(order).toEqual(["capture", "metric", "flush"]);
+    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+  });
+
+  it("still flushes when the metric emission itself rejects", async () => {
+    const deps = makeDeps();
+    (deps.sendCommandErrorTelemetry as jest.Mock).mockRejectedValue(
+      new Error("metrics exploded"),
+    );
+    const code = await reportFailure(
+      { message: null, error: Errors.Usage("x") },
+      deps,
+    );
+
+    expect(code).toBe(1);
+    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+  });
+
+  describe("with the default (commons) emitter", () => {
+    const originalCheckpointDisable = process.env.CHECKPOINT_DISABLE;
+    let count: jest.SpyInstance;
+
+    beforeEach(() => {
+      // the jest preset disables usage telemetry process-wide
+      delete process.env.CHECKPOINT_DISABLE;
+      count = jest.spyOn(Sentry.metrics, "count").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      count.mockRestore();
+      setUsageTelemetryEnabled(undefined);
+      if (originalCheckpointDisable === undefined) {
+        delete process.env.CHECKPOINT_DISABLE;
+      } else {
+        process.env.CHECKPOINT_DISABLE = originalCheckpointDisable;
+      }
+    });
+
+    // Only the metric seams are real here: log and capture stay mocked so
+    // the test neither prints nor spawns debug collection.
+    function realEmitterDeps(): FailureReporterDeps {
+      return {
+        ...makeDeps(),
+        sendCommandErrorTelemetry: defaultDeps.sendCommandErrorTelemetry,
+        flushTelemetry: defaultDeps.flushTelemetry,
+      };
+    }
+
+    it("emits cli.command.error with error_type when usage telemetry is on", async () => {
+      setUsageTelemetryEnabled(true);
+      Errors.setScope("deploy");
+      const error = Errors.External("terraform exited 1");
+      count.mockClear(); // the factory above counted a cli.error
+
+      await reportFailure({ message: null, error }, realEmitterDeps());
+
+      expect(count).toHaveBeenCalledTimes(1);
+      expect(count).toHaveBeenCalledWith(
+        "cli.command.error",
+        1,
+        expect.objectContaining({
+          attributes: expect.objectContaining({
+            command: "deploy",
+            error_type: "External",
+          }),
+        }),
+      );
+    });
+
+    it("emits nothing when usage telemetry is off", async () => {
+      setUsageTelemetryEnabled(false);
+      const error = new Error("boom");
+
+      await reportFailure({ message: null, error }, realEmitterDeps());
+
+      expect(count).not.toHaveBeenCalled();
+    });
   });
 });
 

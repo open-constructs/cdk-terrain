@@ -52,6 +52,7 @@ describeIfDistExists(__dirname)("CdktfProject", () => {
         Name: "cdktf-api-test",
       },
       sendCrashReports: false,
+      sendUsageTelemetry: false,
       dist: path.join(__dirname, "../../../../../../dist"),
     });
 
