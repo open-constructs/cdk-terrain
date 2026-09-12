@@ -149,10 +149,18 @@ export async function watch(
     }
   }
 
-  abortSignal.addEventListener("abort", () => {
-    logger.debug("Abort signal received, stopping watch");
-    watcher.close();
-    changeState({ type: "stopped" });
+  // The session ends only on abort: the CLI exits as soon as its handler
+  // returns, so resolving earlier would end `cdktn watch` after the first run.
+  const stopped = new Promise<void>((resolve) => {
+    abortSignal.addEventListener("abort", async () => {
+      logger.debug("Abort signal received, stopping watch");
+      const inFlight = state.type === "running" ? state.currentRun : undefined;
+      await watcher.close();
+      changeState({ type: "stopped" });
+      // hardAbort rejects the in-flight deploy; that ends the run, not the process
+      await inFlight?.catch(() => undefined);
+      resolve();
+    });
   });
 
   const onFileChange = () => {
@@ -178,4 +186,5 @@ export async function watch(
   onFileChange();
 
   await sendTelemetry("watch", { event: "start" });
+  await stopped;
 }
