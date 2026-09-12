@@ -4,10 +4,10 @@
   "private": true,
   "description": "Tool to generate CDK Terrain function bindings",
   "scripts": {
-    "fetch-metadata": "ts-node scripts/fetch-metadata.ts",
-    "generate": "ts-node scripts/generate.ts",
-    "update-function-matrix": "ts-node scripts/update-function-matrix.ts",
-    "generate-function-availability": "ts-node scripts/generate-function-availability.ts"
+    "fetch-metadata": "tsx scripts/fetch-metadata.ts",
+    "generate": "tsx scripts/generate.ts",
+    "update-function-matrix": "tsx scripts/update-function-matrix.ts",
+    "generate-function-availability": "tsx scripts/generate-function-availability.ts"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "@types/babel__generator": "^7.27.0",
     "@types/babel__template": "^7.4.4",
     "@types/node": "22.20.1",
-    "ts-node": "^10.9.1",
+    "tsx": "4.23.13",
     "typescript": "~6.0.0"
   },
   "lint-staged": {
