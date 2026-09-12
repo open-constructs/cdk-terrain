@@ -66,7 +66,8 @@ export class DockerProvider extends TerraformProvider {
       terraformResourceType: DockerProvider.tfResourceType,
       terraformGeneratorMetadata: {
         providerName: "docker",
-        providerVersionConstraint: "~> 2.0",
+        // OpenTofu rejects kreuzwerker/docker 2.x as unsigned; 3.x is the first signed major
+        providerVersionConstraint: "~> 3.0",
       },
       terraformProviderSource: "kreuzwerker/docker",
     });
