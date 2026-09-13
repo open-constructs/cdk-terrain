@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.25.0](https://github.com/open-constructs/cdk-terrain/compare/v0.24.0...v0.25.0) (2026-09-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lib:** add asset pipeline foundation types and hash utilities ([#371](https://github.com/open-constructs/cdk-terrain/issues/371))
+
+### Features
+
+* **cli:** move the TypeScript template to tsx and TypeScript 6 ([#396](https://github.com/open-constructs/cdk-terrain/issues/396)) ([b50349d](https://github.com/open-constructs/cdk-terrain/commit/b50349d097b2addc39405acb608526de7feaba7e))
+* **deps:** adopt jsii 6.0 and TypeScript 6 ([#395](https://github.com/open-constructs/cdk-terrain/issues/395)) ([26fa8fa](https://github.com/open-constructs/cdk-terrain/commit/26fa8fa53723d95b05efbd0d9e83127dd4b44089))
+* **lib:** add asset pipeline foundation types and hash utilities ([#371](https://github.com/open-constructs/cdk-terrain/issues/371)) ([a008d12](https://github.com/open-constructs/cdk-terrain/commit/a008d1299389fb74d382c40d751a75014cf53a59))
+* **tests:** add per-test runtime pinning to the integration matrix ([#405](https://github.com/open-constructs/cdk-terrain/issues/405)) ([17c2278](https://github.com/open-constructs/cdk-terrain/commit/17c227833edb8d5fd367ec7040c874bdc37b01c9))
+
+
+### Bug Fixes
+
+* **cli:** correct the constructs range comment in the TypeScript template hook ([#408](https://github.com/open-constructs/cdk-terrain/issues/408)) ([9fc0e43](https://github.com/open-constructs/cdk-terrain/commit/9fc0e436c05d07209232bbecf496618a096f0b54))
+* **cli:** make `cdktn get` remove stale files for resources removed from a provider ([#421](https://github.com/open-constructs/cdk-terrain/issues/421)) ([d6e28dc](https://github.com/open-constructs/cdk-terrain/commit/d6e28dcaf49c2cbf98f4d6324edb6664d9573ddf))
+* **gha:** don't fail the pnpm upgrade jobs on ignored dep builds ([#399](https://github.com/open-constructs/cdk-terrain/issues/399)) ([5b66342](https://github.com/open-constructs/cdk-terrain/commit/5b663422a0e5880c17a05753ab5f72d1fc2aa4b4))
+* **gha:** pass -R to gh pr edit in release_github relabel step ([#372](https://github.com/open-constructs/cdk-terrain/issues/372)) ([358edc7](https://github.com/open-constructs/cdk-terrain/commit/358edc7c39b0b380ba89fd31881f0577fe9b6214))
+* **lib:** retry the staging install without --prefer-offline outside CI ([#407](https://github.com/open-constructs/cdk-terrain/issues/407)) ([7bb26e7](https://github.com/open-constructs/cdk-terrain/commit/7bb26e77441db29afd7b0140318347e44898760a))
+* **provider-generator:** satisfy module provider configuration aliases on get ([#383](https://github.com/open-constructs/cdk-terrain/issues/383)) ([54a8217](https://github.com/open-constructs/cdk-terrain/commit/54a8217205f07eea00cff19a02b9214afd44f880))
+* **provider-generator:** stop a provider_functions resource clobbering the functions submodule ([#403](https://github.com/open-constructs/cdk-terrain/issues/403)) ([cf19de9](https://github.com/open-constructs/cdk-terrain/commit/cf19de9531aca75748a92ee27d55045d02a821ba))
+* **tests:** bound and retry the dist publish to the local registry ([#425](https://github.com/open-constructs/cdk-terrain/issues/425)) ([cc9f9e2](https://github.com/open-constructs/cdk-terrain/commit/cc9f9e250351e91c2b509ba360dcbc8917c5e45f))
+* **tests:** drop unused ts-jest transform from shared jest preset ([#382](https://github.com/open-constructs/cdk-terrain/issues/382)) ([03f6e16](https://github.com/open-constructs/cdk-terrain/commit/03f6e169a6b9d995e4dd88773a2795d24ed135eb))
+* **tools:** make the workspace build, package, lint and test on Windows ([#364](https://github.com/open-constructs/cdk-terrain/issues/364)) ([8dcddbe](https://github.com/open-constructs/cdk-terrain/commit/8dcddbef29da743107d44591fef52e3be24979f5))
+
+
+### Miscellaneous Chores
+
+* add OpenTofu and current Terraform to the jsii-terraform image ([#394](https://github.com/open-constructs/cdk-terrain/issues/394)) ([2f29d5a](https://github.com/open-constructs/cdk-terrain/commit/2f29d5a8d45b047c5450eee9640e1cbaaee98c8d))
+* **deps:** move the remaining packages to TypeScript 6 ([#406](https://github.com/open-constructs/cdk-terrain/issues/406)) ([c55d360](https://github.com/open-constructs/cdk-terrain/commit/c55d36032c7fe6295f52b0a54a72e75d2b974f18))
+* **deps:** move the root TypeScript to 6 ([#417](https://github.com/open-constructs/cdk-terrain/issues/417)) ([3cae1e2](https://github.com/open-constructs/cdk-terrain/commit/3cae1e22f43f81ae1ab3e926d7f85ed5fee84318))
+* **deps:** Update xstate to v5.32.4 ([#333](https://github.com/open-constructs/cdk-terrain/issues/333)) ([5ebf74f](https://github.com/open-constructs/cdk-terrain/commit/5ebf74fdbb37a74514a30560c4126fb272286384))
+* **examples:** move the TypeScript examples to tsx and TypeScript 6 ([#419](https://github.com/open-constructs/cdk-terrain/issues/419)) ([857e182](https://github.com/open-constructs/cdk-terrain/commit/857e1821a99aa641b4d0e46afd3abdf7e449cdb4))
+* Flexible python version ([#420](https://github.com/open-constructs/cdk-terrain/issues/420)) ([955f62a](https://github.com/open-constructs/cdk-terrain/commit/955f62a3c9f887d2be64e9c31da8fb30653dcbc6))
+* **gha:** adopt the new jsii-terraform image and test Terraform 1.5.7 + 1.16.1 ([#398](https://github.com/open-constructs/cdk-terrain/issues/398)) ([3ad760b](https://github.com/open-constructs/cdk-terrain/commit/3ad760bceef6feb982ce630ed400302c9e229082))
+* **gha:** gate dependency upgrades on release age ([#418](https://github.com/open-constructs/cdk-terrain/issues/418)) ([b611a87](https://github.com/open-constructs/cdk-terrain/commit/b611a87d5c798bb82c64fc68378df87a2761f9d8))
+* **gha:** retire Docker Hub publishing of jsii-terraform ([#388](https://github.com/open-constructs/cdk-terrain/issues/388)) ([e53cddf](https://github.com/open-constructs/cdk-terrain/commit/e53cddf6a58c85438f3a77f10c2e3c09ae47a397))
+* **lib:** stop publishing build state in the cdktn package ([#397](https://github.com/open-constructs/cdk-terrain/issues/397)) ([51e4a95](https://github.com/open-constructs/cdk-terrain/commit/51e4a95a0d88920af3797f2cd36b9d7c5fd753c2))
+* npm-check-updates && pnpm update ([#326](https://github.com/open-constructs/cdk-terrain/issues/326)) ([7095f6b](https://github.com/open-constructs/cdk-terrain/commit/7095f6b1f84205ba712dee89274257235b885722))
+
+
+### Tests
+
+* **tests:** re-enable the Python edge integration test ([#404](https://github.com/open-constructs/cdk-terrain/issues/404)) ([0a80626](https://github.com/open-constructs/cdk-terrain/commit/0a806264567cc73816e4277cb2f7e1306f7a7674))
+
 ## [0.24.0](https://github.com/open-constructs/cdk-terrain/compare/v0.23.4...v0.24.0) (2026-08-06)
 
 
