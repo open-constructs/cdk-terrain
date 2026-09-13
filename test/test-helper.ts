@@ -21,6 +21,25 @@ function execSyncLogErrors(...args: Parameters<typeof execSync>) {
   }
 }
 
+// `child.kill()` alone only signals the immediate process. With `shell: true`
+// that's the wrapper shell, not the command it runs, so descendants (and
+// their stdout/stderr pipes) can survive a timeout and keep Jest hanging.
+// Killing the whole tree needs a platform-specific approach: on POSIX we
+// make the child its own process group leader (`detached: true`) and signal
+// the group via a negative pid; on Windows `taskkill /t` walks the tree for us.
+function killProcessTree(child: ReturnType<typeof spawn>) {
+  if (!child.pid) return;
+  try {
+    if (process.platform === "win32") {
+      execSync(`taskkill /pid ${child.pid} /t /f`);
+    } else {
+      process.kill(-child.pid, "SIGKILL");
+    }
+  } catch {
+    // Process (tree) may have already exited between the timeout firing and the kill.
+  }
+}
+
 export function packageJsonWithDependency(name: string, version?: string) {
   return expect.objectContaining({
     dependencies: expect.objectContaining({
@@ -95,24 +114,39 @@ export class TestDriver {
     command: string,
     args: string[] = [],
     cwd?: string,
+    timeoutMs = 4 * 60 * 1000,
   ): Promise<{ stdout: string; stderr: string }> {
     try {
       return await new Promise((resolve, reject) => {
         const stdout: string[] = [],
           stderr: string[] = [];
-        const process = spawn(command, args, {
+        const child = spawn(command, args, {
           shell: true,
           stdio: "pipe",
           env: this.env,
           cwd,
+          detached: process.platform !== "win32",
         });
-        process.stdout.on("data", (data) => {
+        // A stalled command (e.g. a registry that stops responding) otherwise
+        // leaves its stdio pipes open forever, which keeps Jest's event loop
+        // alive well past the hook/test timeout and burns the CI job's full
+        // 1h budget before GitHub kills it instead of failing fast here.
+        const timer = setTimeout(() => {
+          killProcessTree(child);
+          reject(
+            new Error(
+              `spawned command ${command} with args ${args} timed out after ${timeoutMs}ms`,
+            ),
+          );
+        }, timeoutMs);
+        child.stdout.on("data", (data) => {
           stdout.push(data.toString());
         });
-        process.stderr.on("data", (data) => {
+        child.stderr.on("data", (data) => {
           stderr.push(data.toString());
         });
-        process.on("close", (code) => {
+        child.on("close", (code) => {
+          clearTimeout(timer);
           if (code === 0) {
             resolve({
               stdout: stripAnsi(stdout.join("\n")),
