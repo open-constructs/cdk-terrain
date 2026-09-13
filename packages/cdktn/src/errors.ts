@@ -62,6 +62,45 @@ Take one of these values from the AssetType Enum.
 Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets
   `);
 
+export const assetHashConflictingExcludeOptions = () =>
+  new Error(
+    `Both 'exclude' and 'ignoreStrategy' were passed to AssetHash.of(), but 'ignoreStrategy' replaces 'exclude' rather than combining with it. Pass only one.`,
+  );
+
+export const assetHashTypeOutputNotSupported = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was configured with assetHashType 'OUTPUT', but bundling is not implemented yet, so there is no output to hash. Use 'SOURCE' (the default) to hash the source, or 'CUSTOM' with an explicit 'assetHash'.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
+export const assetHashTypeCustomRequiresHash = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was configured with assetHashType 'CUSTOM' but no 'assetHash'. A custom hash type requires an explicit 'assetHash' value.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
+export const assetHashConflictingHashType = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was configured with an explicit 'assetHash', so 'assetHashType' must be undefined or 'CUSTOM'.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
+export const assetHashTypeUnknown = (id: string, assetHashType: unknown) =>
+  new Error(
+    `TerraformAsset ${id} was configured with an unknown assetHashType '${String(assetHashType)}'. Use one of AssetHashType.SOURCE, AssetHashType.OUTPUT, or AssetHashType.CUSTOM.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
+export const assetHashOutOfScopeCdktnJson = (configPath: string) =>
+  new Error(
+    `AssetHash.of() was called with a relative path '${configPath}', but we cannot find the cdktf.json above your current working directory '${process.cwd()}'
+
+The cdktf.json file is needed to establish the base for the relative path (the '.' in './foo/bar'), so that the hash matches TerraformAsset for the same source.
+
+Place a cdktf.json at the root of your project, or pass an absolute path. Learn more: https://cdktn.io/docs/create-and-deploy/configuration-file
+`,
+  );
+
 export const dynamicBlockNotSupported = (_foreachExpression: string) =>
   new Error(
     `We do not support directly resolving a TerraformDynamicBlock. Dynamic blocks are only supported on block attributes of resources, data sources, and providers.
