@@ -116,17 +116,20 @@ if (missingHclSmoke.length > 0) {
  * @type {{
  *   target: string[],
  *   terraform: string[],
+ *   binary: string[],
  *   hclOutput: boolean[],
- *   include: Array<{ target: string, terraform: string, hclOutput: boolean }>,
+ *   include: Array<{ target: string, terraform: string, binary: string, hclOutput: boolean }>,
  * }}
  */
 const matrix = {
   target: targets,
   terraform: [tfDefault],
+  binary: [`terraform${tfDefault}`],
   hclOutput: [false],
   include: hclSmokeTargets.map((target) => ({
     target,
     terraform: tfDefault,
+    binary: `terraform${tfDefault}`,
     hclOutput: true,
   })),
 };

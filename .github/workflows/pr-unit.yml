@@ -101,7 +101,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        terraform_version: ["1.16.1", "1.5.7"]
+        include:
+          - terraform_version: "1.16.1"
+            terraform_binary: terraform1.16.1
+          - terraform_version: "1.5.7"
+            terraform_binary: terraform1.5.7
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -170,7 +174,7 @@ jobs:
             --coverage \
             --reporters=default --reporters=github-actions
         env:
-          TERRAFORM_BINARY_NAME: "terraform${{ matrix.terraform_version }}"
+          TERRAFORM_BINARY_NAME: ${{ matrix.terraform_binary }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
           CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
 

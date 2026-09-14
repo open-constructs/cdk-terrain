@@ -123,9 +123,9 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          key: terraform-${{ runner.os }}-${{ matrix.terraform }}-examples
+          key: terraform-${{ runner.os }}-${{ matrix.binary }}-examples
           restore-keys: |
-            terraform-${{ runner.os }}-${{ matrix.terraform }}
+            terraform-${{ runner.os }}-${{ matrix.binary }}
       - name: Cache go
         # Only Go examples and the cross-language `*-documentation` examples need GOCACHE
         if: startsWith(matrix.target, '@examples/go') || endsWith(matrix.target, '-documentation')
@@ -168,7 +168,7 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TEST_TARGET: "${{ matrix.target }}"
-          TERRAFORM_BINARY_NAME: "terraform${{ matrix.terraform }}"
+          TERRAFORM_BINARY_NAME: ${{ matrix.binary }}
           MAVEN_OPTS: "-Xmx3G"
           TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.terraform }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
