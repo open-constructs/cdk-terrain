@@ -6,8 +6,9 @@ import * as fs from "fs-extra";
 import * as semver from "semver";
 import ciInfo from "ci-info";
 import { logger } from "./logging";
-import { DEFAULT_TARGET_VERSIONS, LANGUAGES } from "./config";
+import { DEFAULT_TARGET_VERSIONS, LANGUAGES, isLocalModule } from "./config";
 import { processState } from "./process-state";
+import { isRegistryModule } from "./terraform-module";
 import { terraformCli, TerraformCliProbe } from "./terraform";
 
 type AttributeValue = string | number | boolean;
@@ -82,7 +83,41 @@ const state = processState<CommandTelemetryState>(
 
 // Free-text payload fields are validated before they become attributes so a
 // misconfigured or hand-edited value never carries arbitrary text.
+const CONSTRAINT_PART = /^(=|!=|>=|<=|>|<|~>)?\s*(\d+(?:\.\d+){0,2})$/;
 const RELEASE_VERSION = /^\d+\.\d+\.\d+/;
+
+// Terraform's built-in backend kinds; anything else (a typo, a hand-edited
+// value) is reduced to "other".
+const BACKEND_KINDS = [
+  "local",
+  "remote",
+  "cloud",
+  "s3",
+  "gcs",
+  "azurerm",
+  "http",
+  "consul",
+  "kubernetes",
+  "pg",
+  "oss",
+  "cos",
+  "etcdv3",
+  "artifactory",
+  "swift",
+  "manta",
+];
+
+/** Backend kind for metrics: a built-in kind as-is, anything else "other". */
+export function normalizeBackendKind(backend: unknown): string {
+  if (typeof backend !== "string") {
+    return "unknown";
+  }
+  return BACKEND_KINDS.includes(backend) ? backend : "other";
+}
+
+// Terraform resource type grammar; the stack-level override keys (stack,
+// backend, output, local, terraform_remote_state) are identifiers too.
+const RESOURCE_TYPE = /^[a-z][a-z0-9_]*$/;
 
 // MAJOR.MINOR.PATCH only: prerelease and build identifiers are free text
 // (a wrapper's version line or a locally built library can carry anything).
@@ -96,6 +131,28 @@ function releaseVersion(value: string | undefined): string | undefined {
 function semverRangeOrInvalid(value: string): string {
   const range = value.length <= 64 ? semver.validRange(value) : null;
   return range && !/\d[-+]/.test(value) ? range : "invalid";
+}
+
+/**
+ * Terraform provider constraint: comma-separated operators over versions,
+ * re-joined as "~> 5.0, != 5.1.0" so spacing variants collapse into one
+ * value. Constraints are user-authored free text in cdktf.json, so a
+ * prerelease identifier or an over-long value rejects the whole constraint.
+ */
+export function normalizeProviderConstraint(value: string): string {
+  if (value.length > 64) {
+    return "invalid";
+  }
+  const parts: string[] = [];
+  for (const part of value.split(",")) {
+    const match = CONSTRAINT_PART.exec(part.trim());
+    if (!match) {
+      return "invalid";
+    }
+    const [, operator, version] = match;
+    parts.push(operator ? `${operator} ${version}` : version);
+  }
+  return parts.join(", ");
 }
 
 export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
@@ -220,6 +277,310 @@ export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   }
 }
 
+const PUBLIC_PROVIDER_REGISTRIES = [
+  "registry.terraform.io",
+  "registry.opentofu.org",
+];
+const PROVIDER_SEGMENT = /^[a-z0-9][a-z0-9_-]*$/;
+const PROVIDER_HOST = /^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)+)(:\d+)?$/;
+
+// Registry identities are bounded so an over-long hand-written source cannot
+// carry free text through the segment grammar.
+function withinIdentityLimits(segments: string[]): boolean {
+  return (
+    segments.every((segment) => segment.length <= 64) &&
+    segments.join("/").length <= 128
+  );
+}
+
+/**
+ * Provider identity for metrics: only public-registry `namespace/type` is sent
+ * (`aws`, `hashicorp/aws@~>5`, `registry.terraform.io/hashicorp/aws` are one);
+ * other hosts become "private-registry", paths and malformed input "other".
+ */
+export function normalizeProviderSource(source: string): string {
+  const segments = source.trim().toLowerCase().split("@")[0].split("/");
+  if (segments.length === 3) {
+    const host = segments.shift()!;
+    if (!PUBLIC_PROVIDER_REGISTRIES.includes(host)) {
+      return PROVIDER_HOST.test(host) ? "private-registry" : "other";
+    }
+  }
+  if (segments.length === 1) {
+    segments.unshift("hashicorp");
+  }
+  return segments.length === 2 &&
+    segments.every((s) => PROVIDER_SEGMENT.test(s)) &&
+    withinIdentityLimits(segments)
+    ? segments.join("/")
+    : "other";
+}
+
+// Comparison key for generated-vs-prebuilt, never sent: public sources
+// normalize, anything else stays raw so two unrelated private sources (both
+// "private-registry" on the metric) never match each other.
+function providerIdentity(source: string): string {
+  const normalized = normalizeProviderSource(source);
+  return normalized === "private-registry" || normalized === "other"
+    ? source.trim().toLowerCase().split("@")[0]
+    : normalized;
+}
+
+/**
+ * Identities of the providers a project generates bindings for
+ * (`terraformProviders` in `cdktf.json`, as `"aws@~>5.0"` strings or
+ * `{ name, source }` objects); anything else in a stack is prebuilt.
+ */
+export function getGeneratedProviderSources(
+  projectPath = process.cwd(),
+): string[] {
+  const entries = readRawCdktfJson(projectPath).terraformProviders;
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+  return entries.flatMap((entry) => {
+    if (typeof entry === "string") {
+      return [providerIdentity(entry)];
+    }
+    const source = entry?.source ?? entry?.name;
+    return typeof source === "string" ? [providerIdentity(source)] : [];
+  });
+}
+
+export function classifyProviderBinding(
+  source: string,
+  generatedSources: string[],
+): "generated" | "prebuilt" {
+  return generatedSources.includes(providerIdentity(source))
+    ? "generated"
+    : "prebuilt";
+}
+
+// Public registry addresses are `namespace/name/provider` with plain segments;
+// a dot, colon or `~` in a segment marks a hostname, bucket or home path that
+// go-getter would resolve instead.
+const REGISTRY_SEGMENT = /^[a-z0-9][a-z0-9_-]*$/;
+
+// Forced getters, URLs and well-known object-store or forge hosts.
+const REMOTE_SOURCE =
+  /^(?:git|hg|s3|gcs)::|^git@|:\/\/|^github\.com\/|^bitbucket\.org\/|amazonaws\.com\/|googleapis\.com\//i;
+
+/**
+ * Module identity for metrics. Only public registry sources are sent as-is;
+ * anything else could carry a path, hostname, bucket or organization and is
+ * reduced to its kind.
+ */
+export function classifyModuleSource(source: string): string {
+  const trimmed = source.trim();
+  if (isLocalModule(trimmed) || path.isAbsolute(trimmed)) {
+    return "local";
+  }
+  if (REMOTE_SOURCE.test(trimmed)) {
+    return "git";
+  }
+  if (!isRegistryModule(trimmed)) {
+    return "other";
+  }
+  const segments = trimmed.toLowerCase().split("/");
+  if (segments.length === 4) {
+    return "private-registry";
+  }
+  return segments.every((segment) => REGISTRY_SEGMENT.test(segment)) &&
+    withinIdentityLimits(segments)
+    ? segments.join("/")
+    : "other";
+}
+
+// The synth origins the CLI passes through; see SynthOrigin in cli-core.
+const SYNTH_ORIGINS = ["watch"];
+
+type ScalarAttribute = {
+  attribute: string;
+  type: "string" | "number" | "boolean";
+  /** Enumerated values; a value outside the set is dropped. */
+  values?: string[];
+};
+
+// Scalar payload fields forwarded as attributes, per command, each with the
+// type (and where enumerable, the values) it must have. Anything not listed
+// here, of the wrong type or off the value set stays out of the metric.
+const SCALAR_ATTRIBUTES: Record<string, Record<string, ScalarAttribute>> = {
+  synth: {
+    synthOrigin: {
+      attribute: "synth_origin",
+      type: "string",
+      values: SYNTH_ORIGINS,
+    },
+  },
+  init: {
+    // reduced to a built-in template name or "remote" by templateTelemetryName
+    template: { attribute: "template", type: "string" },
+    isRemote: { attribute: "is_remote", type: "boolean" },
+  },
+  convert: {
+    numberOfModules: { attribute: "module_count", type: "number" },
+    numberOfProviders: { attribute: "provider_count", type: "number" },
+    convertedLines: { attribute: "converted_lines", type: "number" },
+  },
+};
+
+function scalarAttributeValue(
+  value: unknown,
+  spec: ScalarAttribute,
+): AttributeValue | undefined {
+  if (typeof value !== spec.type) {
+    return undefined;
+  }
+  if (spec.type === "number" && !Number.isFinite(value)) {
+    return undefined;
+  }
+  if (spec.values && !spec.values.includes(value as string)) {
+    return undefined;
+  }
+  return value as AttributeValue;
+}
+
+// Number of entries per key of a metadata group such as
+// `overrides: { aws_s3_bucket: ["tags", "region"] }`.
+function groupSizes(group: unknown): Record<string, number> {
+  const sizes: Record<string, number> = {};
+  if (group && typeof group === "object" && !Array.isArray(group)) {
+    for (const [key, entries] of Object.entries(group)) {
+      sizes[key] = Array.isArray(entries) ? entries.length : 0;
+    }
+  }
+  return sizes;
+}
+
+function sum(sizes: Record<string, number>): number {
+  return Object.values(sizes).reduce((total, size) => total + size, 0);
+}
+
+// Override keys are provider schema names, except module overrides which
+// carry the module source and are reduced to its kind.
+function overrideResourceType(key: string): string {
+  const resourceType = key.startsWith("module.")
+    ? `module.${classifyModuleSource(key.slice("module.".length))}`
+    : key;
+  return resourceType.length <= 64 &&
+    (RESOURCE_TYPE.test(resourceType) || resourceType.startsWith("module."))
+    ? resourceType
+    : "other";
+}
+
+/**
+ * Per-stack metrics for synth/diff/deploy/destroy from the stack metadata
+ * block and `required_providers`: backend and library version, override /
+ * import / moved counts and the providers used, never names or ids.
+ */
+function sendStackTelemetry(
+  stackMetadata: unknown[],
+  requiredProviders: unknown[],
+  attributes: Attributes,
+): void {
+  const generatedSources = getGeneratedProviderSources();
+  stackMetadata.forEach((entry, index) => {
+    // a null or non-object entry is not a stack: counting one would inflate
+    // the stack count with metadata the library never wrote
+    if (!entry || typeof entry !== "object") {
+      return;
+    }
+    const metadata = entry as Record<string, any>;
+    const overrides = groupSizes(metadata.overrides);
+    const stackAttributes: Attributes = {
+      ...attributes,
+      backend: normalizeBackendKind(metadata.backend),
+      cloud: typeof metadata.cloud === "string",
+      override_count: sum(overrides),
+      import_count: sum(groupSizes(metadata.imports)),
+      moved_count: sum(groupSizes(metadata.moved)),
+    };
+    const libraryVersion = releaseVersion(metadata.version);
+    if (libraryVersion) {
+      stackAttributes.library_version = libraryVersion;
+    }
+    Sentry.metrics.count("cli.stack", 1, { attributes: stackAttributes });
+
+    for (const [key, count] of Object.entries(overrides)) {
+      Sentry.metrics.count("cli.stack.override", 1, {
+        attributes: {
+          ...attributes,
+          resource_type: overrideResourceType(key),
+          override_count: count,
+        },
+      });
+    }
+
+    const providers = requiredProviders[index];
+    if (!providers || typeof providers !== "object") {
+      return;
+    }
+    for (const [type, constraint] of Object.entries(
+      providers as Record<string, any>,
+    )) {
+      const source =
+        typeof constraint?.source === "string" ? constraint.source : type;
+      const providerAttributes: Attributes = {
+        ...attributes,
+        provider: normalizeProviderSource(source),
+        binding: classifyProviderBinding(source, generatedSources),
+      };
+      if (typeof constraint?.version === "string") {
+        providerAttributes.version_constraint = normalizeProviderConstraint(
+          constraint.version,
+        );
+      }
+      Sentry.metrics.count("cli.stack.provider", 1, {
+        attributes: providerAttributes,
+      });
+    }
+  });
+}
+
+// Payload entries are validated one by one: a throw here would be swallowed
+// by sendTelemetry's catch and skip the command metric for the whole run.
+function sourceOf(entry: unknown): string | undefined {
+  return typeof entry === "string" ? entry : undefined;
+}
+
+// `get` payload: one entry per generated binding, counted per provider and
+// module; only the totals land on the command metric.
+function sendGetTelemetry(targets: unknown[], attributes: Attributes): void {
+  const byType = (type: string) =>
+    targets.flatMap((target: any) => {
+      const source = sourceOf(target?.source);
+      return target?.type === type && source !== undefined ? [source] : [];
+    });
+  const providers = byType("provider");
+  const modules = byType("module");
+  attributes.provider_count = providers.length;
+  attributes.module_count = modules.length;
+  for (const source of providers) {
+    Sentry.metrics.count("cli.get.provider", 1, {
+      attributes: { ...attributes, provider: normalizeProviderSource(source) },
+    });
+  }
+  for (const source of modules) {
+    Sentry.metrics.count("cli.get.module", 1, {
+      attributes: { ...attributes, module: classifyModuleSource(source) },
+    });
+  }
+}
+
+// `init` payload: the providers the new project was created with.
+function sendInitTelemetry(entries: unknown[], attributes: Attributes): void {
+  const providers = entries.flatMap((entry) => sourceOf(entry) ?? []);
+  attributes.provider_count = providers.length;
+  for (const provider of providers) {
+    Sentry.metrics.count("cli.init.provider", 1, {
+      attributes: {
+        ...attributes,
+        provider: normalizeProviderSource(provider),
+      },
+    });
+  }
+}
+
 // A run counts once as cli.command.invoked at start, then once as either
 // cli.command.completed (with the scalars known only at the end) or
 // cli.command.error; a nested operation (a deploy's synth) adds only its own.
@@ -293,6 +654,14 @@ export async function sendTelemetry(
       command,
       payload.language ?? state.language,
     );
+    for (const [key, spec] of Object.entries(
+      SCALAR_ATTRIBUTES[command] ?? {},
+    )) {
+      const value = scalarAttributeValue(payload[key], spec);
+      if (value !== undefined) {
+        attributes[spec.attribute] = value;
+      }
+    }
 
     if (payload.error) {
       attributes.error_type = COMMAND_ERROR_TYPES.includes(payload.errorType)
@@ -302,7 +671,32 @@ export async function sendTelemetry(
       return;
     }
 
-    if (
+    if (command === "get" && Array.isArray(payload.targets)) {
+      sendGetTelemetry(payload.targets, attributes);
+    }
+    if (command === "init" && Array.isArray(payload.addedProviders)) {
+      sendInitTelemetry(payload.addedProviders, attributes);
+    }
+    if (Array.isArray(payload.stackMetadata)) {
+      sendStackTelemetry(
+        payload.stackMetadata,
+        Array.isArray(payload.requiredProviders)
+          ? payload.requiredProviders
+          : [],
+        attributes,
+      );
+    }
+    // a run with failed stacks is not completed: the failure thrown next is
+    // counted as cli.command.error by the entrypoint's reporter
+    const failedStackCount =
+      typeof payload.failedStackCount === "number"
+        ? payload.failedStackCount
+        : 0;
+    if (failedStackCount > 0) {
+      Sentry.metrics.count("cli.stack.failed", failedStackCount, {
+        attributes,
+      });
+    } else if (
       state.startedCommand === undefined ||
       state.startedCommand === command
     ) {
