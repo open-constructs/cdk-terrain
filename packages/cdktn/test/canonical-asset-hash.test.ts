@@ -514,6 +514,41 @@ describe("TerraformAsset artifact layout derives from the packaging", () => {
   });
 });
 
+describe("TerraformAsset stages inside the stack's own directory (#380)", () => {
+  let srcDir: string;
+
+  beforeEach(() => {
+    srcDir = createTempDir();
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "content");
+  });
+
+  afterEach(() => {
+    fs.rmSync(srcDir, { recursive: true, force: true });
+  });
+
+  const stack = () =>
+    new TerraformStack(
+      Testing.app({ context: { [CANONICAL_ASSET_HASHES]: "true" } }),
+      "s",
+    );
+
+  test("staged asset is reachable under stacks/<id>, not as a sibling of stacks/", () => {
+    const s = stack();
+    const asset = new TerraformAsset(s, "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+    });
+
+    const outdir = Testing.fullSynth(s);
+    const stackDir = path.join(outdir, "stacks", s.node.id);
+
+    // The asset resolves inside the stack's own directory...
+    expect(fs.existsSync(path.join(stackDir, asset.path))).toBe(true);
+    // ...never as a sibling of stacks/ (the historical #380 concern).
+    expect(fs.existsSync(path.join(outdir, asset.path))).toBe(false);
+  });
+});
+
 describe("TerraformModuleAsset with the canonicalAssetHashes flag", () => {
   let rootDir: string;
   let moduleA: string;
