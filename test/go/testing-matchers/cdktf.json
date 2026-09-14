@@ -2,6 +2,6 @@
   "language": "go",
   "app": "go run main.go",
   "codeMakerOutput": "generated",
-  "terraformProviders": ["kreuzwerker/docker@~> 2.0"],
+  "terraformProviders": ["kreuzwerker/docker@~> 3.0"],
   "context": {}
 }

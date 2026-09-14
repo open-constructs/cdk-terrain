@@ -2,6 +2,6 @@
   "language": "java",
   "app": "./gradlew run",
   "codeMakerOutput": "imports",
-  "terraformProviders": ["kreuzwerker/docker@~> 2.0"],
+  "terraformProviders": ["kreuzwerker/docker@~> 3.0"],
   "context": {}
 }
