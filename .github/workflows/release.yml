@@ -243,11 +243,13 @@ jobs:
             "@cdktn/commons",
             "@cdktn/cli-core",
           ]
-        terraform_version: ["1.16.1", "1.5.7"]
+        include:
+          - terraform_binary: terraform1.16.1
+          - terraform_binary: terraform1.5.7
     with:
       concurrency_group_prefix: release
       package: ${{ matrix.package }}
-      terraform_version: ${{ matrix.terraform_version }}
+      terraform_binary: ${{ matrix.terraform_binary }}
     secrets: inherit
 
   # ---------------------------------------------------------------------------
@@ -270,11 +272,13 @@ jobs:
             "@cdktn/commons",
             "@cdktn/cli-core",
           ]
-        terraform_version: ["1.16.1", "1.5.7"]
+        include:
+          - terraform_binary: terraform1.16.1
+          - terraform_binary: terraform1.5.7
     with:
       concurrency_group_prefix: release-next
       package: ${{ matrix.package }}
-      terraform_version: ${{ matrix.terraform_version }}
+      terraform_binary: ${{ matrix.terraform_binary }}
     secrets: inherit
 
   quality_next:
