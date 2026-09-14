@@ -106,6 +106,8 @@ jobs:
             terraform_binary: terraform1.16.1
           - terraform_version: "1.5.7"
             terraform_binary: terraform1.5.7
+          - terraform_version: "1.12.6"
+            terraform_binary: tofu1.12.6
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -144,7 +146,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
-          key: providerSchema-${{ runner.os }}-${{ matrix.terraform_version }}-unit-affected
+          key: providerSchema-${{ runner.os }}-${{ matrix.terraform_binary }}-unit-affected
 
       - name: Create TF_PLUGIN_CACHE_DIR if set
         run: |
