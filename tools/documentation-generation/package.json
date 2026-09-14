@@ -13,7 +13,7 @@
     },
     "devDependencies": {
         "jsii-docgen": "^10.12.6",
-        "jsii-rosetta": "~6.0.0",
+        "jsii-rosetta": "~6.0.14",
         "remark-parse": "^11.0.0",
         "remark-stringify": "^11.0.0",
         "unified": "^11.0.5",
