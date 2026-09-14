@@ -3,10 +3,12 @@
 import * as Sentry from "@sentry/node";
 import * as path from "path";
 import * as fs from "fs-extra";
+import * as semver from "semver";
 import ciInfo from "ci-info";
 import { logger } from "./logging";
-import { LANGUAGES } from "./config";
+import { DEFAULT_TARGET_VERSIONS, LANGUAGES } from "./config";
 import { processState } from "./process-state";
+import { terraformCli, TerraformCliProbe } from "./terraform";
 
 type AttributeValue = string | number | boolean;
 type Attributes = Record<string, AttributeValue>;
@@ -66,6 +68,9 @@ type CommandTelemetryState = {
   // The raw `language` of the project the run started in, so every metric of
   // the run (the error metric has no payload) carries the one `invoked` did.
   language?: unknown;
+  // Captured alongside the consent decision, for the same reason: the project
+  // the user ran the command in, not the one the command may chdir into.
+  projectTargetAttributes?: Attributes;
 };
 
 // Shared by both bundle copies: the handlers' copy captures the decision and
@@ -74,6 +79,24 @@ const state = processState<CommandTelemetryState>(
   "cdktn.commandTelemetry",
   () => ({}),
 );
+
+// Free-text payload fields are validated before they become attributes so a
+// misconfigured or hand-edited value never carries arbitrary text.
+const RELEASE_VERSION = /^\d+\.\d+\.\d+/;
+
+// MAJOR.MINOR.PATCH only: prerelease and build identifiers are free text
+// (a wrapper's version line or a locally built library can carry anything).
+function releaseVersion(value: string | undefined): string | undefined {
+  return RELEASE_VERSION.exec(value ?? "")?.[0];
+}
+
+// Normalized so spacing variants collapse into one value; a prerelease or
+// build identifier is free text and rejects the range (hyphen ranges are
+// written " - ", so a hyphen right after a digit is always a prerelease).
+function semverRangeOrInvalid(value: string): string {
+  const range = value.length <= 64 ? semver.validRange(value) : null;
+  return range && !/\d[-+]/.test(value) ? range : "invalid";
+}
 
 export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
   state.usageTelemetryEnabled = enabled;
@@ -101,6 +124,71 @@ export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
     return state.usageTelemetryEnabled;
   }
   return getUsageTelemetryConsent(projectPath) !== false;
+}
+
+/**
+ * The project's declared Terraform/OpenTofu targets as metric attributes.
+ * Falls back to the CLI defaults so every metric carries the ranges the
+ * command actually validated against.
+ */
+export function getProjectTargetAttributes(
+  projectPath = process.cwd(),
+): Attributes {
+  const cdktfJson = readRawCdktfJson(projectPath);
+  const declared =
+    cdktfJson.targetVersions &&
+    typeof cdktfJson.targetVersions === "object" &&
+    !Array.isArray(cdktfJson.targetVersions)
+      ? cdktfJson.targetVersions
+      : undefined;
+  const targets: Record<string, unknown> = declared ?? DEFAULT_TARGET_VERSIONS;
+  const attributes: Attributes = {
+    targets_declared: declared !== undefined,
+    validate_installed_binary: cdktfJson.validateInstalledBinary === true,
+  };
+  if (typeof targets.terraform === "string") {
+    attributes.target_terraform = semverRangeOrInvalid(targets.terraform);
+  }
+  if (typeof targets.opentofu === "string") {
+    attributes.target_opentofu = semverRangeOrInvalid(targets.opentofu);
+  }
+  return attributes;
+}
+
+export function setProjectTargetAttributes(
+  attributes: Attributes | undefined,
+): void {
+  state.projectTargetAttributes = attributes;
+}
+
+/**
+ * Binary attributes from the version probe, bounded so a hung binary never
+ * delays the command; a timed-out probe reports `binary: "unknown"`.
+ */
+export async function getBinaryAttributes(
+  probe: Promise<TerraformCliProbe> = terraformCli(),
+  timeoutMs = 1500,
+): Promise<Attributes> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<TerraformCliProbe>((resolve) => {
+    timer = setTimeout(() => resolve({ name: "unknown" }), timeoutMs);
+  });
+  try {
+    const cli = await Promise.race([probe, timeout]);
+    const attributes: Attributes = { binary: cli.name };
+    // an unrecognised product's version is the first version-like token of
+    // its output, which can be anything (a wrapper's "connected to 10.0.0.1")
+    const release =
+      cli.name === "terraform" || cli.name === "opentofu"
+        ? releaseVersion(cli.version)
+        : undefined;
+    if (release) {
+      attributes.binary_version = release;
+    }
+    return attributes;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -135,11 +223,18 @@ export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
 // A run counts once as cli.command.invoked at start, then once as either
 // cli.command.completed (with the scalars known only at the end) or
 // cli.command.error; a nested operation (a deploy's synth) adds only its own.
-function commandAttributes(command: string, language: unknown): Attributes {
+async function commandAttributes(
+  command: string,
+  language: unknown,
+): Promise<Attributes> {
   const ci: string | false = ciInfo.isCI ? ciInfo.name || "unknown" : false;
   const attributes: Attributes = {
     command,
     ci: ci === false ? false : ci,
+    os: process.platform,
+    arch: process.arch,
+    ...(state.projectTargetAttributes ?? getProjectTargetAttributes()),
+    ...(await getBinaryAttributes()),
   };
   if (LANGUAGES.includes(language as any)) {
     attributes.language = language as string;
@@ -165,7 +260,7 @@ export async function startCommandTelemetry(
     if (!isUsageTelemetryEnabled()) {
       return;
     }
-    const attributes = commandAttributes(command, state.language);
+    const attributes = await commandAttributes(command, state.language);
     Sentry.metrics.count("cli.command.invoked", 1, { attributes });
   } catch (err) {
     logger.debug(`Could not send telemetry data: ${err}`);
@@ -194,7 +289,7 @@ export async function sendTelemetry(
       return;
     }
 
-    const attributes = commandAttributes(
+    const attributes = await commandAttributes(
       command,
       payload.language ?? state.language,
     );
