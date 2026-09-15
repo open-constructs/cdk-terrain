@@ -16,6 +16,11 @@ on:
         default: 1.16.1
         type: string
         required: false
+      terraform_binary:
+        description: Version-suffixed CLI in the image; must correspond to terraform_version
+        default: terraform1.16.1
+        type: string
+        required: false
       dist_artifact_name:
         description: Name of the dist artifact created
         default: dist-provider-integration
@@ -99,7 +104,7 @@ jobs:
     env:
       CHECKPOINT_DISABLE: "1"
       TERRAFORM_VERSION: ${{ inputs.terraform_version }}
-      TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
+      TERRAFORM_BINARY_NAME: ${{ inputs.terraform_binary }}
     timeout-minutes: 60
 
     steps:
@@ -127,9 +132,9 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          key: terraform-${{ runner.os }}-${{ inputs.terraform_version }}-provider-integration
+          key: terraform-${{ runner.os }}-${{ inputs.terraform_binary }}-provider-integration
           restore-keys: |
-            terraform-${{ runner.os }}-${{ inputs.terraform_version }}-
+            terraform-${{ runner.os }}-${{ inputs.terraform_binary }}-
       - name: install test dependencies
         run: cd test && pnpm ci
       - name: integration tests
@@ -180,9 +185,9 @@ jobs:
       - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.terraform }}
-          key: terraform-${{ runner.os }}-${{ inputs.terraform_version }}-provider-integration
+          key: terraform-${{ runner.os }}-${{ inputs.terraform_binary }}-provider-integration
           restore-keys: |
-            terraform-${{ runner.os }}-${{ inputs.terraform_version }}-
+            terraform-${{ runner.os }}-${{ inputs.terraform_binary }}-
       # tmp fix for https://github.com/npm/cli/issues/4980
       - name: update npm
         run: npm install -g npm@8.12.1

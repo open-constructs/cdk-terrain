@@ -9,7 +9,8 @@ on:
       package:
         required: true
         type: string
-      terraform_version:
+      terraform_binary:
+        description: Version-suffixed CLI in the image, e.g. terraform1.16.1 or tofu1.12.6
         required: true
         type: string
 
@@ -17,7 +18,7 @@ env:
   HUSKY: "0"
 
 concurrency:
-  group: ${{ inputs.concurrency_group_prefix }}-unit-${{ inputs.package }}-${{ inputs.terraform_version }}-${{ github.head_ref }}
+  group: ${{ inputs.concurrency_group_prefix }}-unit-${{ inputs.package }}-${{ inputs.terraform_binary }}-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
@@ -58,7 +59,7 @@ jobs:
       - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
-          key: providerSchema-${{ runner.os }}-${{ inputs.terraform_version }}-unit-${{ inputs.package }}
+          key: providerSchema-${{ runner.os }}-${{ inputs.terraform_binary }}-unit-${{ inputs.package }}
 
       - name: installing dependencies
         run: |
@@ -77,7 +78,7 @@ jobs:
           unset TF_PLUGIN_CACHE_DIR
           pnpm exec nx test '${{ inputs.package }}' --ci --coverage --reporters=default --reporters=github-actions
         env:
-          TERRAFORM_BINARY_NAME: "terraform${{ inputs.terraform_version }}"
+          TERRAFORM_BINARY_NAME: ${{ inputs.terraform_binary }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
           CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH: ${{ steps.global-cache-dir-path.outputs.providerSchema }}
 
