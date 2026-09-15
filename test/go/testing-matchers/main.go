@@ -31,7 +31,7 @@ func NewMyStack(scope constructs.Construct, id string) cdktn.TerraformStack {
 	})
 
 	container.NewContainer(stack, jsii.String("nginxContainer"), &container.ContainerConfig{
-		Image: dockerImage.Latest(),
+		Image: dockerImage.Name(),
 		Name:  jsii.String("tutorial"),
 		Ports: &[]*container.ContainerPorts{{
 			Internal: jsii.Number(80), External: jsii.Number(8000),
@@ -60,7 +60,7 @@ func NewMyStackInvalid(scope constructs.Construct, id string) cdktn.TerraformSta
 	type fails struct{}
 
 	container.NewContainer(stack, jsii.String("nginxContainer"), &container.ContainerConfig{
-		Image: dockerImage.Latest(),
+		Image: dockerImage.Name(),
 		Name:  jsii.String("nginx-go-cdktf"),
 		Ports: &[]*container.ContainerPorts{{
 			Internal: jsii.Number(80), External: jsii.Number(8000),
