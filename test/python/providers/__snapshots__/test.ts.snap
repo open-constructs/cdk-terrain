@@ -4,7 +4,7 @@ exports[`python full integration 3rd party synth generates HCL 1`] = `
 "terraform {
   required_providers {
     docker = {
-      version = "2.16.0"
+      version = "3.9.0"
       source  = "kreuzwerker/docker"
     }
   }
@@ -102,7 +102,7 @@ exports[`python full integration 3rd party synth generates JSON 1`] = `
     "required_providers": {
       "docker": {
         "source": "kreuzwerker/docker",
-        "version": "2.16.0"
+        "version": "3.9.0"
       }
     }
   }
