@@ -436,15 +436,19 @@ describe("TerraformAsset assetHashType", () => {
     ).toThrow(/assetHashType.*CUSTOM|CUSTOM/i);
   });
 
-  test("OUTPUT is rejected until bundling exists", () => {
-    expect(
-      () =>
-        new TerraformAsset(stack(), "asset", {
-          path: srcDir,
-          type: AssetType.DIRECTORY,
-          assetHashType: AssetHashType.OUTPUT,
-        }),
-    ).toThrow(/OUTPUT/);
+  test("OUTPUT hashes the source, same as SOURCE, until bundling exists", () => {
+    const output = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      assetHashType: AssetHashType.OUTPUT,
+    });
+    const source = new TerraformAsset(stack(), "asset2", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      assetHashType: AssetHashType.SOURCE,
+    });
+
+    expect(output.assetHash).toEqual(source.assetHash);
   });
 
   test("an out-of-range hash type throws instead of returning undefined", () => {
@@ -458,6 +462,106 @@ describe("TerraformAsset assetHashType", () => {
           assetHashType: "bogus" as unknown as AssetHashType,
         }),
     ).toThrow(/unknown assetHashType/i);
+  });
+
+  test("a resolved assetHash with unsafe characters throws, even with no exclude/extraHash set", () => {
+    // TerraformAsset always routes through AssetStaging, so this path (no
+    // advanced options) gets the same safety check as the exclude/extraHash
+    // path — an assetHash is used as a path segment in `TerraformAsset.path`,
+    // so an unsafe one could otherwise escape the assets directory at synth.
+    expect(
+      () =>
+        new TerraformAsset(stack(), "asset", {
+          path: srcDir,
+          type: AssetType.DIRECTORY,
+          assetHash: "../../escape",
+          assetHashType: AssetHashType.CUSTOM,
+        }),
+    ).toThrow(/may only contain/);
+  });
+});
+
+describe("TerraformAsset with exclude/extraHash (AssetStaging integration)", () => {
+  let srcDir: string;
+
+  beforeEach(() => {
+    srcDir = createTempDir();
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "content");
+    fs.writeFileSync(path.join(srcDir, "b.md"), "docs");
+  });
+
+  afterEach(() => {
+    fs.rmSync(srcDir, { recursive: true, force: true });
+  });
+
+  const stack = () =>
+    new TerraformStack(
+      Testing.app({ context: { [CANONICAL_ASSET_HASHES]: "true" } }),
+      "s",
+    );
+
+  test("exclude changes the hash relative to the unexcluded asset", () => {
+    const plain = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+    });
+    const excluded = new TerraformAsset(stack(), "asset2", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      exclude: ["*.md"],
+    });
+
+    expect(excluded.assetHash).not.toEqual(plain.assetHash);
+  });
+
+  test("exclude does not change the packaging (a directory stays a directory)", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      exclude: ["*.md"],
+    });
+
+    expect(asset.type).toBe(AssetType.DIRECTORY);
+    expect(asset.path.endsWith(asset.assetHash)).toBe(true);
+  });
+
+  test("excluded files are absent from the staged/packed output", () => {
+    const s = stack();
+    const asset = new TerraformAsset(s, "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      exclude: ["*.md"],
+    });
+    const outdir = Testing.fullSynth(s);
+    const stagedDir = path.join(outdir, "stacks", s.node.id, asset.path);
+
+    expect(fs.existsSync(path.join(stagedDir, "a.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(stagedDir, "b.md"))).toBe(false);
+  });
+
+  test("extraHash changes the hash", () => {
+    const withoutExtra = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+    });
+    const withExtra = new TerraformAsset(stack(), "asset2", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      extraHash: "v2",
+    });
+
+    expect(withExtra.assetHash).not.toEqual(withoutExtra.assetHash);
+  });
+
+  test("an explicit assetHash is used verbatim even with exclude set", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      assetHash: "my-custom-hash",
+      exclude: ["*.md"],
+    });
+
+    expect(asset.assetHash).toBe("my-custom-hash");
   });
 });
 

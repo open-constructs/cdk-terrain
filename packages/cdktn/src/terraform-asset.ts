@@ -9,8 +9,8 @@ import {
   IAsset,
   IAssetPackaging,
 } from "./assets";
-import { hashPath, findFileAboveCwd } from "./private/fs";
-import { CANONICAL_ASSET_HASHES } from "./features";
+import { AssetStaging } from "./asset-staging";
+import { findFileAboveCwd } from "./private/fs";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
 import { TerraformStack } from "./terraform-stack";
@@ -18,10 +18,6 @@ import {
   assetExpectsDirectory,
   assetOutOfScopeOfCDKTFJson,
   assetTypeNotImplemented,
-  assetHashTypeOutputNotSupported,
-  assetHashTypeCustomRequiresHash,
-  assetHashConflictingHashType,
-  assetHashTypeUnknown,
 } from "./errors";
 
 export interface TerraformAssetConfig {
@@ -35,15 +31,33 @@ export interface TerraformAssetConfig {
    * How the `assetHash` is derived.
    *
    * `SOURCE` (the default) hashes the source path. `CUSTOM` uses the
-   * `assetHash` value verbatim and requires it to be set. `OUTPUT` is not
-   * supported yet — there is no bundling step to produce an output to hash —
-   * and throws if requested.
+   * `assetHash` value verbatim and requires it to be set. `OUTPUT` also
+   * hashes the source path today — there is no bundling step yet, so the
+   * "output" of an asset is its source verbatim — but will hash the
+   * bundler's output once bundling is introduced.
    *
    * If `assetHash` is set, this must be `undefined` or `AssetHashType.CUSTOM`.
    *
    * @default AssetHashType.SOURCE
    */
   readonly assetHashType?: AssetHashType;
+
+  /**
+   * Paths to exclude from the asset, relative to `path`. See
+   * `AssetStagingOptions.exclude` for the accepted forms. Both the computed
+   * hash and the staged/packed content honor the exclusion.
+   *
+   * @default - nothing is excluded
+   */
+  readonly exclude?: string[];
+
+  /**
+   * Extra information to fold into the hash (e.g. build instructions and
+   * other inputs).
+   *
+   * @default - no extra hash
+   */
+  readonly extraHash?: string;
 }
 
 export enum AssetType {
@@ -77,6 +91,8 @@ export class TerraformAsset extends Construct implements IAsset {
   public readonly assetHash: string;
   // file type of the asset, either AssetType.FILE, AssetType.DIRECTORY, AssetType.ARCHIVE
   public type: AssetType;
+  // owns hashing and packing; `AssetStaging` also validates a custom `assetHash`
+  private readonly staging: AssetStaging;
 
   /**
    * A Terraform Asset takes a file or directory outside of the CDK Terrain context and moves it into it.
@@ -111,7 +127,16 @@ export class TerraformAsset extends Construct implements IAsset {
     const stat = fs.statSync(this.sourcePath);
     const inferredType = stat.isFile() ? AssetType.FILE : AssetType.DIRECTORY;
     this.type = config.type ?? inferredType;
-    this.assetHash = this.resolveAssetHash(id, config);
+
+    this.staging = new AssetStaging(this, "Staging", {
+      sourcePath: this.sourcePath,
+      packaging: this.packaging,
+      assetHash: config.assetHash,
+      assetHashType: config.assetHashType,
+      exclude: config.exclude,
+      extraHash: config.extraHash,
+    });
+    this.assetHash = this.staging.assetHash;
 
     if (stat.isFile() && this.type !== AssetType.FILE) {
       throw assetExpectsDirectory(id, config.path);
@@ -124,46 +149,6 @@ export class TerraformAsset extends Construct implements IAsset {
     addCustomSynthesis(this, {
       onSynthesize: this._onSynthesize.bind(this),
     });
-  }
-
-  /**
-   * Resolve the asset hash from `assetHash` and `assetHashType`.
-   *
-   * Honors the same contract `AssetOptions` documents: an explicit
-   * `assetHash` means the type is `CUSTOM`, `CUSTOM` requires a hash, and
-   * `OUTPUT` is rejected because there is no bundling step to hash yet.
-   * `SOURCE` (the default) hashes the source path as before.
-   * @param id - construct id, for error messages
-   * @param config - the asset configuration
-   */
-  private resolveAssetHash(id: string, config: TerraformAssetConfig): string {
-    const { assetHash, assetHashType } = config;
-
-    if (assetHash !== undefined) {
-      if (
-        assetHashType !== undefined &&
-        assetHashType !== AssetHashType.CUSTOM
-      ) {
-        throw assetHashConflictingHashType(id);
-      }
-      return assetHash;
-    }
-
-    switch (assetHashType) {
-      case AssetHashType.CUSTOM:
-        throw assetHashTypeCustomRequiresHash(id);
-      case AssetHashType.OUTPUT:
-        throw assetHashTypeOutputNotSupported(id);
-      case AssetHashType.SOURCE:
-      case undefined:
-        return hashPath(this.sourcePath, {
-          canonical: !!this.node.tryGetContext(CANONICAL_ASSET_HASHES),
-          archive: this.type === AssetType.ARCHIVE,
-        });
-      default:
-        // Out-of-range value from a non-TypeScript caller.
-        throw assetHashTypeUnknown(id, assetHashType);
-    }
   }
 
   private get namedFolder(): string {
@@ -235,6 +220,6 @@ export class TerraformAsset extends Construct implements IAsset {
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     }
 
-    packaging.pack({ source: this.sourcePath, target: targetPath });
+    this.staging.stage(targetPath);
   }
 }

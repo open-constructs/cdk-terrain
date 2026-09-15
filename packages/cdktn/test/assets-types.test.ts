@@ -29,6 +29,9 @@ describe("Assets Types", () => {
       expect(AssetPackaging.DIRECTORY.producesDirectory).toBe(true);
       expect(AssetPackaging.ZIP.producesDirectory).toBe(false);
       expect(AssetPackaging.ZIP.extension).toBe(".zip");
+      expect(AssetPackaging.FILE.omitsDirectoryEntries).toBe(false);
+      expect(AssetPackaging.DIRECTORY.omitsDirectoryEntries).toBe(false);
+      expect(AssetPackaging.ZIP.omitsDirectoryEntries).toBe(true);
     });
 
     describe("pack", () => {

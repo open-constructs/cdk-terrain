@@ -47,6 +47,7 @@ export * from "./terraform-data-resource";
 export * from "./assets";
 export * from "./ignore-strategy";
 export * from "./asset-hash";
+export * from "./asset-staging";
 // required for JSII because Fn extends from it
 export * from "./functions/terraform-functions.generated";
 export * from "./functions/provider-function";

@@ -103,6 +103,19 @@ export interface IAssetPackaging {
   readonly producesDirectory: boolean;
 
   /**
+   * Whether `pack` emits an artifact with no directory entries of its own —
+   * only the ignore-strategy-aware source walk. `hashPath`'s `archive` frame
+   * must agree with this or the hash and the artifact describe different
+   * file sets.
+   *
+   * `ZipPackaging` sets this because `archiveSync` never emits ZIP directory
+   * entries. A directory-producing packaging that mirrors the source tree
+   * (e.g. `DirectoryPackaging`) leaves this false, since its directories are
+   * real entries on disk.
+   */
+  readonly omitsDirectoryEntries: boolean;
+
+  /**
    * Perform the staging transformation, writing the packaged result to
    * `options.target`.
    * @param options - see {@link PackOptions}
@@ -144,6 +157,7 @@ export interface PackOptions {
 class FilePackaging implements IAssetPackaging {
   public readonly extension = "";
   public readonly producesDirectory = false;
+  public readonly omitsDirectoryEntries = false;
   public pack(options: PackOptions): void {
     fs.copyFileSync(options.source, options.target);
   }
@@ -155,6 +169,7 @@ class FilePackaging implements IAssetPackaging {
 class DirectoryPackaging implements IAssetPackaging {
   public readonly extension = "";
   public readonly producesDirectory = true;
+  public readonly omitsDirectoryEntries = false;
   public pack(options: PackOptions): void {
     copySync(options.source, options.target, {
       shouldExclude: options.ignoreStrategy
@@ -173,6 +188,7 @@ class DirectoryPackaging implements IAssetPackaging {
 class ZipPackaging implements IAssetPackaging {
   public readonly extension = ".zip";
   public readonly producesDirectory = false;
+  public readonly omitsDirectoryEntries = true;
   public pack(options: PackOptions): void {
     archiveSync(
       options.source,
