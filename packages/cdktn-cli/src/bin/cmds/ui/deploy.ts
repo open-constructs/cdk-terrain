@@ -40,7 +40,8 @@ export interface DeployConfig {
  * @param config - All deploy options, forwarded near-verbatim to `CdktfProject.deploy`. `onOutputsRetrieved` is
  *                 invoked once the run completes (or is stopped) with the final outputs map.
  * @returns Promise that resolves when the deploy completes, is stopped, or is dismissed. Rejects with whatever
- *          cli-core rejects with for real failures (terraform error, abort signal, etc.).
+ *          cli-core rejects with for real failures (terraform error, abort signal, etc.). A failure *rendering*
+ *          the fetched outputs is non-fatal and does not cause a rejection.
  */
 export async function runDeploy({
   outDir,
@@ -158,14 +159,38 @@ export async function runDeploy({
     );
 
     const outputs = project.outputsByConstructId;
+
     onOutputsRetrieved(outputs);
 
-    if (outputs && Object.keys(outputs).length > 0) {
-      console.log(renderOutputs(outputs));
+    let rendered = "";
+    let renderFailed = false;
+    try {
+      rendered = outputs ? renderOutputs(outputs) : "";
+    } catch (e) {
+      // The deploy already succeeded at this point; a failure rendering the outputs table is
+      // purely cosmetic and must not fail the deploy. Log it so the user still learns something
+      // went wrong, but do not rethrow.
+      console.error(
+        `\nDeploy succeeded, but rendering the outputs failed: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      renderFailed = true;
+    }
+
+    if (rendered) {
+      console.log(rendered);
+    }
+
+    if (rendered || renderFailed) {
       if (outputsPath) {
         console.log(`The outputs have been written to ${outputsPath}`);
       }
     } else {
+      // Either there were no declared outputs at all, or every one of them was dropped upstream
+      // (e.g. all missing from `terraform output`, the empty-group case renderOutputs collapses
+      // to ""). Either way there is nothing to show the user, so say so plainly instead of
+      // printing a stray blank line.
       console.log("No outputs found.");
     }
   } finally {
