@@ -243,9 +243,7 @@ jobs:
             "@cdktn/commons",
             "@cdktn/cli-core",
           ]
-        include:
-          - terraform_binary: terraform1.16.1
-          - terraform_binary: terraform1.5.7
+        terraform_binary: [terraform1.16.1, terraform1.5.7]
     with:
       concurrency_group_prefix: release
       package: ${{ matrix.package }}
@@ -272,9 +270,7 @@ jobs:
             "@cdktn/commons",
             "@cdktn/cli-core",
           ]
-        include:
-          - terraform_binary: terraform1.16.1
-          - terraform_binary: terraform1.5.7
+        terraform_binary: [terraform1.16.1, terraform1.5.7]
     with:
       concurrency_group_prefix: release-next
       package: ${{ matrix.package }}
