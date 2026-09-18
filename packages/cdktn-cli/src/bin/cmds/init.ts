@@ -49,6 +49,10 @@ class Command extends BaseCommand {
         type: "boolean",
         desc: "Enable crash reporting for the CLI, refer to https://cdktn.io/docs/telemetry#crash-reporting for more details",
       })
+      .option("enable-usage-telemetry", {
+        type: "boolean",
+        desc: "Enable anonymous usage telemetry for the CLI, refer to https://cdktn.io/docs/telemetry for more details",
+      })
       .option("providers", {
         describe: "Providers to add to your project",
         type: "array",
