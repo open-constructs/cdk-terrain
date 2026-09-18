@@ -2,5 +2,6 @@
 .yalc
 yalc.lock
 bundle
+bundle-e2e
 build-config
 !ambient.d.ts
