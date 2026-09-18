@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { mkdtempSync } from "fs";
+import { mkdtempSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
@@ -31,6 +31,40 @@ describe("package-manager", () => {
   afterEach(() => {
     mockAgent.assertNoPendingInterceptors();
     setGlobalDispatcher(originalDispatcher);
+  });
+
+  describe("NodePackageManager detection", () => {
+    function nodeManagerIn(files: Record<string, string>) {
+      const dir = mkdtempSync(join(tmpdir(), "cdktn-pm-test-"));
+      for (const [name, contents] of Object.entries(files)) {
+        writeFileSync(join(dir, name), contents);
+      }
+      return PackageManager.forLanguage(Language.TYPESCRIPT, dir) as any;
+    }
+
+    it("prefers an explicit packageManager field over a conflicting lockfile", () => {
+      // The field is a deliberate declaration; a stale lockfile from another tool must not override it.
+      const manager = nodeManagerIn({
+        "package.json": JSON.stringify({ packageManager: "pnpm@11.5.2" }),
+        "yarn.lock": "",
+      });
+
+      expect(manager.packageManager).toBe("pnpm");
+    });
+
+    it("detects pnpm from its lockfile", () => {
+      expect(nodeManagerIn({ "pnpm-lock.yaml": "" }).packageManager).toBe(
+        "pnpm",
+      );
+    });
+
+    it("detects yarn from its lockfile", () => {
+      expect(nodeManagerIn({ "yarn.lock": "" }).packageManager).toBe("yarn");
+    });
+
+    it("falls back to npm when there is nothing to go on", () => {
+      expect(nodeManagerIn({}).packageManager).toBe("npm");
+    });
   });
 
   describe("JavaPackageManager.isNpmVersionAvailable", () => {
