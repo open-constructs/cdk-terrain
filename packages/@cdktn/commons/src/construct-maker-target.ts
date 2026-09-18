@@ -97,6 +97,7 @@ export class ConstructsMakerModuleTarget extends ConstructsMakerTarget {
     return {
       name: this.name,
       fullName: this.fqn,
+      source: this.source,
       version: this.version,
       type: "module",
     };
@@ -149,6 +150,7 @@ export class ConstructsMakerProviderTarget extends ConstructsMakerTarget {
     return {
       name: this.name,
       fullName: this.source,
+      source: this.source,
       version: this.version,
       type: "provider",
     };
