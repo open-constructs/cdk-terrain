@@ -7,6 +7,7 @@ import {
   AssetPackaging,
   AssetHashType,
   IAsset,
+  IAssetBundler,
   IAssetPackaging,
 } from "./assets";
 import { AssetStaging } from "./asset-staging";
@@ -31,10 +32,9 @@ export interface TerraformAssetConfig {
    * How the `assetHash` is derived.
    *
    * `SOURCE` (the default) hashes the source path. `CUSTOM` uses the
-   * `assetHash` value verbatim and requires it to be set. `OUTPUT` also
-   * hashes the source path today — there is no bundling step yet, so the
-   * "output" of an asset is its source verbatim — but will hash the
-   * bundler's output once bundling is introduced.
+   * `assetHash` value verbatim and requires it to be set. `OUTPUT` hashes the
+   * source too, unless a `bundler` is set — then it hashes the bundler's
+   * built output, which forces an eager build (see `bundler`).
    *
    * If `assetHash` is set, this must be `undefined` or `AssetHashType.CUSTOM`.
    *
@@ -58,6 +58,19 @@ export interface TerraformAssetConfig {
    * @default - no extra hash
    */
   readonly extraHash?: string;
+
+  /**
+   * A bundler that builds the source into an artifact before staging.
+   *
+   * Core ships no bundler; implement `IAssetBundler` or use one from a bundler
+   * package. Under the default `SOURCE` hashing the build is deferred to synth
+   * and stays skippable; `OUTPUT` hashing builds eagerly to hash the artifact.
+   * `AssetType.FILE` is rejected, since bundler output is always a directory.
+   * See `AssetStagingOptions.bundler`.
+   *
+   * @default - the source is staged verbatim, with no build step
+   */
+  readonly bundler?: IAssetBundler;
 }
 
 export enum AssetType {
@@ -128,6 +141,13 @@ export class TerraformAsset extends Construct implements IAsset {
     const inferredType = stat.isFile() ? AssetType.FILE : AssetType.DIRECTORY;
     this.type = config.type ?? inferredType;
 
+    // Validate the type against the source before staging, so an invalid
+    // combination is rejected here rather than after AssetStaging has already
+    // run an eager bundler build.
+    if (stat.isFile() !== (this.type === AssetType.FILE)) {
+      throw assetExpectsDirectory(id, config.path);
+    }
+
     this.staging = new AssetStaging(this, "Staging", {
       sourcePath: this.sourcePath,
       packaging: this.packaging,
@@ -135,16 +155,9 @@ export class TerraformAsset extends Construct implements IAsset {
       assetHashType: config.assetHashType,
       exclude: config.exclude,
       extraHash: config.extraHash,
+      bundler: config.bundler,
     });
     this.assetHash = this.staging.assetHash;
-
-    if (stat.isFile() && this.type !== AssetType.FILE) {
-      throw assetExpectsDirectory(id, config.path);
-    }
-
-    if (!stat.isFile() && this.type === AssetType.FILE) {
-      throw assetExpectsDirectory(id, config.path);
-    }
 
     addCustomSynthesis(this, {
       onSynthesize: this._onSynthesize.bind(this),

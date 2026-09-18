@@ -95,6 +95,14 @@ Place a cdktf.json at the root of your project, or pass an absolute path. Learn 
 `,
   );
 
+export const assetFilePackagingWithBundlerUnsupported = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was configured with a 'bundler' and file packaging (AssetType.FILE). A bundler produces a directory of output, which cannot be staged as a single file.
+
+Use AssetType.ARCHIVE to zip the bundler's output, or AssetType.DIRECTORY to stage it as a tree.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
 export const assetHashInvalid = (id: string, assetHash: string) =>
   new Error(
     `TerraformAsset ${id} resolved an 'assetHash' of '${assetHash}', but it names the staged asset file and so may only contain letters, digits, '_', '.' and '-'.

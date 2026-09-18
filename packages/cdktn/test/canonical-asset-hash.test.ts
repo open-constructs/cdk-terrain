@@ -616,6 +616,27 @@ describe("TerraformAsset artifact layout derives from the packaging", () => {
     expect(asset.fileName).toBe("archive.zip");
     expect(asset.path.endsWith("/archive.zip")).toBe(true);
   });
+
+  test("an invalid type is rejected before the bundler runs", () => {
+    let bundled = false;
+    expect(
+      () =>
+        new TerraformAsset(stack(), "asset", {
+          path: srcDir,
+          type: AssetType.FILE,
+          assetHashType: AssetHashType.OUTPUT,
+          bundler: {
+            bundle: (opts) => {
+              bundled = true;
+              return opts.outputDir;
+            },
+          },
+        }),
+    ).toThrow(/directory/i);
+
+    // The type/source mismatch is caught before staging, so no eager build ran.
+    expect(bundled).toBe(false);
+  });
 });
 
 describe("TerraformAsset stages inside the stack's own directory (#380)", () => {

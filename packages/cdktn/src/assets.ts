@@ -103,6 +103,16 @@ export interface IAssetPackaging {
   readonly producesDirectory: boolean;
 
   /**
+   * Whether `pack` accepts a directory as its `source`.
+   *
+   * Independent of `producesDirectory` and `omitsDirectoryEntries`, both of
+   * which describe the output: a `tar.gz` packaging takes a directory source
+   * yet emits a single file. Bundler output is always a directory, so a
+   * packaging that is `false` here cannot stage it.
+   */
+  readonly acceptsDirectorySource: boolean;
+
+  /**
    * Whether `pack` emits an artifact with no directory entries of its own —
    * only the ignore-strategy-aware source walk. `hashPath`'s `archive` frame
    * must agree with this or the hash and the artifact describe different
@@ -116,9 +126,7 @@ export interface IAssetPackaging {
   readonly omitsDirectoryEntries: boolean;
 
   /**
-   * Perform the staging transformation, writing the packaged result to
-   * `options.target`.
-   * @param options - see {@link PackOptions}
+   * Write the packaged result to `options.target`.
    */
   pack(options: PackOptions): void;
 }
@@ -157,6 +165,7 @@ export interface PackOptions {
 class FilePackaging implements IAssetPackaging {
   public readonly extension = "";
   public readonly producesDirectory = false;
+  public readonly acceptsDirectorySource = false;
   public readonly omitsDirectoryEntries = false;
   public pack(options: PackOptions): void {
     fs.copyFileSync(options.source, options.target);
@@ -169,6 +178,7 @@ class FilePackaging implements IAssetPackaging {
 class DirectoryPackaging implements IAssetPackaging {
   public readonly extension = "";
   public readonly producesDirectory = true;
+  public readonly acceptsDirectorySource = true;
   public readonly omitsDirectoryEntries = false;
   public pack(options: PackOptions): void {
     copySync(options.source, options.target, {
@@ -188,6 +198,7 @@ class DirectoryPackaging implements IAssetPackaging {
 class ZipPackaging implements IAssetPackaging {
   public readonly extension = ".zip";
   public readonly producesDirectory = false;
+  public readonly acceptsDirectorySource = true;
   public readonly omitsDirectoryEntries = true;
   public pack(options: PackOptions): void {
     archiveSync(
@@ -223,6 +234,71 @@ export class AssetPackaging {
   public static readonly ZIP: IAssetPackaging = new ZipPackaging();
 
   private constructor() {}
+}
+
+/**
+ * Options handed to an {@link IAssetBundler} when it runs.
+ *
+ * A struct rather than positional parameters: adding a field is additive,
+ * adding a method parameter is not, and `bundle` is called through JSII where
+ * that distinction is a breaking-change boundary.
+ */
+export interface BundleOptions {
+  /**
+   * Absolute path to the asset's source file or directory. The bundler reads
+   * from here and must not modify it.
+   */
+  readonly source: string;
+
+  /**
+   * A scratch directory the bundler may write into, owned and created by the
+   * caller. The bundler produces its output here (or in a subdirectory) and
+   * returns the directory that holds the finished artifact — see
+   * {@link IAssetBundler.bundle}.
+   */
+  readonly outputDir: string;
+}
+
+/**
+ * Transforms a source tree into a built artifact. Runs at synth, before the
+ * output is packaged and staged.
+ *
+ * This is the extension point for asset bundling: core ships no bundler.
+ * Docker, esbuild, pip, `go build`, and similar are an open-ended set that
+ * is not cloud-specific, so each lives in its own package and implements this
+ * one interface — the same way {@link IIgnoreStrategy} lets richer exclusion
+ * live outside core without core taking on a glob parser. A third party
+ * develops a bundler by implementing this interface and publishing it as a
+ * package; users pass an instance via the consuming construct's `bundler`
+ * option.
+ *
+ * `bundle` runs during the owning construct's `onSynthesize` hook and may
+ * touch the filesystem. Deferring it there keeps it skippable when the asset's
+ * stack is not being synthesized, which holds as long as the hash is taken
+ * over the source rather than the built output.
+ */
+export interface IAssetBundler {
+  /**
+   * A value identifying the build, folded into the asset hash.
+   *
+   * The source tree alone cannot see the build, so swapping a `node:18` base
+   * image for `node:20` would otherwise leave identity unchanged. A value
+   * capturing the build (e.g. `docker:<image>:<command>`) closes that gap.
+   * Mirrors {@link IIgnoreStrategy.cacheKey}: omit it when the build cannot be
+   * summarized as a string, and fall back to `extraHash`.
+   *
+   * @default - the build does not contribute to the hash
+   */
+  readonly bundlerKey?: string;
+
+  /**
+   * Produce the artifact and return the directory holding it.
+   *
+   * Implementations write into `options.outputDir` and return it or a
+   * subdirectory, never writing back to `options.source`. The returned
+   * directory is then packaged as an unbundled source directory would be.
+   */
+  bundle(options: BundleOptions): string;
 }
 
 /**
