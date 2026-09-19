@@ -339,6 +339,7 @@ export class ConstructsMaker {
     const endTSTimer = logTimespan(`Generate Typescript for ${target.name}`);
     const generator = new TerraformProviderGenerator(this.code, schema, {
       importExtension: this.options.languageOptions?.importExtension,
+      targetVersions: this.options.targetVersions,
     });
     generator.generate(target);
 

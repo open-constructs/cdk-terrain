@@ -11,6 +11,7 @@ export * from "./gradle";
 export * from "./logging";
 export * from "./module-schema";
 export * from "./provider-schema";
+export * from "./registry";
 export * from "./terraform-module";
 export * from "./terraform";
 export * from "./util";

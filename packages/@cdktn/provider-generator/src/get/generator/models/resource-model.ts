@@ -5,7 +5,11 @@ import path from "path";
 import { FQPN, parseFQPN, ProviderName } from "@cdktn/provider-schema";
 import { AttributeModel } from "./attribute-model";
 import { Struct, ConfigStruct } from "./struct";
-import { Schema } from "@cdktn/commons";
+import {
+  Schema,
+  TerraformTargetVersions,
+  registryForTargetVersions,
+} from "@cdktn/commons";
 import { ProviderFunctionsModel } from "./provider-function-model";
 
 // Limit is 1200 to prevent stack size error.
@@ -25,6 +29,7 @@ interface ResourceModelOptions {
   schema: Schema;
   terraformSchemaType: string;
   configStructName: string;
+  targetVersions?: TerraformTargetVersions;
 }
 
 type DefinitionPath = string;
@@ -35,6 +40,7 @@ export class ResourceModel {
   public baseName: string;
   public provider: ProviderName;
   public fqpn: FQPN;
+  private readonly targetVersions?: TerraformTargetVersions;
   public providerVersionConstraint?: string;
   public providerVersion?: string;
   public terraformProviderSource?: string;
@@ -68,6 +74,7 @@ export class ResourceModel {
     this.attributes = options.attributes;
     this.schema = options.schema;
     this.fqpn = options.fqpn;
+    this.targetVersions = options.targetVersions;
     this.provider = parseFQPN(options.fqpn).name;
     this.terraformProviderName = this.provider;
     this.fileName = options.fileName;
@@ -109,15 +116,26 @@ export class ResourceModel {
   }
 
   public get linkToDocs(): string {
-    const { hostname, namespace, name } = parseFQPN(this.fqpn);
+    // Keyed off the project's declared targets, not the FQPN hostname: that
+    // hostname reflects whichever CLI fetched the schema, which would make the
+    // generated link differ between a terraform and a tofu `cdktn get`.
+    const registry = registryForTargetVersions(this.targetVersions);
+    const { namespace, name } = parseFQPN(this.fqpn);
     const version = this.providerVersion || "latest";
-    const base = `https://${hostname}/providers/${namespace}/${name}/${version}/docs`;
-    if (this.isProvider) return base;
-    if (this.isDataSource)
-      return `${base}/data-sources/${this.terraformDocName}`;
-    if (this.isEphemeralResource)
-      return `${base}/ephemeral-resources/${this.terraformDocName}`;
-    return `${base}/resources/${this.terraformDocName}`;
+    const kind = this.isProvider
+      ? "provider"
+      : this.isDataSource
+        ? "data-source"
+        : this.isEphemeralResource
+          ? "ephemeral-resource"
+          : "resource";
+    return registry.docsUrl(
+      namespace,
+      name,
+      version,
+      kind,
+      this.terraformDocName,
+    );
   }
 
   public get isProvider(): boolean {
