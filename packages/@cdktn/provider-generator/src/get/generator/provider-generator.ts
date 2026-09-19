@@ -8,6 +8,7 @@ import {
   logger,
   ProviderSchema,
   TerraformProviderConstraint,
+  TerraformTargetVersions,
 } from "@cdktn/commons";
 import { FQPN, parseFQPN, ProviderName } from "@cdktn/provider-schema";
 import {
@@ -29,6 +30,8 @@ export interface TerraformProviderGeneratorOptions {
    * Defaults to "" (CommonJS).
    */
   readonly importExtension?: string;
+  /** Project's declared targetVersions; selects the docs registry. */
+  readonly targetVersions?: TerraformTargetVersions;
 }
 
 interface ProviderData {
@@ -107,7 +110,7 @@ export interface ProviderConstraints {
 }
 
 export class TerraformProviderGenerator {
-  private resourceParser = new ResourceParser();
+  private resourceParser: ResourceParser;
   private resourceEmitter: ResourceEmitter;
   private structEmitter: StructEmitter;
   private providerFunctionsEmitter: ProviderFunctionsEmitter;
@@ -126,6 +129,7 @@ export class TerraformProviderGenerator {
   ) {
     this.code.indentation = 2;
     this.importExtension = options.importExtension ?? "";
+    this.resourceParser = new ResourceParser(options.targetVersions);
     this.resourceEmitter = new ResourceEmitter(this.code, this.importExtension);
     this.structEmitter = new StructEmitter(this.code, this.importExtension);
     this.providerFunctionsEmitter = new ProviderFunctionsEmitter(this.code);

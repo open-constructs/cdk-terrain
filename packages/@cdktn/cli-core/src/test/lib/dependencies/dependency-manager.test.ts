@@ -16,7 +16,7 @@ describe("dependency manager", () => {
           "registry.terraform.io/hashicorp/aws",
         );
         expect(constraint.hostname).toEqual("registry.terraform.io");
-        expect(constraint.isFromTerraformRegistry()).toBe(true);
+        expect(constraint.isFromPublicRegistry()).toBe(true);
         expect(constraint.namespace).toEqual("hashicorp");
         expect(constraint.name).toEqual("aws");
         expect(constraint.simplifiedName).toEqual("aws");
@@ -40,7 +40,7 @@ describe("dependency manager", () => {
           "registry.terraform.io/hashicorp/aws",
         );
         expect(constraint.hostname).toEqual("registry.terraform.io");
-        expect(constraint.isFromTerraformRegistry()).toBe(true);
+        expect(constraint.isFromPublicRegistry()).toBe(true);
         expect(constraint.namespace).toEqual("hashicorp");
         expect(constraint.name).toEqual("aws");
         expect(constraint.version).toBeDefined();
@@ -52,7 +52,7 @@ describe("dependency manager", () => {
       const constraint =
         ProviderConstraint.fromConfigEntry("kreuzwerker/docker");
       expect(constraint.hostname).toEqual("registry.terraform.io");
-      expect(constraint.isFromTerraformRegistry()).toBe(true);
+      expect(constraint.isFromPublicRegistry()).toBe(true);
       expect(constraint.namespace).toEqual("kreuzwerker");
       expect(constraint.name).toEqual("docker");
       expect(constraint.simplifiedName).toEqual("kreuzwerker/docker");
@@ -63,7 +63,7 @@ describe("dependency manager", () => {
         "registry.example.com/acme/customprovider",
       );
       expect(constraint.hostname).toEqual("registry.example.com");
-      expect(constraint.isFromTerraformRegistry()).toBe(false);
+      expect(constraint.isFromPublicRegistry()).toBe(false);
       expect(constraint.namespace).toEqual("acme");
       expect(constraint.name).toEqual("customprovider");
       expect(constraint.simplifiedName).toEqual(

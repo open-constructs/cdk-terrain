@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { Language } from "@cdktn/commons";
+import {
+  Language,
+  readConfigSync,
+  registryForTargetVersions,
+} from "@cdktn/commons";
 import {
   DependencyManager,
   ProviderConstraint,
@@ -30,12 +34,13 @@ export async function providerAdd({
   const version =
     cdktfVersion || (await determineDeps(cdktfVersion, dist)).cdktf_version;
 
+  const registry = registryForTargetVersions(readConfigSync().targetVersions);
   const manager = new DependencyManager(language, version, projectDirectory);
 
   let needsGet = false;
 
   for (const provider of providers) {
-    const constraint = ProviderConstraint.fromConfigEntry(provider);
+    const constraint = ProviderConstraint.fromConfigEntry(provider, registry);
     if (forceLocal) {
       needsGet = true;
       await manager.addLocalProvider(constraint);
