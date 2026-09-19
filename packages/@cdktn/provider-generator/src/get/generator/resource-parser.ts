@@ -11,6 +11,7 @@ import {
   isAttributeNestedType,
   isNestedTypeAttribute,
   Schema,
+  TerraformTargetVersions,
 } from "@cdktn/commons";
 import { ProviderName, FQPN, parseFQPN } from "@cdktn/provider-schema";
 import {
@@ -123,6 +124,7 @@ class Parser {
   constructor(
     private classNames: string[],
     private usedBaseNames: Map<string, string>,
+    private targetVersions?: TerraformTargetVersions,
   ) {}
 
   private uniqueClassName(className: string): string {
@@ -294,6 +296,7 @@ class Parser {
       terraformSchemaType,
       structs: this.structs,
       configStructName,
+      targetVersions: this.targetVersions,
     });
 
     return resourceModel;
@@ -727,6 +730,8 @@ export class ResourceParser {
   private uniqueBaseNames: Map<string, string> = new Map();
   private resources: Record<string, ResourceModel> = {};
 
+  constructor(private readonly targetVersions?: TerraformTargetVersions) {}
+
   public parse(
     fqpn: FQPN,
     type: string,
@@ -738,7 +743,11 @@ export class ResourceParser {
       return this.resources[type];
     }
 
-    const parser = new Parser(this.uniqueClassnames, this.uniqueBaseNames);
+    const parser = new Parser(
+      this.uniqueClassnames,
+      this.uniqueBaseNames,
+      this.targetVersions,
+    );
     const resource = parser.resourceFrom(
       fqpn,
       type,
