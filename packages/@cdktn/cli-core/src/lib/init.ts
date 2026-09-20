@@ -48,6 +48,13 @@ export type InitArgs = {
 
 export const templatesDir = path.join(__dirname, "..", "..", "templates");
 
+// Templates that only carry the files differing from another template. They are scaffolded by running the base
+// template first and then overlaying their own files on top, so the shared files live in exactly one place.
+const TEMPLATE_OVERLAY_BASE: Record<string, string> = {
+  "typescript-pnpm": "typescript",
+  "typescript-yarn": "typescript",
+};
+
 const availableTemplates = fs
   .readdirSync(templatesDir)
   .filter((x) => !x.startsWith("."));
@@ -68,24 +75,34 @@ export async function init({
   providersForceLocal,
   silent,
 }: InitArgs) {
-  const deps: any = await determineDeps(
-    cdktfVersion,
-    dist,
-    path.basename(templatePath),
-  );
+  const templateName = path.basename(templatePath);
+  const overlayBase = TEMPLATE_OVERLAY_BASE[templateName];
+
+  const deps: any = await determineDeps(cdktfVersion, dist, templateName);
 
   const futureFlags = Object.entries(FUTURE_FLAGS)
     .map(([key, value]) => `    "${key}": "${value}"`)
     .join(`,\n`);
 
-  await sscaff(templatePath, destination, {
+  const variables = {
     ...deps,
     ...projectInfo,
     futureFlags,
     projectId,
     sendCrashReports,
     silent,
-  });
+  };
+
+  if (overlayBase) {
+    // `isOverlayBase` tells the base template's hook to lay down files only: the overlay replaces package.json, so
+    // installing here would use the wrong package manager and leave a stray lockfile behind.
+    await sscaff(path.join(templatesDir, overlayBase), destination, {
+      ...variables,
+      isOverlayBase: "true",
+    });
+  }
+
+  await sscaff(templatePath, destination, variables);
   const cdktfConfig = CdktfConfig.read(destination);
 
   let needsGet = false;
@@ -94,6 +111,7 @@ export async function init({
       providers: providers,
       language: cdktfConfig.language,
       projectDirectory: destination,
+      cdktfVersion,
       forceLocal: providersForceLocal,
       dist,
     });
@@ -157,10 +175,13 @@ export async function determineDeps(
 
     // If we know the template, only validate its artifact; otherwise fall
     // back to validating everything (preserves prior behavior for unknown /
-    // remote templates).
+    // remote templates). Overlay templates share their base's artifact.
+    const distTemplate = template
+      ? (TEMPLATE_OVERLAY_BASE[template] ?? template)
+      : template;
     const keysToValidate: DistKey[] =
-      template && distKeysByTemplate[template]
-        ? distKeysByTemplate[template]
+      distTemplate && distKeysByTemplate[distTemplate]
+        ? distKeysByTemplate[distTemplate]
         : (Object.keys(ret) as DistKey[]);
 
     for (const key of keysToValidate) {

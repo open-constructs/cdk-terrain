@@ -48,6 +48,21 @@ const chalkColour = new chalk.Instance();
 
 const isReadme = (file: string) => file.toLowerCase() === "readme.md";
 
+// Matches the `typescript` template and its package-manager variants (`typescript-pnpm`, `typescript-yarn`).
+const isTypescriptTemplate = (name: string) =>
+  name === "typescript" || name.startsWith("typescript-");
+
+// The package manager a TypeScript template scaffolds with, used to run scripts in the generated project.
+function packageManagerFor(templateName: string): string {
+  if (templateName === "typescript-pnpm") {
+    return "pnpm";
+  }
+  if (templateName === "typescript-yarn") {
+    return "yarn";
+  }
+  return "npm";
+}
+
 export function checkForEmptyDirectory(dir: string) {
   if (
     fs
@@ -145,7 +160,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
 
   let fromTerraformProject = argv.fromTerraformProject || undefined;
   if (!fromTerraformProject) {
-    if (templateInfo.Name === "typescript") {
+    if (isTypescriptTemplate(templateInfo.Name)) {
       fromTerraformProject = await getTerraformProject(
         argv.nonInteractive ?? false,
       );
@@ -183,9 +198,9 @@ This means that your Terraform state file will be stored locally on disk in a fi
 
   let convertResult, importPath;
   if (fromTerraformProject) {
-    if (templateInfo.Name !== "typescript") {
+    if (!isTypescriptTemplate(templateInfo.Name)) {
       console.error(
-        `The --from-terraform-project flag is only supported with the typescript template. The command will continue and ignore the flag.`,
+        `The --from-terraform-project flag is only supported with the typescript templates. The command will continue and ignore the flag.`,
       );
     }
 
@@ -262,13 +277,16 @@ This means that your Terraform state file will be stored locally on disk in a fi
     }
 
     if (terraformModules.length + terraformProviders.length > 0) {
-      const npmRunGetOptions: ExecSyncOptions = {
+      const runGetOptions: ExecSyncOptions = {
         cwd: destination,
       };
       if (argv.silent) {
-        npmRunGetOptions.stdio = "ignore";
+        runGetOptions.stdio = "ignore";
       }
-      execSync("npm run get", { cwd: destination });
+      execSync(
+        `${packageManagerFor(templateInfo.Name)} run get`,
+        runGetOptions,
+      );
     }
 
     telemetryData.conversionStats = stats;
