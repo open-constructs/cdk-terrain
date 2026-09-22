@@ -30,7 +30,7 @@ import {
   LocalExecProvisioner,
   RemoteExecProvisioner,
 } from "./terraform-provisioner";
-import { ValidateTerraformVersion } from "./validations/validate-terraform-version";
+import { ValidateFeatureTargetSupport } from "./validations/target-versions";
 import { TerraformStack } from "./terraform-stack";
 import {
   movedToResourceOfDifferentType,
@@ -475,13 +475,15 @@ export class TerraformResource
   }
 
   public importFrom(id: string, provider?: TerraformProvider) {
+    if (!this._imported) {
+      this.node.addValidation(
+        new ValidateFeatureTargetSupport(this, "The import block", {
+          terraform: ">=1.5.0",
+          opentofu: ">=1.6.0",
+        }),
+      );
+    }
     this._imported = { id, provider };
-    this.node.addValidation(
-      new ValidateTerraformVersion(
-        ">=1.5",
-        `Import blocks are only supported for Terraform >=1.5. Please upgrade your Terraform version.`,
-      ),
-    );
   }
 
   private _getResourceTarget(moveTarget: string) {

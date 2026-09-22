@@ -6,7 +6,7 @@
 import { Construct } from "constructs";
 import { TerraformElement } from "./terraform-element";
 import { TerraformProvider } from "./terraform-provider";
-import { ValidateTerraformVersion } from "./validations/validate-terraform-version";
+import { ValidateFeatureTargetSupport } from "./validations/target-versions";
 
 export interface IImportableConfig {
   terraformResourceType: string;
@@ -25,10 +25,10 @@ export class ImportableResource extends TerraformElement {
   ) {
     super(scope, name, config.terraformResourceType);
     this.node.addValidation(
-      new ValidateTerraformVersion(
-        ">=1.5",
-        `Import blocks are only supported for Terraform >=1.5. Please upgrade your Terraform version.`,
-      ),
+      new ValidateFeatureTargetSupport(this, "The import block", {
+        terraform: ">=1.5.0",
+        opentofu: ">=1.6.0",
+      }),
     );
   }
 
