@@ -353,6 +353,7 @@ export async function get(argv: {
       logger.warn(
         `WARNING: No providers or modules found in "cdktf.json" config file, therefore cdktn get does nothing.`,
       );
+      await sendTelemetry("get", {});
       return;
     }
 
@@ -424,6 +425,7 @@ export async function list(argv: any) {
 
   await terraformCheck();
   await runList({ outDir, synthCommand: command });
+  await sendTelemetry("list", {});
 }
 
 export async function login(argv: { tfeHostname: string }) {
@@ -536,6 +538,8 @@ export async function watch(argv: any) {
     terraformParallelism,
     parallelism,
   });
+  // runWatch resolves once the watch is stopped gracefully
+  await sendTelemetry("watch", {});
 }
 
 export async function output(argv: any) {
@@ -572,6 +576,7 @@ export async function output(argv: any) {
     skipSynth,
     skipProviderLock,
   });
+  await sendTelemetry("output", {});
 }
 
 export async function debug(argv: any) {
