@@ -14,6 +14,7 @@ import {
   Language,
   readConfigSync,
   sendTelemetry,
+  flushTelemetry,
   Errors,
   IsErrorType,
   logger,
@@ -397,6 +398,8 @@ export async function init(argv: any) {
         "Local providers have been updated. Running cdktn get to update...",
       );
     }
+    // get re-initializes Sentry; send this client's buffer before it is replaced
+    await flushTelemetry();
     await get({
       language,
       output: codeMakerOutput,
@@ -653,6 +656,10 @@ export async function debug(argv: any) {
 }
 
 export async function providerAdd(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
   const language = config.language;
 
@@ -676,6 +683,8 @@ export async function providerAdd(argv: any) {
     console.log(
       "Local providers have been updated. Running cdktn get to update...",
     );
+    // get re-initializes Sentry; send this client's buffer before it is replaced
+    await flushTelemetry();
     await get({
       language: language,
       output: config.codeMakerOutput,
@@ -689,6 +698,7 @@ export async function providerAdd(argv: any) {
       "After adding this module to your imports, please run 'go mod tidy' to resolve newly added modules",
     );
   }
+  await sendTelemetry("provider add", {});
 }
 
 export async function providerUpgrade(argv: any) {
