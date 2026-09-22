@@ -230,6 +230,37 @@ test("pg backend", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
+describe("cloud backend target versions", () => {
+  function stackWithCloudBackend(context?: Record<string, any>) {
+    const app = Testing.app({ context });
+    const stack = new TerraformStack(app, "test");
+    new b.CloudBackend(stack, {
+      organization: "company",
+      workspaces: new b.NamedCloudWorkspace("my-app-prod"),
+    });
+    return stack;
+  }
+
+  test("synths cleanly for an undeclared project on the default targets", () => {
+    const stack = stackWithCloudBackend();
+    expect(() => Testing.synth(stack, true)).not.toThrow();
+  });
+
+  test("fails when the declared terraform target predates the cloud block", () => {
+    const stack = stackWithCloudBackend({
+      targetVersions: { terraform: ">=1.0.0" },
+    });
+    expect(() => Testing.synth(stack, true))
+      .toThrowErrorMatchingInlineSnapshot(`
+     "Validation failed with the following errors:
+       [test/backend] The cloud block requires terraform >=1.1.0, but the project targets terraform >=1.0.0.
+
+     If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+     "
+    `);
+  });
+});
+
 test("s3 backend (useLockfile: false)", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");

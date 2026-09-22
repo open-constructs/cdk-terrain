@@ -5,7 +5,7 @@ import { keysToSnakeCase, deepMerge } from "../util";
 import { DataTerraformRemoteState } from "./remote-backend";
 import { TerraformRemoteState } from "../terraform-remote-state";
 import { TerraformBackend } from "../terraform-backend";
-import { ValidateTerraformVersion } from "../validations/validate-terraform-version";
+import { ValidateFeatureTargetSupport } from "../validations";
 import { cloudBackendWorkspaceIsNotDefinedByName } from "../errors";
 
 /**
@@ -34,10 +34,10 @@ export class CloudBackend extends TerraformBackend {
     super(scope, "backend", "cloud");
 
     this.node.addValidation(
-      new ValidateTerraformVersion(
-        ">=1.1",
-        `The cloud block is only supported for Terraform >=1.1. Please upgrade your Terraform version.`,
-      ),
+      new ValidateFeatureTargetSupport(this, "The cloud block", {
+        terraform: ">=1.1.0",
+        opentofu: ">=1.6.0",
+      }),
     );
   }
 
