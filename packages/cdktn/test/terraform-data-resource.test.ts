@@ -1,8 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack } from "../src";
+import { App, Testing, TerraformStack } from "../src";
 import { ref } from "../src/tfExpression";
 import { DataResource } from "../src/terraform-data-resource";
+import { createTmpHelper } from "./helper/tmp";
+
+const tmp = createTmpHelper();
 
 test("built-in Terraform data resource", () => {
   const app = Testing.app();
@@ -31,4 +34,36 @@ test("built-in Terraform data resource", () => {
       }
     }"
   `);
+});
+
+describe("targetVersions validation", () => {
+  function appWithStack(context?: Record<string, any>) {
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir: tmp("cdktf.outdir."), context }),
+    );
+    const stack = new TerraformStack(app, "MyStack");
+    return { app, stack };
+  }
+
+  test("fails when the declared terraform target is below the minimum", () => {
+    const { app, stack } = appWithStack({
+      targetVersions: { terraform: "<1.4.0" },
+    });
+    new DataResource(stack, "test-data", { input: { a: "b" } });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+     "Validation failed with the following errors:
+       [MyStack/test-data] The terraform_data resource requires terraform >=1.4.0, but the project targets terraform <1.4.0.
+
+     If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+     "
+    `);
+  });
+
+  test("passes against the default targets", () => {
+    const { app, stack } = appWithStack();
+    new DataResource(stack, "test-data", { input: { a: "b" } });
+
+    expect(() => app.synth()).not.toThrow();
+  });
 });

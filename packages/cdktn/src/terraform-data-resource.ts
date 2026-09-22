@@ -4,7 +4,7 @@
  */
 
 import { Construct } from "constructs";
-import { ValidateTerraformVersion } from "./validations/validate-terraform-version";
+import { ValidateFeatureTargetSupport } from "./validations/target-versions";
 import {
   TerraformMetaArguments,
   TerraformResource,
@@ -37,7 +37,7 @@ export interface DataConfig extends TerraformMetaArguments {
  *
  * The DataResource resource is useful for storing values which need to follow a manage resource lifecycle, and for triggering provisioners when there is no other logical managed resource in which to place them.
  *
- * It requires Terraform 1.4 or later.
+ * It requires Terraform >=1.4.0 or OpenTofu >=1.6.0.
  *
  * It is also possible to generate these bindings by adding "terraform.io/builtin/terraform" to the "terraformProviders" key in your cdktf.json file and running "cdktn get".
  *
@@ -102,10 +102,10 @@ export class DataResource extends TerraformResource {
     this._input = config.input;
     this._triggersReplace = config.triggersReplace;
     this.node.addValidation(
-      new ValidateTerraformVersion(
-        ">=1.4",
-        `The built-in Terraform data resource is only supported for Terraform >=1.4. Please upgrade your Terraform version.`,
-      ),
+      new ValidateFeatureTargetSupport(this, "The terraform_data resource", {
+        terraform: ">=1.4.0",
+        opentofu: ">=1.6.0",
+      }),
     );
   }
 
