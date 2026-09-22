@@ -9,8 +9,11 @@ import { AnnotationMetadataEntryType, Annotations } from "../annotations";
 import { ConstructOrder, IConstruct, MetadataEntry } from "constructs";
 import { Aspects, IAspect } from "../aspect";
 import { StackAnnotation } from "../manifest";
-import { ValidateTerraformVersion } from "../validations/validate-terraform-version";
+import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
+
+// synthesize() can run more than once per stack; add the validation only once.
+const stacksValidatingMoves = new WeakSet<TerraformStack>();
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class StackSynthesizer implements IStackSynthesizer {
@@ -30,34 +33,22 @@ export class StackSynthesizer implements IStackSynthesizer {
     invokeAspects(this.stack);
 
     if (!session.stacksPrepared) {
-      // This session wasn't built by App.synth() (which already prepared
-      // every stack up front) - prepare this stack ourselves so
-      // resolve-discovered provider-feature usage and Terraform-function
-      // usage are rediscovered for the current pass before validations run
-      // below. See ISynthesisSession.stacksPrepared.
-      //
-      // Terraform-function usage is recorded per-stack (see
-      // `TerraformStack._usedFunctions`) and `prepareStack()` clears this
-      // stack's own usage sets itself, as the first step of
-      // `_runPreparingResolve()`, before rediscovering them. Without this,
-      // a function rendered by an earlier pass over this same stack (e.g. a
-      // previous direct call to this same synthesize()) would keep failing
-      // target-version validation in a later pass even after that usage is
-      // gone, breaking the per-synthesis-epoch guarantee that App.synth()
-      // and Testing.synth()/synthHcl() already provide.
+      // Sessions not built by App.synth() arrive unprepared: prepare this
+      // stack so stale provider-feature and function usage is cleared and
+      // rediscovered before validations run (ISynthesisSession.stacksPrepared).
       this.stack.prepareStack();
     }
 
-    if (this.stack.hasResourceMove()) {
-      // TODO(target-versions): this probes the locally installed binary during
-      // synth. Migrate to ValidateFeatureTargetSupport (declared cdktf.json
-      // targetVersions) and leave installed-binary verification to the opt-in
-      // validateInstalledBinary CLI behavior.
+    if (
+      this.stack.hasResourceMove() &&
+      !stacksValidatingMoves.has(this.stack)
+    ) {
+      stacksValidatingMoves.add(this.stack);
       this.stack.node.addValidation(
-        new ValidateTerraformVersion(
-          ">=1.5",
-          `Resource move functionality is only supported for Terraform >=1.5. Please upgrade your Terraform version.`,
-        ),
+        new ValidateFeatureTargetSupport(this.stack, "The moved block", {
+          terraform: ">=1.5.0",
+          opentofu: ">=1.6.0",
+        }),
       );
     }
 
