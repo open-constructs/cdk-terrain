@@ -13,6 +13,7 @@ import {
 // Sentry is stubbed so reporting initializes and the run counts as invoked.
 jest.mock("@sentry/node", () => ({
   init: jest.fn(),
+  flush: jest.fn().mockResolvedValue(true),
   getCurrentScope: jest.fn(() => ({
     setUser: jest.fn(),
     setTag: jest.fn(),
@@ -44,7 +45,17 @@ jest.mock("../ui/output", () => ({
 }));
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
-import { get, list, output, watch } from "../handlers";
+const mockProviderAddLib = jest.fn();
+jest.mock("@cdktn/cli-core", () => ({
+  ...jest.requireActual("@cdktn/cli-core"),
+  providerAdd: (...args: unknown[]) => mockProviderAddLib(...args),
+}));
+jest.mock("@cdktn/commons", () => ({
+  ...jest.requireActual("@cdktn/commons"),
+  getPackageVersion: jest.fn().mockResolvedValue("0.23.0"),
+}));
+
+import { get, list, output, providerAdd, watch } from "../handlers";
 
 // A run that ends without an error counts exactly one cli.command.completed
 // under its own command, whatever nested operation it drove.
@@ -56,6 +67,8 @@ describe("completion metric of handlers without an own emitter", () => {
     CHECKPOINT_DISABLE: process.env.CHECKPOINT_DISABLE,
   };
   const count = Sentry.metrics.count as jest.Mock;
+  const init = Sentry.init as jest.Mock;
+  const flush = Sentry.flush as jest.Mock;
 
   const metricCalls = (name: string) =>
     count.mock.calls.filter(([metric]) => metric === name);
@@ -73,6 +86,8 @@ describe("completion metric of handlers without an own emitter", () => {
     delete process.env.CHECKPOINT_DISABLE;
     setUsageTelemetryEnabled(undefined);
     count.mockClear();
+    init.mockClear();
+    flush.mockClear();
   });
 
   afterEach(() => {
@@ -121,4 +136,41 @@ describe("completion metric of handlers without an own emitter", () => {
     }
     expect(metricCalls("cli.command.error")).toHaveLength(0);
   });
+
+  // needsGet runs a nested get; its own completion must not count
+  it.each([false, true])(
+    "provider add (needsGet %p) counts invoked and completed once each",
+    async (needsGet) => {
+      mockProviderAddLib.mockResolvedValue(needsGet);
+      const log = jest.spyOn(console, "log").mockImplementation(() => {});
+      Errors.setScope("provider add");
+
+      try {
+        await providerAdd({ provider: ["aws"], silent: true });
+      } finally {
+        log.mockRestore();
+      }
+
+      for (const metric of ["cli.command.invoked", "cli.command.completed"]) {
+        expect(metricCalls(metric)).toEqual([
+          [
+            metric,
+            1,
+            {
+              attributes: expect.objectContaining({
+                command: "provider add",
+              }),
+            },
+          ],
+        ]);
+      }
+      // the nested get replaces the client; invoked must be flushed first
+      if (needsGet) {
+        expect(init).toHaveBeenCalledTimes(2);
+        expect(flush.mock.invocationCallOrder[0]).toBeLessThan(
+          init.mock.invocationCallOrder[1],
+        );
+      }
+    },
+  );
 });
