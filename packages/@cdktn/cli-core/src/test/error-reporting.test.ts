@@ -386,6 +386,37 @@ describe("consent gating (initializErrorReporting)", () => {
 
     expect(Sentry.init).not.toHaveBeenCalled();
   });
+  // A malformed flag is unset, not a silent opt-out.
+  it("malformed flags, interactive -> prompts for each and persists booleans", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: "yes",
+      sendUsageTelemetry: 1,
+    });
+    setInteractive(true);
+    const crashPrompt = jest.fn().mockResolvedValue(false);
+    const usagePrompt = jest.fn().mockResolvedValue(true);
+
+    await initializErrorReporting(crashPrompt, usagePrompt);
+
+    expect(crashPrompt).toHaveBeenCalledTimes(1);
+    expect(usagePrompt).toHaveBeenCalledTimes(1);
+    expect(fs.readJsonSync(path.join(workdir, "cdktf.json"))).toMatchObject({
+      sendCrashReports: false,
+      sendUsageTelemetry: true,
+    });
+  });
+  it("malformed flags, non-interactive -> usage on, crash off", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: null,
+      sendUsageTelemetry: "yes",
+    });
+    setInteractive(false);
+
+    await initializErrorReporting();
+
+    expect(isUsageTelemetryEnabled()).toBe(true);
+    await expect(initOptions().beforeSend({}, undefined)).resolves.toBeNull();
+  });
 
   // The resolved decision is captured for the whole run: commands that chdir
   // into another project (convert) must not re-read that project's flag.
@@ -516,9 +547,12 @@ describe("shouldReportCrash tri-state", () => {
     [{ sendCrashReports: false }, false],
     [{ sendCrashReports: "true" }, true],
     [{ sendCrashReports: "false" }, false],
-    // undefined, not false, for an absent flag: that is what triggers the
-    // crash-consent prompt
+    // undefined, not false, for an absent or malformed flag: that is what
+    // triggers the crash-consent prompt
     [{}, undefined],
+    [{ sendCrashReports: "yes" }, undefined],
+    [{ sendCrashReports: 1 }, undefined],
+    [{ sendCrashReports: null }, undefined],
   ])("reads %j as %p", (config, expected) => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
     expect(shouldReportCrash(workdir)).toBe(expected);

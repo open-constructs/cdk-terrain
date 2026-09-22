@@ -1,5 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import { normalizeConsentFlag } from "./config";
 import * as Sentry from "@sentry/node";
 import * as path from "path";
 import * as fs from "fs-extra";
@@ -37,7 +38,8 @@ function readRawCdktfJson(projectPath: string): Record<string, any> {
 
 /**
  * Reads the raw `sendUsageTelemetry` flag from `cdktf.json`. Returns
- * `undefined` when the flag is unset or no readable `cdktf.json` exists;
+ * `undefined` when the flag is unset or malformed, or no readable
+ * `cdktf.json` exists;
  * `isUsageTelemetryEnabled` derives the effective state.
  */
 export function getUsageTelemetryConsent(
@@ -47,11 +49,10 @@ export function getUsageTelemetryConsent(
   if (!("sendUsageTelemetry" in cdktfJson)) {
     return undefined;
   }
-  // init templates render booleans as the strings "true"/"false"; a
-  // boolean-only check would opt every freshly init'ed project out
-  return typeof cdktfJson.sendUsageTelemetry === "boolean"
-    ? cdktfJson.sendUsageTelemetry
-    : cdktfJson.sendUsageTelemetry === "true";
+  return normalizeConsentFlag(
+    "sendUsageTelemetry",
+    cdktfJson.sendUsageTelemetry,
+  );
 }
 
 type CommandTelemetryState = {

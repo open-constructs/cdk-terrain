@@ -10,6 +10,7 @@ import {
   startCommandTelemetry,
   collectDebugInformation,
   DISPLAY_VERSION,
+  normalizeConsentFlag,
 } from "@cdktn/commons";
 import { logger } from "@cdktn/commons";
 import * as path from "path";
@@ -25,16 +26,14 @@ export function shouldReportCrash(
       fs.readFileSync(path.resolve(projectPath, "cdktf.json"), "utf8"),
     );
 
-    // tri-state: an absent flag means "unset" and triggers the
+    // tri-state: an absent or malformed flag means "unset" and triggers the
     // interactive consent prompt; outside a project (no readable
     // cdktf.json) crash reporting stays off
     if (!("sendCrashReports" in cdktfJson)) {
       return undefined;
     }
 
-    return typeof cdktfJson.sendCrashReports === "boolean"
-      ? cdktfJson.sendCrashReports
-      : cdktfJson.sendCrashReports === "true";
+    return normalizeConsentFlag("sendCrashReports", cdktfJson.sendCrashReports);
   } catch (e) {
     logger.debug(
       `Error determining if crash reporting should be enabled, defaulting to false: ${e}`,

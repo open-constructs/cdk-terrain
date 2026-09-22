@@ -482,6 +482,10 @@ describe("telemetry", () => {
       [{ sendUsageTelemetry: "true" }, true],
       [{ sendUsageTelemetry: "false" }, false],
       [{}, undefined],
+      // malformed is unset, not an opt-out
+      [{ sendUsageTelemetry: "yes" }, undefined],
+      [{ sendUsageTelemetry: 1 }, undefined],
+      [{ sendUsageTelemetry: null }, undefined],
     ])("reads %j as %p", (config, expected) => {
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
       expect(getUsageTelemetryConsent(workdir)).toBe(expected);
