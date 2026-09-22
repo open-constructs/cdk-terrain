@@ -57,6 +57,7 @@ describe("convert consent", () => {
   let workdir: string;
   const originalCwd = process.cwd();
   const originalIsTTY = process.stdout.isTTY;
+  const originalStdinIsTTY = process.stdin.isTTY;
   const originalEnv = {
     CI: process.env.CI,
     SENTRY_DSN: process.env.SENTRY_DSN,
@@ -64,12 +65,18 @@ describe("convert consent", () => {
   };
   let logSpy: jest.SpyInstance;
 
-  const setInteractive = (interactive: boolean) => {
+  const setTTY = (stdout: boolean | undefined, stdin: boolean | undefined) => {
     Object.defineProperty(process.stdout, "isTTY", {
-      value: interactive,
+      value: stdout,
+      configurable: true,
+    });
+    Object.defineProperty(process.stdin, "isTTY", {
+      value: stdin,
       configurable: true,
     });
   };
+  const setInteractive = (interactive: boolean) =>
+    setTTY(interactive, interactive);
 
   const cdktfJson = () => fs.readJsonSync(path.join(workdir, "cdktf.json"));
 
@@ -97,7 +104,7 @@ describe("convert consent", () => {
   afterEach(() => {
     logSpy.mockRestore();
     setUsageTelemetryEnabled(undefined);
-    setInteractive(originalIsTTY);
+    setTTY(originalIsTTY, originalStdinIsTTY);
     process.chdir(originalCwd);
     fs.removeSync(workdir);
     for (const [key, value] of Object.entries(originalEnv)) {
@@ -174,5 +181,20 @@ describe("convert consent", () => {
     expect(mockUsagePrompt).not.toHaveBeenCalled();
     expect(cdktfJson()).not.toHaveProperty("sendUsageTelemetry");
     expect(cdktfJson()).not.toHaveProperty("sendCrashReports");
+  });
+
+  it("does not prompt when the HCL is piped on stdin, and converts that input", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      language: "typescript",
+      app: "npx ts-node main.ts",
+    });
+    setTTY(true, undefined);
+
+    await convert({ language: "typescript", provider: [] });
+
+    expect(mockCrashPrompt).not.toHaveBeenCalled();
+    expect(mockUsagePrompt).not.toHaveBeenCalled();
+    expect(cdktfJson()).not.toHaveProperty("sendUsageTelemetry");
+    expect(mockConvert).toHaveBeenCalledWith("resource {}", expect.anything());
   });
 });

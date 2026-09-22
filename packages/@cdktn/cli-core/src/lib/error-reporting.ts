@@ -95,6 +95,7 @@ export async function initializErrorReporting(
   // cdktf.json to persist the decision into; otherwise fall through to
   // the per-flag non-interactive defaults below.
   const canPrompt =
+    Boolean(process.stdin.isTTY) &&
     Boolean(process.stdout.isTTY) &&
     !ciInfo.isCI &&
     !process.env.CI &&
