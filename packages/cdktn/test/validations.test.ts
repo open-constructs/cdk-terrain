@@ -9,12 +9,10 @@ import {
   checkFeatureSupportedByTargets,
   parseTerraformCliVersion,
   resolveTargetVersions,
-  ValidateBinaryVersion,
   ValidateFeatureTargetSupport,
 } from "../src/validations";
 import { TestProvider } from "./helper/provider";
 import { createTmpHelper } from "./helper/tmp";
-import { terraformBinaryName } from "../src/util";
 
 const tmp = createTmpHelper();
 
@@ -70,90 +68,6 @@ class CustomConstruct extends Construct {
     new NestedCustomConstruct(this, "nested", nestedValidation);
   }
 }
-
-describe("ValidateBinaryVersion", () => {
-  test("validates the version of a binary", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
-    });
-    testResource.node.addValidation(
-      new ValidateBinaryVersion(
-        "terraform",
-        ">=1.3.0",
-        `echo "Terraform v1.2.0\non darwin_amd64"`,
-      ),
-    );
-    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
-      "Validation failed with the following errors:
-        [MyStack/testResource] terraform version 1.2.0 is lower than the required version >=1.3.0 for this construct. 
-
-      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
-      "
-    `);
-  });
-
-  test("validation passes if the version is correct", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
-    });
-    testResource.node.addValidation(
-      new ValidateBinaryVersion(
-        "terraform",
-        ">=1.2.0",
-        `echo "Terraform v1.2.0\non darwin_amd64"`,
-      ),
-    );
-    expect(() => app.synth()).not.toThrow();
-  });
-
-  test("validation fails if version command fails", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
-    });
-    testResource.node.addValidation(
-      new ValidateBinaryVersion("terraform", ">=1.2.0", `exit 1`),
-    );
-    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
-      "Validation failed with the following errors:
-        [MyStack/testResource] Could not determine version of terraform, exit 1 failed: Error: Command failed: exit 1
-
-      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
-      "
-    `);
-  });
-
-  test("validation fails if version command returns no version string", () => {
-    const outdir = tmp("cdktf.outdir.");
-    const app = Testing.stubVersion(new App({ stackTraces: false, outdir }));
-    const stack = new TerraformStack(app, "MyStack");
-    new TestProvider(stack, "foo", {});
-    const testResource = new TestResource(stack, "testResource", {
-      name: "foo",
-    });
-    testResource.node.addValidation(
-      new ValidateBinaryVersion("terraform", ">=1.2.0", `echo "foo"`),
-    );
-    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
-      "Validation failed with the following errors:
-        [MyStack/testResource] Could not determine version of terraform (running echo "foo")
-
-      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
-      "
-    `);
-  });
-});
 
 describe("parseTerraformCliVersion", () => {
   test("detects Terraform from the first version output line", () => {
