@@ -661,15 +661,6 @@ describe("telemetry", () => {
       expect(attributes).toEqual({ binary: "unknown" });
       expect(JSON.stringify(attributes)).not.toContain("10.0.0");
     });
-
-    it("reports unknown when the probe does not settle in time", async () => {
-      // a hung or interactive `terraform version` must never delay a
-      // command; the race has a 1500 ms ceiling in production
-      const hung = new Promise<never>(() => {});
-      await expect(getBinaryAttributes(hung, 10)).resolves.toEqual({
-        binary: "unknown",
-      });
-    });
   });
 
   describe("getProjectTargetAttributes", () => {

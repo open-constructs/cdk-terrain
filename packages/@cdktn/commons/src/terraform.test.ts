@@ -97,4 +97,23 @@ describe("terraform binary probe", () => {
     await expect(terraformVersion()).resolves.toBeUndefined();
     expect(count).not.toHaveBeenCalled();
   });
+
+  it("resolves to unknown when `version` outlives the timeout", async () => {
+    const binary = path.join(fixtureDir, "terraform");
+    fs.writeFileSync(binary, "#!/bin/sh\nexec sleep 10\n", { mode: 0o755 });
+    const { terraformCli } = loadProbe(binary);
+
+    const started = Date.now();
+    await expect(terraformCli()).resolves.toEqual({ name: "unknown" });
+    // well under the fixture's 10s sleep: the probe was killed, not awaited
+    expect(Date.now() - started).toBeLessThan(9000);
+  }, 15000);
+
+  it("resolves to unknown when `version` exits non-zero", async () => {
+    const binary = path.join(fixtureDir, "terraform");
+    fs.writeFileSync(binary, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    const { terraformCli } = loadProbe(binary);
+
+    await expect(terraformCli()).resolves.toEqual({ name: "unknown" });
+  });
 });

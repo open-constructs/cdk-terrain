@@ -162,34 +162,22 @@ export function setProjectTargetAttributes(
   state.projectTargetAttributes = attributes;
 }
 
-/**
- * Binary attributes from the version probe, bounded so a hung binary never
- * delays the command; a timed-out probe reports `binary: "unknown"`.
- */
+/** Binary attributes from the version probe. */
 export async function getBinaryAttributes(
   probe: Promise<TerraformCliProbe> = terraformCli(),
-  timeoutMs = 1500,
 ): Promise<Attributes> {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<TerraformCliProbe>((resolve) => {
-    timer = setTimeout(() => resolve({ name: "unknown" }), timeoutMs);
-  });
-  try {
-    const cli = await Promise.race([probe, timeout]);
-    const attributes: Attributes = { binary: cli.name };
-    // an unrecognised product's version is the first version-like token of
-    // its output, which can be anything (a wrapper's "connected to 10.0.0.1")
-    const release =
-      cli.name === "terraform" || cli.name === "opentofu"
-        ? releaseVersion(cli.version)
-        : undefined;
-    if (release) {
-      attributes.binary_version = release;
-    }
-    return attributes;
-  } finally {
-    clearTimeout(timer);
+  const cli = await probe;
+  const attributes: Attributes = { binary: cli.name };
+  // an unrecognised product's version is the first version-like token of
+  // its output, which can be anything (a wrapper's "connected to 10.0.0.1")
+  const release =
+    cli.name === "terraform" || cli.name === "opentofu"
+      ? releaseVersion(cli.version)
+      : undefined;
+  if (release) {
+    attributes.binary_version = release;
   }
+  return attributes;
 }
 
 /**

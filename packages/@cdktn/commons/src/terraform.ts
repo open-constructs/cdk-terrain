@@ -23,12 +23,14 @@ export type {
 /**
  * Outcome of probing the configured Terraform-compatible binary:
  * `missing` when it could not be spawned, `unknown` when its version output
- * was not recognized.
+ * was not recognized or it failed or timed out.
  */
 export interface TerraformCliProbe {
   readonly name: TerraformCliName | "missing";
   readonly version?: string;
 }
+
+const PROBE_TIMEOUT_MS = 1500;
 
 // The CLI bundle carries several copies of this module (two esbuild entries
 // plus the commons build behind the external hcl2cdk); process state keeps it
@@ -48,7 +50,9 @@ export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
 
 function versionOutput(): Promise<string> {
   if (!probe.output) {
-    const output = exec(terraformBinaryName, ["version"], {});
+    const output = exec(terraformBinaryName, ["version"], {
+      timeout: PROBE_TIMEOUT_MS,
+    });
     output.catch(() => undefined); // the consumers below handle rejection
     probe.output = output;
   }
@@ -59,7 +63,10 @@ function versionOutput(): Promise<string> {
 export function terraformCli(): Promise<TerraformCliProbe> {
   return versionOutput()
     .then((output) => parseTerraformCliVersion(output))
-    .catch(() => ({ name: "missing" as const }));
+    .catch((err) => ({
+      name:
+        err?.code === "ENOENT" ? ("missing" as const) : ("unknown" as const),
+    }));
 }
 
 /**
