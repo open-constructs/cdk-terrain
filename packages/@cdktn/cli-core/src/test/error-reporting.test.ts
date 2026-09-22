@@ -58,6 +58,10 @@ const setInteractive = (interactive: boolean) => {
     value: interactive,
     configurable: true,
   });
+  Object.defineProperty(process.stdin, "isTTY", {
+    value: interactive,
+    configurable: true,
+  });
   if (interactive) {
     delete process.env.CI;
     ciInfoMock.isCI = false;
@@ -76,6 +80,7 @@ function useReportingFixture() {
     CHECKPOINT_DISABLE: process.env.CHECKPOINT_DISABLE,
   };
   const originalIsTTY = process.stdout.isTTY;
+  const originalStdinIsTTY = process.stdin.isTTY;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -95,6 +100,10 @@ function useReportingFixture() {
     fs.removeSync(workdir);
     Object.defineProperty(process.stdout, "isTTY", {
       value: originalIsTTY,
+      configurable: true,
+    });
+    Object.defineProperty(process.stdin, "isTTY", {
+      value: originalStdinIsTTY,
       configurable: true,
     });
     for (const [key, value] of Object.entries(originalEnv)) {
@@ -253,6 +262,17 @@ describe("consent gating (initializErrorReporting)", () => {
       () => {
         setInteractive(true);
         process.env.CI = "true";
+      },
+      true,
+    ],
+    [
+      "stdout TTY but stdin piped",
+      () => {
+        setInteractive(true);
+        Object.defineProperty(process.stdin, "isTTY", {
+          value: undefined,
+          configurable: true,
+        });
       },
       true,
     ],

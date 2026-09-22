@@ -149,5 +149,9 @@ export async function verifySimilarLibraryVersion() {
 }
 
 export function isInteractiveTerminal() {
-  return process.stdout.isTTY && !process.env.CI;
+  return (
+    Boolean(process.stdin.isTTY) &&
+    Boolean(process.stdout.isTTY) &&
+    !process.env.CI
+  );
 }
