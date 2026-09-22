@@ -63,14 +63,11 @@ export function terraformCli(): Promise<TerraformCliProbe> {
 }
 
 /**
- * Version string for `cdktn debug`; a missing binary resolves to the error
- * text, since an `Errors.Usage` value would count a phantom `cli.error`.
+ * Version string for `cdktn debug`; `undefined` when the probe fails, since
+ * an `Errors.Usage` value would count a phantom `cli.error`.
  */
 export function terraformVersion(): Promise<string | undefined> {
   return versionOutput()
     .then((output) => parseTerraformCliVersion(output).version)
-    .catch(
-      (err) =>
-        `Error: Usage Error: Unknown: Error loading terraform version ${err}`,
-    );
+    .catch(() => undefined);
 }
