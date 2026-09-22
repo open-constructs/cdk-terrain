@@ -94,9 +94,7 @@ describe("terraform binary probe", () => {
     const count = jest.spyOn(sentry.metrics, "count");
 
     await expect(terraformCli()).resolves.toEqual({ name: "missing" });
-    await expect(terraformVersion()).resolves.toMatch(
-      /^Error: Usage Error: Unknown: Error loading terraform version/,
-    );
+    await expect(terraformVersion()).resolves.toBeUndefined();
     expect(count).not.toHaveBeenCalled();
   });
 });

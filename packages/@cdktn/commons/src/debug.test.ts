@@ -4,10 +4,11 @@ import * as fs from "fs";
 import * as path from "path";
 
 jest.mock("./terraform", () => ({
-  terraformVersion: () => Promise.resolve("1.7.5"),
+  terraformVersion: jest.fn(() => Promise.resolve("1.7.5")),
 }));
 
 import { collectDebugInformation } from "./debug";
+import { terraformVersion } from "./terraform";
 import { withTempDir } from "./util";
 
 function writeInstalledPackage(packageName: string, version: string) {
@@ -70,6 +71,15 @@ describe("collectDebugInformation()", () => {
           constructs: "10.3.0",
           jsii: "5.5.0",
         }),
+      );
+    });
+  });
+
+  it("reports terraform as null when the binary cannot be probed", async () => {
+    jest.mocked(terraformVersion).mockResolvedValueOnce(undefined);
+    await withTempDir("debug.test", async () => {
+      await expect(collectDebugInformation()).resolves.toEqual(
+        expect.objectContaining({ terraform: null }),
       );
     });
   });
