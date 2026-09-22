@@ -60,7 +60,7 @@ export function getUserId(): string {
     path.resolve(homeDir(), "config.json"),
     "userId",
     true,
-    `This signature is a randomly generated UUID used to anonymously differentiate users in telemetry data order to inform product direction.
+    `This signature is a randomly generated UUID used to anonymously differentiate users in telemetry data in order to inform product direction.
 This signature is random, it is not based on any personally identifiable information.
 To create a new signature, you can simply delete this file at any time.
 See https://cdktn.io/docs/telemetry for more
