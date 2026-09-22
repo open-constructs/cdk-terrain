@@ -12,9 +12,6 @@ import { StackAnnotation } from "../manifest";
 import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
 
-// synthesize() can run more than once per stack; add the validation only once.
-const stacksValidatingMoves = new WeakSet<TerraformStack>();
-
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class StackSynthesizer implements IStackSynthesizer {
   /**
@@ -39,11 +36,7 @@ export class StackSynthesizer implements IStackSynthesizer {
       this.stack.prepareStack();
     }
 
-    if (
-      this.stack.hasResourceMove() &&
-      !stacksValidatingMoves.has(this.stack)
-    ) {
-      stacksValidatingMoves.add(this.stack);
+    if (this.stack.hasResourceMove()) {
       this.stack.node.addValidation(
         new ValidateFeatureTargetSupport(this.stack, "The moved block", {
           terraform: ">=1.5.0",

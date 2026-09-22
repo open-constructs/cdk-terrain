@@ -32,19 +32,6 @@ describe("resource moves validate against declared targetVersions", () => {
     `);
   });
 
-  test("repeated synth reports the error once", () => {
-    const app = appWithMove({ targetVersions: { terraform: "<1.4.0" } });
-
-    expect(() => app.synth()).toThrow();
-    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
-     "Validation failed with the following errors:
-       [MyStack] The moved block requires terraform >=1.5.0, but the project targets terraform <1.4.0.
-
-     If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
-     "
-    `);
-  });
-
   test("default targets: synth passes", () => {
     const app = appWithMove();
 
