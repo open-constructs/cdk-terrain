@@ -1,6 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { exec } from "./util";
+import { processState } from "./process-state";
 import {
   parseTerraformCliVersion,
   TerraformCliName,
@@ -30,31 +31,28 @@ export interface TerraformCliProbe {
 }
 
 // The CLI bundle carries several copies of this module (two esbuild entries
-// plus the commons build behind the external hcl2cdk); keying the probe on
-// globalThis keeps it to one `version` spawn per process, started on first use.
-const PROBE_KEY = Symbol.for("cdktn.terraformCli");
+// plus the commons build behind the external hcl2cdk); process state keeps it
+// to one `version` spawn per process, started on first use.
+const probe = processState<{ output?: Promise<string> }>(
+  "cdktn.terraformCli",
+  () => ({}),
+);
 
 /**
  * Test seam for the process-global probe: seeds the raw `version` output the
  * parsers see, or clears it when called without an argument.
  */
 export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
-  const globals = globalThis as { [PROBE_KEY]?: Promise<string> };
-  if (output === undefined) {
-    delete globals[PROBE_KEY];
-  } else {
-    globals[PROBE_KEY] = output;
-  }
+  probe.output = output;
 }
 
 function versionOutput(): Promise<string> {
-  const globals = globalThis as { [PROBE_KEY]?: Promise<string> };
-  if (!globals[PROBE_KEY]) {
+  if (!probe.output) {
     const output = exec(terraformBinaryName, ["version"], {});
     output.catch(() => undefined); // the consumers below handle rejection
-    globals[PROBE_KEY] = output;
+    probe.output = output;
   }
-  return globals[PROBE_KEY];
+  return probe.output;
 }
 
 /** Binary and version for usage telemetry; never rejects. */
