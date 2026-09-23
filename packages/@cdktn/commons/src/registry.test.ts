@@ -58,6 +58,8 @@ describe("docsUrl", () => {
     );
   });
 
+  // TODO(#444): drop the fallback once opentofu/registry-ui#348 ships an
+  // ephemeral-resource route; this assertion is what will fail when it does.
   it("falls back to the provider page for OpenTofu ephemeral resources", () => {
     expect(
       OPENTOFU_REGISTRY.docsUrl(
