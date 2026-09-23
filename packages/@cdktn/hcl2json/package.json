@@ -38,11 +38,11 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "fs-extra": "11.3.6"
+    "fs-extra": "11.4.0"
   },
   "devDependencies": {
     "@types/fs-extra": "11.0.4",
-    "@types/node": "22.20.1",
-    "typescript": "~6.0.0"
+    "@types/node": "22.20.4",
+    "typescript": "~6.0.3"
   }
 }
