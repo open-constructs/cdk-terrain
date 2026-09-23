@@ -20,7 +20,7 @@ jobs:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
     env:
       CHECKPOINT_DISABLE: "1"
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -53,8 +53,10 @@ jobs:
             mkdir -p "$TF_PLUGIN_CACHE_DIR"
           fi
       - name: install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: build and package
+        timeout-minutes: 30
         run: |
           pnpm run build
           pnpm run package

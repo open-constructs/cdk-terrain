@@ -31,8 +31,10 @@ jobs:
       - name: Setup corepack-managed pnpm
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: Run prettier
+        timeout-minutes: 5
         run: pnpm run lint:prettier
 
   lint:
@@ -55,12 +57,15 @@ jobs:
       - name: Setup corepack-managed pnpm
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: Run lint (affected)
         if: github.event_name == 'pull_request'
+        timeout-minutes: 5
         run: pnpm exec nx affected -t lint --parallel=3 --format=gha --base="$NX_BASE" --head="$NX_HEAD"
       - name: Run lint (all)
         if: github.event_name != 'pull_request'
+        timeout-minutes: 5
         run: pnpm exec nx run-many -t lint --parallel=3 --format=gha
 
   knip:
@@ -78,8 +83,10 @@ jobs:
       - name: Setup corepack-managed pnpm
         uses: ./.github/actions/setup-corepack-pnpm
       - name: Install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: Install test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: Run knip
         run: pnpm exec knip --reporter github-actions --reporter symbols
