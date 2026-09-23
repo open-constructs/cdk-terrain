@@ -48,14 +48,27 @@ describe("runGet telemetry", () => {
     Errors.setScope("unknown");
   });
 
-  it("sends one get metric on success", async () => {
-    mockGet.mockResolvedValue(undefined);
+  it("collects every generated target into one get metric", async () => {
+    mockGet.mockImplementation(async ({ reportTelemetry }) => {
+      await reportTelemetry({
+        targetLanguage: "typescript",
+        trackingPayload: { type: "provider", source: "aws", version: "5.0.0" },
+      });
+      await reportTelemetry({
+        targetLanguage: "typescript",
+        trackingPayload: { type: "module", source: "./modules/vpc" },
+      });
+    });
 
     await runGet(config);
 
     expect(mockSendTelemetry).toHaveBeenCalledTimes(1);
     expect(mockSendTelemetry).toHaveBeenCalledWith("get", {
       language: "typescript",
+      targets: [
+        { type: "provider", source: "aws" },
+        { type: "module", source: "./modules/vpc" },
+      ],
     });
   });
 
