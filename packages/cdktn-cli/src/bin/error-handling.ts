@@ -2,7 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as yargs from "yargs";
 import * as Sentry from "@sentry/node";
-import { IsErrorType, collectDebugInformation } from "@cdktn/commons";
+import {
+  CommandErrorType,
+  Errors,
+  IsErrorType,
+  collectDebugInformation,
+  commandErrorType,
+  flushTelemetry,
+  sendTelemetry,
+} from "@cdktn/commons";
 
 export type CliFailure = { message?: string | null; error?: unknown };
 
@@ -11,7 +19,12 @@ export interface FailureReporterDeps {
   logError(msg: string): void; // default: console.error
   collectDebugInformation(): Promise<Record<string, unknown>>;
   captureException(error: unknown): void; // default: Sentry.captureException
-  flushTelemetry(timeoutMs: number): Promise<void>; // default: Sentry.flush
+  // default: commons sendTelemetry, which applies the usage-telemetry gate
+  sendCommandErrorTelemetry(
+    command: string,
+    errorType: CommandErrorType,
+  ): Promise<void>;
+  flushTelemetry(timeoutMs: number): Promise<void>; // default: commons flushTelemetry
 }
 
 export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
@@ -51,9 +64,9 @@ export const defaultDeps: FailureReporterDeps = {
   captureException: (error) => {
     Sentry.captureException(error);
   },
-  flushTelemetry: async (timeoutMs) => {
-    await Sentry.flush(timeoutMs);
-  },
+  sendCommandErrorTelemetry: (command, errorType) =>
+    sendTelemetry(command, { error: true, errorType }),
+  flushTelemetry,
 };
 
 export async function reportFailure(
@@ -95,6 +108,17 @@ export async function reportFailure(
     deps.logError(`Error while reporting failure: ${describeError(e).message}`);
   }
 
+  // The one place a failure that reaches the entrypoint is counted; synth
+  // failures that exit inside cli-core count themselves and never get here.
+  // A yargs validation failure carries a message but no error.
+  try {
+    await deps.sendCommandErrorTelemetry(
+      Errors.getScope(),
+      error === undefined || error === null ? "Usage" : commandErrorType(error),
+    );
+  } catch {
+    /* never mask the original error */
+  }
   try {
     await deps.flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
   } catch {

@@ -14,6 +14,7 @@ import {
   Language,
   readConfigSync,
   sendTelemetry,
+  flushTelemetry,
   Errors,
   IsErrorType,
   logger,
@@ -57,7 +58,10 @@ import {
   verifySimilarLibraryVersion,
 } from "./helper/check-environment";
 import { sanitizeVarFiles } from "./helper/var-files";
-import { askForCrashReportingConsent } from "./helper/error-reporting";
+import {
+  askForCrashReportingConsent,
+  askForUsageTelemetryConsent,
+} from "./helper/error-reporting";
 import { startPerformanceMonitoring } from "./helper/performance";
 import path from "path";
 import os from "os";
@@ -90,7 +94,12 @@ export async function convert({
   stack,
   experimentalProviderSchemaCachePath,
 }: any) {
-  await initializErrorReporting();
+  // Consent is read and persisted against the user's project before the
+  // conversion chdirs into a throwaway one.
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   await displayVersionMessage();
 
   const pkg = readPackageJson();
@@ -146,6 +155,7 @@ export async function convert({
       projectDescription: "Temporary project for conversion",
       local: true,
       enableCrashReporting: false,
+      enableUsageTelemetry: false,
       fromTerraformProject: "no",
       dist: pkg.version === "0.0.0" ? dist : undefined,
       cdktfVersion: pkg.version,
@@ -177,7 +187,10 @@ export async function convert({
 }
 
 export async function deploy(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -229,7 +242,10 @@ export async function deploy(argv: any) {
 }
 
 export async function destroy(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -267,7 +283,10 @@ export async function destroy(argv: any) {
 }
 
 export async function diff(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -315,7 +334,10 @@ export async function get(argv: {
   try {
     throwIfNotProjectDirectory();
     await displayVersionMessage();
-    await initializErrorReporting(askForCrashReportingConsent);
+    await initializErrorReporting(
+      askForCrashReportingConsent,
+      askForUsageTelemetryConsent,
+    );
     await checkEnvironment();
     await verifySimilarLibraryVersion();
     const config = readConfigSync(); // read config again to be up-to-date (if called via 'add' command)
@@ -332,6 +354,7 @@ export async function get(argv: {
       logger.warn(
         `WARNING: No providers or modules found in "cdktf.json" config file, therefore cdktn get does nothing.`,
       );
+      await sendTelemetry("get", {});
       return;
     }
 
@@ -375,6 +398,8 @@ export async function init(argv: any) {
         "Local providers have been updated. Running cdktn get to update...",
       );
     }
+    // get re-initializes Sentry; send this client's buffer before it is replaced
+    await flushTelemetry();
     await get({
       language,
       output: codeMakerOutput,
@@ -391,7 +416,10 @@ export async function init(argv: any) {
 }
 
 export async function list(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -400,6 +428,7 @@ export async function list(argv: any) {
 
   await terraformCheck();
   await runList({ outDir, synthCommand: command });
+  await sendTelemetry("list", {});
 }
 
 export async function login(argv: { tfeHostname: string }) {
@@ -451,7 +480,10 @@ export async function synth(argv: any) {
     : () => {};
 
   try {
-    await initializErrorReporting(askForCrashReportingConsent);
+    await initializErrorReporting(
+      askForCrashReportingConsent,
+      askForUsageTelemetryConsent,
+    );
     throwIfNotProjectDirectory();
     await displayVersionMessage();
     await checkEnvironment();
@@ -464,10 +496,9 @@ export async function synth(argv: any) {
       checkCodeMakerOutput &&
       !(await fs.pathExists(config.codeMakerOutput))
     ) {
-      console.error(
-        `ERROR: synthesis failed, run "cdktn get" to generate providers in ${config.codeMakerOutput}`,
+      throw Errors.Usage(
+        `synthesis failed, run "cdktn get" to generate providers in ${config.codeMakerOutput}`,
       );
-      process.exit(1);
     }
 
     await terraformCheck();
@@ -482,7 +513,10 @@ export async function synth(argv: any) {
 }
 
 export async function watch(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   const command = argv.app;
@@ -493,10 +527,9 @@ export async function watch(argv: any) {
   const parallelism = argv.parallelism;
 
   if (!autoApprove) {
-    console.error(
-      chalkColour`{redBright ERROR: The watch command always automatically deploys and approves changes. To make this behaviour explicit the --auto-approve flag must be set}`,
+    throw Errors.Usage(
+      "The watch command always automatically deploys and approves changes. To make this behaviour explicit the --auto-approve flag must be set",
     );
-    process.exit(1);
   }
 
   await terraformCheck();
@@ -508,10 +541,15 @@ export async function watch(argv: any) {
     terraformParallelism,
     parallelism,
   });
+  // runWatch resolves once the watch is stopped gracefully
+  await sendTelemetry("watch", {});
 }
 
 export async function output(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -541,6 +579,7 @@ export async function output(argv: any) {
     skipSynth,
     skipProviderLock,
   });
+  await sendTelemetry("output", {});
 }
 
 export async function debug(argv: any) {
@@ -617,6 +656,10 @@ export async function debug(argv: any) {
 }
 
 export async function providerAdd(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
   const language = config.language;
 
@@ -640,6 +683,8 @@ export async function providerAdd(argv: any) {
     console.log(
       "Local providers have been updated. Running cdktn get to update...",
     );
+    // get re-initializes Sentry; send this client's buffer before it is replaced
+    await flushTelemetry();
     await get({
       language: language,
       output: config.codeMakerOutput,
@@ -653,6 +698,7 @@ export async function providerAdd(argv: any) {
       "After adding this module to your imports, please run 'go mod tidy' to resolve newly added modules",
     );
   }
+  await sendTelemetry("provider add", {});
 }
 
 export async function providerUpgrade(argv: any) {

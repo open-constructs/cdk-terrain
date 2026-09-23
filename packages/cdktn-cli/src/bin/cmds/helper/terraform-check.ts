@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { TerraformCli, SynthesizedStack } from "@cdktn/cli-core";
-import { logger } from "@cdktn/commons";
+import { Errors, logger } from "@cdktn/commons";
 import * as semver from "semver";
 import { existsSync } from "fs-extra";
 import * as path from "path";
@@ -45,27 +45,23 @@ export const getTerraformVersion = async (): Promise<string | null> => {
   }
 };
 
+// Throws rather than exits so the failure is reported (and counted) once by
+// the CLI entrypoint; an undeterminable version only warns.
 export const terraformCheck = async (): Promise<void> => {
-  try {
-    if (existsSync(path.join(process.cwd(), "terraform.tfstate"))) {
-      throw new Error(`
+  if (existsSync(path.join(process.cwd(), "terraform.tfstate"))) {
+    throw Errors.Usage(`
         CDK Terrain now supports multiple stacks!
         Found 'terraform.tfstate' Terraform state file. Please rename it to match the stack name. Learn more https://cdktn.io/docs/concepts/stacks#multiple-stacks
       `);
-    }
-    const cleanTerraformVersion = await getTerraformVersion();
+  }
+  const cleanTerraformVersion = await getTerraformVersion();
 
-    if (cleanTerraformVersion !== null) {
-      if (
-        cleanTerraformVersion &&
-        semver.lt(cleanTerraformVersion, MIN_SUPPORTED_VERSION)
-      ) {
-        const warningMessage = `Warning: unsupported Terraform version [${cleanTerraformVersion}] - please upgrade to >=${MIN_SUPPORTED_VERSION}`;
-        console.warn(warningMessage);
-      }
-    }
-  } catch (e: any) {
-    console.error(e.message);
-    process.exit(1);
+  if (
+    cleanTerraformVersion &&
+    semver.lt(cleanTerraformVersion, MIN_SUPPORTED_VERSION)
+  ) {
+    console.warn(
+      `Warning: unsupported Terraform version [${cleanTerraformVersion}] - please upgrade to >=${MIN_SUPPORTED_VERSION}`,
+    );
   }
 };
