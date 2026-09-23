@@ -1,7 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Errors } from "./errors";
 import { exec } from "./util";
+import { processState } from "./process-state";
+import {
+  parseTerraformCliVersion,
+  TerraformCliName,
+} from "cdktn/lib/validations";
 
 export const terraformBinaryName =
   process.env.TERRAFORM_BINARY_NAME || "terraform";
@@ -16,12 +20,61 @@ export type {
   TerraformCliName,
 } from "cdktn/lib/validations";
 
-export const terraformVersion = exec(
-  terraformBinaryName,
-  ["version", "-json"],
-  {},
-)
-  .then((versionString) => JSON.parse(versionString).terraform_version)
-  .catch((err) =>
-    Errors.Usage(`Unknown: Error loading terraform version ${err}`, err),
-  );
+/**
+ * Outcome of probing the configured Terraform-compatible binary:
+ * `missing` when it could not be spawned, `unknown` when its version output
+ * was not recognized or it failed or timed out.
+ */
+export interface TerraformCliProbe {
+  readonly name: TerraformCliName | "missing";
+  readonly version?: string;
+}
+
+const PROBE_TIMEOUT_MS = 1500;
+
+// The CLI bundle carries several copies of this module (two esbuild entries
+// plus the commons build behind the external hcl2cdk); process state keeps it
+// to one `version` spawn per process, started on first use.
+const probe = processState<{ output?: Promise<string> }>(
+  "cdktn.terraformCli",
+  () => ({}),
+);
+
+/**
+ * Test seam for the process-global probe: seeds the raw `version` output the
+ * parsers see, or clears it when called without an argument.
+ */
+export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
+  probe.output = output;
+}
+
+function versionOutput(): Promise<string> {
+  if (!probe.output) {
+    const output = exec(terraformBinaryName, ["version"], {
+      timeout: PROBE_TIMEOUT_MS,
+    });
+    output.catch(() => undefined); // the consumers below handle rejection
+    probe.output = output;
+  }
+  return probe.output;
+}
+
+/** Binary and version for usage telemetry; never rejects. */
+export function terraformCli(): Promise<TerraformCliProbe> {
+  return versionOutput()
+    .then((output) => parseTerraformCliVersion(output))
+    .catch((err) => ({
+      name:
+        err?.code === "ENOENT" ? ("missing" as const) : ("unknown" as const),
+    }));
+}
+
+/**
+ * Version string for `cdktn debug`; `undefined` when the probe fails, since
+ * an `Errors.Usage` value would count a phantom `cli.error`.
+ */
+export function terraformVersion(): Promise<string | undefined> {
+  return versionOutput()
+    .then((output) => parseTerraformCliVersion(output).version)
+    .catch(() => undefined);
+}
