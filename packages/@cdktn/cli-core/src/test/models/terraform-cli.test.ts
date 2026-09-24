@@ -59,7 +59,7 @@ describe("terraform-cli", () => {
       // The exit code is produced as the machine's final-state output and read off the settled snapshot.
       jest.mocked(spawnInteractive).mockImplementation(silentPty(3));
 
-      await expect(makeCli().deploy({}, () => {})).rejects.toMatch(
+      await expect(makeCli().deploy({}, () => {})).rejects.toThrow(
         /exit code 3/,
       );
     });
