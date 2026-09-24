@@ -33,7 +33,7 @@ const bindings: Record<string, ProviderDefinition> = {
     path: "providers/aws",
   },
   docker: {
-    fqn: "kreuzwerker/docker@=3.0.1",
+    fqn: "kreuzwerker/docker@=3.9.0",
     type: ProviderType.provider,
     path: "providers/docker",
   },
