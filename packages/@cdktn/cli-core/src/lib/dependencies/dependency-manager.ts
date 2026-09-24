@@ -6,6 +6,9 @@ import {
   IsErrorType,
   logger,
   TerraformDependencyConstraint,
+  Registry,
+  TERRAFORM_REGISTRY,
+  registryForHostname,
 } from "@cdktn/commons";
 import { toPascalCase, toSnakeCase } from "codemaker";
 import { CdktfConfig } from "../cdktf-config";
@@ -17,23 +20,29 @@ import {
   getPrebuiltProviderVersionInformation,
   getPrebuiltProviderVersions,
 } from "./prebuilt-providers";
-import { getLatestVersion } from "./registry-api";
+import { getLatestVersion, registryForConstraint } from "./registry-api";
 import { versionMatchesConstraint } from "./version-constraints";
 import * as semver from "semver";
 import { LocalProviderVersions } from "../local-provider-versions";
 import { LocalProviderConstraints } from "../local-provider-constraints";
 
 // ref: https://www.terraform.io/language/providers/requirements#source-addresses
-export const DEFAULT_HOSTNAME = "registry.terraform.io";
+export const DEFAULT_HOSTNAME = TERRAFORM_REGISTRY.hostname;
 export const DEFAULT_NAMESPACE = "hashicorp";
-function normalizeProviderSource(source: string) {
-  // returns <HOSTNAME>/<NAMESPACE>/<TYPE>
+
+/**
+ * Expands a source to <HOSTNAME>/<NAMESPACE>/<TYPE>. A source that already
+ * names a hostname is left alone, so an explicitly qualified provider - which
+ * is what OpenTofu users have been told to write - always wins over the
+ * project's target.
+ */
+function normalizeProviderSource(source: string, registry: Registry) {
   const slashes = source.split("/").length - 1;
   switch (slashes) {
     case 0:
-      return `${DEFAULT_HOSTNAME}/${DEFAULT_NAMESPACE}/${source}`;
+      return `${registry.hostname}/${DEFAULT_NAMESPACE}/${source}`;
     case 1:
-      return `${DEFAULT_HOSTNAME}/${source}`;
+      return `${registry.hostname}/${source}`;
     default:
       return source;
   }
@@ -52,18 +61,21 @@ export class ProviderConstraint {
   constructor(
     source: string,
     public readonly version: string | undefined,
+    registry: Registry = TERRAFORM_REGISTRY,
   ) {
-    this.source = normalizeProviderSource(source);
+    this.source = normalizeProviderSource(source, registry);
   }
 
   static fromConfigEntry(
     provider: string | TerraformDependencyConstraint,
+    registry: Registry = TERRAFORM_REGISTRY,
   ): ProviderConstraint {
     if (typeof provider === "string") {
       const [src, version] = provider.split("@");
       return new ProviderConstraint(
         src.trim(),
         version ? version.trim() : undefined,
+        registry,
       );
     }
 
@@ -71,11 +83,15 @@ export class ProviderConstraint {
       (provider.namespace ? `${provider.namespace}/` : "") +
       (provider.source || provider.name);
 
-    return new ProviderConstraint(src, provider.version);
+    return new ProviderConstraint(src, provider.version, registry);
   }
 
-  public isFromTerraformRegistry(): boolean {
-    return this.hostname === DEFAULT_HOSTNAME;
+  /**
+   * Whether this provider lives on a registry cdktn can query for versions.
+   * Private and self-hosted registries expose no such API.
+   */
+  public isFromPublicRegistry(): boolean {
+    return registryForHostname(this.hostname) !== undefined;
   }
 
   /**
@@ -109,7 +125,10 @@ export class ProviderConstraint {
   public get simplifiedName(): string {
     return this.source
       .split("/")
-      .filter((part) => part !== DEFAULT_HOSTNAME && part !== DEFAULT_NAMESPACE)
+      .filter(
+        (part) =>
+          registryForHostname(part) === undefined && part !== DEFAULT_NAMESPACE,
+      )
       .join("/");
   }
 
@@ -362,7 +381,7 @@ export class DependencyManager {
       `Adding local provider ${constraint.source} with version constraint ${constraint.version} to cdktf.json`,
     );
 
-    if (!constraint.version && constraint.isFromTerraformRegistry()) {
+    if (!constraint.version && constraint.isFromPublicRegistry()) {
       const v = await getLatestVersion(constraint);
       if (v) {
         constraint = new ProviderConstraint(
@@ -372,7 +391,7 @@ export class DependencyManager {
         );
       } else {
         throw Errors.Usage(
-          `Could not find a version for the provider '${constraint}' in the public registry. This could be due to a typo, please take a look at https://registry.terraform.io/browse/providers to find all supported providers.`,
+          `Could not find a version for the provider '${constraint}' in the public registry. This could be due to a typo, please take a look at ${registryForConstraint(constraint).browseUrl} to find all supported providers.`,
         );
       }
     }

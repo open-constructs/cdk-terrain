@@ -76,3 +76,17 @@ export function registryForTargetVersions(
     targetVersions?.terraform === undefined;
   return opentofuOnly ? OPENTOFU_REGISTRY : TERRAFORM_REGISTRY;
 }
+
+/** The registries cdktn knows how to query for available versions. */
+export const PUBLIC_REGISTRIES: readonly Registry[] = [
+  TERRAFORM_REGISTRY,
+  OPENTOFU_REGISTRY,
+];
+
+/**
+ * The public registry serving `hostname`, or undefined for a private or
+ * self-hosted one - which cdktn cannot query for versions.
+ */
+export function registryForHostname(hostname: string): Registry | undefined {
+  return PUBLIC_REGISTRIES.find((r) => r.hostname === hostname);
+}
