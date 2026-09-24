@@ -6,6 +6,8 @@ import { TerraformTargetVersions } from "./config";
 export interface Registry {
   /** Hostname used to resolve providers declared without one. */
   readonly hostname: string;
+  /** How to name this registry in generated documentation text. */
+  readonly displayName: string;
   /** Where to send a user looking for available providers. */
   readonly browseUrl: string;
   /**
@@ -24,6 +26,7 @@ export interface Registry {
 
 export const TERRAFORM_REGISTRY: Registry = {
   hostname: "registry.terraform.io",
+  displayName: "Terraform Registry",
   browseUrl: "https://registry.terraform.io/browse/providers",
   docsUrl(namespace, provider, version, kind, name) {
     const base = `https://registry.terraform.io/providers/${namespace}/${provider}/${version}/docs`;
@@ -46,6 +49,7 @@ export const TERRAFORM_REGISTRY: Registry = {
 // back to the provider page.
 export const OPENTOFU_REGISTRY: Registry = {
   hostname: "registry.opentofu.org",
+  displayName: "OpenTofu Registry",
   browseUrl: "https://search.opentofu.org/providers",
   docsUrl(namespace, provider, version, kind, name) {
     const base = `https://search.opentofu.org/provider/${namespace}/${provider}/v${version}/docs`;

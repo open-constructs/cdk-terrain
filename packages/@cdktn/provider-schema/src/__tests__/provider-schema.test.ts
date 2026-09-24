@@ -17,12 +17,35 @@ import {
   sanitizeProviderSchema,
 } from "../provider-schema";
 
+/**
+ * Rewrites the registry host in the keys of a fully-qualified-name map.
+ * Only the keys: a host appearing inside provider documentation text is the
+ * same whichever CLI fetched the schema, and should stay as authored.
+ */
+function stubRegistryKeys(map: Record<string, unknown> | undefined) {
+  if (!map) return map;
+  return Object.fromEntries(
+    Object.entries(map).map(([fqpn, v]) => [
+      fqpn.replace(/^[^/]+\//, "STUBBED_REGISTRY/"),
+      v,
+    ]),
+  );
+}
+
 function sanitizeJson(value: any) {
   value["format_version"] = "STUBBED VERSION";
   // cli_name/cli_version stamp whatever binary fetched the schema and vary
   // by environment
   if ("cli_name" in value) value["cli_name"] = "STUBBED CLI";
   if ("cli_version" in value) value["cli_version"] = "STUBBED VERSION";
+  // Same reason: the CLI keys these by fully qualified name, so the host says
+  // which binary fetched the schema rather than anything about the code under
+  // test - terraform and tofu would otherwise need separate snapshots of
+  // identical data.
+  if (value["provider_schemas"])
+    value["provider_schemas"] = stubRegistryKeys(value["provider_schemas"]);
+  if (value["provider_versions"])
+    value["provider_versions"] = stubRegistryKeys(value["provider_versions"]);
   return stableStringify(value, null, 2);
 }
 
