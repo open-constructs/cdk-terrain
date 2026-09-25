@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { TerraformHclModule, TerraformStack, Testing } from "../src";
+import {
+  BundlerKey,
+  TerraformHclModule,
+  TerraformStack,
+  Testing,
+} from "../src";
 import * as path from "path";
 import { TerraformModuleAsset } from "../src/terraform-module-asset";
 
@@ -140,5 +145,45 @@ describe("createAssetsFromLocalModules", () => {
     );
 
     expect(moduleOptionsFalse.source).toEqual(localSource);
+  });
+});
+
+describe("BundlerKey", () => {
+  test("joins ordered parts, escaping the separator inside a part", () => {
+    // The colon inside "node:20" is escaped so it cannot be mistaken for a
+    // part boundary.
+    expect(BundlerKey.of("docker", "node:20", "npm run build").toString()).toBe(
+      "docker:node\\:20:npm run build",
+    );
+  });
+
+  test("order is significant", () => {
+    expect(BundlerKey.of("a", "b").toString()).not.toBe(
+      BundlerKey.of("b", "a").toString(),
+    );
+  });
+
+  test("escapes the separator so distinct inputs cannot collide", () => {
+    expect(BundlerKey.of("a:b", "c").toString()).not.toBe(
+      BundlerKey.of("a", "b:c").toString(),
+    );
+  });
+
+  test("add appends parts", () => {
+    expect(BundlerKey.of("docker").add("node:20", "build").toString()).toBe(
+      BundlerKey.of("docker", "node:20", "build").toString(),
+    );
+  });
+
+  test("withEnv sorts record entries so property order does not matter", () => {
+    const a = BundlerKey.of("base").withEnv({ B: "2", A: "1" }).toString();
+    const b = BundlerKey.of("base").withEnv({ A: "1", B: "2" }).toString();
+    expect(a).toBe(b);
+  });
+
+  test("different env values produce different keys", () => {
+    const dev = BundlerKey.of("build").withEnv({ NODE_ENV: "development" });
+    const prod = BundlerKey.of("build").withEnv({ NODE_ENV: "production" });
+    expect(dev.toString()).not.toBe(prod.toString());
   });
 });

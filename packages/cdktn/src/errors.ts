@@ -95,9 +95,32 @@ Place a cdktf.json at the root of your project, or pass an absolute path. Learn 
 `,
   );
 
+export const assetFilePackagingWithBundlerUnsupported = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was configured with a 'bundler' and file packaging (AssetType.FILE). A bundler produces a directory of output, which cannot be staged as a single file.
+
+Use AssetType.ARCHIVE to zip the bundler's output, or AssetType.DIRECTORY to stage it as a tree.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
 export const assetHashInvalid = (id: string, assetHash: string) =>
   new Error(
     `TerraformAsset ${id} resolved an 'assetHash' of '${assetHash}', but it names the staged asset file and so may only contain letters, digits, '_', '.' and '-'.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
+export const assetStagingBundlerOutputNotDirectory = (
+  id: string,
+  produced: string,
+) =>
+  new Error(
+    `TerraformAsset ${id}'s bundler returned '${produced}', which is not a directory. A bundler must write its output into 'options.outputDir' and return that directory (or a subdirectory of it); the returned tree is then packaged.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
+export const assetStagingAlreadyStaged = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was already staged. An AssetStaging stages exactly once — its bundler output is captured on the first call and cannot be rebuilt or restaged.
 Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
   );
 
