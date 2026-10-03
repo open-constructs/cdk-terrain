@@ -43,7 +43,7 @@ jobs:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
     env:
       CHECKPOINT_DISABLE: "1"
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -74,6 +74,7 @@ jobs:
             go-${{ runner.os }}-
       - name: installing dependencies and build
         if: ${{ !inputs.skip_setup }}
+        timeout-minutes: 30
         run: |
           pnpm ci
           pnpm build
@@ -81,6 +82,7 @@ jobs:
         env:
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
       - name: installing test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: Upload dist
         if: ${{ !inputs.skip_setup }}
@@ -105,7 +107,7 @@ jobs:
       CHECKPOINT_DISABLE: "1"
       TERRAFORM_VERSION: ${{ inputs.terraform_version }}
       TERRAFORM_BINARY_NAME: ${{ inputs.terraform_binary }}
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -136,8 +138,10 @@ jobs:
           restore-keys: |
             terraform-${{ runner.os }}-${{ inputs.terraform_binary }}-
       - name: install test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: integration tests
+        timeout-minutes: 20
         run: cd test && pnpm run test:provider ${TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}
@@ -155,7 +159,7 @@ jobs:
     env:
       CHECKPOINT_DISABLE: "1"
       TERRAFORM_VERSION: ${{ inputs.terraform_version }}
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -192,8 +196,10 @@ jobs:
       - name: update npm
         run: npm install -g npm@8.12.1
       - name: install test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: integration tests
+        timeout-minutes: 30
         run: cd test && ./provider-tests/test-provider.bat ${env:TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}
