@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { Language } from "@cdktn/commons";
+import * as path from "path";
+import {
+  Language,
+  readConfigSync,
+  registryForTargetVersions,
+} from "@cdktn/commons";
 import {
   DependencyManager,
   ProviderConstraint,
@@ -30,12 +35,17 @@ export async function providerAdd({
   const version =
     cdktfVersion || (await determineDeps(cdktfVersion, dist)).cdktf_version;
 
+  // Read the target project's config, not the caller's cwd - init() scaffolds
+  // into `destination` and calls this without changing directory.
+  const registry = registryForTargetVersions(
+    readConfigSync(path.join(projectDirectory, "cdktf.json")).targetVersions,
+  );
   const manager = new DependencyManager(language, version, projectDirectory);
 
   let needsGet = false;
 
   for (const provider of providers) {
-    const constraint = ProviderConstraint.fromConfigEntry(provider);
+    const constraint = ProviderConstraint.fromConfigEntry(provider, registry);
     if (forceLocal) {
       needsGet = true;
       await manager.addLocalProvider(constraint);
