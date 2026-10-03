@@ -54,6 +54,7 @@ export interface TerraformOutput {
 export function isTerraformOutput(output: any): output is TerraformOutput {
   return (
     typeof output === "object" &&
+    output !== null &&
     typeof output.sensitive === "boolean" &&
     (typeof output.type === "string" || Array.isArray(output.type))
   );

@@ -24,17 +24,26 @@ function unpackTerraformOutput(
   outputs: NestedTerraformOutputs,
   includeSensitiveOutputs: boolean,
 ): Record<string, string> {
-  return Object.entries(outputs).reduce(
-    (acc, [key, entry]) => ({
+  return Object.entries(outputs).reduce((acc, [key, entry]) => {
+    if (isTerraformOutput(entry)) {
+      return {
+        ...acc,
+        [key]:
+          !entry.sensitive || includeSensitiveOutputs ? entry.value : undefined,
+      };
+    }
+    // Defensive hardening: `entry` comes from externally-sourced data (terraform output metadata
+    // mapped by getConstructIdsForOutputs), and Object.entries() below would throw on a null or
+    // undefined entry. Omit the key rather than recurse into it or retain an undefined/null value -
+    // consistent with how getConstructIdsForOutputs omits unresolved outputs.
+    if (entry === null || typeof entry !== "object") {
+      return acc;
+    }
+    return {
       ...acc,
-      [key]: isTerraformOutput(entry)
-        ? !entry.sensitive || includeSensitiveOutputs
-          ? entry.value
-          : undefined
-        : unpackTerraformOutput(entry, includeSensitiveOutputs),
-    }),
-    {},
-  );
+      [key]: unpackTerraformOutput(entry, includeSensitiveOutputs),
+    };
+  }, {});
 }
 
 export async function saveOutputs(
@@ -202,6 +211,12 @@ export const parseOutput = (str: string): DeployingResource[] => {
   }, new Array());
 };
 
+// Matches the prefix TerraformStack.registerOutgoingCrossStackReference() uses when it
+// synthesizes an output for a cross-stack dependency (packages/cdktn/src/terraform-stack.ts).
+// There is no shared constant to import for it - the identifier is not exported anywhere - so the
+// prefix is duplicated here.
+const CROSS_STACK_OUTPUT_PREFIX = "cross-stack-output-";
+
 const isObjectEmpty = (obj: Record<string, any>): boolean => {
   if (typeof obj !== "object") {
     return false;
@@ -227,7 +242,26 @@ export const getConstructIdsForOutputs = (
   const mapOutputs = (value: OutputIdMap): NestedTerraformOutputs => {
     return Object.entries(value).reduce((acc, [key, value]) => {
       if (typeof value === "string") {
-        return { ...acc, [key]: outputs[value] };
+        const resolved = outputs[value];
+        if (resolved === undefined) {
+          // The metadata declares an output that terraform did not return (state drift,
+          // --skip-synth, a renamed/removed output, ...). Omit the key entirely rather than
+          // retaining it with an undefined value, which would later crash the renderer.
+          //
+          // Cross-stack outputs are generated plumbing for stack dependencies rather than
+          // something the user declared directly, and a dependent stack legitimately produces
+          // many of them - warning on each missing one would be noise the user cannot act on.
+          // A directly user-declared output silently going missing is exactly the kind of
+          // condition that made the original crash hard to diagnose, so it gets a warning.
+          const message = `Output "${value}" (construct id "${key}") declared in stack metadata but absent from terraform output; omitting it.`;
+          if (value.startsWith(CROSS_STACK_OUTPUT_PREFIX)) {
+            logger.debug(message);
+          } else {
+            logger.warn(message);
+          }
+          return acc;
+        }
+        return { ...acc, [key]: resolved };
       }
 
       const mapped = mapOutputs(value);
