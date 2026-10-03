@@ -5,6 +5,7 @@ import { TestResource, DockerImage } from "../../../test/helper/resource";
 import {
   toBeValidTerraform,
   toPlanSuccessfully,
+  warmUpProviderLockFileCache,
   getToHaveResourceWithProperties,
   getToHaveProviderWithProperties,
   getToHaveDataSourceWithProperties,
@@ -13,6 +14,7 @@ import {
 import { TestDataSource } from "../../../test/helper/data-source";
 import { TerraformStack } from "../../terraform-stack";
 import { DockerProvider } from "../../../test/helper/provider";
+import { S3Backend } from "../../backends/s3-backend";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -348,6 +350,101 @@ describe("matchers", () => {
       expect(res.pass).toBeFalsy();
       expect(res.message).toEqual(
         expect.stringContaining("Expected subject to plan successfully"),
+      );
+    });
+
+    it("succeeds with { backend: false } by substituting a local backend", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new S3Backend(stack, {
+        bucket: "nope",
+        key: "k",
+        region: "us-east-1",
+      });
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack), {
+        backend: false,
+      });
+
+      expect(res.pass).toBeTruthy();
+    });
+
+    it("renders terraform diagnostics in the failure message", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      // The provider schema requires a string; this type mismatch is caught by `plan`'s
+      // implicit validate step and reported as a `-json` diagnostic, not a parse error.
+      new DockerImage(stack, "test", { name: { not: "a string" } as any });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack), {
+        backend: false,
+      });
+      expect(res.pass).toBeFalsy();
+      expect(res.message).toEqual(expect.stringContaining("Diagnostics:"));
+    });
+
+    it("removes the local backend override after the plan, so a later real-backend call still fails", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new S3Backend(stack, {
+        bucket: "nope",
+        key: "k",
+        region: "us-east-1",
+      });
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      expect(
+        toPlanSuccessfully(synthesized, { backend: false }).pass,
+      ).toBeTruthy();
+      // If the override file had leaked, this would also pass against the local backend
+      // instead of failing against the unreachable S3 one.
+      expect(toPlanSuccessfully(synthesized).pass).toBeFalsy();
+    });
+
+    it("warmUpProviderLockFileCache seeds the cache ahead of a matcher call", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      // Resolving up front should not itself be observable as a failure, and the matcher
+      // should still succeed against the lock file the warm-up seeded.
+      expect(() => warmUpProviderLockFileCache([synthesized])).not.toThrow();
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+    });
+
+    it("reuses the lock file seeded by a prior warm-up across multiple matcher calls", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      warmUpProviderLockFileCache([synthesized]);
+
+      // Both calls should seed from the lock file the warm-up cached, rather than one of them
+      // racing a fresh provider resolution against the shared plugin cache.
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
       );
     });
   });

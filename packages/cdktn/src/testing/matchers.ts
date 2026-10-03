@@ -1,7 +1,9 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
+import * as crypto from "crypto";
 import { execSync, SpawnSyncReturns } from "child_process";
 import { snakeCase, terraformBinaryName } from "../util";
 import {
@@ -10,7 +12,6 @@ import {
   matchersPathIsNotDirectory,
 } from "../errors";
 
-// TerraformConstructor is class with the static property 'tfResourceType'
 export interface TerraformConstructor {
   readonly tfResourceType: string;
 }
@@ -22,14 +23,9 @@ export type SynthesizedStack = {
 };
 
 /**
- * Class representing the contents of a return by an assertion
+ * The result of a testing matcher assertion.
  */
 export class AssertionReturn {
-  /**
-   * Create an AssertionReturn
-   * @param message - String message containing information about the result of the assertion
-   * @param pass - Boolean pass denoting the success of the assertion
-   */
   constructor(
     public readonly message: string,
     public readonly pass: boolean,
@@ -39,9 +35,7 @@ export class AssertionReturn {
 export type MatcherReturnJest = { message: () => string; pass: boolean };
 
 /**
- * Reformats the contents of the base testing matcher return type AssertionReturn into type useable by jest
- * @param toReturn
- * @returns {MatcherReturnJest}
+ * Adapts an {@link AssertionReturn} to Jest's `{ message, pass }` matcher shape.
  */
 export function returnMatcherToJest(
   toReturn: AssertionReturn,
@@ -53,11 +47,8 @@ export function returnMatcherToJest(
 }
 
 /**
- * Compares expected and received. All expected properties are matched and considered equal even if
- * there are more properties in the received object than in the expected object in which case it will still return true.
- * @param expected
- * @param received
- * @returns {boolean}
+ * Deep-equals `expected` against `received`, ignoring extra properties on `received` and
+ * matching each key in either camelCase or snake_case.
  */
 export function asymetricDeepEqualIgnoringObjectCasing(
   expected: unknown,
@@ -69,9 +60,8 @@ export function asymetricDeepEqualIgnoringObjectCasing(
         return (
           Array.isArray(received) &&
           expected.length === received.length &&
-          expected.every(
-            (item, index) =>
-              asymetricDeepEqualIgnoringObjectCasing(item, received[index]), // recursively compare arrays
+          expected.every((item, index) =>
+            asymetricDeepEqualIgnoringObjectCasing(item, received[index]),
           )
         );
       }
@@ -85,7 +75,6 @@ export function asymetricDeepEqualIgnoringObjectCasing(
         return false;
       }
 
-      // recursively compare objects and allow snake case as well as camel case
       return Object.keys(expected as Record<string, unknown>).every((key) => {
         if ((received as any)[key] !== undefined) {
           return asymetricDeepEqualIgnoringObjectCasing(
@@ -120,8 +109,8 @@ const defaultPassEvaluation = (
 function isAsymmetric(obj: any) {
   return !!obj && typeof obj === "object" && "asymmetricMatch" in obj;
 }
-// You can use expect.Anything(), expect.ObjectContaining, etc in jest, this makes it nicer to read
-// when we print error messages
+// Renders jest asymmetric matchers (expect.anything(), etc.) as "expect.Anything()" in messages,
+// instead of their internal object representation.
 // eslint-disable-next-line jsdoc/require-jsdoc
 function jestAsymetricMatcherStringifyReplacer(_key: string, value: any) {
   return isAsymmetric(value) ? `expect.${value.toString()}` : value;
@@ -129,10 +118,9 @@ function jestAsymetricMatcherStringifyReplacer(_key: string, value: any) {
 // eslint-disable-next-line jsdoc/require-jsdoc
 function getAssertElementWithProperties(
   functionName: string,
-  // We have the evaluation function configurable so we can make use of the specific testing frameworks capabilities
-  // This makes the resulting tests more native to the testing framework
+  // Configurable so each adapter (Jest, Vitest, ...) can use its own matcher semantics.
   customPassEvaluation?: (
-    items: any[], // configurations of the requested type
+    items: any[],
     assertedProperties: Record<string, any>,
   ) => boolean,
 ) {
@@ -145,7 +133,7 @@ function getAssertElementWithProperties(
   ): AssertionReturn {
     let stack: SynthesizedStack;
 
-    // Rececived could either be a JSON string or a path to a file
+    // received may be a JSON string or a path to a file containing one
     const stackContent = fs.existsSync(received)
       ? fs.readFileSync(received, "utf8")
       : received;
@@ -156,14 +144,13 @@ function getAssertElementWithProperties(
       throw invalidStack(functionName, stackContent);
     }
 
+    // find every item of itemType.tfResourceType under stack[type], keyed by name
     const items =
       Object.values(
-        Object.entries(stack[type] || {}) // for all data/resource entries
-          .find(
-            // find the object with a matching name
-            ([type, _values]) => type === itemType.tfResourceType,
-          )?.[1] || {}, // get all items of that type (encoded as a record of name -> config)
-      ) || []; // get a list of all configs of that type
+        Object.entries(stack[type] || {}).find(
+          ([type, _values]) => type === itemType.tfResourceType,
+        )?.[1] || {},
+      ) || [];
     const pass = passEvaluation(items, properties);
     if (pass) {
       return new AssertionReturn(
@@ -198,9 +185,8 @@ Found ${items.length === 0 ? "no" : items.length} ${
 }
 
 /**
- * Returns the function toHaveDataSourceWithProperties using the evaluation properties of customPassEvaluation
- * @param customPassEvaluation
- * @returns {getToHaveDataSourceWithProperties~toHaveDataSourceWithProperties}
+ * Returns a `toHaveDataSourceWithProperties` matcher using `customPassEvaluation` to decide a
+ * match.
  */
 export function getToHaveDataSourceWithProperties(
   customPassEvaluation?: (
@@ -208,13 +194,6 @@ export function getToHaveDataSourceWithProperties(
     assertedProperties: Record<string, any>,
   ) => boolean,
 ) {
-  /**
-   * Evaluates the received stack to have the data source resourceType containing specified properties
-   * @param received
-   * @param resourceType
-   * @param properties
-   * @returns {AssertionReturn}
-   */
   return function toHaveDataSourceWithProperties(
     received: string,
     resourceType: TerraformConstructor,
@@ -228,9 +207,8 @@ export function getToHaveDataSourceWithProperties(
 }
 
 /**
- * Returns the function toHaveResourceWithProperties using the evaluation properties of customPassEvaluation
- * @param customPassEvaluation
- * @returns
+ * Returns a `toHaveResourceWithProperties` matcher using `customPassEvaluation` to decide a
+ * match.
  */
 export function getToHaveResourceWithProperties(
   customPassEvaluation?: (
@@ -238,13 +216,6 @@ export function getToHaveResourceWithProperties(
     assertedProperties: Record<string, any>,
   ) => boolean,
 ) {
-  /**
-   * Evaluates the received stack to have the resource resourceType containing specified properties
-   * @param received
-   * @param resourceType
-   * @param properties
-   * @returns {AssertionReturn}
-   */
   return function toHaveResourceWithProperties(
     received: string,
     resourceType: TerraformConstructor,
@@ -258,10 +229,7 @@ export function getToHaveResourceWithProperties(
 }
 
 /**
- * A helper util to verify wether an Error was caused by the Nodejs `process.spawn` API.
- *
- * @param   {Error}   err The Error object to verify
- * @returns {Boolean}     A bool indicating wether the input Error is containing process.spawn output.
+ * Reports whether `err` carries `child_process.execSync`/`spawnSync` output buffers.
  */
 const isExecSpawnError = (err: any): err is Error & SpawnSyncReturns<any> =>
   "output" in err &&
@@ -269,32 +237,76 @@ const isExecSpawnError = (err: any): err is Error & SpawnSyncReturns<any> =>
   err.output.some((buf: any) => Buffer.isBuffer(buf));
 
 /**
- * A helper util to append `process.spawn` output to assertion messages to improve developer expirience.
- *
- * @param   {String} message The message to optionally append process output to.
- * @param   {Error}  err     The error from which the `process.spawn` output should be retreived from.
- * @returns {String}         The finalized assertion message decorated with the `process.spawn` output.
+ * Renders terraform diagnostic entries as human-readable text.
  */
-const withProcessOutput = (message: string, err: unknown) => {
-  let output = "";
+const formatDiagnostics = (diagnostics: any[]): string =>
+  diagnostics
+    .filter((d) => d?.severity && d?.summary)
+    .map(
+      ({ severity, summary, detail }) =>
+        `${severity}: ${summary}${detail ? `\n${detail}` : ""}`,
+    )
+    .join("\n");
 
-  if (isExecSpawnError(err)) {
-    output =
-      err.output
-        ?.map((buffer: Buffer) => buffer?.toString("utf8"))
-        .filter(Boolean)
-        .join("\n") ?? "";
+/**
+ * Renders the diagnostics found in the output of a `terraform <cmd> -json` invocation as
+ * human-readable text. Handles both `plan`'s newline-delimited JSON stream (one `diagnostic`
+ * entry per line) and `validate`'s single pretty-printed object (a top-level `diagnostics`
+ * array).
+ */
+const renderJsonDiagnostics = (output: string): string => {
+  try {
+    const parsed = JSON.parse(output);
+    if (Array.isArray(parsed?.diagnostics)) {
+      return formatDiagnostics(parsed.diagnostics);
+    }
+  } catch {
+    // not a single JSON object; fall through to the newline-delimited format
   }
 
-  const appendix = output.length ? `. Output: ${output}` : "";
+  const diagnostics = output
+    .split("\n")
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return undefined;
+      }
+    })
+    .filter((entry) => entry?.type === "diagnostic" && entry.diagnostic)
+    .map((entry) => entry.diagnostic);
+
+  return formatDiagnostics(diagnostics);
+};
+
+/**
+ * Appends a failed process's output to an assertion message, preferring rendered `-json`
+ * diagnostics over the raw output when available.
+ */
+const withProcessOutput = (message: string, err: unknown) => {
+  if (!isExecSpawnError(err)) {
+    return `${message}: ${err}.`;
+  }
+
+  const output =
+    err.output
+      ?.map((buffer: Buffer) => buffer?.toString("utf8"))
+      .filter(Boolean)
+      .join("\n") ?? "";
+
+  const diagnostics = renderJsonDiagnostics(output);
+  const appendix = diagnostics.length
+    ? `. Diagnostics: ${diagnostics}`
+    : output.length
+      ? `. Output: ${output}`
+      : "";
 
   return `${message}: ${err}${appendix}.`;
 };
 
 /**
- * Returns the function toHaveProviderWithProperties using the evaluation properties of customPassEvaluation
- * @param customPassEvaluation
- * @returns {getToHaveProviderWithProperties~toHaveProviderWithProperties}
+ * Returns a `toHaveProviderWithProperties` matcher using `customPassEvaluation` to decide a
+ * match.
  */
 export function getToHaveProviderWithProperties(
   customPassEvaluation?: (
@@ -302,13 +314,6 @@ export function getToHaveProviderWithProperties(
     assertedProperties: Record<string, any>,
   ) => boolean,
 ) {
-  /**
-   * Evaluates the received stack to have the provider resourceType containing specified properties
-   * @param received
-   * @param resourceType
-   * @param properties
-   * @returns {AssertionReturn}
-   */
   return function toHaveProviderWithProperties(
     received: string,
     resourceType: TerraformConstructor,
@@ -321,10 +326,189 @@ export function getToHaveProviderWithProperties(
   };
 }
 
+const providerLockFileCacheRoot = path.join(
+  os.tmpdir(),
+  "cdktn-testing-provider-lockfiles",
+);
+
+// A loosely pinned requirement (e.g. "~> 5.0") shouldn't stay pinned to whichever version a
+// machine first resolved forever, so the cache expires.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+const binaryVersionCache = new Map<string, string>();
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+function getBinaryVersion(binaryName: string, env: NodeJS.ProcessEnv): string {
+  const cached = binaryVersionCache.get(binaryName);
+  if (cached) {
+    return cached;
+  }
+
+  let version = "unknown";
+  try {
+    version = execSync(`${binaryName} version`, { env, stdio: "pipe" })
+      .toString("utf8")
+      .split("\n")[0];
+  } catch {
+    // only affects cache partitioning, so "unknown" is an acceptable fallback
+  }
+
+  binaryVersionCache.set(binaryName, version);
+  return version;
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+function getProviderLockCacheDir(
+  workingDir: string,
+  binaryName: string,
+  env: NodeJS.ProcessEnv,
+): string | undefined {
+  try {
+    const config = JSON.parse(
+      fs.readFileSync(path.join(workingDir, "cdk.tf.json"), "utf8"),
+    );
+    const cacheKey = crypto
+      .createHash("sha256")
+      .update(binaryName)
+      .update(getBinaryVersion(binaryName, env))
+      .update(JSON.stringify(config?.terraform?.required_providers ?? {}))
+      .digest("hex");
+    return path.join(providerLockFileCacheRoot, cacheKey);
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * Evaluates the validity of the received stack
- * @param received
- * @returns {AssertionReturn}
+ * Copies a cached `.terraform.lock.hcl` into `workingDir` if `warmUpProviderLockFileCache` has
+ * already resolved one for its exact set of required providers, and it hasn't expired. Never
+ * runs `init` itself.
+ *
+ * @returns whether a lock file was seeded.
+ */
+function seedFromWarmCache(
+  workingDir: string,
+  binaryName: string,
+  env: NodeJS.ProcessEnv,
+): boolean {
+  const cacheDir = getProviderLockCacheDir(workingDir, binaryName, env);
+  if (!cacheDir) {
+    return false;
+  }
+
+  const cachedLockFile = path.join(cacheDir, ".terraform.lock.hcl");
+  try {
+    if (Date.now() - fs.statSync(cachedLockFile).mtimeMs >= CACHE_TTL_MS) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  fs.copyFileSync(cachedLockFile, path.join(workingDir, ".terraform.lock.hcl"));
+  return true;
+}
+
+/**
+ * Removes `TF_PLUGIN_CACHE_DIR` from `env`. Without a seeded lock file, `init` resolves
+ * providers itself; against terraform >= 1.4 that re-downloads into the shared plugin cache
+ * even when it's warm, racing other concurrent `init`s
+ * (https://github.com/open-constructs/cdk-terrain/issues/452). Dropping the cache dir from the
+ * environment makes `init` resolve into (and download straight into) the stack's own
+ * `.terraform` directory instead, so it can't race anyone.
+ */
+function withoutPluginCache(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const { TF_PLUGIN_CACHE_DIR: _unused, ...rest } = env;
+  return rest;
+}
+
+/**
+ * Resolves and caches a `.terraform.lock.hcl` for the exact set of required providers in
+ * `workingDir`, running a real `init` against the shared plugin cache. Only ever called from
+ * `warmUpProviderLockFileCache`, which runs serially within a single process, so no cross-
+ * process lock is needed: it's the only writer to the cache.
+ */
+function resolveAndCacheProviderLockFile(
+  workingDir: string,
+  binaryName: string,
+  env: NodeJS.ProcessEnv,
+): void {
+  const cacheDir = getProviderLockCacheDir(workingDir, binaryName, env);
+  if (!cacheDir) {
+    return;
+  }
+
+  const cachedLockFile = path.join(cacheDir, ".terraform.lock.hcl");
+  try {
+    if (Date.now() - fs.statSync(cachedLockFile).mtimeMs < CACHE_TTL_MS) {
+      return;
+    }
+  } catch {
+    // not cached yet
+  }
+
+  execSync(`${binaryName} init -backend=false -input=false`, {
+    cwd: workingDir,
+    env,
+    stdio: "pipe",
+  });
+
+  const targetLockFile = path.join(workingDir, ".terraform.lock.hcl");
+  try {
+    if (fs.existsSync(targetLockFile)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+      const tmpLockFile = `${cachedLockFile}.${process.pid}.tmp`;
+      fs.copyFileSync(targetLockFile, tmpLockFile);
+      fs.renameSync(tmpLockFile, cachedLockFile);
+    }
+  } catch {
+    // the cache write-back is an optimization only; a failure here must not fail the warm-up
+  }
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+function getManifestStacks(
+  received: string,
+): [string, { workingDirectory: string }][] {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.resolve(received, "manifest.json"), "utf8"),
+  );
+  return Object.entries(manifest.stacks);
+}
+
+/**
+ * Resolves and caches a `.terraform.lock.hcl` for every unique required-providers set across
+ * the given `fullSynth` output directories, up front and serially.
+ *
+ * Intended for callers that know the full set of stacks under test ahead of time — e.g. a
+ * Jest/Vitest `globalSetup` hook, before parallel workers start — so there's nothing left for
+ * `toBeValidTerraform`/`toPlanSuccessfully` to race over
+ * (https://github.com/open-constructs/cdk-terrain/issues/452).
+ *
+ * @param received one or more `fullSynth` output directories to warm up
+ */
+export function warmUpProviderLockFileCache(received: string[]): void {
+  received
+    .flatMap((dir) =>
+      getManifestStacks(dir).map(([, stack]) =>
+        path.resolve(dir, stack.workingDirectory),
+      ),
+    )
+    .forEach((workingDir) =>
+      resolveAndCacheProviderLockFile(
+        workingDir,
+        terraformBinaryName,
+        process.env,
+      ),
+    );
+}
+
+// execSync's default 1 MiB maxBuffer is easily exceeded by `-json` output for a plan/validate
+// of more than a few dozen resources.
+const EXEC_MAX_BUFFER = 100 * 1024 * 1024;
+
+/**
+ * Checks that the received stack is valid Terraform (`terraform validate`).
  */
 export function toBeValidTerraform(received: string): AssertionReturn {
   try {
@@ -339,19 +523,20 @@ export function toBeValidTerraform(received: string): AssertionReturn {
   }
 
   try {
-    const manifest = JSON.parse(
-      fs.readFileSync(path.resolve(received, "manifest.json"), "utf8"),
-    );
-
-    const stacks = Object.entries(manifest.stacks);
+    const stacks = getManifestStacks(received);
 
     stacks.forEach(([name, stack]) => {
       const opts = {
-        cwd: path.resolve(received, (stack as any).workingDirectory),
+        cwd: path.resolve(received, stack.workingDirectory),
         env: process.env,
         stdio: "pipe",
+        maxBuffer: EXEC_MAX_BUFFER,
       } as any;
-      execSync(`${terraformBinaryName} init`, opts);
+      const seeded = seedFromWarmCache(opts.cwd, terraformBinaryName, opts.env);
+      execSync(`${terraformBinaryName} init -backend=false -input=false`, {
+        ...opts,
+        env: seeded ? opts.env : withoutPluginCache(opts.env),
+      });
       const out = execSync(`${terraformBinaryName} validate -json`, opts);
 
       const result = JSON.parse(out.toString());
@@ -375,12 +560,48 @@ export function toBeValidTerraform(received: string): AssertionReturn {
   }
 }
 
+export interface ToPlanSuccessfullyOptions {
+  /**
+   * Whether `init`/`plan` should use the stack's real backend. Disable this for stacks whose
+   * backend (e.g. s3, remote) is not reachable in the test environment and whose plan does not
+   * depend on existing state.
+   * @default true
+   */
+  readonly backend?: boolean;
+}
+
+const noRealBackendOverrideFileName =
+  "cdktn-testing-no-backend_override.tf.json";
+
 /**
- * Evaluates the ability for the received stack to successfully plan
- * @param received
- * @returns {AssertionReturn}
+ * `init -backend=false` leaves the backend uninitialized, which `plan` refuses to run against
+ * (`fullSynth` output always has a backend block). Write a Terraform JSON override that swaps
+ * in a `local` backend instead, so `init` can initialize for real without credentials or
+ * network access.
  */
-export function toPlanSuccessfully(received: string): AssertionReturn {
+function overrideWithLocalBackend(workingDir: string) {
+  fs.writeFileSync(
+    path.join(workingDir, noRealBackendOverrideFileName),
+    JSON.stringify({ terraform: { backend: { local: {} } } }),
+  );
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+function removeLocalBackendOverride(workingDir: string) {
+  fs.rmSync(path.join(workingDir, noRealBackendOverrideFileName), {
+    force: true,
+  });
+}
+
+/**
+ * Checks that the received stack plans successfully (`terraform plan`).
+ */
+export function toPlanSuccessfully(
+  received: string,
+  options: ToPlanSuccessfullyOptions = {},
+): AssertionReturn {
+  const { backend = true } = options;
+
   try {
     if (!fs.statSync(received).isDirectory()) {
       throw matchersPathIsNotDirectory("toPlanSuccessfully");
@@ -393,22 +614,41 @@ export function toPlanSuccessfully(received: string): AssertionReturn {
   }
 
   try {
-    const manifest = JSON.parse(
-      fs.readFileSync(path.resolve(received, "manifest.json"), "utf8"),
-    );
-
-    const stacks = Object.entries(manifest.stacks);
+    const stacks = getManifestStacks(received);
 
     stacks.forEach(([, stack]) => {
       const opts = {
-        cwd: path.resolve(received, (stack as any).workingDirectory),
+        cwd: path.resolve(received, stack.workingDirectory),
         env: process.env,
-        stdio: "ignore",
+        stdio: "pipe",
+        maxBuffer: EXEC_MAX_BUFFER,
       } as any;
-      execSync(`${terraformBinaryName} init`, opts);
 
-      // Throws on a non-zero exit code
-      execSync(`${terraformBinaryName} plan -input=false -lock=false `, opts);
+      if (!backend) {
+        overrideWithLocalBackend(opts.cwd);
+      }
+
+      try {
+        const seeded = seedFromWarmCache(
+          opts.cwd,
+          terraformBinaryName,
+          opts.env,
+        );
+        execSync(`${terraformBinaryName} init -input=false`, {
+          ...opts,
+          env: seeded ? opts.env : withoutPluginCache(opts.env),
+        });
+
+        // throws on a non-zero exit code
+        execSync(
+          `${terraformBinaryName} plan -input=false -lock=false -json`,
+          opts,
+        );
+      } finally {
+        if (!backend) {
+          removeLocalBackendOverride(opts.cwd);
+        }
+      }
     });
 
     return new AssertionReturn(

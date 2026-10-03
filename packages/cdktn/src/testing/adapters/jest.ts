@@ -5,6 +5,7 @@ import {
   getToHaveDataSourceWithProperties,
   toBeValidTerraform,
   toPlanSuccessfully,
+  ToPlanSuccessfullyOptions,
 } from "../matchers";
 import {
   getToHaveResourceWithProperties,
@@ -37,7 +38,7 @@ declare global {
       ): R;
 
       toBeValidTerraform(): R;
-      toPlanSuccessfully(): R;
+      toPlanSuccessfully(options?: ToPlanSuccessfullyOptions): R;
     }
   }
 }
@@ -158,8 +159,8 @@ export function setupJest() {
     toBeValidTerraform(received: string) {
       return returnMatcherToJest(toBeValidTerraform(received));
     },
-    toPlanSuccessfully(received: string) {
-      return returnMatcherToJest(toPlanSuccessfully(received));
+    toPlanSuccessfully(received: string, options?: ToPlanSuccessfullyOptions) {
+      return returnMatcherToJest(toPlanSuccessfully(received, options));
     },
   });
 }
