@@ -6,6 +6,10 @@
 const { execSync } = require("child_process");
 const { readFileSync, writeFileSync } = require("fs");
 
+exports.pre = () => {
+  requirePackageManager("npm");
+};
+
 exports.post = (ctx) => {
   const silent = ctx.silent === "true" || ctx.silent === true;
   // Terraform Cloud configuration settings if the organization name and workspace is set.
@@ -21,6 +25,12 @@ exports.post = (ctx) => {
       ctx.WorkspaceName,
       ctx.TerraformRemoteHostname
     );
+  }
+
+  // When this template is only the base of an overlay template, the overlay owns dependency installation and the
+  // help text: it replaces package.json, so installing with npm here would leave a stray package-lock.json.
+  if (ctx.isOverlayBase === "true") {
+    return;
   }
 
   const npm_cdktf = ctx.npm_cdktf;
@@ -50,6 +60,17 @@ exports.post = (ctx) => {
     console.log(readFileSync("./help", "utf-8"));
   }
 };
+
+function requirePackageManager(packageManager) {
+  const probe = process.platform === "win32" ? "where" : "which";
+  try {
+    execSync(`${probe} ${packageManager}`, { stdio: "ignore" });
+  } catch {
+    throw new Error(
+      `Could not find "${packageManager}" on your PATH. Install it (e.g. "corepack enable ${packageManager}") and run cdktn init again.`
+    );
+  }
+}
 
 function installDeps(deps, isDev, silent) {
   const devDep = isDev ? "-D" : "";

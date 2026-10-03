@@ -1,0 +1,16 @@
+*.d.ts
+*.js
+node_modules
+cdktf.out
+cdktf.log
+*terraform.*.tfstate*
+.gen
+.terraform
+tsconfig.tsbuildinfo
+!jest.config.js
+!setup.js
+
+# Yarn writes these alongside node_modules; the lockfile and .yarnrc.yml are committed, these are not.
+.yarn/*
+!.yarn/patches
+.pnp.*

@@ -194,6 +194,32 @@ const pipPackageSchema = z.array(
   z.object({ name: z.string(), version: z.string() }).loose(),
 );
 
+// [
+//   {
+//     "name": "my-project",
+//     "dependencies": {
+//       "@cdktn/provider-random": { "from": "@cdktn/provider-random", "version": "3.0.11" }
+//     }
+//   }
+// ]
+const pnpmListSchema = z.array(
+  z
+    .object({
+      dependencies: z.record(
+        z.string(),
+        z.object({ version: z.string() }).loose(),
+      ),
+      devDependencies: z.record(
+        z.string(),
+        z.object({ version: z.string() }).loose(),
+      ),
+    })
+    .partial()
+    .loose(),
+);
+
+type NodePm = "npm" | "pnpm" | "yarn";
+
 /**
  * manages installing, updating, and removing dependencies
  * in the package system used by the target language of a CDKTN
@@ -243,8 +269,42 @@ export abstract class PackageManager {
 }
 
 class NodePackageManager extends PackageManager {
-  private hasYarnLockfile(): boolean {
-    return existsSync(path.join(this.workingDirectory, "yarn.lock"));
+  private detectedPackageManager?: NodePm;
+
+  /**
+   * The package manager this project uses. An explicit `packageManager` field (corepack) wins over lockfile
+   * probing, since it is a deliberate declaration; the result is cached because `provider add` resolves it per
+   * provider.
+   *
+   * @internal
+   */
+  public get packageManager(): NodePm {
+    if (this.detectedPackageManager) {
+      return this.detectedPackageManager;
+    }
+
+    try {
+      const pkg = fs.readJsonSync(
+        path.join(this.workingDirectory, "package.json"),
+      );
+      const declared = String(pkg?.packageManager ?? "").split("@")[0];
+      if (declared === "pnpm" || declared === "yarn" || declared === "npm") {
+        this.detectedPackageManager = declared;
+        return declared;
+      }
+    } catch {
+      // no or unreadable package.json - fall through to lockfile probing
+    }
+
+    if (existsSync(path.join(this.workingDirectory, "pnpm-lock.yaml"))) {
+      this.detectedPackageManager = "pnpm";
+    } else if (existsSync(path.join(this.workingDirectory, "yarn.lock"))) {
+      this.detectedPackageManager = "yarn";
+    } else {
+      this.detectedPackageManager = "npm";
+    }
+
+    return this.detectedPackageManager;
   }
 
   public async addPackage(
@@ -254,21 +314,21 @@ class NodePackageManager extends PackageManager {
   ): Promise<void> {
     console.log(`Adding package ${packageName} @ ${packageVersion}`);
 
-    // probe for package-lock.json or yarn.lock
-    let command = "npm";
-    let args = ["install"];
+    const command = this.packageManager;
+    const args = [command === "npm" ? "install" : "add"];
 
-    if (this.hasYarnLockfile()) {
-      command = "yarn";
-      args = ["add"];
-    }
     args.push(
       packageVersion ? packageName + "@" + packageVersion : packageName,
     );
 
+    // Quiet flags differ per manager: pnpm has no --no-progress, and Yarn Berry errors on unknown options - it has
+    // neither --silent nor --no-progress (Yarn 1 accepted both).
     if (silent) {
-      args.push("--silent");
-      args.push("--no-progress");
+      if (command === "npm") {
+        args.push("--silent", "--no-progress");
+      } else if (command === "pnpm") {
+        args.push("--silent");
+      }
     }
 
     // Install exact version
@@ -347,12 +407,48 @@ class NodePackageManager extends PackageManager {
     }
   }
 
+  private async listPnpmPackages(): Promise<
+    { name: string; version: string }[]
+  > {
+    try {
+      // --depth 0 keeps the output to direct dependencies, which is where providers always live, and matches the
+      // top-level-only semantics of the npm listing.
+      const stdout = await exec("pnpm", ["list", "--json", "--depth", "0"], {
+        cwd: this.workingDirectory,
+      });
+
+      logger.debug(`Listing pnpm packages using "pnpm list --json": ${stdout}`);
+      const json = pnpmListSchema.parse(JSON.parse(stdout));
+
+      return json
+        .flatMap((project) => [
+          ...Object.entries(project.dependencies || {}),
+          ...Object.entries(project.devDependencies || {}),
+        ])
+        .filter(
+          ([depName]) =>
+            depName.startsWith("@cdktf/provider-") ||
+            depName.startsWith("@cdktn/provider-"),
+        )
+        .map(([name, dep]) => ({ name, version: dep.version }));
+    } catch (e: any) {
+      throw new Error(
+        `Could not determine installed packages using 'pnpm list --json': ${e}`,
+      );
+    }
+  }
+
   public async listProviderPackages(): Promise<
     { name: string; version: string }[]
   > {
-    return this.hasYarnLockfile()
-      ? this.listYarnPackages()
-      : this.listNpmPackages();
+    switch (this.packageManager) {
+      case "pnpm":
+        return this.listPnpmPackages();
+      case "yarn":
+        return this.listYarnPackages();
+      default:
+        return this.listNpmPackages();
+    }
   }
 }
 
