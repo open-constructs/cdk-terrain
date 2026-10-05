@@ -59,8 +59,8 @@
   },
   "peerDependencies": {
     "cdktn": "workspace:*",
-    "jsii": "~6.0.0",
-    "jsii-pacmak": "1.140.0"
+    "jsii": "~6.0.16",
+    "jsii-pacmak": "1.141.0"
   },
   "lint-staged": {
     "src/**/*.ts": [
