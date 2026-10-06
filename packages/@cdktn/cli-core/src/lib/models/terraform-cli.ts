@@ -465,7 +465,7 @@ export class TerraformCli implements Terraform {
     try {
       return await exec(
         terraformBinaryName,
-        ["-v"],
+        ["version"],
         {
           cwd: this.workdir,
           env: process.env,
