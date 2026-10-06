@@ -67,6 +67,12 @@ export const assetHashConflictingExcludeOptions = () =>
     `Both 'exclude' and 'ignoreStrategy' were passed to AssetHash.of(), but 'ignoreStrategy' replaces 'exclude' rather than combining with it. Pass only one.`,
   );
 
+export const assetStagingConflictingExcludeOptions = (id: string) =>
+  new Error(
+    `TerraformAsset ${id} was configured with both 'exclude' and 'ignoreStrategy', but 'ignoreStrategy' replaces 'exclude' rather than combining with it. Pass only one.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
 export const assetHashTypeCustomRequiresHash = (id: string) =>
   new Error(
     `TerraformAsset ${id} was configured with assetHashType 'CUSTOM' but no 'assetHash'. A custom hash type requires an explicit 'assetHash' value.

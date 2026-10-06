@@ -562,6 +562,77 @@ describe("TerraformAsset with exclude/extraHash (AssetStaging integration)", () 
 
     expect(asset.assetHash).toBe("my-custom-hash");
   });
+
+  test("ignoreStrategy negation is honored by hashing and staged/packed output", () => {
+    // A plain `relativePath === "b.md"` exclusion is expressible with
+    // `exclude` already; the point of `ignoreStrategy` is `!`-negation,
+    // which only takes effect with `pruneExcludedDirectories: false` (see
+    // `IIgnoreStrategy.pruneExcludedDirectories`) -- without it the excluded
+    // directory is pruned and the re-include is never evaluated.
+    fs.mkdirSync(path.join(srcDir, "node_modules"));
+    fs.writeFileSync(path.join(srcDir, "node_modules", "junk.js"), "junk");
+    fs.writeFileSync(path.join(srcDir, "node_modules", "keep.js"), "keep");
+
+    const s = stack();
+    const asset = new TerraformAsset(s, "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      ignoreStrategy: {
+        pruneExcludedDirectories: false,
+        ignores: ({ relativePath }) =>
+          (relativePath === "node_modules" ||
+            relativePath.startsWith("node_modules/")) &&
+          relativePath !== "node_modules/keep.js",
+      },
+    });
+    // Otherwise identical, but without the `keep.js` re-include: excludes
+    // all of `node_modules`. If the hash didn't actually account for
+    // `keep.js`, this would collide with `asset`'s hash.
+    const withoutReinclude = new TerraformAsset(s, "asset2", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      ignoreStrategy: {
+        pruneExcludedDirectories: false,
+        ignores: ({ relativePath }) =>
+          relativePath === "node_modules" ||
+          relativePath.startsWith("node_modules/"),
+      },
+    });
+
+    expect(asset.assetHash).not.toEqual(withoutReinclude.assetHash);
+
+    const outdir = Testing.fullSynth(s);
+    const stagedDir = path.join(outdir, "stacks", s.node.id, asset.path);
+    expect(fs.existsSync(path.join(stagedDir, "a.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(stagedDir, "b.md"))).toBe(true);
+    expect(fs.existsSync(path.join(stagedDir, "node_modules", "junk.js"))).toBe(
+      false,
+    );
+    expect(fs.existsSync(path.join(stagedDir, "node_modules", "keep.js"))).toBe(
+      true,
+    );
+  });
+
+  test("exclude and ignoreStrategy cannot be combined", () => {
+    let error: Error | undefined;
+    try {
+      new TerraformAsset(stack(), "asset", {
+        path: srcDir,
+        type: AssetType.DIRECTORY,
+        exclude: ["*.md"],
+        ignoreStrategy: { ignores: () => false },
+      });
+    } catch (e) {
+      error = e as Error;
+    }
+
+    // Names the TerraformAsset, not `AssetHash.of()`, which this path never
+    // calls into.
+    expect(error?.message).toMatch(
+      /TerraformAsset.*asset.*exclude.*ignoreStrategy/is,
+    );
+    expect(error?.message).not.toContain("AssetHash.of()");
+  });
 });
 
 describe("TerraformAsset artifact layout derives from the packaging", () => {
@@ -757,6 +828,40 @@ describe("TerraformAsset artifact layout derives from the packaging", () => {
         }),
     ).toThrow(/AssetType\.DIRECTORY|AssetType\.ARCHIVE|single file/i);
   });
+
+  // Regression: `filteredSource` materialised exclusions by `copySync`-ing
+  // the source into a scratch dir, which assumes a directory root and threw
+  // ENOTDIR against a file source. Hashing already special-cases a file
+  // root (there is nothing under it to filter); staging needs to agree, so
+  // a bundler for a file source still gets handed the file itself.
+  test.each([
+    // `hasExclusions` is true for any defined `ignoreStrategy`, unlike
+    // `exclude`, which only triggers it with at least one entry -- both
+    // reach `filteredSource` and must be covered.
+    ["a no-op ignoreStrategy", { ignoreStrategy: { ignores: () => false } }],
+    ["a non-empty exclude", { exclude: ["x"] }],
+  ])(
+    "a file source with %s and a bundler stages without crashing",
+    (_label, extra) => {
+      const s = stack();
+      const asset = new TerraformAsset(s, "asset", {
+        path: srcFile,
+        type: AssetType.FILE,
+        ...extra,
+        bundler: {
+          bundle: (opts) => {
+            const built = path.join(opts.outputDir, "built.bin");
+            fs.writeFileSync(built, "bundled");
+            return BundleResult.file(built);
+          },
+        },
+      });
+
+      const outdir = Testing.fullSynth(s);
+      const stagedFile = path.join(outdir, "stacks", s.node.id, asset.path);
+      expect(fs.readFileSync(stagedFile, "utf-8")).toBe("bundled");
+    },
+  );
 });
 
 describe("TerraformAsset stages inside the stack's own directory (#380)", () => {

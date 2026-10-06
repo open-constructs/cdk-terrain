@@ -14,7 +14,6 @@ import {
   IAssetPackaging,
 } from "./assets";
 import {
-  assetHashConflictingExcludeOptions,
   assetHashConflictingHashType,
   assetHashInvalid,
   assetHashTypeCustomRequiresHash,
@@ -24,6 +23,7 @@ import {
   assetStagingBundlerFileOutputNeedsFilePackaging,
   assetStagingBundlerOutputNotDirectory,
   assetStagingBundlerOutputNotFile,
+  assetStagingConflictingExcludeOptions,
 } from "./errors";
 import { CANONICAL_ASSET_HASHES } from "./features";
 import { ExcludeIgnoreStrategy, IIgnoreStrategy } from "./ignore-strategy";
@@ -239,7 +239,7 @@ export class AssetStaging extends Construct implements IAsset {
     this.bundler = props.bundler;
 
     if (props.exclude?.length && props.ignoreStrategy) {
-      throw assetHashConflictingExcludeOptions();
+      throw assetStagingConflictingExcludeOptions(this.displayName);
     }
     this.ignoreStrategy =
       props.ignoreStrategy ?? new ExcludeIgnoreStrategy(props.exclude ?? []);
@@ -469,13 +469,16 @@ export class AssetStaging extends Construct implements IAsset {
   /**
    * Absolute path to the source the bundler should read.
    *
-   * With no exclusions the resolved source is handed over directly. Otherwise
-   * the excluded source tree is materialised into the scratch directory, so
-   * the bundler sees the same file set the hash was taken over.
+   * With no exclusions, or with a file source, the resolved source is handed
+   * over directly — a file has no children to filter, matching `hashSource`,
+   * which only ever applies the ignore strategy to a directory's entries and
+   * never to the root itself. Otherwise the excluded source tree is
+   * materialised into the scratch directory, so the bundler sees the same
+   * file set the hash was taken over.
    */
   private filteredSource(scratch: string): string {
     const absoluteSource = path.resolve(this.sourcePath);
-    if (!this.hasExclusions) {
+    if (!this.hasExclusions || fs.statSync(absoluteSource).isFile()) {
       return absoluteSource;
     }
     const input = path.join(scratch, "input");
