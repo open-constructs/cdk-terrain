@@ -56,6 +56,11 @@ On Linux with limited tmpfs: `TMPDIR=/var/tmp pnpm test`
 `pnpm nx test <pkg> --watch` is the recommended dev loop — Nx builds the
 `^build` chain once, then jest's watch UI reruns affected tests on each save.
 
+When adding or changing tests, run the `test-audit` skill
+(`.claude/skills/test-audit/SKILL.md`) over them: it gates each test on the
+contract it protects and the tier that should own it, and flags duplicated or
+implementation-coupled tests.
+
 ### Running CLI locally
 
 ```bash
@@ -113,9 +118,9 @@ This is a **JSII monorepo** (Lerna + pnpm workspaces) that compiles TypeScript t
 
 Feature flags in `packages/cdktn/src/features.ts` enable breaking behavior changes behind opt-in flags. New projects get flags enabled via `cdktf.json`. Add new flags to `FUTURE_FLAGS` map.
 
-## Constitution
+## Project Principles
 
-See `.specify/memory/constitution.md` for project principles. Priority order: YAGNI > KISS > UX Consistency > Test Coverage. Small PRs reviewable in <30 minutes preferred.
+Priority order: YAGNI > KISS > UX Consistency > Test Coverage. Small PRs reviewable in <30 minutes preferred.
 
 ## Commit Style
 
@@ -123,9 +128,14 @@ Use [conventional commits](https://www.conventionalcommits.org/):
 
 - `feat(cli):` / `feat(lib):` / `feat(provider-generator):`
 - `fix(cli):` / `fix(lib):`
+- `refactor(lib):` / `perf(cli):` / `test(lib):` / `revert:`
 - `chore:` for docs, CI, non-code changes
 
-Allowed scopes: `cli`, `lib`, `hcl2cdk`, `hcl2json`, `provider-generator`, `examples`, `tests`, `docs`, `readme`, `release`, `deps`, `gha`
+Allowed types: `feat`, `fix`, `chore`, `refactor`, `revert`, `test`, `perf`
+
+Allowed scopes: `cli`, `lib`, `hcl2cdk`, `hcl2json`, `provider-generator`, `examples`, `tests`, `tools`, `docs`, `readme`, `release`, `deps`, `gha`
+
+The PR title is what gets linted (`.github/workflows/pr-lint.yml`); the scope is optional.
 
 ## CI Labels
 

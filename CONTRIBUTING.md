@@ -77,6 +77,9 @@ Ensuring your PR titles follow this format helps us quickly identify the purpose
 - feat(Affected_Component): A addition of a feature within the Affected Component
 - fix(Affected_Component): A bug fix within the Affected Component
 - refactor(Affected_Component): A refactor within the Affected Component
+- perf(Affected_Component): A performance improvement within the Affected Component
+- test(Affected_Component): A change that only adds or updates tests for the Affected Component
+- revert(Affected_Component): A revert of an earlier change
 - chore: Updates to docs, CI work, and more generally work that does not fall under the previous categories
 
 #### Affected Component:
@@ -248,7 +251,7 @@ Most unit tests can be run without any prerequisites:
 
 ```shell
 $ pnpm test # to run all tests at once
-$ pnpm test:watch # to run all tests in watch mode
+$ pnpm nx test @cdktn/commons --watch # to run one package's tests in watch mode
 ```
 
 > [!TIP]
