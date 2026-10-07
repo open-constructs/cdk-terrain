@@ -128,7 +128,7 @@ Use [conventional commits](https://www.conventionalcommits.org/):
 
 - `feat(cli):` / `feat(lib):` / `feat(provider-generator):`
 - `fix(cli):` / `fix(lib):`
-- `refactor(lib):` / `perf(cli):` / `test(lib):` / `revert:`
+- `refactor(lib):` / `perf(cli):` / `test(lib):` / `revert(lib):`
 - `chore:` for docs, CI, non-code changes
 
 Allowed types: `feat`, `fix`, `chore`, `refactor`, `revert`, `test`, `perf`

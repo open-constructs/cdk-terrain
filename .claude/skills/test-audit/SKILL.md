@@ -151,7 +151,7 @@ run parallel discovery lanes when available:
 - CLI (`packages/cdktn-cli`, `packages/@cdktn/cli-core`);
 - generation and conversion (`@cdktn/provider-generator`,
   `@cdktn/provider-schema`, `@cdktn/hcl2cdk`, `@cdktn/hcl2json`,
-  `@cdktn/commons`);
+  `@cdktn/hcl-tools`, `@cdktn/commons`);
 - integration suite, provider tests, and examples (`test/`, `examples/`);
 - a cross-cutting pattern sweep, including unit-versus-integration overlap.
 
@@ -233,15 +233,15 @@ Commands for every step are in [TIERS.md](TIERS.md).
    current.
 2. Confirm in the output that each suite ran rather than skipped, and say
    which matrix cells (binary, language, HCL mode) you ran. CI covers the
-   rest.
+   other cells, but it can skip a dist-gated suite too; TIERS.md says when.
 3. For a removed grep or call-shape assertion, run the real path that owns the
    contract: the synth, the generation, or the CLI command.
 4. A changed snapshot is a behavior change. Explain every changed entry by the
    source change before accepting it.
 5. Run targeted formatting and lint, then `git diff --check`.
 6. List the projects the PR will test. When the change deletes, renames, or
-   adds an integration scenario, a provider, or an example, run the matching
-   matrix builder.
+   adds an integration scenario or an example, run the matching matrix
+   builder.
 7. Inspect `git diff --numstat`; report production and tooling separately from
    tests, snapshots, and fixtures.
 8. Review the final diff with `/code-review` when it is available.

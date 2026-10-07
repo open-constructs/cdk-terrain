@@ -10,7 +10,7 @@ workflows, binaries, or matrix builders change; check it against
 | Tier                 | Where                                                                                                            | Owns                                                                                                                                              | CI routing                                                                                                                         |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Static gates         | `build` (tsc, jsii), `pnpm package`, eslint, prettier, knip                                                      | types, JSII-compilable API, packaging for all languages, formatting, dependency hygiene                                                           | always on PRs; labels cannot skip them                                                                                             |
-| Unit                 | `cdktn-cli`, `@cdktn/commons`, `@cdktn/hcl2cdk`, `@cdktn/hcl2json`, `@cdktn/hcl-tools` (Nx tag `unit-test`)      | behavior of one package through its public entry point                                                                                            | PR: `nx affected`, one job, the image's default terraform                                                                          |
+| Unit                 | `cdktn-cli`, `@cdktn/commons`, `@cdktn/hcl2cdk`, `@cdktn/hcl2json`, `@cdktn/hcl-tools` (Nx tag `unit-test`)      | behavior of one package through its public entry point                                                                                            | PR: `nx affected`, one job, the image's default terraform; `main`: every package except `@cdktn/hcl-tools`                         |
 | Unit, binary matrix  | `cdktn`, `@cdktn/cli-core`, `@cdktn/provider-generator`, `@cdktn/provider-schema` (Nx tag `unit-test:terraform`) | the same, plus behavior that varies by Terraform or OpenTofu version                                                                              | PR: `nx affected` once per binary in the `pr-unit.yml` matrix; `main`: every package, Terraform only                               |
 | Integration          | `test/<language>/<scenario>/test.ts`                                                                             | the packaged CLI and library, installed from `dist/`, against a real binary; and each language binding actually installing, compiling and running | every file, once per tested Terraform version, plus an HCL-mode run for files that use an HCL gate (`tools/build-test-matrix.mjs`) |
 | Provider integration | `test/provider-tests`, one template stamped per key in `providers.json`                                          | `cdktn get` on real, large provider schemas; the only Windows coverage                                                                            | every provider, Linux and Windows                                                                                                  |
@@ -27,6 +27,13 @@ workflows, binaries, or matrix builders change; check it against
 - Suites wrapped in `describeIfDistExists` skip with only a warning when
   `dist/` is missing. `@cdktn/hcl2cdk` runs its synth legs only when `CI` is
   set, and its global setup needs `dist/` and a Terraform binary.
+- CI does not always package before unit tests, so a dist-gated suite can
+  skip there too. On a PR, the `unit-test` job packages only when
+  `@cdktn/hcl2cdk` is affected, and the binary-matrix job only when
+  `@cdktn/cli-core` is. A PR that touches only `cdktn-cli` or
+  `@cdktn/cli-core` therefore skips `cdktn-cli`'s dist-gated suite, and on
+  `main` only the `@cdktn/hcl2cdk` job packages. Run such a suite locally
+  after `pnpm package`; a green CI run is not proof that it executed.
 - Some `packages/cdktn` tests import `../lib`, the built output. Running jest
   directly without a build tests stale code; running through Nx builds first.
 - The Nx cache does not key on `TERRAFORM_BINARY_NAME`. Pass `--skip-nx-cache`
@@ -64,11 +71,13 @@ Formatting, lint (warnings fail), and CI routing:
 ```bash
 pnpm exec prettier --check <files>
 pnpm nx lint <project>
-pnpm exec nx show projects --affected --base=origin/main --head=HEAD
+# <remote> is the remote for open-constructs/cdk-terrain, not a fork
+pnpm exec nx show projects --affected --base=$(git merge-base HEAD <remote>/main) --head=HEAD
 node tools/build-test-matrix.mjs             # integration; needs test/ deps
-node tools/build-provider-test-matrix.mjs
 node tools/build-example-matrix.mjs
 ```
 
-The matrix builders throw on a stale pin. Run the matching one when a change
-deletes, renames, or adds an integration scenario, a provider, or an example.
+These two matrix builders throw on a stale pin. Run the matching one when a
+change deletes, renames, or adds an integration scenario or an example. The
+provider matrix has no pins to check: it is the keys of
+`test/provider-tests/providers.json`.
