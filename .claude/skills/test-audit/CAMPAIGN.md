@@ -133,9 +133,9 @@ on the same harness.
 ## 8. Reconcile and hand off
 
 Campaigns outlive many `main` commits. Before each lane PR, refresh from
-`main`. When `main` modified a file the campaign deleted, keep the deletion.
-Port the new contract into the keeper instead, and confirm every new
-regression `main` added still has a home. Rerun the subsystem's unit suite,
+`main`. When `main` modified a file the campaign deleted, re-evaluate the
+incoming change first: port every new contract and regression it added into
+the keeper. Only then keep the deletion. Rerun the subsystem's unit suite,
 and let CI run the integration, provider, and example tiers on the refreshed
 head; do not skip them with a label.
 

@@ -15,9 +15,9 @@ integration suite); before starting one, read [CAMPAIGN.md](CAMPAIGN.md).
 
 ## Test tiers
 
-Every contract has one owning tier. Know the tiers before judging a test;
-[TIERS.md](TIERS.md) has where each lives, how CI routes it, what a green run
-does and does not prove, and the commands.
+Every contract has one primary owning tier. Know the tiers before judging a
+test; [TIERS.md](TIERS.md) has where each lives, how CI routes it, what a
+green run does and does not prove, and the commands.
 
 - Static gates (build, `pnpm package`, lint): types, the JSII-compilable API,
   packaging for every language.
@@ -82,7 +82,9 @@ by the code under test, so it is a contract only on these terms:
   description) asserts that property directly. An entry too large to review,
   or a whole stack re-snapshotted to check one string, proves only that the
   output did not change.
-- Never run a blanket `-u`; update the one file you meant to change.
+- Update only the snapshot file you meant to change. The repository-wide
+  update commands (`pnpm test:update`, `pnpm integration:update`) are for a
+  deliberate migration, where every changed entry is still reviewed.
 
 ## Junk patterns
 
