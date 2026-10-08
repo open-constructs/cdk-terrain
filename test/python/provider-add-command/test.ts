@@ -77,7 +77,7 @@ describe("provider add command", () => {
 
         driver.copyFile("cdktf-pip.json", "cdktf.json");
         driver.copyFiles("requirements.txt");
-        driver.exec("pip", [
+        await driver.exec("pip", [
           "install",
           "--no-compile",
           "-r",
