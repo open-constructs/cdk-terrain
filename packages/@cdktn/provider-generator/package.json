@@ -5,7 +5,15 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "nx": {
-    "tags": ["unit-test:terraform"]
+    "tags": ["unit-test:terraform"],
+    "targets": {
+      "build": {
+        "outputs": [
+          "{projectRoot}/build",
+          "{projectRoot}/edge-provider-bindings"
+        ]
+      }
+    }
   },
   "publishConfig": {
     "access": "public"
