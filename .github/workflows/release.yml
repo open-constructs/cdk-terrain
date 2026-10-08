@@ -178,7 +178,7 @@ jobs:
           name: edge-provider-bindings-next
           path: packages/@cdktn/provider-generator/edge-provider-bindings
       - name: publish tag
-        run: git push --follow-tags
+        run: git push origin "v${{ steps.get_version.outputs.version }}"
 
   # ---------------------------------------------------------------------------
   # Test fan-out — release channel
