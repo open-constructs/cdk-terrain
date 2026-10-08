@@ -9,6 +9,7 @@ import {
   AssetHashType,
   AssetOptions,
   BundleOutputType,
+  HashAlgorithm,
   IAsset,
   IAssetBundler,
   IAssetPackaging,
@@ -27,7 +28,7 @@ import {
 } from "./errors";
 import { CANONICAL_ASSET_HASHES } from "./features";
 import { ExcludeIgnoreStrategy, IIgnoreStrategy } from "./ignore-strategy";
-import { copySync, hashPath } from "./private/fs";
+import { copySync, formatDigest, hashPath } from "./private/fs";
 
 // A resolved hash is used verbatim as a path segment (see `TerraformAsset.path`),
 // so it may only contain characters that are always safe there.
@@ -204,6 +205,7 @@ export class AssetStaging extends Construct implements IAsset {
   private readonly hasExclusions: boolean;
   private readonly hashCache: Map<string, string>;
   private readonly bundler?: IAssetBundler;
+  private readonly hashAlgorithm: HashAlgorithm;
 
   /**
    * Output of an eager `OUTPUT`-hash build, carried to `stage()` for reuse.
@@ -237,6 +239,7 @@ export class AssetStaging extends Construct implements IAsset {
     this.isDirectory = props.packaging.producesDirectory;
     this.hashCache = hashCacheFor(this.node.root);
     this.bundler = props.bundler;
+    this.hashAlgorithm = props.hashAlgorithm ?? HashAlgorithm.MD5;
 
     if (props.exclude?.length && props.ignoreStrategy) {
       throw assetHashConflictingExcludeOptions();
@@ -295,7 +298,7 @@ export class AssetStaging extends Construct implements IAsset {
         if (!extraHash && !salt && !bundlerKey) {
           return baseHash;
         }
-        const folded = crypto.createHash("md5").update(baseHash);
+        const folded = crypto.createHash(this.hashAlgorithm).update(baseHash);
         if (extraHash) {
           folded.update(extraHash);
         }
@@ -305,7 +308,7 @@ export class AssetStaging extends Construct implements IAsset {
         if (salt) {
           folded.update(String(salt));
         }
-        return folded.digest("hex").slice(0, 32).toUpperCase();
+        return formatDigest(folded.digest("hex"), this.hashAlgorithm);
       }
       default:
         // Out-of-range value from a non-TypeScript caller.
@@ -328,6 +331,7 @@ export class AssetStaging extends Construct implements IAsset {
             sourcePath: this.sourcePath,
             canonical,
             archive,
+            algorithm: this.hashAlgorithm,
             ignore: this.ignoreStrategy.cacheKey,
           })
         : undefined;
@@ -340,6 +344,7 @@ export class AssetStaging extends Construct implements IAsset {
     const hash = hashPath(this.sourcePath, {
       canonical,
       archive,
+      algorithm: this.hashAlgorithm,
       shouldExclude: (relativePath, isDirectory) =>
         this.ignoreStrategy.ignores({ relativePath, isDirectory }),
       descendIntoExcludedDirectories:
@@ -369,7 +374,11 @@ export class AssetStaging extends Construct implements IAsset {
       // A single-file artifact is hashed as a file (no archive framing); a
       // directory is hashed as the packaged tree would be.
       const isFile = outputType === BundleOutputType.FILE;
-      return hashPath(produced, { canonical, archive: archive && !isFile });
+      return hashPath(produced, {
+        canonical,
+        archive: archive && !isFile,
+        algorithm: this.hashAlgorithm,
+      });
     } catch (e) {
       // The build failed before `eagerBuild` was set, so stage() can never
       // reach this scratch to clean it. Reclaim it now rather than leaving a

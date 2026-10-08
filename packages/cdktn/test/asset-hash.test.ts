@@ -3,7 +3,12 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { AssetHash, ExcludeIgnoreStrategy, IIgnoreStrategy } from "../lib";
+import {
+  AssetHash,
+  ExcludeIgnoreStrategy,
+  HashAlgorithm,
+  IIgnoreStrategy,
+} from "../lib";
 
 describe("AssetHash", () => {
   let tempDir: string;
@@ -206,6 +211,56 @@ describe("AssetHash", () => {
         ignoreStrategy: new ExcludeIgnoreStrategy(["*.tmp"]),
       }),
     ).toThrow(/exclude.*ignoreStrategy|ignoreStrategy.*exclude/i);
+  });
+
+  test("defaults to a 32-character uppercase MD5-style digest", () => {
+    fs.writeFileSync(path.join(tempDir, "a.txt"), "hello");
+
+    const hash = AssetHash.of(tempDir);
+
+    expect(hash).toMatch(/^[0-9A-F]{32}$/);
+  });
+
+  test("hashAlgorithm SHA256 produces a full-length lowercase digest", () => {
+    fs.writeFileSync(path.join(tempDir, "a.txt"), "hello");
+
+    const hash = AssetHash.of(tempDir, {
+      hashAlgorithm: HashAlgorithm.SHA256,
+    });
+
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test("hashAlgorithm changes the digest relative to the default", () => {
+    fs.writeFileSync(path.join(tempDir, "a.txt"), "hello");
+
+    const md5Hash = AssetHash.of(tempDir);
+    const sha256Hash = AssetHash.of(tempDir, {
+      hashAlgorithm: HashAlgorithm.SHA256,
+    });
+
+    expect(sha256Hash.toUpperCase()).not.toBe(md5Hash);
+  });
+
+  test("hashAlgorithm SHA256 still changes with content and extraHash", () => {
+    const file = path.join(tempDir, "a.txt");
+    fs.writeFileSync(file, "hello");
+    const original = AssetHash.of(tempDir, {
+      hashAlgorithm: HashAlgorithm.SHA256,
+    });
+
+    fs.writeFileSync(file, "goodbye");
+    expect(
+      AssetHash.of(tempDir, { hashAlgorithm: HashAlgorithm.SHA256 }),
+    ).not.toBe(original);
+
+    fs.writeFileSync(file, "hello");
+    const withExtra = AssetHash.of(tempDir, {
+      hashAlgorithm: HashAlgorithm.SHA256,
+      extraHash: "salt",
+    });
+    expect(withExtra).not.toBe(original);
+    expect(withExtra).toMatch(/^[0-9a-f]{64}$/);
   });
 
   test("hashes on the canonical scheme regardless of the feature flag", () => {

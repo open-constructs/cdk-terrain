@@ -52,6 +52,39 @@ export interface AssetOptions {
    * explicitly specified this value defaults to `AssetHashType.CUSTOM`.
    */
   readonly assetHashType?: AssetHashType;
+
+  /**
+   * Digest algorithm used to compute the asset hash.
+   *
+   * `MD5` (the default) truncates to 32 uppercase hex characters, matching
+   * every hash this library has ever produced. `SHA256` is kept full-length
+   * and lowercase instead, matching the untruncated digest external tooling
+   * (e.g. AWS CDK) expects when an asset hash must line up with one computed
+   * elsewhere.
+   *
+   * Has no effect when `assetHashType` is `CUSTOM`, since `assetHash` is
+   * then used verbatim.
+   *
+   * @default HashAlgorithm.MD5
+   */
+  readonly hashAlgorithm?: HashAlgorithm;
+}
+
+/**
+ * Digest algorithm used to compute an asset hash.
+ *
+ * See `AssetOptions.hashAlgorithm`.
+ */
+export enum HashAlgorithm {
+  /**
+   * MD5, truncated to 32 uppercase hex characters.
+   */
+  MD5 = "md5",
+
+  /**
+   * SHA256, kept full-length and lowercase.
+   */
+  SHA256 = "sha256",
 }
 
 /**

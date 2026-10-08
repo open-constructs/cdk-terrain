@@ -6,6 +6,7 @@ import * as path from "path";
 import {
   AssetPackaging,
   AssetHashType,
+  HashAlgorithm,
   IAsset,
   IAssetBundler,
   IAssetPackaging,
@@ -43,6 +44,14 @@ export interface TerraformAssetConfig {
    * @default AssetHashType.SOURCE
    */
   readonly assetHashType?: AssetHashType;
+
+  /**
+   * Digest algorithm used to compute `assetHash`. See
+   * `AssetOptions.hashAlgorithm`.
+   *
+   * @default HashAlgorithm.MD5
+   */
+  readonly hashAlgorithm?: HashAlgorithm;
 
   /**
    * Paths to exclude from the asset, relative to `path`. See
@@ -179,6 +188,7 @@ export class TerraformAsset extends Construct implements IAsset {
       packaging: this.packaging,
       assetHash: config.assetHash,
       assetHashType: config.assetHashType,
+      hashAlgorithm: config.hashAlgorithm,
       exclude: config.exclude,
       extraHash: config.extraHash,
       bundler: config.bundler,

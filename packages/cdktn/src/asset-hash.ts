@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as crypto from "crypto";
 import * as path from "path";
-import { hashPath, findFileAboveCwd } from "./private/fs";
+import { HashAlgorithm } from "./assets";
+import { formatDigest, hashPath, findFileAboveCwd } from "./private/fs";
 import { ExcludeIgnoreStrategy, IIgnoreStrategy } from "./ignore-strategy";
 import {
   assetHashConflictingExcludeOptions,
@@ -36,6 +37,14 @@ export interface AssetHashOptions {
    * @default - `exclude` is used with the built-in matcher
    */
   readonly ignoreStrategy?: IIgnoreStrategy;
+
+  /**
+   * Digest algorithm used to compute the hash. See
+   * `AssetOptions.hashAlgorithm`.
+   *
+   * @default HashAlgorithm.MD5
+   */
+  readonly hashAlgorithm?: HashAlgorithm;
 }
 
 /**
@@ -81,12 +90,14 @@ export class AssetHash {
     const strategy =
       options.ignoreStrategy ??
       new ExcludeIgnoreStrategy(options.exclude ?? []);
+    const algorithm = options.hashAlgorithm ?? HashAlgorithm.MD5;
 
     // Pinned to the canonical scheme: this is a brand-new API with no
     // existing hashes to preserve, so it has no reason to start on the
     // legacy scheme that `canonicalAssetHashes` exists to move away from.
     const baseHash = hashPath(resolved, {
       canonical: true,
+      algorithm,
       shouldExclude: (relativePath, isDirectory) =>
         strategy.ignores({ relativePath, isDirectory }),
       descendIntoExcludedDirectories:
@@ -97,13 +108,14 @@ export class AssetHash {
       return baseHash;
     }
 
-    return crypto
-      .createHash("md5")
-      .update(baseHash)
-      .update(options.extraHash)
-      .digest("hex")
-      .slice(0, 32)
-      .toUpperCase();
+    return formatDigest(
+      crypto
+        .createHash(algorithm)
+        .update(baseHash)
+        .update(options.extraHash)
+        .digest("hex"),
+      algorithm,
+    );
   }
 
   /**

@@ -188,6 +188,18 @@ export function archiveSync(
 
 export interface HashPathOptions {
   /**
+   * Digest algorithm to hash with. `md5` (the default) truncates to
+   * {@link HASH_LEN} hex characters and uppercases, matching every hash
+   * this module has ever produced. `sha256` is returned full-length and
+   * lowercase instead, matching the untruncated lowercase hex digest
+   * external tooling (e.g. AWS CDK) expects, since truncating or
+   * re-casing it would break that compatibility.
+   *
+   * @default "md5"
+   */
+  readonly algorithm?: string;
+
+  /**
    * Use the canonical entry-framed hash instead of the legacy
    * content-concatenation hash. Enabled through the `canonicalAssetHashes`
    * feature flag.
@@ -224,29 +236,47 @@ export interface HashPathOptions {
 }
 
 /**
- * Compute a stable MD5 hash of a file or directory's contents.
+ * Compute a stable hash of a file or directory's contents.
  * In both schemes symlinks are hashed by their metadata (path + target)
  * instead of being followed, so shared targets are not double-counted and
  * cycles cannot recurse; a symlink at the root itself is followed, matching
  * how the asset source path is opened when the artifact is emitted.
  * @param src - path to a file or directory to hash
  * @param options - hash scheme selection, see {@link HashPathOptions}
- * @returns uppercased hex digest, truncated to HASH_LEN characters
+ * @returns see {@link HashPathOptions.algorithm} for the digest's casing and length
  */
 export function hashPath(src: string, options: HashPathOptions = {}): string {
+  const algorithm = options.algorithm ?? "md5";
   const digest = options.canonical
     ? canonicalHashPath(
         src,
         !options.archive,
+        algorithm,
         options.shouldExclude,
         options.descendIntoExcludedDirectories,
       )
     : legacyHashPath(
         src,
+        algorithm,
         options.shouldExclude,
         options.descendIntoExcludedDirectories,
       );
-  return digest.slice(0, HASH_LEN).toUpperCase();
+  return formatDigest(digest, algorithm);
+}
+
+/**
+ * Render a raw hex digest the way {@link hashPath} always has, see
+ * {@link HashPathOptions.algorithm}. Shared with callers (`AssetHash`,
+ * `AssetStaging`) that fold additional data (e.g. `extraHash`) into a
+ * `hashPath` result and must format the combined digest the same way.
+ * @param hex - raw hex digest to format
+ * @param algorithm - the algorithm `hex` was produced with
+ */
+export function formatDigest(hex: string, algorithm: string = "md5"): string {
+  if (algorithm === "sha256") {
+    return hex;
+  }
+  return hex.slice(0, HASH_LEN).toUpperCase();
 }
 
 /**
@@ -258,17 +288,19 @@ export function hashPath(src: string, options: HashPathOptions = {}): string {
  * bytes, so a file containing `foo` can never collide with a symlink
  * targeting `foo`.
  * @param src - path to a file or directory to hash
+ * @param algorithm - digest algorithm, see {@link HashPathOptions.algorithm}
  * @param shouldExclude - entries to omit, see {@link HashPathOptions.shouldExclude}
  * @param descendIntoExcludedDirectories - keep walking excluded directories,
  * see {@link HashPathOptions.descendIntoExcludedDirectories}
  */
 function legacyHashPath(
   src: string,
+  algorithm: string,
   shouldExclude?: ExcludePredicate,
   descendIntoExcludedDirectories = false,
 ): string {
-  const content = crypto.createHash("md5");
-  const links = crypto.createHash("md5");
+  const content = crypto.createHash(algorithm);
+  const links = crypto.createHash(algorithm);
   let linkCount = 0;
 
   /**
@@ -306,7 +338,7 @@ function legacyHashPath(
   if (linkCount === 0) {
     return content.digest("hex");
   }
-  const outer = crypto.createHash("md5");
+  const outer = crypto.createHash(algorithm);
   outer.update("cdktn/asset-hash/symlinks/v1\0");
   outer.update(content.digest("hex"));
   outer.update(links.digest("hex"));
@@ -331,15 +363,17 @@ function legacyHashPath(
  * @param src - path to a file or directory to hash
  * @param includeDirectories - record directory entries; false for archive
  * artifacts, where the emitted zip has no directory entries
+ * @param algorithm - digest algorithm, see {@link HashPathOptions.algorithm}
  * @param shouldExclude - entries to omit, see {@link HashPathOptions.shouldExclude}
  */
 function canonicalHashPath(
   src: string,
   includeDirectories: boolean,
+  algorithm: string,
   shouldExclude?: ExcludePredicate,
   descendIntoExcludedDirectories = false,
 ): string {
-  const hash = crypto.createHash("md5");
+  const hash = crypto.createHash(algorithm);
 
   /**
    * Walk `p`, framing each entry into the enclosing hash accumulator.

@@ -13,6 +13,7 @@ import {
   AssetHash,
   AssetHashType,
   BundleResult,
+  HashAlgorithm,
   IAsset,
 } from "../src";
 import { CANONICAL_ASSET_HASHES } from "../src/features";
@@ -561,6 +562,47 @@ describe("TerraformAsset with exclude/extraHash (AssetStaging integration)", () 
     });
 
     expect(asset.assetHash).toBe("my-custom-hash");
+  });
+
+  test("hashAlgorithm SHA256 produces a full-length lowercase assetHash", () => {
+    const asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      hashAlgorithm: HashAlgorithm.SHA256,
+    });
+
+    expect(asset.assetHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test("hashAlgorithm changes assetHash relative to the MD5 default", () => {
+    const md5Asset = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+    });
+    const sha256Asset = new TerraformAsset(stack(), "asset2", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      hashAlgorithm: HashAlgorithm.SHA256,
+    });
+
+    expect(sha256Asset.assetHash.toUpperCase()).not.toBe(md5Asset.assetHash);
+  });
+
+  test("hashAlgorithm SHA256 is honored by extraHash folding too", () => {
+    const withoutExtra = new TerraformAsset(stack(), "asset", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      hashAlgorithm: HashAlgorithm.SHA256,
+    });
+    const withExtra = new TerraformAsset(stack(), "asset2", {
+      path: srcDir,
+      type: AssetType.DIRECTORY,
+      hashAlgorithm: HashAlgorithm.SHA256,
+      extraHash: "v2",
+    });
+
+    expect(withExtra.assetHash).not.toBe(withoutExtra.assetHash);
+    expect(withExtra.assetHash).toMatch(/^[0-9a-f]{64}$/);
   });
 });
 
