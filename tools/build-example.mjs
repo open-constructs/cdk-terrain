@@ -35,9 +35,11 @@ if (!exampleToBuild) {
 }
 
 async function runInExample(command) {
+  // Examples have no Nx dependency on the cdktn packages;
+  // a remote cache hit would replay stale `cdktn get` output.
   try {
     return await run(
-      `pnpm exec nx run-many -t ${command} -p '${exampleToBuild}'`,
+      `pnpm exec nx run-many -t ${command} -p '${exampleToBuild}' --skip-nx-cache`,
     );
   } catch (e) {
     const err = new Error(
