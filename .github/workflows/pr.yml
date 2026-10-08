@@ -79,6 +79,10 @@ jobs:
     secrets: inherit
 
   results:
+    # Required check. A run the concurrency group cancels in favour of a newer
+    # run for the same commit ends green here, because a cancelled or failed
+    # check run would block the merge even after the newer run passes. A run
+    # cancelled by hand ends green too: re-run it before merging.
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: "PR - Result"
@@ -96,6 +100,6 @@ jobs:
       - run: exit 1
         if: >-
           ${{
-               contains(needs.*.result, 'failure')
-            || contains(needs.*.result, 'cancelled')
+               !cancelled()
+            && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
           }}
