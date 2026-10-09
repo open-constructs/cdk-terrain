@@ -5,14 +5,33 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "nx": {
-    "tags": ["unit-test:terraform"]
+    "tags": ["unit-test:terraform"],
+    "targets": {
+      "build": {
+        "inputs": [
+          "production",
+          "^production",
+          "{projectRoot}/src/__tests__/edge-provider-schema/**"
+        ]
+      },
+      "build:edge-bindings": {
+        "dependsOn": ["build"],
+        "inputs": [
+          "production",
+          "^production",
+          "{projectRoot}/src/__tests__/edge-provider-schema/**"
+        ],
+        "outputs": ["{projectRoot}/edge-provider-bindings"],
+        "cache": true
+      }
+    }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "tsc",
-    "postbuild": "node ./build/__tests__/edge-provider-schema/cli.js ./edge-provider-bindings",
+    "build:edge-bindings": "node ./build/__tests__/edge-provider-schema/cli.js ./edge-provider-bindings",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u",

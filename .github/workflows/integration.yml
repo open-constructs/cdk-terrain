@@ -74,6 +74,7 @@ jobs:
         run: |
           pnpm run build
           pnpm run package
+          pnpm run build:edge-bindings
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
@@ -89,6 +90,7 @@ jobs:
         with:
           name: ${{ inputs.edge_bindings_artifact_name }}
           path: packages/@cdktn/provider-generator/edge-provider-bindings
+          if-no-files-found: error
       - name: installing test dependencies
         run: cd test && pnpm ci
       - name: Build test matrix
