@@ -1,4 +1,7 @@
-packages/@cdktn/cli-core/templates
+# Only the package.json files are ignored: Nx would read them as a project
+# named after their placeholder. Keep rest in file map so edits invalidate
+# the cli-core and cdktn-cli caches.
+packages/@cdktn/cli-core/templates/*/package.json
 
 # Build staging tree for the cdktn package. On Windows the nx daemon's file
 # watcher keeps handles open on watched directories, which makes the rmSync in
