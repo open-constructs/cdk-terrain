@@ -7,6 +7,13 @@
   "nx": {
     "tags": ["unit-test:terraform"],
     "targets": {
+      "build": {
+        "inputs": [
+          "production",
+          "^production",
+          "{projectRoot}/src/__tests__/edge-provider-schema/**"
+        ]
+      },
       "build:edge-bindings": {
         "dependsOn": ["build"],
         "inputs": [

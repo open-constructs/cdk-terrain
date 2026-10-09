@@ -93,6 +93,7 @@ jobs:
         with:
           name: edge-provider-bindings-release
           path: packages/@cdktn/provider-generator/edge-provider-bindings
+          if-no-files-found: error
 
   # ---------------------------------------------------------------------------
   # Next channel: always bumps to a fresh prerelease version on each push to
@@ -179,6 +180,7 @@ jobs:
         with:
           name: edge-provider-bindings-next
           path: packages/@cdktn/provider-generator/edge-provider-bindings
+          if-no-files-found: error
       - name: publish tag
         run: git push origin "v${{ steps.get_version.outputs.version }}"
 
