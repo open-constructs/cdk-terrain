@@ -53,6 +53,6 @@ export const Errors = {
   // Set the scope for all errors
   setScope(scope: string) {
     errorScope = scope;
-    Sentry.configureScope((s) => s.setTransactionName(scope));
+    Sentry.getCurrentScope().setTransactionName(scope);
   },
 };
