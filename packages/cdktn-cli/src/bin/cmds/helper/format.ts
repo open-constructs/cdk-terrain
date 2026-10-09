@@ -122,11 +122,22 @@ function renderNested(
   if (isTerraformOutput(value)) {
     return " ".repeat(indent * 2) + renderOutput(name, value);
   }
+  // Defensive hardening: `value` is externally-sourced, and Object.entries() below throws on
+  // `null`/`undefined` (and would silently index a primitive). Bail out to an empty node so a
+  // malformed leaf can never take down the CLI after a successful deploy.
+  if (value === null || typeof value !== "object") return "";
   const header = " ".repeat(indent * 2) + chalk.bold(name);
   const children = Object.entries(value)
     .sort(compareOutputs(value))
     .map(([k, v]) => renderNested(k, v, indent + 1))
+    // A dropped node (undefined/null leaf, or a group that bailed out above) renders as "" - filter
+    // those out so they don't leave a stray blank line when joined.
+    .filter((line) => line !== "")
     .join("\n");
+  // Every child dropped (or the group was empty to begin with, including a legitimately empty `{}`
+  // group - deliberate: it used to print a bare header and now prints nothing): render nothing
+  // rather than a bare header over a blank line, so the caller's filter can drop this node too.
+  if (children === "") return "";
   return `${header}\n${children}`;
 }
 
@@ -138,9 +149,14 @@ function renderNested(
  *          when there are no outputs.
  */
 export function renderOutputs(outputs: NestedTerraformOutputs): string {
-  return Object.entries(outputs)
-    .map(([k, v]) => renderNested(k, v, 0))
-    .join("\n");
+  return (
+    Object.entries(outputs)
+      .map(([k, v]) => renderNested(k, v, 0))
+      // A dropped top-level key (e.g. an undefined stack) renders as "" - filter those out so they
+      // don't leave a stray blank line when joined.
+      .filter((line) => line !== "")
+      .join("\n")
+  );
 }
 
 /**
