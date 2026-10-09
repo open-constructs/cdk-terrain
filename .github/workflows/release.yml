@@ -71,6 +71,7 @@ jobs:
           node tools/align-version.mjs
           pnpm run build
           pnpm run package
+          pnpm run build:edge-bindings
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: Add sourcemap and commit info to sentry
@@ -158,6 +159,7 @@ jobs:
           pnpm ci
           pnpm run build
           pnpm run package
+          pnpm run build:edge-bindings
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: Add sourcemap and commit info to sentry

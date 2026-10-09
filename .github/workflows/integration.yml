@@ -74,6 +74,7 @@ jobs:
         run: |
           pnpm run build
           pnpm run package
+          pnpm run build:edge-bindings
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}

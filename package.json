@@ -5,6 +5,7 @@
     "scripts": {
         "build-and-package": "nx run-many -t build package -p \"cdktn*\" \"@cdktn/*\" && node tools/collect-dist.mjs",
         "build": "nx run-many -t build -p \"cdktn*\" \"@cdktn/*\"",
+        "build:edge-bindings": "nx run-many -t build:edge-bindings -p @cdktn/provider-generator",
         "format": "prettier --cache --write .",
         "package": "GOWORK=off nx run-many -t package && node tools/collect-dist.mjs",
         "package:python": "nx run-many -t package:python && node tools/collect-dist.mjs",

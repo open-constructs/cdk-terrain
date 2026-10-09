@@ -19,6 +19,7 @@ You can also execute a test (or all of them) against the `dist` build artifact:
 $ pnpm install
 $ pnpm build
 $ pnpm run package # creates "dist/"
+$ pnpm run build:edge-bindings
 $ cd test
 $ pnpm edge:install
 $ ./run-against-dist.mjs npx jest --runInBand
@@ -44,7 +45,7 @@ Test Environment:
 
 To test all edge cases without building all providers we create an edge provider that contains all these edge cases.
 The provider lives under `packages/@cdktn/provider-generator/lib/__tests__/edge-provider-schema` and the provider bindings are tested there through snapshots.
-We generate the schema into `packages/@cdktn/provider-generator/edge-provider-bindings` on build and copy them through GH Actions or the `edge:install` command.
+`pnpm run build:edge-bindings` generates the bindings into `packages/@cdktn/provider-generator/edge-provider-bindings`; GH Actions uploads them from there and the `edge:install` command copies them for a local run.
 
 We also build a helper to translate an initial version of these tests through the different languages, `edge:translateTests` takes the typescript `main.ts` and translates it to the other languages. The translation is not perfect, but a good start.
 

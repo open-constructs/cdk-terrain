@@ -3,12 +3,7 @@
   "version": "0.0.0",
   "description": "CDK Terrain CLI",
   "nx": {
-    "tags": ["unit-test"],
-    "targets": {
-      "build": {
-        "outputs": ["{projectRoot}/bundle"]
-      }
-    }
+    "tags": ["unit-test"]
   },
   "bin": {
     "cdktn": "bin/cdktn"
