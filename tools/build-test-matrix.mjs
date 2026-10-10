@@ -42,7 +42,23 @@ const availableVersions = {
  * @type {Record<string, Array<{ product: "terraform" | "opentofu", version: string }>>}
  */
 const pinnedRuntimes = {
+  // Declares an OpenTofu-only target, so only the OpenTofu CLI is a meaningful pairing.
+  "typescript/opentofu-target/test.ts": [
+    { product: "opentofu", version: "1.12.6" },
+  ],
   "typescript/provider-features/test.ts": [
+    { product: "terraform", version: "1.16.1" },
+    { product: "opentofu", version: "1.12.6" },
+  ],
+  // Provider commands driven by the OpenTofu CLI. Their projects declare no targetVersions, so registry selection
+  // stays Terraform-based; opentofu-target covers that. The Terraform entries restate the `tested` default.
+  "typescript/provider-add-command/test.ts": [
+    { product: "terraform", version: "1.5.7" },
+    { product: "terraform", version: "1.16.1" },
+    { product: "opentofu", version: "1.12.6" },
+  ],
+  "typescript/provider-upgrade-command/test.ts": [
+    { product: "terraform", version: "1.5.7" },
     { product: "terraform", version: "1.16.1" },
     { product: "opentofu", version: "1.12.6" },
   ],
@@ -84,8 +100,12 @@ const absoluteTargets = execFileSync(
   .map((line) => line.trim())
   .filter(Boolean);
 
-const testDirPrefix = `${testDir}/`;
+/** Matrix keys are posix-style, so normalise the separators jest emits on Windows. */
+const toPosix = (p) => p.replace(/\\/g, "/");
+
+const testDirPrefix = `${toPosix(testDir)}/`;
 const targets = absoluteTargets
+  .map(toPosix)
   .map((p) => (p.startsWith(testDirPrefix) ? p.slice(testDirPrefix.length) : p))
   .sort();
 

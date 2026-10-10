@@ -5,6 +5,7 @@ import {
   onPosix,
   onWindows,
   packageJsonWithDependency,
+  providerVersion,
 } from "../../test-helper";
 
 describe("provider upgrade command", () => {
@@ -87,7 +88,7 @@ describe("provider upgrade command", () => {
         driver.readLocalFile(".gen/versions.json"),
       );
 
-      expect(genVersionsFile["registry.terraform.io/hashicorp/random"]).toEqual(
+      expect(providerVersion(genVersionsFile, "hashicorp/random")).toEqual(
         "3.2.0",
       );
     });
@@ -108,9 +109,9 @@ describe("provider upgrade command", () => {
           driver.readLocalFile(".gen/versions.json"),
         );
 
-        expect(
-          genVersionsFile["registry.terraform.io/hashicorp/random"],
-        ).toEqual("3.2.0");
+        expect(providerVersion(genVersionsFile, "hashicorp/random")).toEqual(
+          "3.2.0",
+        );
       },
       120_000,
     );

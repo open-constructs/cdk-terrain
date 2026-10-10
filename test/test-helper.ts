@@ -48,6 +48,32 @@ export function packageJsonWithDependency(name: string, version?: string) {
   });
 }
 
+/**
+ * Looks up a provider version in a generated `versions.json`. Keys are fully qualified and carry the host of whichever
+ * registry the fetching CLI used, so match on the provider part instead of pinning one registry.
+ *
+ * @param versionsFile parsed contents of a generated `versions.json`
+ * @param fqn provider name as `namespace/name`
+ */
+export function providerVersion(
+  versionsFile: Record<string, string>,
+  fqn: string,
+): string | undefined {
+  const matches = Object.entries(versionsFile).filter(
+    ([key]) => key.split("/").slice(1).join("/") === fqn,
+  );
+  // More than one means one entry per registry host for the same provider (#483).
+  // Returning either would let a stale version pass silently.
+  if (matches.length > 1) {
+    throw new Error(
+      `versions.json has ${matches.length} entries for ${fqn}: ${matches
+        .map(([key, version]) => `${key}=${version}`)
+        .join(", ")}`,
+    );
+  }
+  return matches[0]?.[1];
+}
+
 export class QueryableStack {
   private readonly stack: Record<string, any>;
   constructor(stackInput: string) {
@@ -350,10 +376,10 @@ export class TestDriver {
   };
 
   /**
-   * runs terraform init and terraform validate in the output directory for the given stack name
+   * runs init and validate with the configured CLI in the output directory for the given stack name
    * @param stack the name of the stack to validate
    * @param baseDirectory an optional base directory for the cdktn project
-   * @returns the stdout of terraform validate
+   * @returns the stdout of validate
    */
   async validate(stack: string, baseDirectory?: string) {
     const cwd = path.join(
@@ -362,8 +388,10 @@ export class TestDriver {
       "stacks",
       stack,
     );
-    await this.exec("terraform", ["init"], cwd);
-    const res = await this.exec("terraform", ["validate"], cwd);
+    // The image's bare `terraform` is the default version, so honour the CLI the matrix selected.
+    const binary = this.env.TERRAFORM_BINARY_NAME || "terraform";
+    await this.exec(binary, ["init"], cwd);
+    const res = await this.exec(binary, ["validate"], cwd);
     return res.stdout;
   }
 

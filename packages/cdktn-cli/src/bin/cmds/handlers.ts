@@ -21,6 +21,7 @@ import {
   getPackageVersion,
   TerraformDependencyConstraint,
   ConstructsMakerProviderTarget,
+  registryForTargetVersions,
 } from "@cdktn/commons";
 
 import { checkForEmptyDirectory, runInit } from "./helper/init";
@@ -676,8 +677,13 @@ export async function providerUpgrade(argv: any) {
 
   const constraintsToUpdate: ProviderConstraint[] = [];
 
+  // Resolve an unqualified argument the way this project's cdktf.json entries
+  // resolve. Defaulting to Terraform made `upgrade` normalize to a different
+  // host than the config, so an installed provider looked missing.
+  const registry = registryForTargetVersions(config.targetVersions);
+
   for (const provider of argv.provider) {
-    const constraint = ProviderConstraint.fromConfigEntry(provider);
+    const constraint = ProviderConstraint.fromConfigEntry(provider, registry);
     const { addedLocalProvider } = await manager.upgradeProvider(constraint);
     if (addedLocalProvider) {
       constraintsToUpdate.push(constraint);
@@ -713,7 +719,12 @@ export async function providerUpgrade(argv: any) {
       constraints,
       cleanDirectory: false,
       constraintsToGenerate: constraintsToUpdate.map(
-        (c) => new TerraformProviderConstraint(c),
+        (c) =>
+          new TerraformProviderConstraint(
+            c.version
+              ? `${c.requiredProvidersSource}@${c.version}`
+              : c.requiredProvidersSource,
+          ),
       ),
     });
   }

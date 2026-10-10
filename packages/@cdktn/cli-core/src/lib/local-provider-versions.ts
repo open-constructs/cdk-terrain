@@ -1,13 +1,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Errors, logger } from "@cdktn/commons";
+import { Errors, logger, registryForHostname } from "@cdktn/commons";
 import fs from "fs-extra";
 import path from "path";
 import { CdktfConfig } from "./cdktf-config";
-import {
-  DEFAULT_HOSTNAME,
-  DEFAULT_NAMESPACE,
-} from "./dependencies/dependency-manager";
+import { DEFAULT_NAMESPACE } from "./dependencies/dependency-manager";
 
 // TODO: move this to @cdktn/commons
 // tracked here https://github.com/hashicorp/terraform-cdk/issues/1814
@@ -46,11 +43,15 @@ export class LocalProviderVersions {
 
     this.versions = Object.fromEntries(
       Object.entries(providerVersions).map(([providerFqn, versions]) => {
+        // Any public registry host, not just Terraform's: the host recorded here
+        // is whichever registry the fetching CLI used.
+        const [maybeHost, ...rest] = providerFqn.split("/");
+        const withoutHost = registryForHostname(maybeHost)
+          ? rest.join("/")
+          : providerFqn;
+
         return [
-          providerFqn
-            .replace(`${DEFAULT_HOSTNAME}/`, "")
-            .replace(`${DEFAULT_NAMESPACE}/`, "")
-            .toLowerCase(),
+          withoutHost.replace(`${DEFAULT_NAMESPACE}/`, "").toLowerCase(),
           versions,
         ];
       }),

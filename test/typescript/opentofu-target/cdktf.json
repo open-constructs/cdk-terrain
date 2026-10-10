@@ -1,0 +1,12 @@
+{
+  "language": "typescript",
+  "app": "npx tsx main.ts",
+  "terraformProviders": [
+    "hashicorp/random@=3.6.0"
+  ],
+  "terraformModules": [],
+  "targetVersions": {
+    "opentofu": ">=1.6.0"
+  },
+  "context": {}
+}

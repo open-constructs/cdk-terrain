@@ -47,6 +47,11 @@
       "outputs": ["{projectRoot}/dist"],
       "cache": true
     },
+    "package:js": { "dependsOn": ["build"] },
+    "package:python": { "dependsOn": ["build"] },
+    "package:java": { "dependsOn": ["build"] },
+    "package:dotnet": { "dependsOn": ["build"] },
+    "package:go": { "dependsOn": ["build"] },
     "test": {
       "dependsOn": [
         "build",

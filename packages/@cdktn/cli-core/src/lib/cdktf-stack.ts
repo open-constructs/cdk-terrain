@@ -5,7 +5,11 @@ import { Terraform } from "./models/terraform";
 import { getConstructIdsForOutputs, NestedTerraformOutputs } from "./output";
 import {
   Errors,
+  OPENTOFU_REGISTRY,
+  Registry,
+  TERRAFORM_REGISTRY,
   logger,
+  parseTerraformCliVersion,
   readConfigSync,
   terraformBinaryName,
 } from "@cdktn/commons";
@@ -17,9 +21,12 @@ import {
   tryReadGeneratedConfigurationFile,
   tryRemoveGeneratedConfigurationFile,
 } from "./models/terraform-cli";
-import { ProviderConstraint } from "./dependencies/dependency-manager";
 import { terraformJsonSchema, TerraformStack } from "./terraform-json";
-import { TerraformProviderLock } from "./terraform-provider-lock";
+import {
+  TerraformProviderLock,
+  needsLockfileUpdate,
+  needsUpgrade,
+} from "./terraform-provider-lock";
 import { convertConfigurationFile } from "./convert";
 
 export type StackUpdate =
@@ -283,10 +290,11 @@ export class CdktfStack {
   ) {
     const terraform = await this.terraformClient();
     await this.validateInstalledBinaryIfConfigured(terraform);
+    const cliRegistry = await this.runningCliRegistry(terraform);
     const needsLockfileUpdate = skipProviderLock
       ? false
-      : await this.checkNeedsLockfileUpdate();
-    const needsUpgrade = await this.checkNeedsUpgrade();
+      : await this.checkNeedsLockfileUpdate(cliRegistry);
+    const needsUpgrade = await this.checkNeedsUpgrade(cliRegistry);
     await terraform.init({
       needsUpgrade,
       noColor: noColor ?? false,
@@ -296,21 +304,32 @@ export class CdktfStack {
     return terraform;
   }
 
+  /**
+   * The registry the running CLI resolves bare provider sources from, or
+   * undefined when it cannot be identified.
+   */
+  private async runningCliRegistry(
+    terraform: Terraform,
+  ): Promise<Registry | undefined> {
+    try {
+      const { name } = parseTerraformCliVersion(await terraform.version());
+      if (name === "opentofu") return OPENTOFU_REGISTRY;
+      if (name === "terraform") return TERRAFORM_REGISTRY;
+    } catch (e) {
+      logger.debug(`Could not identify the Terraform-compatible CLI: ${e}`);
+    }
+    return undefined;
+  }
+
   private requiredProviders() {
     // Read required providers from the stack output
     const requiredProviders = this.parsedContent.terraform?.required_providers;
-
-    return Object.values(requiredProviders || {}).reduce(
-      (acc, obj) => {
-        const constraint = new ProviderConstraint(obj.source, obj.version);
-        acc[constraint.source] = constraint;
-        return acc;
-      },
-      {} as Record<string, ProviderConstraint>,
-    );
+    return Object.values(requiredProviders || {});
   }
 
-  private async checkNeedsLockfileUpdate(): Promise<boolean> {
+  private async checkNeedsLockfileUpdate(
+    cliRegistry: Registry | undefined,
+  ): Promise<boolean> {
     if (this.options.migrateState) {
       // If we're migrating state, we need to init
       return true;
@@ -323,46 +342,14 @@ export class CdktfStack {
       return true;
     }
 
-    const requiredProviders = this.requiredProviders();
-
-    for (const provider of Object.values(requiredProviders)) {
-      const hasProvider = await lock.hasMatchingProvider(provider);
-      if (!hasProvider) {
-        // If we don't have a provider or version doesn't match, we need to init
-        return true;
-      }
-    }
-
-    return false;
+    return needsLockfileUpdate(this.requiredProviders(), lock, cliRegistry);
   }
 
-  private async checkNeedsUpgrade(): Promise<boolean> {
+  private async checkNeedsUpgrade(
+    cliRegistry: Registry | undefined,
+  ): Promise<boolean> {
     const lock = new TerraformProviderLock(this.stack.workingDirectory);
-    const allProviders = this.requiredProviders();
-    const lockedProviders = Object.values(await lock.providers());
-
-    // Check if any provider contained in `providers` violates constraints in `lockedProviders`
-    // Upgrade if some provider constraint not met
-    // If a provider wasn't preset in lockedProviders, that's fine; it will just get added
-    return lockedProviders.some((lockedProvider) => {
-      const lockedConstraint = lockedProvider.constraints;
-      if (!lockedConstraint) {
-        // Provider lock doesn't have a constraint specified, so we can't check.
-        // This shouldn't happen
-        logger.debug(
-          `Provider lock doesn't have a constraint for ${lockedProvider.name}`,
-        );
-        return false;
-      }
-
-      const provider = allProviders[lockedConstraint.source];
-      if (!provider) {
-        // else no longer using this provider, so won't cause problems
-        return;
-      }
-
-      return !lockedConstraint.matchesVersion(provider.version ?? ">0");
-    });
+    return needsUpgrade(this.requiredProviders(), lock, cliRegistry);
   }
 
   private async run(cb: () => Promise<void>) {
