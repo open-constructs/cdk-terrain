@@ -11,6 +11,7 @@ import {
   IAssetPackaging,
 } from "./assets";
 import { AssetStaging } from "./asset-staging";
+import { IIgnoreStrategy } from "./ignore-strategy";
 import { findFileAboveCwd } from "./private/fs";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
@@ -47,11 +48,27 @@ export interface TerraformAssetConfig {
   /**
    * Paths to exclude from the asset, relative to `path`. See
    * `AssetStagingOptions.exclude` for the accepted forms. Both the computed
-   * hash and the staged/packed content honor the exclusion.
+   * hash and the staged/packed content honor the exclusion. Cannot be
+   * combined with `ignoreStrategy`, which replaces this matcher rather than
+   * layering on top of it.
    *
    * @default - nothing is excluded
    */
   readonly exclude?: string[];
+
+  /**
+   * Exclusion matching, for callers that need `.gitignore` / `.dockerignore`
+   * parity (including `!`-negation) rather than the built-in exact-path /
+   * suffix / directory matcher. See `AssetStagingOptions.ignoreStrategy`.
+   *
+   * `!`-negation only takes effect if the strategy also sets
+   * `pruneExcludedDirectories: false`; otherwise an excluded directory is
+   * pruned before its contents are ever checked against a re-include
+   * pattern. See `IIgnoreStrategy.pruneExcludedDirectories`.
+   *
+   * @default - `exclude` is used with the built-in matcher
+   */
+  readonly ignoreStrategy?: IIgnoreStrategy;
 
   /**
    * Extra information to fold into the hash (e.g. build instructions and
@@ -180,6 +197,7 @@ export class TerraformAsset extends Construct implements IAsset {
       assetHash: config.assetHash,
       assetHashType: config.assetHashType,
       exclude: config.exclude,
+      ignoreStrategy: config.ignoreStrategy,
       extraHash: config.extraHash,
       bundler: config.bundler,
     });
