@@ -6,6 +6,7 @@ import {
   getGlobalDispatcher,
   Dispatcher,
 } from "undici";
+import { OPENTOFU_REGISTRY, TERRAFORM_REGISTRY } from "@cdktn/commons";
 import { ProviderConstraint } from "../../../lib/dependencies/dependency-manager";
 import {
   getNpmPackageName,
@@ -194,6 +195,65 @@ describe("prebuilt-providers", () => {
           }),
         ]),
       );
+    });
+  });
+
+  describe("getNpmPackageName registry matching", () => {
+    // The published map keys providers without a hostname.
+    const mockProvidersMap = () =>
+      mockAgent
+        .get("https://raw.githubusercontent.com")
+        .intercept({
+          path: /.*cdktn-repository-manager.*provider\.json/,
+          method: "GET",
+        })
+        .reply(200, { random: "hashicorp/random" });
+
+    it("finds the package for a Terraform-targeting project", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint("random", "=3.9.0", TERRAFORM_REGISTRY),
+          true,
+        ),
+      ).resolves.toBe("@cdktn/provider-random");
+    });
+
+    it("finds the package for an OpenTofu-only project", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint("random", "=3.9.0", OPENTOFU_REGISTRY),
+          true,
+        ),
+      ).resolves.toBe("@cdktn/provider-random");
+    });
+
+    it("does not match a private registry provider to a public prebuilt", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint(
+            "registry.example.com/hashicorp/random",
+            "=3.9.0",
+          ),
+          true,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it("still reports no package for a provider that has none", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint("nope", "=1.0.0", OPENTOFU_REGISTRY),
+          true,
+        ),
+      ).resolves.toBeUndefined();
     });
   });
 

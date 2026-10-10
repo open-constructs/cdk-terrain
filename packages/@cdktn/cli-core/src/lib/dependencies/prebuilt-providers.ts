@@ -87,13 +87,24 @@ export async function getNpmPackageName(
   constraint: ProviderConstraint,
   useCdktn: boolean,
 ): Promise<string | undefined> {
+  // Prebuilt packages are built from public registry providers; a private host
+  // names a different provider even when namespace and name collide.
+  if (!constraint.isFromPublicRegistry()) {
+    return undefined;
+  }
+
   const providers = await getAllPrebuiltProviders();
 
-  const entry = Object.entries(providers).find(
-    ([, p]) =>
-      ProviderConstraint.fromConfigEntry(p).source.toLowerCase() ===
-      constraint.source.toLowerCase(),
-  );
+  // The prebuilt list is published against the Terraform registry while
+  // `constraint` resolves against whatever the project targets, so match on the
+  // provider across the public registries.
+  const entry = Object.entries(providers).find(([, p]) => {
+    const prebuilt = ProviderConstraint.fromConfigEntry(p);
+    return (
+      prebuilt.namespace.toLowerCase() === constraint.namespace.toLowerCase() &&
+      prebuilt.name.toLowerCase() === constraint.name.toLowerCase()
+    );
+  });
   if (!entry) {
     return undefined; // no pre-built provider found for this constraint
   }
