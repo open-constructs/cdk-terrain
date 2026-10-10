@@ -3,8 +3,10 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import {
+  ConstructsMakerModuleTarget,
   Language,
   TerraformDependencyConstraint,
+  TerraformModuleConstraint,
   TerraformTargetVersions,
 } from "@cdktn/commons";
 import { createTmpHelper } from "./util";
@@ -202,5 +204,46 @@ describe("targetVersions threading through 'cdktn get'", () => {
     });
     const toGenerate = await maker2.filterAlreadyGenerated([constraint]);
     expect(toGenerate).toEqual([]);
+  });
+});
+
+describe("targetVersions reaching generated module bindings", () => {
+  const moduleConstraint = new TerraformModuleConstraint(
+    "terraform-aws-modules/vpc/aws@3.19.0",
+  );
+
+  const emittedSources = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return emittedSources(full);
+      return entry.name.endsWith(".ts") ? [fs.readFileSync(full, "utf8")] : [];
+    });
+
+  beforeEach(() => {
+    mockReadSchema.mockReset();
+    const target = ConstructsMakerModuleTarget.from(
+      moduleConstraint,
+      Language.TYPESCRIPT,
+    ) as ConstructsMakerModuleTarget;
+    mockReadSchema.mockResolvedValue({
+      moduleSchema: {
+        [target.moduleKey]: { name: target.name, inputs: [], outputs: [] },
+      },
+    });
+  });
+
+  it("links an OpenTofu-only project's modules to the OpenTofu registry", async () => {
+    const workdir = tmp("target-versions-module.test");
+    const maker = new ConstructsMaker({
+      codeMakerOutput: workdir,
+      targetLanguage: Language.TYPESCRIPT,
+      targetVersions: { opentofu: ">=1.6.0" },
+    });
+
+    await maker.generate([moduleConstraint]);
+
+    expect(emittedSources(workdir).join("\n")).toContain(
+      "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/v3.19.0",
+    );
   });
 });

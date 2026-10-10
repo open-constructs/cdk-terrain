@@ -72,3 +72,38 @@ describe("docsUrl", () => {
     ).toBe("https://search.opentofu.org/provider/hashicorp/random/v3.7.2/docs");
   });
 });
+
+describe("moduleDocsUrl", () => {
+  const source = "terraform-aws-modules/vpc/aws";
+
+  it("builds Terraform registry paths", () => {
+    const r = TERRAFORM_REGISTRY;
+    expect(r.moduleDocsUrl(source, "3.12.0")).toBe(
+      "https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.12.0",
+    );
+    expect(r.moduleDocsUrl(source)).toBe(
+      "https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest",
+    );
+    expect(r.moduleDocsUrl(source, "3.12.0", "vpc-endpoints")).toBe(
+      "https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.12.0/submodules/vpc-endpoints",
+    );
+  });
+
+  // Verified against rendered pages: the v prefix is required (without it the
+  // page serves a version list) and "submodule" is singular.
+  it("builds OpenTofu registry paths", () => {
+    const r = OPENTOFU_REGISTRY;
+    expect(r.moduleDocsUrl(source, "3.12.0")).toBe(
+      "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/v3.12.0",
+    );
+    expect(r.moduleDocsUrl(source, "3.12.0", "vpc-endpoints")).toBe(
+      "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/v3.12.0/submodule/vpc-endpoints",
+    );
+  });
+
+  it("does not v-prefix the OpenTofu latest alias", () => {
+    expect(OPENTOFU_REGISTRY.moduleDocsUrl(source)).toBe(
+      "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/latest",
+    );
+  });
+});

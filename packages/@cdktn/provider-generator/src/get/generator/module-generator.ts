@@ -3,12 +3,17 @@
 import { CodeMaker, toCamelCase } from "codemaker";
 import { AttributeModel } from "./models";
 import { sanitizedComment } from "./sanitized-comments";
-import { ConstructsMakerModuleTarget } from "@cdktn/commons";
+import {
+  ConstructsMakerModuleTarget,
+  TerraformTargetVersions,
+  registryForTargetVersions,
+} from "@cdktn/commons";
 
 export class ModuleGenerator {
   constructor(
     private readonly code: CodeMaker,
     private readonly targets: ConstructsMakerModuleTarget[],
+    private readonly targetVersions?: TerraformTargetVersions,
   ) {
     this.code.indentation = 2;
 
@@ -76,22 +81,18 @@ export class ModuleGenerator {
     // ... and more
     // ../module and ./module (local paths)
     const isNonRegistryModule = target.source.includes(".");
-    let registryPath;
-    // Submodules also exist (e.g. terraform-aws-modules/vpc/aws//modules/vpc-endpoints)
-    // And linking directly to them in the Registry requires including the version
-    // like e.g. https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest/submodules/vpc-endpoints
-    if (target.source.includes("//")) {
-      registryPath = target.source.replace(
-        "//modules",
-        `/${target.version || "latest"}/submodules`,
-      );
-      // terraform-aws-modules/vpc/aws//modules/vpc-endpoints
-      // ->
-      // terraform-aws-modules/vpc/aws/latest/submodules/vpc-endpoints
-    } else {
-      // not submodule specified, just append the version
-      registryPath = `${target.source}/${target.version || "latest"}`;
-    }
+    // Keyed off the project's declared targets rather than a fixed registry, so
+    // the link matches the product the project builds for.
+    const registry = registryForTargetVersions(this.targetVersions);
+    // A `//` in the source points at a submodule, e.g.
+    // terraform-aws-modules/vpc/aws//modules/vpc-endpoints
+    const [moduleSource, subPath] = target.source.split("//", 2);
+    const submodule = subPath?.replace(/^modules\//, "");
+    const docsUrl = registry.moduleDocsUrl(
+      moduleSource,
+      target.version,
+      submodule,
+    );
 
     const comment = sanitizedComment(this.code);
     comment.line(`Defines an ${baseName} based on a Terraform module`);
@@ -99,7 +100,7 @@ export class ModuleGenerator {
     comment.line(
       isNonRegistryModule
         ? `Source at ${target.source}`
-        : `Docs at Terraform Registry: {@link https://registry.terraform.io/modules/${registryPath} ${target.source}}`,
+        : `Docs at ${registry.displayName}: {@link ${docsUrl} ${target.source}}`,
     );
     comment.end();
     this.code.openBlock(`export class ${baseName} extends TerraformModule`);
