@@ -1,0 +1,15 @@
+{
+  "language": "typescript",
+  "app": "pnpm exec tsx main.ts",
+  "projectId": "{{projectId}}",
+  "sendCrashReports": "{{sendCrashReports}}",
+  "targetVersions": {
+    "terraform": ">=1.5.7",
+    "opentofu": ">=1.6.0"
+  },
+  "terraformProviders": [],
+  "terraformModules": [],
+  "context": {
+{{futureFlags}}
+  }
+}

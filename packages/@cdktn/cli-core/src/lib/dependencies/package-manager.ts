@@ -194,6 +194,95 @@ const pipPackageSchema = z.array(
   z.object({ name: z.string(), version: z.string() }).loose(),
 );
 
+// [
+//   {
+//     "name": "my-project",
+//     "dependencies": {
+//       "@cdktn/provider-random": { "from": "@cdktn/provider-random", "version": "3.0.11" }
+//     }
+//   }
+// ]
+const pnpmListSchema = z.array(
+  z
+    .object({
+      dependencies: z.record(
+        z.string(),
+        z.object({ version: z.string() }).loose(),
+      ),
+      devDependencies: z.record(
+        z.string(),
+        z.object({ version: z.string() }).loose(),
+      ),
+    })
+    .partial()
+    .loose(),
+);
+
+export const YARN_TRACKING_ISSUE_URL =
+  "https://github.com/open-constructs/cdk-terrain/issues/492";
+
+/**
+ * Yarn classic (1.x) and Yarn Berry (2+) share the `yarn` command but differ in CLI surface, so they are told apart.
+ */
+export type NodePackageManagerName = "npm" | "pnpm" | "yarn" | "yarn-berry";
+
+/**
+ * The command that drives a project managed by the given package manager.
+ */
+export function nodePackageManagerCommand(
+  packageManager: NodePackageManagerName,
+): "npm" | "pnpm" | "yarn" {
+  return packageManager === "yarn-berry" ? "yarn" : packageManager;
+}
+
+/**
+ * Detects the package manager of the Node.js project in `dir`. An explicit `packageManager` field (corepack) wins
+ * over lockfile probing, since it is a deliberate declaration.
+ */
+export function detectNodePackageManager(dir: string): NodePackageManagerName {
+  let declared: string | undefined;
+  try {
+    declared = fs.readJsonSync(path.join(dir, "package.json"))?.packageManager;
+  } catch {
+    // no or unreadable package.json - fall through to lockfile probing
+  }
+
+  if (typeof declared === "string") {
+    const [name, version] = declared.split("@");
+    if (name === "npm" || name === "pnpm") {
+      return name;
+    }
+    if (name === "yarn") {
+      return semver.major(semver.coerce(version) ?? "1.0.0") >= 2
+        ? "yarn-berry"
+        : "yarn";
+    }
+  }
+
+  if (existsSync(path.join(dir, "pnpm-lock.yaml"))) {
+    return "pnpm";
+  }
+  if (existsSync(path.join(dir, ".yarnrc.yml"))) {
+    return "yarn-berry";
+  }
+  if (existsSync(path.join(dir, "yarn.lock"))) {
+    return "yarn";
+  }
+  return "npm";
+}
+
+let yarnDeprecationWarned = false;
+
+function warnAboutYarn() {
+  if (yarnDeprecationWarned) {
+    return;
+  }
+  yarnDeprecationWarned = true;
+  logger.warn(
+    `WARNING: This project uses Yarn. Yarn classic (1.x) is unmaintained; please move the project to npm or pnpm. Yarn Berry (2+) is not officially supported and will not be added unless ${YARN_TRACKING_ISSUE_URL} gains votes.`,
+  );
+}
+
 /**
  * manages installing, updating, and removing dependencies
  * in the package system used by the target language of a CDKTN
@@ -243,8 +332,19 @@ export abstract class PackageManager {
 }
 
 class NodePackageManager extends PackageManager {
-  private hasYarnLockfile(): boolean {
-    return existsSync(path.join(this.workingDirectory, "yarn.lock"));
+  private detectedPackageManager?: NodePackageManagerName;
+
+  private get packageManager(): NodePackageManagerName {
+    // Cached because `provider add` resolves it once per provider.
+    if (!this.detectedPackageManager) {
+      this.detectedPackageManager = detectNodePackageManager(
+        this.workingDirectory,
+      );
+      if (nodePackageManagerCommand(this.detectedPackageManager) === "yarn") {
+        warnAboutYarn();
+      }
+    }
+    return this.detectedPackageManager;
   }
 
   public async addPackage(
@@ -254,21 +354,21 @@ class NodePackageManager extends PackageManager {
   ): Promise<void> {
     console.log(`Adding package ${packageName} @ ${packageVersion}`);
 
-    // probe for package-lock.json or yarn.lock
-    let command = "npm";
-    let args = ["install"];
+    const command = nodePackageManagerCommand(this.packageManager);
+    const args = [command === "npm" ? "install" : "add"];
 
-    if (this.hasYarnLockfile()) {
-      command = "yarn";
-      args = ["add"];
-    }
     args.push(
       packageVersion ? packageName + "@" + packageVersion : packageName,
     );
 
+    // Quiet flags differ per manager: pnpm has no --no-progress, and Yarn Berry errors on unknown options - it has
+    // neither --silent nor --no-progress (Yarn 1 accepts both).
     if (silent) {
-      args.push("--silent");
-      args.push("--no-progress");
+      if (this.packageManager === "npm" || this.packageManager === "yarn") {
+        args.push("--silent", "--no-progress");
+      } else if (this.packageManager === "pnpm") {
+        args.push("--silent");
+      }
     }
 
     // Install exact version
@@ -347,12 +447,54 @@ class NodePackageManager extends PackageManager {
     }
   }
 
+  private async listPnpmPackages(): Promise<
+    { name: string; version: string }[]
+  > {
+    try {
+      // --depth 0 keeps the output to direct dependencies, which is where providers always live, and matches the
+      // top-level-only semantics of the npm listing.
+      const stdout = await exec("pnpm", ["list", "--json", "--depth", "0"], {
+        cwd: this.workingDirectory,
+      });
+
+      logger.debug(`Listing pnpm packages using "pnpm list --json": ${stdout}`);
+      const json = pnpmListSchema.parse(JSON.parse(stdout));
+
+      return json
+        .flatMap((project) => [
+          ...Object.entries(project.dependencies || {}),
+          ...Object.entries(project.devDependencies || {}),
+        ])
+        .filter(
+          ([depName]) =>
+            depName.startsWith("@cdktf/provider-") ||
+            depName.startsWith("@cdktn/provider-"),
+        )
+        .map(([name, dep]) => ({ name, version: dep.version }));
+    } catch (e: any) {
+      throw new Error(
+        `Could not determine installed packages using 'pnpm list --json': ${e}`,
+      );
+    }
+  }
+
   public async listProviderPackages(): Promise<
     { name: string; version: string }[]
   > {
-    return this.hasYarnLockfile()
-      ? this.listYarnPackages()
-      : this.listNpmPackages();
+    switch (this.packageManager) {
+      case "pnpm":
+        return this.listPnpmPackages();
+      case "yarn":
+        return this.listYarnPackages();
+      case "yarn-berry":
+        // Yarn Berry dropped `yarn list`, and its replacement (`yarn info`) has a different output format that is
+        // not supported.
+        throw Errors.Usage(
+          `Listing installed providers is not supported for projects using Yarn Berry (2+). See ${YARN_TRACKING_ISSUE_URL} for workarounds and to vote for Yarn Berry support.`,
+        );
+      default:
+        return this.listNpmPackages();
+    }
   }
 }
 

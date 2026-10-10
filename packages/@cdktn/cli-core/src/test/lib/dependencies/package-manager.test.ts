@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { mkdtempSync } from "fs";
+import { mkdtempSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
@@ -9,8 +9,28 @@ import {
   getGlobalDispatcher,
   Dispatcher,
 } from "undici";
-import { Language } from "@cdktn/commons";
-import { PackageManager } from "../../../lib/dependencies/package-manager";
+import { Language, exec, logger } from "@cdktn/commons";
+import {
+  PackageManager,
+  detectNodePackageManager,
+} from "../../../lib/dependencies/package-manager";
+
+jest.mock("@cdktn/commons", () => ({
+  ...jest.requireActual("@cdktn/commons"),
+  exec: jest.fn(),
+}));
+
+function pkg(packageManager: string) {
+  return JSON.stringify({ packageManager });
+}
+
+function projectWith(files: Record<string, string>) {
+  const dir = mkdtempSync(join(tmpdir(), "cdktn-pm-test-"));
+  for (const [name, contents] of Object.entries(files)) {
+    writeFileSync(join(dir, name), contents);
+  }
+  return dir;
+}
 
 const MAVEN_HOST = "https://repo1.maven.org";
 const GITHUB_HOST = "https://api.github.com";
@@ -31,6 +51,167 @@ describe("package-manager", () => {
   afterEach(() => {
     mockAgent.assertNoPendingInterceptors();
     setGlobalDispatcher(originalDispatcher);
+  });
+
+  describe("detectNodePackageManager", () => {
+    it.each<[string, Record<string, string>, string]>([
+      ["npm field", { "package.json": pkg("npm@10.9.0") }, "npm"],
+      [
+        "pnpm field over a conflicting lockfile",
+        { "package.json": pkg("pnpm@11.5.2"), "yarn.lock": "" },
+        "pnpm",
+      ],
+      ["yarn@1 field", { "package.json": pkg("yarn@1.22.22") }, "yarn"],
+      [
+        "yarn@4 field",
+        { "package.json": pkg("yarn@4.5.0+sha512.abc") },
+        "yarn-berry",
+      ],
+      ["pnpm-lock.yaml", { "pnpm-lock.yaml": "" }, "pnpm"],
+      ["yarn.lock alone", { "yarn.lock": "" }, "yarn"],
+      [
+        "yarn.lock with .yarnrc.yml",
+        { "yarn.lock": "", ".yarnrc.yml": "" },
+        "yarn-berry",
+      ],
+      ["nothing", {}, "npm"],
+    ])("%s => %s", (_, files, expected) => {
+      expect(detectNodePackageManager(projectWith(files))).toBe(expected);
+    });
+  });
+
+  describe("NodePackageManager", () => {
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+
+    beforeEach(() => {
+      execMock.mockReset();
+      jest.spyOn(console, "log").mockImplementation(() => undefined);
+      jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it.each<[string, Record<string, string>, string, string[]]>([
+      [
+        "npm",
+        {},
+        "npm",
+        [
+          "install",
+          "@cdktn/provider-random@1.0.0",
+          "--silent",
+          "--no-progress",
+          "-E",
+        ],
+      ],
+      [
+        "pnpm",
+        { "pnpm-lock.yaml": "" },
+        "pnpm",
+        ["add", "@cdktn/provider-random@1.0.0", "--silent", "-E"],
+      ],
+      [
+        "yarn classic",
+        { "yarn.lock": "" },
+        "yarn",
+        [
+          "add",
+          "@cdktn/provider-random@1.0.0",
+          "--silent",
+          "--no-progress",
+          "-E",
+        ],
+      ],
+      [
+        "yarn berry",
+        { "package.json": pkg("yarn@4.5.0") },
+        "yarn",
+        ["add", "@cdktn/provider-random@1.0.0", "-E"],
+      ],
+    ])(
+      "adds a package quietly with flags %s accepts",
+      async (_, files, command, args) => {
+        const dir = projectWith(files);
+        execMock.mockResolvedValue("");
+
+        await PackageManager.forLanguage(Language.TYPESCRIPT, dir).addPackage(
+          "@cdktn/provider-random",
+          "1.0.0",
+          true,
+        );
+
+        expect(execMock).toHaveBeenCalledWith(command, args, { cwd: dir });
+      },
+    );
+
+    it("lists direct provider dependencies from pnpm", async () => {
+      execMock.mockResolvedValue(
+        JSON.stringify([
+          {
+            name: "my-project",
+            dependencies: {
+              "@cdktn/provider-random": { version: "3.0.11" },
+              cdktn: { version: "0.22.0" },
+            },
+            devDependencies: {
+              "@cdktf/provider-null": { version: "10.0.0" },
+            },
+          },
+        ]),
+      );
+
+      const packages = await PackageManager.forLanguage(
+        Language.TYPESCRIPT,
+        projectWith({ "pnpm-lock.yaml": "" }),
+      ).listProviderPackages();
+
+      expect(packages).toEqual([
+        { name: "@cdktn/provider-random", version: "3.0.11" },
+        { name: "@cdktf/provider-null", version: "10.0.0" },
+      ]);
+    });
+
+    it("refuses to list providers for Yarn Berry, pointing at the tracking issue", async () => {
+      const manager = PackageManager.forLanguage(
+        Language.TYPESCRIPT,
+        projectWith({ "yarn.lock": "", ".yarnrc.yml": "" }),
+      );
+
+      await expect(manager.listProviderPackages()).rejects.toThrow(
+        /not supported for projects using Yarn Berry.*issues\/492/,
+      );
+      expect(execMock).not.toHaveBeenCalled();
+    });
+
+    it("warns once per process that Yarn is deprecated or unsupported", async () => {
+      await jest.isolateModulesAsync(async () => {
+        const commons = await import("@cdktn/commons");
+        const isolated =
+          await import("../../../lib/dependencies/package-manager");
+        (commons.exec as jest.Mock).mockResolvedValue("");
+        const warn = jest
+          .spyOn(commons.logger, "warn")
+          .mockImplementation(() => undefined);
+
+        const yarnProjects: Record<string, string>[] = [
+          { "yarn.lock": "" },
+          { "package.json": pkg("yarn@4.5.0") },
+        ];
+        for (const files of yarnProjects) {
+          await isolated.PackageManager.forLanguage(
+            Language.TYPESCRIPT,
+            projectWith(files),
+          ).addPackage("@cdktn/provider-random", "1.0.0");
+        }
+
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0][0]).toContain(
+          isolated.YARN_TRACKING_ISSUE_URL,
+        );
+      });
+    });
   });
 
   describe("JavaPackageManager.isNpmVersionAvailable", () => {

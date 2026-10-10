@@ -211,6 +211,9 @@ export class DependencyManager {
     try {
       installedPackages = await this.packageManager.listProviderPackages();
     } catch (e) {
+      if (IsErrorType(e, "Usage")) {
+        throw e;
+      }
       throw new Error(`Failed to list packages: ${e}`);
     }
 

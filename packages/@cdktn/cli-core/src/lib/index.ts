@@ -9,6 +9,12 @@ export {
   ProviderConstraint,
 } from "./dependencies/dependency-manager";
 export { getAllPrebuiltProviders } from "./dependencies/prebuilt-providers";
+export {
+  detectNodePackageManager,
+  nodePackageManagerCommand,
+  NodePackageManagerName,
+  YARN_TRACKING_ISSUE_URL,
+} from "./dependencies/package-manager";
 export { providerAdd } from "./provider-add";
 export { TerraformCli } from "./models/terraform-cli";
 export { CdktfConfig } from "./cdktf-config";
