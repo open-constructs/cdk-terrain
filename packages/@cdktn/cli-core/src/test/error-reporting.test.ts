@@ -22,10 +22,13 @@ jest.mock("@sentry/node", () => ({
 
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
-jest.mock("@cdktn/commons", () => ({
-  ...jest.requireActual("@cdktn/commons"),
-  collectDebugInformation: jest.fn().mockResolvedValue({}),
-}));
+jest.mock("@cdktn/commons", () => {
+  const actual = jest.requireActual("@cdktn/commons");
+  return {
+    ...actual,
+    collectDebugInformation: jest.fn().mockResolvedValue({}),
+  };
+});
 
 import * as Sentry from "@sentry/node";
 import ciInfo from "ci-info";
