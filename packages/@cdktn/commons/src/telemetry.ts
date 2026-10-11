@@ -102,8 +102,9 @@ export function sendErrorTelemetry(type: string, command: string): void {
   }
 }
 
-// Call before any explicit process.exit() on a path that may have emitted
-// metrics: Sentry buffers asynchronously and a hard exit drops the buffer.
+// Call before an explicit process.exit() and before reporting is initialized
+// again (a nested get): Sentry buffers asynchronously, and both a hard exit
+// and a replaced client drop the buffer.
 export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   try {
     await Sentry.flush(timeoutMs);

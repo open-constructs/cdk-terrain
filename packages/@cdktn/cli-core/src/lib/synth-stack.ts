@@ -177,8 +177,6 @@ Command output on stdout:
         throw e;
       }
       console.error(`ERROR: ${errorOutput}`);
-      // hard exit skips the entrypoint's failure reporter and flush, so
-      // count and flush the failed run here (bounded)
       await this.synthErrorTelemetry(e, synthOrigin);
       await flushTelemetry();
       process.exit(1);

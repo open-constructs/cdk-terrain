@@ -237,7 +237,6 @@ describe("consent gating (initializErrorReporting)", () => {
       sendCrashReports: false,
       sendUsageTelemetry: false,
     });
-    // both declined -> no Sentry at all
     expect(Sentry.init).not.toHaveBeenCalled();
   });
 

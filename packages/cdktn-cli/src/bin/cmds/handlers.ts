@@ -399,7 +399,6 @@ export async function init(argv: any) {
         "Local providers have been updated. Running cdktn get to update...",
       );
     }
-    // get re-initializes Sentry; send this client's buffer before it is replaced
     await flushTelemetry();
     await get({
       language,
@@ -685,7 +684,6 @@ export async function providerAdd(argv: any) {
     console.log(
       "Local providers have been updated. Running cdktn get to update...",
     );
-    // get re-initializes Sentry; send this client's buffer before it is replaced
     await flushTelemetry();
     await get({
       language: language,

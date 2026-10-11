@@ -214,7 +214,6 @@ describe("telemetry", () => {
 
     it("counts only the run's own command as completed; a nested operation adds its own metrics", async () => {
       await startCommandTelemetry("deploy");
-      // the synth a deploy drives, then the deploy itself
       await sendTelemetry("synth", { totalTime: 42, language: "python" });
       await sendTelemetry("deploy", { language: "python" });
       expect(await Sentry.flush(2000)).toBe(true);
@@ -277,8 +276,6 @@ describe("telemetry", () => {
       });
       setUsageTelemetryEnabled(true);
       await startCommandTelemetry("deploy");
-      // the handlers' copy: a nested start is a no-op, only the run's own
-      // command completes, and the error carries the language read at start
       await second.startCommandTelemetry("synth");
       await second.sendTelemetry("synth", { language: "go" });
       await second.sendTelemetry("deploy", { error: true, errorType: "Usage" });
@@ -294,8 +291,6 @@ describe("telemetry", () => {
   });
 
   describe("sendTelemetry gating", () => {
-    // CHECKPOINT_DISABLE > the decision captured at command start >
-    // sendUsageTelemetry in cdktf.json (absent file = flag unset) > on
     it.each([
       { env: undefined, captured: undefined, flag: undefined, emits: true },
       { env: undefined, captured: undefined, flag: true, emits: true },

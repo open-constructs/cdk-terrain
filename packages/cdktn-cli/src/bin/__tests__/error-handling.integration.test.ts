@@ -192,8 +192,6 @@ type MetricItem = {
   attributes: Record<string, { value: unknown }>;
 };
 
-// A third copy of the envelope parser (test helper, sink, here); unifying
-// them is tracked as a follow-up.
 function parseMetricItems(bodies: string[]): MetricItem[] {
   const items: MetricItem[] = [];
   for (const body of bodies) {
