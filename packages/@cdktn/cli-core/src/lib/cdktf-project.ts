@@ -421,7 +421,7 @@ export class CdktfProject {
     }
     await this.finishStackRun(
       "diff",
-      stacks,
+      [stack.stack],
       stack.error ? [stack.stack.name] : [],
       () =>
         Errors.External(

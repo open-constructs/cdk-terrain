@@ -71,4 +71,55 @@ describe("CdktfProject stack telemetry on failure", () => {
       );
     },
   );
+
+  it.each([
+    ["a clean plan", undefined, 0],
+    ["a failed plan", "plan failed", 1],
+  ])(
+    "diff reports the diffed stack only, with %s",
+    async (_case, error, failedStackCount) => {
+      const other: SynthesizedStack = {
+        ...stack,
+        name: "other-stack",
+        content: JSON.stringify({
+          "//": { metadata: { ...metadata, stackName: "other-stack" } },
+        }),
+      };
+      const project = new CdktfProject({
+        synthCommand: "unused",
+        outDir: "unused",
+        onUpdate: () => {},
+      });
+      jest
+        .spyOn(project as any, "readSynthesizedStacks")
+        .mockResolvedValue([other, stack]);
+      jest.spyOn(project, "getStackExecutor").mockImplementation(
+        (selected) =>
+          ({
+            stack: selected,
+            error,
+            initalizeTerraform: async () => {},
+            diff: async () => {},
+          }) as any,
+      );
+
+      const run = project.diff({ skipSynth: true, stackName: "pending-stack" });
+      if (error) {
+        await expect(run).rejects.toThrow(
+          "Stack failed to plan: pending-stack",
+        );
+      } else {
+        await run;
+      }
+
+      expect(commons.sendTelemetry).toHaveBeenCalledTimes(1);
+      expect(commons.sendTelemetry).toHaveBeenCalledWith(
+        "diff",
+        expect.objectContaining({
+          stackMetadata: [metadata],
+          failedStackCount,
+        }),
+      );
+    },
+  );
 });
