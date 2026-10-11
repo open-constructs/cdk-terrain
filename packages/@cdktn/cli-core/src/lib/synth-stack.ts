@@ -288,13 +288,7 @@ Command output on stdout:
     stackMetadata: unknown[];
     requiredProviders: unknown[];
   } {
-    const contents = stacks.map((stack) => {
-      try {
-        return JSON.parse(stack.content);
-      } catch {
-        return {};
-      }
-    });
+    const contents = stacks.map((stack) => JSON.parse(stack.content));
     return {
       stackMetadata: contents.map((c) => c?.["//"]?.metadata ?? {}),
       requiredProviders: contents.map(
