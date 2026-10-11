@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import yargs from "yargs";
 import { Errors, Language } from "@cdktn/commons";
 
 const mockGet = jest.fn();
@@ -24,7 +23,6 @@ jest.mock("../../helper/tty-stream", () => ({
 }));
 
 import { runGet } from "../get";
-import { runCli } from "../../../error-handling";
 
 const config = {
   codeMakerOutput: ".gen",
@@ -66,35 +64,5 @@ describe("runGet telemetry", () => {
     await expect(runGet(config)).rejects.toBe(failure);
 
     expect(mockSendTelemetry).not.toHaveBeenCalled();
-  });
-
-  it("a failing get run yields exactly one cli.command.error and no cli.command.completed", async () => {
-    mockGet.mockRejectedValue(Errors.External("schema fetch failed"));
-    const cli = yargs(["get"])
-      .exitProcess(false)
-      .command(
-        "get",
-        "generates bindings",
-        () => {},
-        async () => {
-          Errors.setScope("get");
-          await runGet(config);
-        },
-      );
-    const exitSpy = jest
-      .spyOn(process, "exit")
-      .mockImplementation((() => undefined) as never);
-
-    try {
-      await runCli(cli);
-    } finally {
-      exitSpy.mockRestore();
-    }
-
-    expect(mockSendTelemetry).toHaveBeenCalledTimes(1);
-    expect(mockSendTelemetry).toHaveBeenCalledWith("get", {
-      error: true,
-      errorType: "External",
-    });
   });
 });

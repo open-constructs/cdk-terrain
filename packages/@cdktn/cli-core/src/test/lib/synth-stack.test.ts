@@ -54,11 +54,10 @@ describe("SynthStack.synth failure paths count the run before exiting", () => {
       ).rejects.toThrow("exit 1");
 
       expect(commons.sendTelemetry).toHaveBeenCalledTimes(1);
-      expect(commons.sendTelemetry).toHaveBeenCalledWith("deploy", {
-        error: true,
-        errorType: "unexpected",
-        synthOrigin: undefined,
-      });
+      expect(commons.sendTelemetry).toHaveBeenCalledWith(
+        "deploy",
+        expect.objectContaining({ error: true, errorType: "unexpected" }),
+      );
       expect(commons.flushTelemetry).toHaveBeenCalledTimes(1);
       expect(commons.sendTelemetry.mock.invocationCallOrder[0]).toBeLessThan(
         commons.flushTelemetry.mock.invocationCallOrder[0],

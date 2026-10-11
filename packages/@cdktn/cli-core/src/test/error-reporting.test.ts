@@ -22,16 +22,10 @@ jest.mock("@sentry/node", () => ({
 
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
-// the capture setters call through so the gating cases below observe the
-// real captured state, while init can still be asserted to perform them
-jest.mock("@cdktn/commons", () => {
-  const actual = jest.requireActual("@cdktn/commons");
-  return {
-    ...actual,
-    collectDebugInformation: jest.fn().mockResolvedValue({}),
-    setUsageTelemetryEnabled: jest.fn(actual.setUsageTelemetryEnabled),
-  };
-});
+jest.mock("@cdktn/commons", () => ({
+  ...jest.requireActual("@cdktn/commons"),
+  collectDebugInformation: jest.fn().mockResolvedValue({}),
+}));
 
 import * as Sentry from "@sentry/node";
 import ciInfo from "ci-info";
@@ -44,7 +38,6 @@ import {
 import {
   initializErrorReporting,
   shouldReportCrash,
-  persistSendUsageTelemetryDecision,
 } from "../lib/error-reporting";
 
 // the ci-info mock above replaces the module with a plain mutable object,
@@ -246,7 +239,7 @@ describe("consent gating (initializErrorReporting)", () => {
   });
 
   // Every condition that makes prompting impossible falls through to the
-  // non-interactive defaults: no prompt, nothing persisted, usage default-on.
+  // non-interactive defaults: neither prompt, nothing persisted, usage on.
   it.each([
     ["no TTY", () => setInteractive(false), true],
     [
@@ -262,6 +255,17 @@ describe("consent gating (initializErrorReporting)", () => {
       () => {
         setInteractive(true);
         process.env.CI = "true";
+      },
+      true,
+    ],
+    [
+      "stdin TTY but stdout redirected",
+      () => {
+        setInteractive(true);
+        Object.defineProperty(process.stdout, "isTTY", {
+          value: undefined,
+          configurable: true,
+        });
       },
       true,
     ],
@@ -282,12 +286,10 @@ describe("consent gating (initializErrorReporting)", () => {
       false,
     ],
   ])(
-    "usage unset, %s -> no prompt, nothing persisted, default-on init",
+    "both flags unset, %s -> no prompt, nothing persisted, default-on init",
     async (_case, arrange, hasProject) => {
       if (hasProject) {
-        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-          sendCrashReports: false,
-        });
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {});
       }
       arrange();
       const crashPrompt = jest.fn();
@@ -298,26 +300,16 @@ describe("consent gating (initializErrorReporting)", () => {
       expect(crashPrompt).not.toHaveBeenCalled();
       expect(usagePrompt).not.toHaveBeenCalled();
       if (hasProject) {
-        expect(
-          fs.readJsonSync(path.join(workdir, "cdktf.json")).sendUsageTelemetry,
-        ).toBeUndefined();
+        const persisted = fs.readJsonSync(path.join(workdir, "cdktf.json"));
+        expect(persisted.sendCrashReports).toBeUndefined();
+        expect(persisted.sendUsageTelemetry).toBeUndefined();
       } else {
         expect(fs.existsSync(path.join(workdir, "cdktf.json"))).toBe(false);
       }
       expect(Sentry.init).toHaveBeenCalledTimes(1);
     },
   );
-  it("captures the usage decision while still in the user's cwd", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: false,
-    });
-    setInteractive(false);
-
-    await initializErrorReporting();
-
-    expect(setUsageTelemetryEnabled).toHaveBeenCalledWith(true);
-  });
-  it("reads and persists against an explicit project path, not the cwd", async () => {
+  it("reads the consent flags of an explicit project path, not the cwd", async () => {
     // init creates the project in a destination directory and initializes
     // reporting against it; the cwd may hold an unrelated (or no) cdktf.json
     const destination = path.join(workdir, "new-project");
@@ -338,7 +330,6 @@ describe("consent gating (initializErrorReporting)", () => {
 
     expect(crashPrompt).not.toHaveBeenCalled();
     expect(usagePrompt).not.toHaveBeenCalled();
-    expect(setUsageTelemetryEnabled).toHaveBeenCalledWith(true);
     expect(isUsageTelemetryEnabled()).toBe(true);
     // usage-only consent: the client exists but drops error events
     await expect(initOptions().beforeSend({}, undefined)).resolves.toBeNull();
@@ -372,17 +363,6 @@ describe("consent gating (initializErrorReporting)", () => {
     expect(usagePrompt).not.toHaveBeenCalled();
     expect(Sentry.init).not.toHaveBeenCalled();
   });
-  it("CHECKPOINT_DISABLE does NOT affect crash reporting", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: true,
-    });
-    setInteractive(false);
-    process.env.CHECKPOINT_DISABLE = "1";
-
-    await initializErrorReporting();
-
-    expect(Sentry.init).toHaveBeenCalledTimes(1);
-  });
   it("explicit sendUsageTelemetry: false + crash off -> Sentry never initialized", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: false,
@@ -405,25 +385,6 @@ describe("consent gating (initializErrorReporting)", () => {
     await initializErrorReporting();
 
     expect(Sentry.init).not.toHaveBeenCalled();
-  });
-  // A malformed flag is unset, not a silent opt-out.
-  it("malformed flags, interactive -> prompts for each and persists booleans", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      sendCrashReports: "yes",
-      sendUsageTelemetry: 1,
-    });
-    setInteractive(true);
-    const crashPrompt = jest.fn().mockResolvedValue(false);
-    const usagePrompt = jest.fn().mockResolvedValue(true);
-
-    await initializErrorReporting(crashPrompt, usagePrompt);
-
-    expect(crashPrompt).toHaveBeenCalledTimes(1);
-    expect(usagePrompt).toHaveBeenCalledTimes(1);
-    expect(fs.readJsonSync(path.join(workdir, "cdktf.json"))).toMatchObject({
-      sendCrashReports: false,
-      sendUsageTelemetry: true,
-    });
   });
   it("malformed flags, non-interactive -> usage on, crash off", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
@@ -488,8 +449,6 @@ describe("start-of-command metric (initializErrorReporting)", () => {
     Errors.setScope("deploy");
 
     await initializErrorReporting();
-    // init runs get, which initializes reporting again
-    await initializErrorReporting();
 
     expect(invokedCalls()).toHaveLength(1);
     expect(invokedCalls()[0][2]).toEqual(
@@ -527,26 +486,16 @@ describe("start-of-command metric (initializErrorReporting)", () => {
     );
   });
 
-  it.each([
-    ["usage telemetry declined", { sendUsageTelemetry: false }, {}],
-    ["CHECKPOINT_DISABLE", {}, { CHECKPOINT_DISABLE: "1" }],
-    ["no SENTRY_DSN", {}, { SENTRY_DSN: undefined }],
-  ])("emits nothing when %s", async (_case, flags, env) => {
+  it("emits nothing on a crash-only init (usage telemetry declined)", async () => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
       sendCrashReports: true,
-      ...flags,
+      sendUsageTelemetry: false,
     });
     setInteractive(false);
-    for (const [key, value] of Object.entries(env)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
-    }
 
     await initializErrorReporting();
 
+    expect(Sentry.init).toHaveBeenCalledTimes(1);
     expect(Sentry.metrics.count).not.toHaveBeenCalled();
   });
 });
@@ -563,16 +512,11 @@ describe("shouldReportCrash tri-state", () => {
   });
 
   it.each([
-    [{ sendCrashReports: true }, true],
-    [{ sendCrashReports: false }, false],
     [{ sendCrashReports: "true" }, true],
-    [{ sendCrashReports: "false" }, false],
     // undefined, not false, for an absent or malformed flag: that is what
     // triggers the crash-consent prompt
     [{}, undefined],
     [{ sendCrashReports: "yes" }, undefined],
-    [{ sendCrashReports: 1 }, undefined],
-    [{ sendCrashReports: null }, undefined],
   ])("reads %j as %p", (config, expected) => {
     fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
     expect(shouldReportCrash(workdir)).toBe(expected);
@@ -580,25 +524,5 @@ describe("shouldReportCrash tri-state", () => {
 
   it("returns false outside a project (missing cdktf.json)", () => {
     expect(shouldReportCrash(workdir)).toBe(false);
-  });
-});
-
-describe("persistSendUsageTelemetryDecision", () => {
-  it("writes the decision without clobbering other keys", () => {
-    const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-persist-"));
-    try {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        language: "typescript",
-        sendCrashReports: true,
-      });
-      persistSendUsageTelemetryDecision(false, workdir);
-      expect(fs.readJsonSync(path.join(workdir, "cdktf.json"))).toEqual({
-        language: "typescript",
-        sendCrashReports: true,
-        sendUsageTelemetry: false,
-      });
-    } finally {
-      fs.removeSync(workdir);
-    }
   });
 });

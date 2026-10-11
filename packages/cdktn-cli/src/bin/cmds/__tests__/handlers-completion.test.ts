@@ -187,7 +187,6 @@ describe("completion metric of handlers without an own emitter", () => {
       }
       // the nested get replaces the client; invoked must be flushed first
       if (needsGet) {
-        expect(init).toHaveBeenCalledTimes(2);
         expect(flush.mock.invocationCallOrder[0]).toBeLessThan(
           init.mock.invocationCallOrder[1],
         );

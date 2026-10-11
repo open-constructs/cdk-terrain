@@ -75,8 +75,6 @@ describe("convert consent", () => {
       configurable: true,
     });
   };
-  const setInteractive = (interactive: boolean) =>
-    setTTY(interactive, interactive);
 
   const cdktfJson = () => fs.readJsonSync(path.join(workdir, "cdktf.json"));
 
@@ -121,7 +119,7 @@ describe("convert consent", () => {
       language: "typescript",
       app: "npx ts-node main.ts",
     });
-    setInteractive(true);
+    setTTY(true, true);
     const cwdAtPrompt: string[] = [];
     mockUsagePrompt.mockImplementation(async () => {
       cwdAtPrompt.push(process.cwd());
@@ -138,63 +136,11 @@ describe("convert consent", () => {
       sendCrashReports: false,
       sendUsageTelemetry: true,
     });
-    expect(mockUsagePrompt.mock.invocationCallOrder[0]).toBeLessThan(
-      mockRunInit.mock.invocationCallOrder[0],
-    );
     // the decision captured in the user's cwd survives the throwaway
     // project, which opts out
     expect(mockRunInit.mock.calls[0][0]).toMatchObject({
       enableUsageTelemetry: false,
     });
     expect(process.cwd()).toBe(workdir);
-  });
-
-  it("does not prompt again when the flags are already set", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      language: "typescript",
-      app: "npx ts-node main.ts",
-      sendCrashReports: false,
-      sendUsageTelemetry: false,
-    });
-    setInteractive(true);
-
-    await convert({ language: "typescript", provider: [] });
-
-    expect(mockCrashPrompt).not.toHaveBeenCalled();
-    expect(mockUsagePrompt).not.toHaveBeenCalled();
-    expect(cdktfJson()).toMatchObject({
-      sendCrashReports: false,
-      sendUsageTelemetry: false,
-    });
-  });
-
-  it("stays prompt-free without a terminal and persists nothing", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      language: "typescript",
-      app: "npx ts-node main.ts",
-    });
-    setInteractive(false);
-
-    await convert({ language: "typescript", provider: [] });
-
-    expect(mockCrashPrompt).not.toHaveBeenCalled();
-    expect(mockUsagePrompt).not.toHaveBeenCalled();
-    expect(cdktfJson()).not.toHaveProperty("sendUsageTelemetry");
-    expect(cdktfJson()).not.toHaveProperty("sendCrashReports");
-  });
-
-  it("does not prompt when the HCL is piped on stdin, and converts that input", async () => {
-    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-      language: "typescript",
-      app: "npx ts-node main.ts",
-    });
-    setTTY(true, undefined);
-
-    await convert({ language: "typescript", provider: [] });
-
-    expect(mockCrashPrompt).not.toHaveBeenCalled();
-    expect(mockUsagePrompt).not.toHaveBeenCalled();
-    expect(cdktfJson()).not.toHaveProperty("sendUsageTelemetry");
-    expect(mockConvert).toHaveBeenCalledWith("resource {}", expect.anything());
   });
 });

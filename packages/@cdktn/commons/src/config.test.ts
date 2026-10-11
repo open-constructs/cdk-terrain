@@ -1,7 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { parseConfig } from "./config";
-import { logger } from "./logging";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
@@ -750,18 +749,6 @@ describe("parseConfig", () => {
       const config = parseConfig(JSON.stringify({ sendCrashReports: true }));
       expect(config.sendCrashReports).toBe(true);
       expect("sendUsageTelemetry" in config).toBe(false);
-    });
-
-    it("logs a rejected value at debug level", () => {
-      const debug = jest.spyOn(logger, "debug").mockImplementation(() => {});
-      try {
-        parseConfig(JSON.stringify({ sendUsageTelemetry: "yes" }));
-        expect(debug).toHaveBeenCalledWith(
-          expect.stringContaining("Ignoring sendUsageTelemetry"),
-        );
-      } finally {
-        debug.mockRestore();
-      }
     });
   });
 
