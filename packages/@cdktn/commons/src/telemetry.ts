@@ -166,7 +166,7 @@ const BACKEND_KINDS = [
 ];
 
 /** Backend kind for metrics: a built-in kind as-is, anything else "other". */
-export function normalizeBackendKind(backend: unknown): string {
+function normalizeBackendKind(backend: unknown): string {
   if (typeof backend !== "string") {
     return "unknown";
   }
@@ -197,7 +197,7 @@ function semverRangeOrInvalid(value: string): string {
  * value. Constraints are user-authored free text in cdktf.json, so a
  * prerelease identifier or an over-long value rejects the whole constraint.
  */
-export function normalizeProviderConstraint(value: string): string {
+function normalizeProviderConstraint(value: string): string {
   if (value.length > 64) {
     return "invalid";
   }
@@ -326,7 +326,7 @@ function withinIdentityLimits(segments: string[]): boolean {
  * (`aws`, `hashicorp/aws@~>5`, `registry.terraform.io/hashicorp/aws` are one);
  * other hosts become "private-registry", paths and malformed input "other".
  */
-export function normalizeProviderSource(source: string): string {
+function normalizeProviderSource(source: string): string {
   const segments = source.trim().toLowerCase().split("@")[0].split("/");
   if (segments.length === 3) {
     const host = segments.shift()!;
@@ -359,7 +359,7 @@ function providerIdentity(source: string): string {
  * (`terraformProviders` in `cdktf.json`, as `"aws@~>5.0"` strings or
  * `{ name, source }` objects); anything else in a stack is prebuilt.
  */
-export function getGeneratedProviderSources(
+function getGeneratedProviderSources(
   projectPath = process.cwd(),
 ): string[] {
   const entries = readRawCdktfJson(projectPath).terraformProviders;
@@ -375,7 +375,7 @@ export function getGeneratedProviderSources(
   });
 }
 
-export function classifyProviderBinding(
+function classifyProviderBinding(
   source: string,
   generatedSources: string[],
 ): "generated" | "prebuilt" {
@@ -398,7 +398,7 @@ const REMOTE_SOURCE =
  * anything else could carry a path, hostname, bucket or organization and is
  * reduced to its kind.
  */
-export function classifyModuleSource(source: string): string {
+function classifyModuleSource(source: string): string {
   const trimmed = source.trim();
   if (isLocalModule(trimmed) || path.isAbsolute(trimmed)) {
     return "local";
