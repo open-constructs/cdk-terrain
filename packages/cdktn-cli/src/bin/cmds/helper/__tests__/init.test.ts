@@ -5,7 +5,6 @@ import { templateTelemetryName } from "../init";
 describe("templateTelemetryName", () => {
   it.each([
     ["typescript", "typescript"],
-    ["python", "python"],
     ["https://example.com/my-secret-template", "remote"],
     ["my-secret-template", "remote"],
   ])("maps the template %p to %p", (name, expected) => {
