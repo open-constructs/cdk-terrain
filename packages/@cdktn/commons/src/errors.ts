@@ -11,7 +11,6 @@ export function IsErrorType(error: any, type: ErrorType): boolean {
   return error && error.__type === type;
 }
 
-/** Metric class of a thrown value: its `Errors` type, "unexpected" otherwise. */
 export function commandErrorType(error: unknown): CommandErrorType {
   for (const type of ["Usage", "External", "Internal"] as const) {
     if (IsErrorType(error, type)) {

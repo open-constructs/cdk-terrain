@@ -26,9 +26,8 @@ export function shouldReportCrash(
       fs.readFileSync(path.resolve(projectPath, "cdktf.json"), "utf8"),
     );
 
-    // tri-state: an absent or malformed flag means "unset" and triggers the
-    // interactive consent prompt; outside a project (no readable
-    // cdktf.json) crash reporting stays off
+    // undefined means "unset" and lets the caller prompt; false (the catch
+    // below) means no readable cdktf.json, so no crash reporting
     if (!("sendCrashReports" in cdktfJson)) {
       return undefined;
     }
@@ -79,10 +78,8 @@ function isPromise(p: any): p is Promise<any> {
   );
 }
 
-/**
- * `projectPath` is the project whose consent flags apply: the cwd for every
- * command, the freshly created project for `init`.
- */
+// projectPath is the project whose consent flags apply; init passes the one
+// it just created.
 export async function initializErrorReporting(
   runCrashConsentPrompt?: () => Promise<boolean>,
   runUsageTelemetryConsentPrompt?: () => Promise<boolean>,
@@ -91,9 +88,8 @@ export async function initializErrorReporting(
   let shouldReport = shouldReportCrash(projectPath);
   let usageConsent = getUsageTelemetryConsent(projectPath);
 
-  // Prompting requires a real user at a terminal (TTY and not CI) and a
-  // cdktf.json to persist the decision into; otherwise fall through to
-  // the per-flag non-interactive defaults below.
+  // stdin must be a TTY as well: a prompt would consume the input `convert`
+  // reads from it. Without a cdktf.json there is nowhere to persist the answer.
   const canPrompt =
     Boolean(process.stdin.isTTY) &&
     Boolean(process.stdout.isTTY) &&
@@ -116,15 +112,12 @@ export async function initializErrorReporting(
     }
   }
 
-  // Non-interactive defaults: crash reporting is opt-in (off), usage
-  // telemetry is on unless CHECKPOINT_DISABLE is set.
+  // unset means: crash reporting off (opt-in), usage telemetry on (opt-out)
   const crashReportingEnabled = shouldReport === true;
   const usageTelemetryEnabled =
     !process.env.CHECKPOINT_DISABLE && usageConsent !== false;
 
-  // Capture the decision while we are still in the user's working
-  // directory: some commands (convert) chdir into a temporary project
-  // before sendTelemetry runs and must not consult that project's flags.
+  // captured in the user's cwd; see CommandTelemetryState in commons
   setUsageTelemetryEnabled(usageTelemetryEnabled);
 
   if (!crashReportingEnabled && !usageTelemetryEnabled) {
@@ -151,9 +144,8 @@ export async function initializErrorReporting(
     // explicit, so a change of the SDK default cannot silently stop delivery
     enableMetrics: true,
     async beforeSend(event, hint) {
-      // Error/crash events require their own consent: when Sentry is
-      // initialized only for usage metrics, drop every error event
-      // (metrics do not pass through beforeSend).
+      // Crash events need their own consent: with usage-only consent every
+      // error event is dropped (metrics do not pass through beforeSend).
       if (!crashReportingEnabled) {
         return null;
       }
@@ -203,8 +195,7 @@ export async function initializErrorReporting(
     });
   }
 
-  // The run is counted as started here, under the command scope every
-  // command sets before it initializes reporting.
+  // every command calls Errors.setScope before this, so the scope is the command
   await startCommandTelemetry(Errors.getScope(), projectPath);
 }
 

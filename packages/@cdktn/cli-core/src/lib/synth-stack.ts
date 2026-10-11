@@ -303,11 +303,8 @@ Command output on stdout:
     });
   }
 
-  /**
-   * One `cli.command.error` per failed run, under the running command (a
-   * deploy's synth fails the deploy). Only the self-exiting paths above count
-   * here; anything thrown is counted by the entrypoint's failure reporter.
-   */
+  // Only for the self-exiting paths above, under the running command (a deploy's
+  // synth fails the deploy); a thrown error is counted by the entrypoint.
   public static async synthErrorTelemetry(
     error: unknown,
     synthOrigin?: SynthOrigin,

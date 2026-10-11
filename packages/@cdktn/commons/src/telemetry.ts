@@ -12,7 +12,6 @@ import { processState } from "./process-state";
 type AttributeValue = string | number | boolean;
 type Attributes = Record<string, AttributeValue>;
 
-/** Error class of a failed command run: a typed `Errors` value or "unexpected". */
 export const COMMAND_ERROR_TYPES = [
   "Usage",
   "External",
@@ -21,11 +20,8 @@ export const COMMAND_ERROR_TYPES = [
 ] as const;
 export type CommandErrorType = (typeof COMMAND_ERROR_TYPES)[number];
 
-/**
- * Raw `cdktf.json` read that never throws: telemetry must work outside a
- * project and must not depend on cli-core's typed config (commons cannot
- * import cli-core).
- */
+// Never throws: telemetry also runs outside a project. Raw, because commons
+// cannot import cli-core's typed config.
 function readRawCdktfJson(projectPath: string): Record<string, any> {
   try {
     return JSON.parse(
@@ -36,12 +32,7 @@ function readRawCdktfJson(projectPath: string): Record<string, any> {
   }
 }
 
-/**
- * Reads the raw `sendUsageTelemetry` flag from `cdktf.json`. Returns
- * `undefined` when the flag is unset or malformed, or no readable
- * `cdktf.json` exists;
- * `isUsageTelemetryEnabled` derives the effective state.
- */
+// undefined: unset, malformed, or no readable cdktf.json
 export function getUsageTelemetryConsent(
   projectPath = process.cwd(),
 ): boolean | undefined {
@@ -80,20 +71,14 @@ export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
   state.usageTelemetryEnabled = enabled;
 }
 
-/**
- * Whether a command already captured its consent decision. `init` initializes
- * reporting for the project it just created and must not overwrite the
- * decision of a command (`convert`) that drives it inside a throwaway project.
- */
+// `init` must not overwrite the decision of a command (`convert`) that
+// drives it inside a throwaway project.
 export function hasCapturedUsageTelemetryDecision(): boolean {
   return state.usageTelemetryEnabled !== undefined;
 }
 
-/**
- * Effective usage-telemetry gate: `CHECKPOINT_DISABLE` > the decision captured
- * at command start > `sendUsageTelemetry` in `cdktf.json` > enabled by
- * default. Independent of crash reporting (`sendCrashReports`).
- */
+// Precedence: CHECKPOINT_DISABLE > the decision captured at command start >
+// `sendUsageTelemetry` in cdktf.json > enabled.
 export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
   if (process.env.CHECKPOINT_DISABLE) {
     return false;
@@ -104,11 +89,8 @@ export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
   return getUsageTelemetryConsent(projectPath) !== false;
 }
 
-/**
- * Counts an error built by the `Errors` factories as `cli.error` by type and
- * command, never message or context (both can carry paths and user input).
- * `cli.command.error` counts failed runs; a handled Usage error counts here.
- */
+// By type and command only: message and context can carry paths and user
+// input.
 export function sendErrorTelemetry(type: string, command: string): void {
   try {
     if (!isUsageTelemetryEnabled()) {
@@ -120,11 +102,8 @@ export function sendErrorTelemetry(type: string, command: string): void {
   }
 }
 
-/**
- * Bounded flush of buffered telemetry. Call before any explicit
- * `process.exit()` on a path that may have emitted metrics: Sentry buffers
- * asynchronously and a hard exit drops the buffer.
- */
+// Call before any explicit process.exit() on a path that may have emitted
+// metrics: Sentry buffers asynchronously and a hard exit drops the buffer.
 export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   try {
     await Sentry.flush(timeoutMs);
@@ -133,9 +112,6 @@ export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   }
 }
 
-// A run counts once as cli.command.invoked at start, then once as either
-// cli.command.completed (with the scalars known only at the end) or
-// cli.command.error; a nested operation (a deploy's synth) adds only its own.
 function commandAttributes(command: string, language: unknown): Attributes {
   const ci: string | false = ciInfo.isCI ? ciInfo.name || "unknown" : false;
   const attributes: Attributes = {
@@ -148,11 +124,8 @@ function commandAttributes(command: string, language: unknown): Attributes {
   return attributes;
 }
 
-/**
- * Counts the run as `cli.command.invoked` (an attempt, whatever its outcome).
- * Called once consent is captured and Sentry initialized; later calls in the
- * same process are no-ops.
- */
+// Counts the attempt, whatever its outcome. Runs after consent is captured
+// and Sentry initialized; later calls in the same process are no-ops.
 export async function startCommandTelemetry(
   command: string,
   projectPath = process.cwd(),
@@ -179,13 +152,9 @@ export function resetCommandTelemetry(): void {
   state.language = undefined;
 }
 
-/**
- * Emits the usage telemetry of a finished command or operation as Sentry
- * metrics; payload fields reach the attributes only through the allow-lists
- * above. A silent no-op when usage telemetry is disabled or Sentry is not
- * initialized. `payload.error` counts the run as `cli.command.error` by
- * `errorType` instead.
- */
+// Payload fields reach the attributes only through the allow-lists above.
+// A no-op when usage telemetry is disabled or Sentry is not initialized;
+// `payload.error` counts the run as cli.command.error instead.
 export async function sendTelemetry(
   command: string,
   payload: Record<string, any>,

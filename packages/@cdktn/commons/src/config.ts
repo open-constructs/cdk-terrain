@@ -309,10 +309,7 @@ interface ConfigBase {
 
 const CONSENT_FLAGS = ["sendCrashReports", "sendUsageTelemetry"] as const;
 
-/**
- * Tri-state read of a consent flag: a boolean or "true"/"false" string is a
- * decision; any other value is treated as unset (`undefined`).
- */
+/** A boolean or "true"/"false" is a decision; anything else is unset. */
 export function normalizeConsentFlag(
   key: (typeof CONSENT_FLAGS)[number],
   value: unknown,

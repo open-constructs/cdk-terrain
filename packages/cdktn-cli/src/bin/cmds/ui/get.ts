@@ -70,8 +70,6 @@ export async function runGet({
     });
     await sendTelemetry("get", { language });
   } catch (e: any) {
-    // not counted here: the entrypoint's failure reporter counts the run
-    // once, under the command's scope
     stream?.stop();
     if (!IsErrorType(e, "Usage")) {
       console.error(e);

@@ -183,8 +183,6 @@ This means that your Terraform state file will be stored locally on disk in a fi
   }
 
   const ci: string | false = ciDetect();
-  // Prompts only run for a real user at a terminal; non-interactive
-  // defaults are crash reporting off, usage telemetry on.
   const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
   const sendCrashReports =
     argv.enableCrashReporting ??
@@ -302,9 +300,8 @@ This means that your Terraform state file will be stored locally on disk in a fi
     telemetryData.addedProviders = providers;
   }
 
-  // The consent answers are now persisted in the new project's cdktf.json;
-  // reporting is initialized against it so the init metric honours them.
-  // convert drives init inside a throwaway project and already captured its own.
+  // Initialized against the new project so the init metric honours the consent
+  // persisted there; `convert` drives init and already captured its own.
   if (!hasCapturedUsageTelemetryDecision()) {
     await initializErrorReporting(
       undefined,
