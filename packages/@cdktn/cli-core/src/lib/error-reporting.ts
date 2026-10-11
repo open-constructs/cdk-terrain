@@ -87,14 +87,12 @@ export async function initializErrorReporting(
     release: `cdktn-cli-${DISPLAY_VERSION}`,
     // Fixed so the SDK never falls back to the user's SENTRY_ENVIRONMENT.
     environment: "production",
-    // Usage metrics are delivered independently of trace sampling, so no
-    // trace quota is spent.
+    // metrics are delivered independently of trace sampling
     tracesSampleRate: 0,
     // Fixed constant so the machine hostname is never attached to events or
     // metrics (v10 defaults server_name/server.address to the hostname).
     serverName: "cdktn-cli",
-    // Usage metrics ride on the SDK's metrics pipeline; explicit so a future
-    // SDK default flip cannot silently stop delivery.
+    // explicit, so a change of the SDK default cannot silently stop delivery
     enableMetrics: true,
     async beforeSend(event, hint) {
       if (!hint) {
