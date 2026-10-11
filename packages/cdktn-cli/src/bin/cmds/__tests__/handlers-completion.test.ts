@@ -28,6 +28,7 @@ jest.mock("../helper/version-check", () => ({
 }));
 jest.mock("../helper/terraform-check", () => ({
   terraformCheck: jest.fn().mockResolvedValue(undefined),
+  getTerraformVersion: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("../helper/check-environment", () => ({
   ...jest.requireActual("../helper/check-environment"),
@@ -46,16 +47,26 @@ jest.mock("../ui/output", () => ({
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
 const mockProviderAddLib = jest.fn();
+const mockInitLib = jest.fn();
 jest.mock("@cdktn/cli-core", () => ({
   ...jest.requireActual("@cdktn/cli-core"),
   providerAdd: (...args: unknown[]) => mockProviderAddLib(...args),
+  init: (...args: unknown[]) => mockInitLib(...args),
 }));
 jest.mock("@cdktn/commons", () => ({
   ...jest.requireActual("@cdktn/commons"),
   getPackageVersion: jest.fn().mockResolvedValue("0.23.0"),
 }));
 
-import { get, list, output, providerAdd, watch } from "../handlers";
+import {
+  get,
+  init as initHandler,
+  list,
+  output,
+  providerAdd,
+  watch,
+} from "../handlers";
+import { verifySimilarLibraryVersion } from "../helper/check-environment";
 
 // A run that ends without an error counts exactly one cli.command.completed
 // under its own command, whatever nested operation it drove.
@@ -173,4 +184,63 @@ describe("completion metric of handlers without an own emitter", () => {
       }
     },
   );
+
+  describe("init", () => {
+    const runInit = () =>
+      initHandler({
+        local: true,
+        silent: true,
+        nonInteractive: true,
+        template: "typescript",
+        projectName: "test",
+        projectDescription: "test",
+        fromTerraformProject: "no",
+        enableCrashReporting: false,
+        enableUsageTelemetry: true,
+      });
+
+    beforeEach(() => {
+      // init refuses a non-empty directory; the scaffold writes the project
+      fs.removeSync(path.join(workdir, "cdktf.json"));
+      mockInitLib.mockImplementation(async () => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+          language: "typescript",
+          app: "npx ts-node main.ts",
+          sendCrashReports: false,
+        });
+        return true;
+      });
+      Errors.setScope("init");
+    });
+
+    it("counts completed once, after the nested get", async () => {
+      await runInit();
+
+      for (const metric of ["cli.command.invoked", "cli.command.completed"]) {
+        expect(metricCalls(metric)).toEqual([
+          [
+            metric,
+            1,
+            {
+              attributes: expect.objectContaining({
+                command: "init",
+                language: "typescript",
+              }),
+            },
+          ],
+        ]);
+      }
+    });
+
+    it("does not count completed when the nested get fails", async () => {
+      (verifySimilarLibraryVersion as jest.Mock).mockRejectedValueOnce(
+        Errors.External("library version mismatch"),
+      );
+
+      await expect(runInit()).rejects.toThrow("library version mismatch");
+
+      expect(metricCalls("cli.command.invoked")).toHaveLength(1);
+      expect(metricCalls("cli.command.completed")).toHaveLength(0);
+    });
+  });
 });

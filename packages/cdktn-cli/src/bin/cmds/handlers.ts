@@ -390,7 +390,8 @@ export async function init(argv: any) {
 
   checkForEmptyDirectory(".");
 
-  const { needsGet, codeMakerOutput, language } = await runInit(argv);
+  const { needsGet, codeMakerOutput, language, telemetry } =
+    await runInit(argv);
 
   if (needsGet) {
     if (!argv.silent) {
@@ -413,6 +414,7 @@ export async function init(argv: any) {
       "Run 'go mod tidy' after adding imports for any needed modules such as prebuilt providers",
     );
   }
+  await sendTelemetry("init", telemetry);
 }
 
 export async function list(argv: any) {

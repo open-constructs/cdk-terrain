@@ -19,22 +19,14 @@ jest.mock("@cdktn/cli-core", () => {
   };
 });
 
-jest.mock("@cdktn/commons", () => {
-  const actual = jest.requireActual("@cdktn/commons");
-  return { ...actual, sendTelemetry: jest.fn().mockResolvedValue(undefined) };
-});
-
 jest.mock("../terraform-check", () => ({
   getTerraformVersion: jest.fn().mockResolvedValue(undefined),
   terraformCheck: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { initializErrorReporting } from "@cdktn/cli-core";
-import { sendTelemetry, setUsageTelemetryEnabled } from "@cdktn/commons";
+import { setUsageTelemetryEnabled } from "@cdktn/commons";
 import { runInit } from "../init";
-
-const callOrder = (mock: unknown) =>
-  (mock as jest.Mock).mock.invocationCallOrder[0];
 
 describe("runInit telemetry wiring", () => {
   let destination: string;
@@ -65,18 +57,15 @@ describe("runInit telemetry wiring", () => {
     fs.removeSync(destination);
   });
 
-  it("initializes reporting against the destination before sending the init metric", async () => {
-    await init();
+  it("initializes reporting against the destination and returns the init metric payload", async () => {
+    const { telemetry } = await init();
 
     expect(initializErrorReporting).toHaveBeenCalledWith(
       undefined,
       undefined,
       path.resolve(destination),
     );
-    expect(callOrder(initializErrorReporting)).toBeLessThan(
-      callOrder(sendTelemetry),
-    );
-    expect(sendTelemetry).toHaveBeenCalledWith("init", {
+    expect(telemetry).toEqual({
       template: "typescript",
       addedProviders: ["aws"],
       language: "typescript",
@@ -89,6 +78,5 @@ describe("runInit telemetry wiring", () => {
     await init();
 
     expect(initializErrorReporting).not.toHaveBeenCalled();
-    expect(sendTelemetry).toHaveBeenCalledTimes(1);
   });
 });

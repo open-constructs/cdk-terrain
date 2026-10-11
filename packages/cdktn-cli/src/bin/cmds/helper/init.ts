@@ -36,7 +36,6 @@ import {
   logger,
   Errors,
   hasCapturedUsageTelemetryDecision,
-  sendTelemetry,
   ConstructsMakerProviderTarget,
   detectNodePackageManager,
   nodePackageManagerCommand,
@@ -314,15 +313,11 @@ This means that your Terraform state file will be stored locally on disk in a fi
     );
   }
 
-  await sendTelemetry("init", {
-    ...telemetryData,
-    language: cdktfConfig.language,
-  });
-
   return {
     needsGet,
     codeMakerOutput: cdktfConfig.codeMakerOutput,
     language: cdktfConfig.language,
+    telemetry: { ...telemetryData, language: cdktfConfig.language },
   };
 }
 
