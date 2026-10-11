@@ -432,7 +432,7 @@ describe("telemetry", () => {
 
     it("counts the run as completed even when a per-source metric cannot be built", async () => {
       await sendTelemetry("get", {
-        targets: [{ type: "provider", source: 7 }],
+        targets: [null, { type: "provider", source: 7 }],
       });
 
       const items = await deliveredItems();

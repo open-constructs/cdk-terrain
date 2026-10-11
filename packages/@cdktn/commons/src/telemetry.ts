@@ -693,7 +693,7 @@ function sendSourceTelemetry(
 // targets: one `{ type, source }` per generated binding
 function targetSources(targets: any[], type: string): string[] {
   return targets
-    .filter((target) => target.type === type)
+    .filter((target) => target?.type === type)
     .map((target) => target.source);
 }
 
