@@ -2,15 +2,10 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 //
-// Minimal local Sentry "sink" for end-to-end validation of the cdktn-cli
-// telemetry pipeline. Accepts Sentry envelopes on POST /api/<project>/envelope/
-// and records every envelope item type (for trace_metric, each metric's name,
-// value and attributes; for event, its server name, environment and user).
-//
-// Usage: node tools/sentry-sink.mjs [port=0]
+// Local Sentry sink for tools/validate-sentry-e2e.sh: records the envelopes
+// POSTed to /api/<project>/envelope/. Usage: node tools/sentry-sink.mjs [port=0]
 //   port 0 picks a free port; the chosen one is printed on the first line
-//   GET /__items  -> JSON array of recorded items
-//   GET /__raw    -> every decoded envelope body, concatenated
+//   GET /__items -> recorded items as JSON; GET /__raw -> decoded envelope bodies
 import * as http from "node:http";
 import * as zlib from "node:zlib";
 
