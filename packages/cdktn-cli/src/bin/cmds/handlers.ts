@@ -704,6 +704,10 @@ export async function providerAdd(argv: any) {
 }
 
 export async function providerUpgrade(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
 
   const language = config.language;
@@ -771,9 +775,14 @@ export async function providerUpgrade(argv: any) {
       "Update your imports to reflect this modules upgrade, then please run 'go mod tidy' to resolve newly added modules",
     );
   }
+  await sendTelemetry("provider upgrade", {});
 }
 
 export async function providerList(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
   const language = config.language;
 
@@ -793,6 +802,7 @@ export async function providerList(argv: any) {
   const allProviders = await manager.allProviders();
   if (argv.json) {
     console.log(JSON.stringify(allProviders));
+    await sendTelemetry("provider list", {});
     return;
   }
   const data = [];
@@ -820,4 +830,5 @@ export async function providerList(argv: any) {
   }
   await terraformCheck();
   printProviderList(data);
+  await sendTelemetry("provider list", {});
 }

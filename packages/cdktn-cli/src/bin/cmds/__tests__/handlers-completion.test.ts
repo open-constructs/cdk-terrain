@@ -48,10 +48,17 @@ jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
 const mockProviderAddLib = jest.fn();
 const mockInitLib = jest.fn();
+const mockGetLib = jest.fn();
+const mockDependencyManager = {
+  allProviders: jest.fn(),
+  upgradeProvider: jest.fn(),
+};
 jest.mock("@cdktn/cli-core", () => ({
   ...jest.requireActual("@cdktn/cli-core"),
   providerAdd: (...args: unknown[]) => mockProviderAddLib(...args),
   init: (...args: unknown[]) => mockInitLib(...args),
+  get: (...args: unknown[]) => mockGetLib(...args),
+  DependencyManager: jest.fn(() => mockDependencyManager),
 }));
 jest.mock("@cdktn/commons", () => ({
   ...jest.requireActual("@cdktn/commons"),
@@ -64,9 +71,12 @@ import {
   list,
   output,
   providerAdd,
+  providerList,
+  providerUpgrade,
   watch,
 } from "../handlers";
 import { verifySimilarLibraryVersion } from "../helper/check-environment";
+import { terraformCheck } from "../helper/terraform-check";
 
 // A run that ends without an error counts exactly one cli.command.completed
 // under its own command, whatever nested operation it drove.
@@ -184,6 +194,90 @@ describe("completion metric of handlers without an own emitter", () => {
       }
     },
   );
+
+  describe("provider list and provider upgrade", () => {
+    let log: jest.SpyInstance;
+
+    const expectInvokedAndCompletedOnce = (command: string) => {
+      for (const metric of ["cli.command.invoked", "cli.command.completed"]) {
+        expect(metricCalls(metric)).toEqual([
+          [
+            metric,
+            1,
+            {
+              attributes: expect.objectContaining({
+                command,
+                language: "typescript",
+              }),
+            },
+          ],
+        ]);
+      }
+    };
+
+    beforeEach(() => {
+      log = jest.spyOn(console, "log").mockImplementation(() => {});
+      mockDependencyManager.allProviders.mockResolvedValue({
+        local: [{ providerName: "aws", providerConstraint: "~> 5.0" }],
+        prebuilt: [],
+      });
+      mockDependencyManager.upgradeProvider.mockResolvedValue({
+        addedLocalProvider: true,
+      });
+      mockGetLib.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      log.mockRestore();
+    });
+
+    it.each([true, false])(
+      "provider list (json %p) counts invoked and completed once each",
+      async (json) => {
+        Errors.setScope("provider list");
+
+        await providerList({ json });
+
+        expect(log).toHaveBeenCalledWith(expect.stringContaining("aws"));
+        expectInvokedAndCompletedOnce("provider list");
+      },
+    );
+
+    it("provider list does not count completed when it fails before printing", async () => {
+      (terraformCheck as jest.Mock).mockRejectedValueOnce(
+        Errors.Usage("unsupported terraform"),
+      );
+      Errors.setScope("provider list");
+
+      await expect(providerList({ json: false })).rejects.toThrow(
+        "unsupported terraform",
+      );
+
+      expect(metricCalls("cli.command.invoked")).toHaveLength(1);
+      expect(metricCalls("cli.command.completed")).toHaveLength(0);
+    });
+
+    it("provider upgrade counts invoked and completed once each", async () => {
+      Errors.setScope("provider upgrade");
+
+      await providerUpgrade({ provider: ["aws@~>5.0"] });
+
+      expect(mockGetLib).toHaveBeenCalledTimes(1);
+      expectInvokedAndCompletedOnce("provider upgrade");
+    });
+
+    it("provider upgrade does not count completed when generating the bindings fails", async () => {
+      mockGetLib.mockRejectedValueOnce(new Error("generation failed"));
+      Errors.setScope("provider upgrade");
+
+      await expect(
+        providerUpgrade({ provider: ["aws@~>5.0"] }),
+      ).rejects.toThrow("generation failed");
+
+      expect(metricCalls("cli.command.invoked")).toHaveLength(1);
+      expect(metricCalls("cli.command.completed")).toHaveLength(0);
+    });
+  });
 
   describe("init", () => {
     const runInit = () =>
