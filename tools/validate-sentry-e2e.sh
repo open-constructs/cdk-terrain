@@ -199,7 +199,8 @@ EXPECTED_RUNS="$(printf '%s\n' \
 $RUNS"
 
 # Stack metrics are aggregated per run: one item per distinct identity, its
-# value the number of stacks sharing it. Sorted as "<metric> <identity> <value>".
+# value the number of stacks sharing it and its counts summed over them.
+# Sorted as "<metric> <identity> <value>".
 STACK_METRICS="$(node -e '
   const lines = [];
   for (const item of JSON.parse(process.argv[1])) {
@@ -207,14 +208,18 @@ STACK_METRICS="$(node -e '
       if (name.startsWith("cli.stack")) {
         const identity =
           attributes.provider ?? attributes.resource_type ?? attributes.backend;
-        lines.push(`${name} ${identity} ${value}`);
+        const sums =
+          name === "cli.stack"
+            ? ` overrides=${attributes.override_count} imports=${attributes.import_count}`
+            : "";
+        lines.push(`${name} ${identity} ${value}${sums}`);
       }
     }
   }
   console.log(lines.sort().join("\n"));
 ' "$ITEMS")"
 EXPECTED_STACK_METRICS="$(printf '%s\n' \
-  'cli.stack local 2' \
+  'cli.stack local 2 overrides=1 imports=1' \
   'cli.stack.override aws_s3_bucket 1' \
   'cli.stack.provider hashicorp/aws 2' \
   'cli.stack.provider hashicorp/random 2' \
@@ -223,7 +228,7 @@ EXPECTED_STACK_METRICS="$(printf '%s\n' \
 [ "$STACK_METRICS" = "$EXPECTED_STACK_METRICS" ] \
   || fail "stack metrics differ from one item per distinct backend, provider and overridden type; got:
 $STACK_METRICS"
-for key in binding library_version override_count import_count resource_type; do
+for key in binding library_version; do
   echo "$ITEMS" | grep -q "\"$key\"" \
     || fail "$key attribute missing on the stack metrics"
 done
