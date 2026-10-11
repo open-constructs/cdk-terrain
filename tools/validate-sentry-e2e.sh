@@ -4,7 +4,7 @@
 #
 # End-to-end check of cdktn-cli telemetry on the real esbuild bundle: builds a
 # throwaway copy of it with a local-sink DSN, runs convert (success), a failing
-# synth (error), a hand-written stack (per-stack metrics) and a crashing
+# synth (error), two hand-written stacks (stack metrics) and a crashing
 # command (entrypoint failure path), then asserts on what reached
 # tools/sentry-sink.mjs. The shipped bundle is never touched.
 set -euo pipefail
@@ -95,51 +95,50 @@ cat > fake-app.js <<'JS'
 const fs = require("fs");
 const path = require("path");
 const outdir = process.env.CDKTF_OUTDIR;
-const name = "E2E-SECRET-STACK-NAME";
-fs.mkdirSync(path.join(outdir, "stacks", name), { recursive: true });
-fs.writeFileSync(
-  path.join(outdir, "stacks", name, "cdk.tf.json"),
-  JSON.stringify({
-    "//": {
-      metadata: {
-        version: "0.0.0-e2e",
-        stackName: name,
-        backend: "local",
-        overrides: { aws_s3_bucket: ["tags"] },
-        imports: { aws_s3_bucket: ["e2e-secret-resource-id"] },
-      },
-      outputs: {},
+const aws = { source: "aws", version: "~> 5.0" };
+const random = { source: "hashicorp/random", version: "3.6.0" };
+const stacks = {
+  "E2E-SECRET-STACK-NAME": {
+    metadata: {
+      overrides: { aws_s3_bucket: ["tags"] },
+      imports: { aws_s3_bucket: ["e2e-secret-resource-id"] },
     },
-    terraform: {
-      required_providers: {
-        aws: { source: "aws", version: "~> 5.0" },
-        random: { source: "hashicorp/random", version: "3.6.0" },
-        vault: { source: "tfe.leak-host.example/leak-org/vault", version: "~> 3.0" },
-        local: { source: "./leak-provider" },
-      },
+    providers: {
+      aws,
+      random,
+      vault: { source: "tfe.leak-host.example/leak-org/vault", version: "~> 3.0" },
+      local: { source: "./leak-provider" },
     },
-  }),
-);
-fs.writeFileSync(
-  path.join(outdir, "manifest.json"),
-  JSON.stringify({
-    version: "0.0.0-e2e",
-    stacks: {
-      [name]: {
-        name,
-        constructPath: name,
-        workingDirectory: `stacks/${name}`,
-        synthesizedStackPath: `stacks/${name}/cdk.tf.json`,
-        stackMetadataPath: `stacks/${name}/metadata.json`,
-        annotations: [],
-        dependencies: [],
+  },
+  "E2E-SECRET-STACK-NAME-2": { metadata: {}, providers: { aws, random } },
+};
+const manifest = { version: "0.0.0-e2e", stacks: {} };
+for (const [name, { metadata, providers }] of Object.entries(stacks)) {
+  fs.mkdirSync(path.join(outdir, "stacks", name), { recursive: true });
+  fs.writeFileSync(
+    path.join(outdir, "stacks", name, "cdk.tf.json"),
+    JSON.stringify({
+      "//": {
+        metadata: { version: "0.0.0-e2e", stackName: name, backend: "local", ...metadata },
+        outputs: {},
       },
-    },
-  }),
-);
+      terraform: { required_providers: providers },
+    }),
+  );
+  manifest.stacks[name] = {
+    name,
+    constructPath: name,
+    workingDirectory: `stacks/${name}`,
+    synthesizedStackPath: `stacks/${name}/cdk.tf.json`,
+    stackMetadataPath: `stacks/${name}/metadata.json`,
+    annotations: [],
+    dependencies: [],
+  };
+}
+fs.writeFileSync(path.join(outdir, "manifest.json"), JSON.stringify(manifest));
 JS
 
-echo "==> STACK trigger: cdktn synth (hand-written stack)"
+echo "==> STACK trigger: cdktn synth (two hand-written stacks)"
 node "$CDKTN" synth --check-code-maker-output=false >/dev/null \
   || { echo "FAIL: the stack trigger synth exited non-zero; an unrelated synth regression also fails here" >&2; exit 1; }
 
@@ -177,7 +176,7 @@ RUNS="$(node -e '
   for (const item of JSON.parse(process.argv[1])) {
     for (const metric of item.metrics ?? []) {
       if (metric.name.startsWith("cli.command.")) {
-        runs.push(`${metric.name} ${metric.command}`);
+        runs.push(`${metric.name} ${metric.attributes.command}`);
       }
     }
   }
@@ -195,18 +194,36 @@ EXPECTED_RUNS="$(printf '%s\n' \
 [ "$RUNS" = "$EXPECTED_RUNS" ] \
   || fail "run metrics differ from one invoked per run plus one completed or error; got:
 $RUNS"
-echo "$ITEMS" | grep -q '"cli.stack"' \
-  || fail "cli.stack metric missing (stack trigger)"
-echo "$ITEMS" | grep -q '"cli.stack.override"' \
-  || fail "cli.stack.override metric missing (stack trigger)"
+
+# Stack metrics are aggregated per run: one item per distinct identity, its
+# value the number of stacks sharing it. Sorted as "<metric> <identity> <value>".
+STACK_METRICS="$(node -e '
+  const lines = [];
+  for (const item of JSON.parse(process.argv[1])) {
+    for (const { name, value, attributes } of item.metrics ?? []) {
+      if (name.startsWith("cli.stack")) {
+        const identity =
+          attributes.provider ?? attributes.resource_type ?? attributes.backend;
+        lines.push(`${name} ${identity} ${value}`);
+      }
+    }
+  }
+  console.log(lines.sort().join("\n"));
+' "$ITEMS")"
+EXPECTED_STACK_METRICS="$(printf '%s\n' \
+  'cli.stack local 2' \
+  'cli.stack.override aws_s3_bucket 1' \
+  'cli.stack.provider hashicorp/aws 2' \
+  'cli.stack.provider hashicorp/random 2' \
+  'cli.stack.provider other 1' \
+  'cli.stack.provider private-registry 1')"
+[ "$STACK_METRICS" = "$EXPECTED_STACK_METRICS" ] \
+  || fail "stack metrics differ from one item per distinct backend, provider and overridden type; got:
+$STACK_METRICS"
 for key in binding library_version override_count import_count resource_type; do
   echo "$ITEMS" | grep -q "\"$key\"" \
     || fail "$key attribute missing on the stack metrics"
 done
-echo "$RAW" | grep -q 'hashicorp/random' \
-  || fail "normalized provider source missing from the stack metrics"
-echo "$RAW" | grep -q 'private-registry' \
-  || fail "private-registry provider was not reduced to its kind"
 # matched as key/value adjacency inside the metric item, so a "production"
 # elsewhere in the envelope cannot satisfy the check
 echo "$RAW" | grep -q '"sentry.environment":{"value":"production"' \
