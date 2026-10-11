@@ -12,6 +12,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTDIR="$ROOT/packages/cdktn-cli/bundle-e2e"
 CDKTN="$OUTDIR/bin/cdktn.js"
+
+# convert --language typescript never reads dist, so `pnpm build` is enough.
+for output in \
+  packages/@cdktn/commons/build/index.js \
+  packages/@cdktn/cli-core/build/lib/index.js \
+  packages/@cdktn/hcl2json/build/index.js \
+  packages/@cdktn/hcl2json/main.wasm.gz \
+  packages/@cdktn/hcl2cdk/build/index.js \
+  packages/cdktn/lib/index.js; do
+  [ -f "$ROOT/$output" ] || { echo "FAIL: $output is missing; run pnpm build first" >&2; exit 1; }
+done
+
 SINK_LOG="$(mktemp)"
 SINK_PID=""
 
