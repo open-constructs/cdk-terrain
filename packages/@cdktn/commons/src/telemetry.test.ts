@@ -526,6 +526,30 @@ describe("telemetry", () => {
       expect(providers[3]).not.toHaveProperty("version_constraint");
     });
 
+    it("classifies bindings against the project the command started in, not the current cwd", async () => {
+      await startCommandTelemetry("diff");
+      const elsewhere = path.join(workdir, "elsewhere");
+      fs.mkdirSync(elsewhere);
+      fs.writeJsonSync(path.join(elsewhere, "cdktf.json"), {
+        terraformProviders: ["google"],
+      });
+      process.chdir(elsewhere);
+
+      await sendTelemetry("diff", { stackMetadata, requiredProviders });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const providers = parseMetricItems(envelopeBodies)
+        .filter((i) => i.name === "cli.stack.provider")
+        .map(attributeValues);
+      expect(providers.map((p) => [p.provider, p.binding])).toEqual([
+        ["hashicorp/aws", "generated"],
+        ["kreuzwerker/docker", "generated"],
+        ["hashicorp/google", "prebuilt"],
+        ["hashicorp/random", "prebuilt"],
+        ["private-registry", "prebuilt"],
+      ]);
+    });
+
     it("counts failed stacks and never serializes their failure messages", async () => {
       await sendTelemetry("destroy", {
         stackMetadata,

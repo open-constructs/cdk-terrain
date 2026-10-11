@@ -13,6 +13,7 @@ import {
 import { performance } from "perf_hooks";
 import {
   Errors,
+  SynthOrigin,
   commandErrorType,
   flushTelemetry,
   logger,
@@ -75,8 +76,6 @@ interface ManifestJson {
   version: string;
   stacks: StackManifest[];
 }
-
-export type SynthOrigin = "watch";
 
 export class SynthStack {
   public static async synth(

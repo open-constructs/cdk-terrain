@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: MPL-2.0
 import {
   Errors,
+  SynthOrigin,
   ensureAllSettledBeforeThrowing,
   logger,
   readConfigSync,
   sendTelemetry,
 } from "@cdktn/commons";
-import { SynthesizedStack, SynthOrigin, SynthStack } from "./synth-stack";
+import { SynthesizedStack, SynthStack } from "./synth-stack";
 import { printAnnotations } from "./synth";
 import {
   CdktfStack,

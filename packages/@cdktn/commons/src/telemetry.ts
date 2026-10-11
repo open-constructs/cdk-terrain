@@ -72,6 +72,9 @@ type CommandTelemetryState = {
   packageManager?: PackageManager;
   // captured with the consent decision, for the same reason
   projectTargetAttributes?: Attributes;
+  // Captured at start like `language`: the bindings the started project
+  // generates, whatever directory the run is in when it reports its stacks.
+  generatedProviderSources?: string[];
 };
 
 // Shared by both bundle copies: the handlers' copy captures the decision and
@@ -413,14 +416,15 @@ export function classifyModuleSource(source: string): string {
     : "other";
 }
 
-// The synth origins the CLI passes through; see SynthOrigin in cli-core.
-const SYNTH_ORIGINS = ["watch"];
+/** What triggered a synth other than the command itself. */
+export const SYNTH_ORIGINS = ["watch"] as const;
+export type SynthOrigin = (typeof SYNTH_ORIGINS)[number];
 
 type ScalarAttribute = {
   attribute: string;
   type: "string" | "number" | "boolean";
   /** Enumerated values; a value outside the set is dropped. */
-  values?: string[];
+  values?: readonly string[];
 };
 
 // Scalar payload fields forwarded as attributes, per command, each with the
@@ -500,7 +504,8 @@ function sendStackTelemetry(
   requiredProviders: unknown[],
   attributes: Attributes,
 ): void {
-  const generatedSources = getGeneratedProviderSources();
+  const generatedSources =
+    state.generatedProviderSources ?? getGeneratedProviderSources();
   stackMetadata.forEach((entry, index) => {
     // a null or non-object entry is not a stack: counting one would inflate
     // the stack count with metadata the library never wrote
@@ -638,6 +643,7 @@ export async function startCommandTelemetry(
   const cdktfJson = readRawCdktfJson(projectPath);
   state.language = cdktfJson.language;
   state.packageManager = detectPackageManager(projectPath, cdktfJson);
+  state.generatedProviderSources = getGeneratedProviderSources(projectPath);
   try {
     if (!isUsageTelemetryEnabled()) {
       return;
@@ -654,6 +660,7 @@ export function resetCommandTelemetry(): void {
   state.startedCommand = undefined;
   state.language = undefined;
   state.packageManager = undefined;
+  state.generatedProviderSources = undefined;
 }
 
 // Payload fields reach the attributes only through the allow-lists above.
