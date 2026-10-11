@@ -58,8 +58,7 @@ export async function runGet({
   stream?.start();
   stream?.setBar(`${GetStatus.STARTING}...`, { spinner: true });
 
-  // the generator reports one target at a time; collected into a single
-  // command metric with per-binding counts
+  // the generator reports one target at a time; sent as one `get` metric
   const generatedTargets: { type: string; source: string }[] = [];
   try {
     await get({

@@ -144,8 +144,7 @@ function detectPackageManager(
 const CONSTRAINT_PART = /^(=|!=|>=|<=|>|<|~>)?\s*(\d+(?:\.\d+){0,2})$/;
 const RELEASE_VERSION = /^\d+\.\d+\.\d+/;
 
-// Terraform's built-in backend kinds; anything else (a typo, a hand-edited
-// value) is reduced to "other".
+// Terraform's built-in backend kinds; anything else is sent as "other"
 const BACKEND_KINDS = [
   "local",
   "remote",
@@ -165,7 +164,6 @@ const BACKEND_KINDS = [
   "manta",
 ];
 
-/** Backend kind for metrics: a built-in kind as-is, anything else "other". */
 function normalizeBackendKind(backend: unknown): string {
   if (typeof backend !== "string") {
     return "unknown";
@@ -191,12 +189,9 @@ function semverRangeOrInvalid(value: string): string {
   return range && !/\d[-+]/.test(value) ? range : "invalid";
 }
 
-/**
- * Terraform provider constraint: comma-separated operators over versions,
- * re-joined as "~> 5.0, != 5.1.0" so spacing variants collapse into one
- * value. Constraints are user-authored free text in cdktf.json, so a
- * prerelease identifier or an over-long value rejects the whole constraint.
- */
+// Re-joined as "~> 5.0, != 5.1.0" so spacing variants are one value. The
+// constraint is user-authored, so a prerelease identifier or an over-long
+// value rejects it whole.
 function normalizeProviderConstraint(value: string): string {
   if (value.length > 64) {
     return "invalid";
@@ -321,11 +316,9 @@ function withinIdentityLimits(segments: string[]): boolean {
   );
 }
 
-/**
- * Provider identity for metrics: only public-registry `namespace/type` is sent
- * (`aws`, `hashicorp/aws@~>5`, `registry.terraform.io/hashicorp/aws` are one);
- * other hosts become "private-registry", paths and malformed input "other".
- */
+// Only a public-registry `namespace/type` is sent (`aws`, `hashicorp/aws@~>5`
+// and `registry.terraform.io/hashicorp/aws` are one); other hosts become
+// "private-registry", paths and malformed input "other".
 function normalizeProviderSource(source: string): string {
   const segments = source.trim().toLowerCase().split("@")[0].split("/");
   if (segments.length === 3) {
@@ -354,11 +347,8 @@ function providerIdentity(source: string): string {
     : normalized;
 }
 
-/**
- * Identities of the providers a project generates bindings for
- * (`terraformProviders` in `cdktf.json`, as `"aws@~>5.0"` strings or
- * `{ name, source }` objects); anything else in a stack is prebuilt.
- */
+// From `terraformProviders` in cdktf.json (`"aws@~>5.0"` strings or
+// `{ name, source }` objects); a stack provider not listed there is prebuilt.
 function getGeneratedProviderSources(projectPath = process.cwd()): string[] {
   const entries = readRawCdktfJson(projectPath).terraformProviders;
   if (!Array.isArray(entries)) {
@@ -391,11 +381,8 @@ const REGISTRY_SEGMENT = /^[a-z0-9][a-z0-9_-]*$/;
 const REMOTE_SOURCE =
   /^(?:git|hg|s3|gcs)::|^git@|:\/\/|^github\.com\/|^bitbucket\.org\/|amazonaws\.com\/|googleapis\.com\//i;
 
-/**
- * Module identity for metrics. Only public registry sources are sent as-is;
- * anything else could carry a path, hostname, bucket or organization and is
- * reduced to its kind.
- */
+// Only public registry sources are sent as-is; anything else could carry a
+// path, hostname, bucket or organization and is reduced to its kind.
 function classifyModuleSource(source: string): string {
   const trimmed = source.trim();
   if (isLocalModule(trimmed) || path.isAbsolute(trimmed)) {
@@ -467,8 +454,7 @@ function scalarAttributeValue(
   return value as AttributeValue;
 }
 
-// Number of entries per key of a metadata group such as
-// `overrides: { aws_s3_bucket: ["tags", "region"] }`.
+// `overrides: { aws_s3_bucket: ["tags", "region"] }` gives { aws_s3_bucket: 2 }
 function groupSizes(group: unknown): Record<string, number> {
   const sizes: Record<string, number> = {};
   if (group && typeof group === "object" && !Array.isArray(group)) {
@@ -616,11 +602,7 @@ function emitGroups(
   }
 }
 
-/**
- * Stack metrics for synth/diff/deploy/destroy from the stack metadata
- * block and `required_providers`: backend and library version, override /
- * import / moved counts and the providers used, never names or ids.
- */
+// counts and allow-listed kinds only, never names or ids
 function sendStackTelemetry(
   stackMetadata: unknown[],
   requiredProviders: unknown[],
@@ -708,7 +690,7 @@ function sendSourceTelemetry(
   emitGroups(metric, MAX_BINDING_SOURCES, groups, attributes);
 }
 
-// `get` payload: one `{ type, source }` per generated binding
+// targets: one `{ type, source }` per generated binding
 function targetSources(targets: any[], type: string): string[] {
   return targets
     .filter((target) => target.type === type)

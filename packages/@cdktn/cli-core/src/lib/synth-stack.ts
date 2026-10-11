@@ -279,11 +279,8 @@ Command output on stdout:
     return stacks;
   }
 
-  /**
-   * The telemetry-relevant slice of the synthesized stacks: the metadata
-   * block and `required_providers`, one entry per stack. Resource config
-   * and outputs stay out of the payload.
-   */
+  // Per stack, only the metadata block and `required_providers`: resource
+  // config and outputs never enter the payload.
   public static telemetryPayload(stacks: SynthesizedStack[]): {
     stackMetadata: unknown[];
     requiredProviders: unknown[];

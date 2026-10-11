@@ -431,10 +431,8 @@ export class CdktfProject {
     );
   }
 
-  /**
-   * Emits the stack metrics, with the failed-stack count, before the failure
-   * is thrown; the failed run itself is counted by the entrypoint's reporter.
-   */
+  // Stack metrics go out before the failure is thrown; the entrypoint's
+  // reporter counts the failed run.
   private async finishStackRun(
     command: "diff" | "deploy" | "destroy",
     stacks: SynthesizedStack[],
