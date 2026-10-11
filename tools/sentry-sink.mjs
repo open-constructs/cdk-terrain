@@ -11,7 +11,6 @@
 //   port 0 picks a free port; the chosen one is printed on the first line
 //   GET /__items  -> JSON array of recorded items
 //   GET /__raw    -> every decoded envelope body, concatenated
-//   GET /__reset  -> clears recorded items and bodies
 import * as http from "node:http";
 import * as zlib from "node:zlib";
 
@@ -57,11 +56,6 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && req.url === "/__raw") {
     res.setHeader("content-type", "text/plain");
     return res.end(bodies.join("\n"));
-  }
-  if (req.method === "GET" && req.url === "/__reset") {
-    items.length = 0;
-    bodies.length = 0;
-    return res.end("ok");
   }
 
   const chunks = [];
