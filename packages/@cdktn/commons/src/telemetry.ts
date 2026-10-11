@@ -81,9 +81,9 @@ function releaseVersion(value: string | undefined): string | undefined {
   return RELEASE_VERSION.exec(value ?? "")?.[0];
 }
 
-// Normalized so spacing variants collapse into one value; a prerelease or
-// build identifier is free text and rejects the range (hyphen ranges are
-// written " - ", so a hyphen right after a digit is always a prerelease).
+// Normalized so spacing variants collapse into one value. Hyphen ranges are
+// written " - ", so a hyphen right after a digit is always a prerelease:
+// free text (see releaseVersion), which rejects the range.
 function semverRangeOrInvalid(value: string): string {
   const range = value.length <= 64 ? semver.validRange(value) : null;
   return range && !/\d[-+]/.test(value) ? range : "invalid";

@@ -238,7 +238,6 @@ describe("telemetry", () => {
       const invoked = items.find((i) => i.name === "cli.command.invoked")!;
       const completed = items.find((i) => i.name === "cli.command.completed")!;
       const keys = Object.keys(invoked.attributes);
-      // the start and end metrics carry the same base set
       expect(Object.keys(completed.attributes).sort()).toEqual(
         [...keys].sort(),
       );
