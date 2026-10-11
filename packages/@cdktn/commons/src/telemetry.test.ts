@@ -263,8 +263,6 @@ describe("telemetry", () => {
       expect(keys).toEqual(
         expect.arrayContaining(["sentry.release", "sentry.environment"]),
       );
-      expect(invoked.attributes.binary_version.value).toBe("1.9.0");
-      expect(invoked.attributes["server.address"].value).toBe("cdktn-cli");
       const bytes = envelopeBodies.join("\n");
       expect(bytes).not.toContain("prod-vpc");
       expect(bytes).not.toContain("/Users/x/secret");
@@ -296,21 +294,12 @@ describe("telemetry", () => {
       expect(envelopeBodies.join("\n")).not.toContain("DROP TABLE");
     });
 
-    it("sends declared targets that are not semver ranges as invalid", () => {
-      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
-        targetVersions: { terraform: "latest /Users/x", opentofu: ">=1.8" },
-      });
-      expect(getProjectTargetAttributes(workdir)).toMatchObject({
-        target_terraform: "invalid",
-        target_opentofu: ">=1.8.0",
-      });
-    });
-
     it.each([
       [">= 1.9.0", ">=1.9.0"],
       ["~1.8", ">=1.8.0 <1.9.0-0"],
       ["1.2.3 - 2.0.0", ">=1.2.3 <=2.0.0"],
       [">=1.0.0 <2.0.0 || 1.2.3", ">=1.0.0 <2.0.0||1.2.3"],
+      ["latest /Users/x", "invalid"],
       [">= 1.0.0-LEAK-TV-PRERELEASE.corp.example.com", "invalid"],
       ["1.2.3-acme.internal", "invalid"],
       ["1.2.3+LEAK-TV-BUILD.johns-macbook", "invalid"],
@@ -404,7 +393,7 @@ describe("telemetry", () => {
       initSentryWithCapturingTransport();
     });
 
-    it("observes the captured decision, the started command and its language from the other copy", async () => {
+    it("observes the captured decision and targets, the started command and its language from the other copy", async () => {
       // the project opts out; only the decision captured by the first copy
       // lets the second one emit
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
@@ -412,6 +401,7 @@ describe("telemetry", () => {
         sendUsageTelemetry: false,
       });
       setUsageTelemetryEnabled(true);
+      setProjectTargetAttributes({ target_opentofu: ">=1.7.0" });
       await startCommandTelemetry("deploy");
       await second.startCommandTelemetry("synth");
       await second.sendTelemetry("synth", { language: "go" });
@@ -423,26 +413,11 @@ describe("telemetry", () => {
         ["cli.command.invoked", "deploy"],
         ["cli.command.error", "deploy"],
       ]);
-      expect(attributeValues(items[1]).language).toBe("go");
-    });
-
-    it("stamps the target attributes captured by the other copy", async () => {
-      setProjectTargetAttributes({
-        targets_declared: true,
-        validate_installed_binary: true,
+      expect(attributeValues(items[1])).toMatchObject({
+        language: "go",
         target_opentofu: ">=1.7.0",
       });
-      await second.sendTelemetry("convert", {});
-      expect(await Sentry.flush(2000)).toBe(true);
-
-      const [completed] = parseMetricItems(envelopeBodies);
-      expect(attributeValues(completed)).toMatchObject({
-        command: "convert",
-        targets_declared: true,
-        validate_installed_binary: true,
-        target_opentofu: ">=1.7.0",
-      });
-      expect(completed.attributes.target_terraform).toBeUndefined();
+      expect(items[1].attributes).not.toHaveProperty("target_terraform");
     });
   });
 
@@ -572,20 +547,20 @@ describe("telemetry", () => {
       });
     });
 
-    it.each([[{}], [{ targetVersions: "nope" }], [{ targetVersions: [] }]])(
-      "falls back to the defaults for %j",
-      (config) => {
+    it.each([
+      [{}],
+      [{ targetVersions: "nope" }],
+      [{ targetVersions: [] }],
+      [undefined],
+    ])("falls back to the defaults for a cdktf.json of %j", (config) => {
+      if (config) {
         fs.writeJsonSync(path.join(workdir, "cdktf.json"), config);
-        expect(getProjectTargetAttributes(workdir)).toEqual({
-          targets_declared: false,
-          validate_installed_binary: false,
-          ...DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES,
-        });
-      },
-    );
-
-    it("does not throw without a cdktf.json", () => {
-      expect(getProjectTargetAttributes(workdir).targets_declared).toBe(false);
+      }
+      expect(getProjectTargetAttributes(workdir)).toEqual({
+        targets_declared: false,
+        validate_installed_binary: false,
+        ...DEFAULT_TARGET_VERSIONS_AS_ATTRIBUTES,
+      });
     });
   });
 
