@@ -20,11 +20,8 @@ export type {
   TerraformCliName,
 } from "cdktn/lib/validations";
 
-/**
- * Outcome of probing the configured Terraform-compatible binary:
- * `missing` when it could not be spawned, `unknown` when its version output
- * was not recognized or it failed or timed out.
- */
+// `missing`: the binary could not be spawned; `unknown`: its version output
+// was not recognized, or it failed or timed out.
 export interface TerraformCliProbe {
   readonly name: TerraformCliName | "missing";
   readonly version?: string;
@@ -40,10 +37,7 @@ const probe = processState<{ output?: Promise<string> }>(
   () => ({}),
 );
 
-/**
- * Test seam for the process-global probe: seeds the raw `version` output the
- * parsers see, or clears it when called without an argument.
- */
+/** Test seam: seeds the raw `version` output, or clears it when omitted. */
 export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
   probe.output = output;
 }
@@ -69,10 +63,8 @@ export function terraformCli(): Promise<TerraformCliProbe> {
     }));
 }
 
-/**
- * Version string for `cdktn debug`; `undefined` when the probe fails, since
- * an `Errors.Usage` value would count a phantom `cli.error`.
- */
+// `undefined` when the probe fails: building an Errors.Usage here would
+// count a phantom cli.error.
 export function terraformVersion(): Promise<string | undefined> {
   return versionOutput()
     .then((output) => parseTerraformCliVersion(output).version)

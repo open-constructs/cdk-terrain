@@ -60,8 +60,7 @@ type CommandTelemetryState = {
   // The raw `language` of the project the run started in, so every metric of
   // the run (the error metric has no payload) carries the one `invoked` did.
   language?: unknown;
-  // Captured alongside the consent decision, for the same reason: the project
-  // the user ran the command in, not the one the command may chdir into.
+  // captured with the consent decision, for the same reason
   projectTargetAttributes?: Attributes;
 };
 
@@ -112,11 +111,8 @@ export function isUsageTelemetryEnabled(projectPath = process.cwd()): boolean {
   return getUsageTelemetryConsent(projectPath) !== false;
 }
 
-/**
- * The project's declared Terraform/OpenTofu targets as metric attributes.
- * Falls back to the CLI defaults so every metric carries the ranges the
- * command actually validated against.
- */
+// Falls back to the CLI defaults, so every metric carries the ranges the
+// command validated against.
 export function getProjectTargetAttributes(
   projectPath = process.cwd(),
 ): Attributes {
@@ -147,7 +143,6 @@ export function setProjectTargetAttributes(
   state.projectTargetAttributes = attributes;
 }
 
-/** Binary attributes from the version probe. */
 export async function getBinaryAttributes(
   probe: Promise<TerraformCliProbe> = terraformCli(),
 ): Promise<Attributes> {
