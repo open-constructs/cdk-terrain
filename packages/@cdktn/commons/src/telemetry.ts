@@ -359,9 +359,7 @@ function providerIdentity(source: string): string {
  * (`terraformProviders` in `cdktf.json`, as `"aws@~>5.0"` strings or
  * `{ name, source }` objects); anything else in a stack is prebuilt.
  */
-function getGeneratedProviderSources(
-  projectPath = process.cwd(),
-): string[] {
+function getGeneratedProviderSources(projectPath = process.cwd()): string[] {
   const entries = readRawCdktfJson(projectPath).terraformProviders;
   if (!Array.isArray(entries)) {
     return [];
