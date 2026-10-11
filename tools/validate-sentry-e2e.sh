@@ -9,7 +9,7 @@
 # tools/sentry-sink.mjs. The shipped bundle is never touched.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 OUTDIR="$ROOT/packages/cdktn-cli/bundle-e2e"
 CDKTN="$OUTDIR/bin/cdktn.js"
 
@@ -25,6 +25,7 @@ for output in \
 done
 
 SINK_LOG="$(mktemp)"
+E2E_HOME="$(mktemp -d)"
 SINK_PID=""
 
 cleanup() {
@@ -33,7 +34,7 @@ cleanup() {
     kill "$SINK_PID" 2>/dev/null || true
     wait "$SINK_PID" 2>/dev/null || true
   fi
-  rm -rf "$OUTDIR" "$SINK_LOG"
+  rm -rf "$OUTDIR" "$SINK_LOG" "$E2E_HOME"
   exit "$status"
 }
 trap cleanup EXIT
@@ -73,6 +74,8 @@ await_items() {
 WORK="$(mktemp -d)"
 pushd "$WORK" >/dev/null
 unset CHECKPOINT_DISABLE
+# An empty home makes the first run mint the anonymous install id checked below.
+export CDKTF_HOME="$E2E_HOME"
 # Sentry env vars a user or CI may export; none of their values may be sent.
 export SENTRY_ENVIRONMENT="LEAK-ENV-SENTRY"
 export SENTRY_TRACE="0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1"
@@ -160,7 +163,7 @@ node "$CDKTN" output --skip-synth >/dev/null 2>&1 || true
 popd >/dev/null
 rm -rf "$CRASH_WORK"
 
-await_items 'cli.command.invoked' 'cli.command.completed' 'cli.command.error' '"cli.stack.provider"' '{"type":"event"}'
+await_items 'cli.command.invoked' 'cli.command.completed' 'cli.command.error' '"cli.stack.provider"' '"type":"event"'
 RAW="$(curl -sf "http://localhost:${PORT}/__raw")"
 echo "==> sink recorded: $ITEMS"
 
@@ -224,15 +227,46 @@ for key in binding library_version override_count import_count resource_type; do
   echo "$ITEMS" | grep -q "\"$key\"" \
     || fail "$key attribute missing on the stack metrics"
 done
-# matched as key/value adjacency inside the metric item, so a "production"
-# elsewhere in the envelope cannot satisfy the check
-echo "$RAW" | grep -q '"sentry.environment":{"value":"production"' \
-  || fail "sentry.environment is not the fixed production value"
-for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example leak-org leak-provider LEAK-ENV-SENTRY LEAK-BAGGAGE-SENTRY 0af7651916cd43dd8448eb211c80319c; do
-  if echo "$RAW" | grep -q "$secret"; then
-    fail "$secret reached the sink: stack names, resource ids, provider hosts/paths and SENTRY_* env values must never be sent"
+
+# The only identity on the wire: the random install id minted into CDKTF_HOME,
+# a fixed server name and a fixed environment, on every metric and the event.
+USER_ID="$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).userId' "$E2E_HOME/config.json" 2>/dev/null)" \
+  || fail "no install id was minted into CDKTF_HOME"
+[[ "$USER_ID" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]] \
+  || fail "the install id in CDKTF_HOME is not a random UUID: $USER_ID"
+IDENTITIES="$(node -e '
+  const seen = new Set();
+  for (const item of JSON.parse(process.argv[1])) {
+    for (const { attributes } of item.metrics ?? []) {
+      seen.add(
+        `metric ${attributes["user.id"]} ${attributes["server.address"]} ${attributes["sentry.environment"]}`,
+      );
+    }
+    if (item.type === "event") seen.add(`event ${JSON.stringify(item.event)}`);
+  }
+  console.log([...seen].sort().join("\n"));
+' "$ITEMS")"
+EXPECTED_IDENTITIES="$(printf '%s\n' \
+  "event {\"server_name\":\"cdktn-cli\",\"environment\":\"production\",\"user\":{\"id\":\"$USER_ID\"}}" \
+  "metric $USER_ID cdktn-cli production")"
+[ "$IDENTITIES" = "$EXPECTED_IDENTITIES" ] \
+  || fail "user, server name or environment differ from the install id, cdktn-cli and production; got:
+$IDENTITIES"
+
+HOST="$(uname -n)"
+HOST="${HOST%%.*}"
+USERNAME="$(id -un)"
+[ -n "$HOST" ] && [ -n "$USERNAME" ] || fail "cannot determine the hostname and username to scan for"
+for secret in E2E-SECRET-STACK-NAME e2e-secret-resource-id leak-host.example leak-org leak-provider LEAK-ENV-SENTRY LEAK-BAGGAGE-SENTRY 0af7651916cd43dd8448eb211c80319c "$HOST" "$WORK" "$STACK_WORK" "$CRASH_WORK" "$E2E_HOME"; do
+  if echo "$RAW" | grep -qF -- "$secret"; then
+    fail "$secret reached the sink: stack names, resource ids, provider hosts/paths, SENTRY_* env values, the hostname and the working directories must never be sent"
   fi
 done
+# The crash event's stack frames name the bundle's own files by absolute path,
+# which may sit under a home directory; the username may appear nowhere else.
+if echo "${RAW//"$OUTDIR"/}" | grep -qwF -- "$USERNAME"; then
+  fail "the username $USERNAME reached the sink outside the bundle's install path"
+fi
 echo "$RAW" | grep -q '"error_type":{"value":"unexpected"' \
   || fail "the crash trigger was not counted as an unexpected cli.command.error"
 echo "$RAW" | grep -q '"converted_lines"' \
