@@ -500,6 +500,21 @@ describe("telemetry", () => {
       initSentryWithCapturingTransport();
     });
 
+    it("delivers no stack, provider or override metric when the project opts out", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        sendUsageTelemetry: false,
+      });
+
+      await sendTelemetry("deploy", {
+        language: "typescript",
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 0,
+      });
+
+      expect(await deliveredItems()).toEqual([]);
+    });
+
     it("counts stacks by backend, cloud and library version with their group sizes", async () => {
       await sendTelemetry("deploy", {
         language: "typescript",
