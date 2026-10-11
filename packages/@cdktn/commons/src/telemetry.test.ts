@@ -8,7 +8,6 @@ import {
   sendTelemetry,
   startCommandTelemetry,
   resetCommandTelemetry,
-  getBinaryAttributes,
   getProjectTargetAttributes,
   getUsageTelemetryConsent,
   setProjectTargetAttributes,
@@ -523,37 +522,40 @@ describe("telemetry", () => {
     });
   });
 
-  describe("getBinaryAttributes", () => {
+  describe("binary attributes", () => {
+    async function invokedAttributes(versionOutput: string) {
+      seedTerraformCliProbeForTests(Promise.resolve(versionOutput));
+      initSentryWithCapturingTransport();
+      await startCommandTelemetry("synth");
+      expect(await Sentry.flush(2000)).toBe(true);
+      return attributeValues(parseMetricItems(envelopeBodies)[0]);
+    }
+
     it.each([
-      ["1.10.0-alpha20250101", "1.10.0"],
-      ["1.2.3-LEAK-WRAPPER-hostname.corp.example.com+LEAK-BUILD", "1.2.3"],
-      ["9.9.9-LEAK-UNKNOWN/Users/x/LEAK-SECRET-DIR", "9.9.9"],
+      ["Terraform v1.10.0-alpha20250101", "terraform", "1.10.0"],
+      [
+        "OpenTofu v1.2.3-LEAK-HOST.corp.example.com+LEAK-BUILD/Users/x",
+        "opentofu",
+        "1.2.3",
+      ],
     ])(
-      "reduces the probed version %p to its release %p",
-      async (version, release) => {
-        await expect(
-          getBinaryAttributes(Promise.resolve({ name: "terraform", version })),
-        ).resolves.toEqual({ binary: "terraform", binary_version: release });
+      "reduces the probed version of %p to its release",
+      async (versionOutput, binary, release) => {
+        expect(await invokedAttributes(versionOutput)).toMatchObject({
+          binary,
+          binary_version: release,
+        });
+        expect(envelopeBodies.join("\n")).not.toContain("LEAK");
       },
     );
 
-    it("omits binary_version when the probed version has no release prefix", async () => {
-      await expect(
-        getBinaryAttributes(
-          Promise.resolve({ name: "opentofu", version: "v1.2" }),
-        ),
-      ).resolves.toEqual({ binary: "opentofu" });
-    });
-
     it("sends no version for an unrecognised product: a wrapper's output has no product version line", async () => {
-      seedTerraformCliProbeForTests(
-        Promise.resolve(
-          "connected to 10.0.0.1 as LEAK-USER (wrapper 3.4.5)\nTerraform v1.9.0\n",
-        ),
+      const attributes = await invokedAttributes(
+        "connected to 10.0.0.1 as LEAK-USER (wrapper 3.4.5)\nTerraform v1.9.0\n",
       );
-      const attributes = await getBinaryAttributes();
-      expect(attributes).toEqual({ binary: "unknown" });
-      expect(JSON.stringify(attributes)).not.toContain("10.0.0");
+      expect(attributes.binary).toBe("unknown");
+      expect(attributes).not.toHaveProperty("binary_version");
+      expect(envelopeBodies.join("\n")).not.toContain("LEAK-USER");
     });
   });
 

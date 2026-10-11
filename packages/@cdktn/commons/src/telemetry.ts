@@ -9,7 +9,7 @@ import ciInfo from "ci-info";
 import { logger } from "./logging";
 import { DEFAULT_TARGET_VERSIONS, LANGUAGES } from "./config";
 import { processState } from "./process-state";
-import { terraformCli, TerraformCliProbe } from "./terraform";
+import { terraformCli } from "./terraform";
 
 type AttributeValue = string | number | boolean;
 type Attributes = Record<string, AttributeValue>;
@@ -143,10 +143,8 @@ export function setProjectTargetAttributes(
   state.projectTargetAttributes = attributes;
 }
 
-export async function getBinaryAttributes(
-  probe: Promise<TerraformCliProbe> = terraformCli(),
-): Promise<Attributes> {
-  const cli = await probe;
+async function getBinaryAttributes(): Promise<Attributes> {
+  const cli = await terraformCli();
   const attributes: Attributes = { binary: cli.name };
   // an unrecognised product's version is the first version-like token of
   // its output, which can be anything (a wrapper's "connected to 10.0.0.1")
