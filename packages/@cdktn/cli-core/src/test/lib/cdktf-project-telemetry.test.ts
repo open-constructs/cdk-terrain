@@ -34,8 +34,8 @@ describe("CdktfProject stack telemetry on failure", () => {
     commons.sendTelemetry.mockClear();
   });
 
-  // A pending executor after `execute` returns is a stack that never ran
-  // (its dependency failed); the stack metrics go out before the throw.
+  // A pending executor after `execute` returns is a stack that never ran:
+  // its dependency failed.
   it.each(["deploy", "destroy"] as const)(
     "%s with a pending stack counts it as failed and still throws",
     async (method) => {

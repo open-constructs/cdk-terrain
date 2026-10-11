@@ -675,7 +675,6 @@ function sendStackTelemetry(
   );
 }
 
-// One counter per distinct normalised source; the value is its entries.
 function sendSourceTelemetry(
   metric: string,
   attribute: string,
