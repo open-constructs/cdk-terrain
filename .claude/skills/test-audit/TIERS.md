@@ -12,6 +12,7 @@ workflows, binaries, or matrix builders change; check it against
 | Static gates         | `build` (tsc, jsii), `pnpm package`, eslint, prettier, knip                                                      | types, JSII-compilable API, packaging for all languages, formatting, dependency hygiene                                                           | always on PRs; labels cannot skip them                                                                                             |
 | Unit                 | `cdktn-cli`, `@cdktn/commons`, `@cdktn/hcl2cdk`, `@cdktn/hcl2json`, `@cdktn/hcl-tools` (Nx tag `unit-test`)      | behavior of one package through its public entry point                                                                                            | PR: `nx affected`, one job, the image's default terraform; `main`: every package except `@cdktn/hcl-tools`                         |
 | Unit, binary matrix  | `cdktn`, `@cdktn/cli-core`, `@cdktn/provider-generator`, `@cdktn/provider-schema` (Nx tag `unit-test:terraform`) | the same, plus behavior that varies by Terraform or OpenTofu version                                                                              | PR: `nx affected` once per binary in the `pr-unit.yml` matrix; `main`: every package, Terraform only                               |
+| Telemetry e2e        | `tools/validate-sentry-e2e.sh` with `tools/sentry-sink.mjs`                                                      | what the real esbuild bundle delivers to a local Sentry sink: run accounting, stack aggregation, the identity sent, no leaked names or paths      | PR: its own job after quality and build, skipped by `ci/skip-unit`; not on `main`                                                  |
 | Integration          | `test/<language>/<scenario>/test.ts`                                                                             | the packaged CLI and library, installed from `dist/`, against a real binary; and each language binding actually installing, compiling and running | every file, once per tested Terraform version, plus an HCL-mode run for files that use an HCL gate (`tools/build-test-matrix.mjs`) |
 | Provider integration | `test/provider-tests`, one template stamped per key in `providers.json`                                          | `cdktn get` on real, large provider schemas; the only Windows coverage                                                                            | every provider, Linux and Windows                                                                                                  |
 | Examples             | `examples/**` (`tools/build-example-matrix.mjs`)                                                                 | real-provider bindings type-check and synthesize in every language; the docs snippets compile                                                     | build and synth only; an example's own `test` target never runs in CI                                                              |
@@ -64,6 +65,13 @@ pnpm integration:single <language>/<scenario>
 SYNTH_HCL_OUTPUT=true pnpm integration:single <language>/<scenario>   # HCL run
 cd test && pnpm edge:install                 # before edge scenarios
 cd test && pnpm run test:provider <name>     # one provider test
+```
+
+The telemetry e2e needs `pnpm build`, not `pnpm package`; it builds its own
+scratch bundle and leaves `bundle/` alone.
+
+```bash
+bash tools/validate-sentry-e2e.sh
 ```
 
 Formatting, lint (warnings fail), and CI routing:
