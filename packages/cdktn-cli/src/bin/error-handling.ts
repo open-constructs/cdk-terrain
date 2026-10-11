@@ -7,11 +7,11 @@ import { IsErrorType, collectDebugInformation } from "@cdktn/commons";
 export type CliFailure = { message?: string | null; error?: unknown };
 
 export interface FailureReporterDeps {
-  log(msg: string): void; // default: console.log
-  logError(msg: string): void; // default: console.error
+  log(msg: string): void;
+  logError(msg: string): void;
   collectDebugInformation(): Promise<Record<string, unknown>>;
-  captureException(error: unknown): void; // default: Sentry.captureException
-  flushTelemetry(timeoutMs: number): Promise<void>; // default: Sentry.flush
+  captureException(error: unknown): void;
+  flushTelemetry(timeoutMs: number): Promise<void>;
 }
 
 export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
@@ -21,8 +21,7 @@ export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
 // whatever word follows it, so only presence counts (as yargs itself checks).
 const YARGS_COMPLETION_KEY = "get-yargs-completions";
 
-// Non-Error tolerant: a raw string or object throw still prints a message,
-// never the literal `undefined`.
+// a thrown string or plain object still yields a message, never `undefined`
 export function describeError(e: unknown): { message: string; stack?: string } {
   if (e instanceof Error) return { message: e.message, stack: e.stack };
   if (typeof e === "string") return { message: e };
@@ -65,13 +64,11 @@ export async function reportFailure(
     if (message) deps.log(message); // yargs validation text
 
     if (IsErrorType(error, "Usage")) {
-      // not captured: cli-core's `beforeSend` drops "Usage Error" events
-      // anyway (a user mistake, not a crash)
-      deps.logError((error as Error).message); // one line, NO debug info
+      // a user mistake, not a crash: not captured
+      deps.logError((error as Error).message);
     } else if (IsErrorType(error, "External")) {
-      // one clean line for the user, but still captured: `beforeSend`
-      // keeps External errors
-      deps.logError((error as Error).message); // one line, NO debug info
+      // captured, but printed without stack or debug information
+      deps.logError((error as Error).message);
       deps.captureException(error);
     } else if (error !== undefined && error !== null) {
       const { message: m, stack } = describeError(error);
@@ -153,10 +150,9 @@ export function runCli(
     if (failure) {
       process.exit(await reportFailure(failure, deps));
     } else if (completionRequest) {
-      // yargs does not await the completion callback, so an asynchronous
-      // completion function (cdktn.ts reads the manifest) prints only after
-      // parseAsync resolved; no handler ran, so there is nothing to flush and
-      // the loop drains on its own.
+      // yargs does not await an asynchronous completion callback (cdktn.ts
+      // reads the manifest), so it prints after parseAsync resolved: exiting
+      // here would cut it off, and no handler ran, so nothing needs a flush.
       return;
     } else {
       // success / --help / --version: Sentry buffers asynchronously, so flush
