@@ -222,7 +222,7 @@ echo "$RAW" | grep -q '"converted_lines"' \
   || fail "the convert scalars did not ride on cli.command.completed"
 
 # A cheap bundle scan; the sink assertions above are what prove the transport.
-HASHICORP_REFS="$(grep -c "checkpoint-api.hashicorp.com" "$CDKTN" || true)"
-[ "$HASHICORP_REFS" = "0" ] || fail "bundle still references checkpoint-api.hashicorp.com ($HASHICORP_REFS hits)"
+HASHICORP_REFS="$(grep -rl "checkpoint-api.hashicorp.com" "$OUTDIR/bin" || true)"
+[ -z "$HASHICORP_REFS" ] || fail "bundle still references checkpoint-api.hashicorp.com: $HASHICORP_REFS"
 
 echo "PASS: success-path, error-path, per-stack and entrypoint-failure telemetry delivered to the local sink"
