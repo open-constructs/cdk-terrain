@@ -75,6 +75,9 @@ type CommandTelemetryState = {
   // Captured at start like `language`: the bindings the started project
   // generates, whatever directory the run is in when it reports its stacks.
   generatedProviderSources?: string[];
+  // A run reports its stacks once: a watch session redeploys the same app
+  // for hours and would repeat them on every file change.
+  stackMetricsSent?: boolean;
 };
 
 // Shared by both bundle copies: the handlers' copy captures the decision and
@@ -452,7 +455,7 @@ const SCALAR_ATTRIBUTES: Record<string, Record<string, ScalarAttribute>> = {
 
 function scalarAttributeValue(
   value: unknown,
-  spec: ScalarAttribute,
+  spec: Pick<ScalarAttribute, "type" | "values">,
 ): AttributeValue | undefined {
   if (typeof value !== spec.type) {
     return undefined;
@@ -494,8 +497,129 @@ function overrideResourceType(key: string): string {
     : "other";
 }
 
+// Distinct identities reported per metric and run. A project's size must not
+// decide how many events one run sends, so the rest folds into one event.
+const MAX_STACK_GROUPS = 8;
+const MAX_STACK_PROVIDERS = 32;
+const MAX_STACK_OVERRIDE_TYPES = 32;
+const MAX_BINDING_SOURCES = 32;
+
+// What an aggregated metric adds to the command attributes, with the type
+// each must have; anything else stays out of the metric.
+const AGGREGATE_ATTRIBUTES: Record<
+  string,
+  Record<string, ScalarAttribute["type"]>
+> = {
+  "cli.stack": {
+    backend: "string",
+    cloud: "boolean",
+    library_version: "string",
+    override_count: "number",
+    import_count: "number",
+    moved_count: "number",
+    truncated: "boolean",
+  },
+  "cli.stack.provider": {
+    provider: "string",
+    version_constraint: "string",
+    binding: "string",
+    truncated: "boolean",
+  },
+  "cli.stack.override": {
+    resource_type: "string",
+    override_count: "number",
+    truncated: "boolean",
+  },
+  "cli.get.provider": { provider: "string", truncated: "boolean" },
+  "cli.get.module": { module: "string", truncated: "boolean" },
+  "cli.init.provider": { provider: "string", truncated: "boolean" },
+};
+
+type MetricGroup = {
+  identity: Attributes;
+  sums: Record<string, number>;
+  value: number;
+  lastMember?: number;
+};
+type MetricGroups = Map<string, MetricGroup>;
+
+function addSums(target: Record<string, number>, sums: Record<string, number>) {
+  for (const [name, count] of Object.entries(sums)) {
+    target[name] = (target[name] ?? 0) + count;
+  }
+}
+
+// The identity must hold normalised values only: grouping on a raw source
+// would send one event per distinct private host. A member (a stack) that
+// reaches a group twice is counted once.
+function countInto(
+  groups: MetricGroups,
+  member: number,
+  identity: Attributes,
+  sums: Record<string, number> = {},
+): void {
+  const key = JSON.stringify(identity);
+  let group = groups.get(key);
+  if (!group) {
+    group = { identity, sums: {}, value: 0 };
+    groups.set(key, group);
+  }
+  if (group.lastMember !== member) {
+    group.lastMember = member;
+    group.value += 1;
+  }
+  addSums(group.sums, sums);
+}
+
+// One counter per group, the most counted first (ties by identity, so the
+// kept set is stable); the groups past `limit` fold into one event without
+// identity, which keeps the metric's total.
+function emitGroups(
+  metric: string,
+  limit: number,
+  groups: MetricGroups,
+  attributes: Attributes,
+): void {
+  const sorted = [...groups.entries()]
+    .sort(([keyA, a], [keyB, b]) => b.value - a.value || (keyA < keyB ? -1 : 1))
+    .map(([, group]) => group);
+  const emitted = sorted.slice(0, limit);
+  const folded = sorted.slice(limit);
+  if (folded.length > 0) {
+    const residual: MetricGroup = {
+      identity: { truncated: true },
+      sums: {},
+      value: 0,
+    };
+    for (const group of folded) {
+      residual.value += group.value;
+      addSums(residual.sums, group.sums);
+    }
+    emitted.push(residual);
+  }
+  const allowed = AGGREGATE_ATTRIBUTES[metric];
+  for (const group of emitted) {
+    const own: Attributes = {};
+    for (const [name, raw] of Object.entries({
+      ...group.identity,
+      ...group.sums,
+    })) {
+      const value =
+        name in allowed
+          ? scalarAttributeValue(raw, { type: allowed[name] })
+          : undefined;
+      if (value !== undefined) {
+        own[name] = value;
+      }
+    }
+    Sentry.metrics.count(metric, group.value, {
+      attributes: { ...attributes, ...own },
+    });
+  }
+}
+
 /**
- * Per-stack metrics for synth/diff/deploy/destroy from the stack metadata
+ * Stack metrics for synth/diff/deploy/destroy from the stack metadata
  * block and `required_providers`: backend and library version, override /
  * import / moved counts and the providers used, never names or ids.
  */
@@ -506,6 +630,9 @@ function sendStackTelemetry(
 ): void {
   const generatedSources =
     state.generatedProviderSources ?? getGeneratedProviderSources();
+  const stacks: MetricGroups = new Map();
+  const overrides: MetricGroups = new Map();
+  const providers: MetricGroups = new Map();
   stackMetadata.forEach((entry, index) => {
     // a null or non-object entry is not a stack: counting one would inflate
     // the stack count with metadata the library never wrote
@@ -513,99 +640,81 @@ function sendStackTelemetry(
       return;
     }
     const metadata = entry as Record<string, any>;
-    const overrides = groupSizes(metadata.overrides);
-    const stackAttributes: Attributes = {
-      ...attributes,
+    const overrideSizes = groupSizes(metadata.overrides);
+    const stack: Attributes = {
       backend: normalizeBackendKind(metadata.backend),
       cloud: typeof metadata.cloud === "string",
-      override_count: sum(overrides),
-      import_count: sum(groupSizes(metadata.imports)),
-      moved_count: sum(groupSizes(metadata.moved)),
     };
     const libraryVersion = releaseVersion(metadata.version);
     if (libraryVersion) {
-      stackAttributes.library_version = libraryVersion;
+      stack.library_version = libraryVersion;
     }
-    Sentry.metrics.count("cli.stack", 1, { attributes: stackAttributes });
+    countInto(stacks, index, stack, {
+      override_count: sum(overrideSizes),
+      import_count: sum(groupSizes(metadata.imports)),
+      moved_count: sum(groupSizes(metadata.moved)),
+    });
 
-    for (const [key, count] of Object.entries(overrides)) {
-      Sentry.metrics.count("cli.stack.override", 1, {
-        attributes: {
-          ...attributes,
-          resource_type: overrideResourceType(key),
-          override_count: count,
-        },
-      });
+    for (const [key, count] of Object.entries(overrideSizes)) {
+      countInto(
+        overrides,
+        index,
+        { resource_type: overrideResourceType(key) },
+        { override_count: count },
+      );
     }
 
-    const providers = requiredProviders[index];
-    if (!providers || typeof providers !== "object") {
+    const required = requiredProviders[index];
+    if (!required || typeof required !== "object") {
       return;
     }
     for (const [type, constraint] of Object.entries(
-      providers as Record<string, any>,
+      required as Record<string, any>,
     )) {
       const source =
         typeof constraint?.source === "string" ? constraint.source : type;
-      const providerAttributes: Attributes = {
-        ...attributes,
+      const provider: Attributes = {
         provider: normalizeProviderSource(source),
-        binding: classifyProviderBinding(source, generatedSources),
       };
       if (typeof constraint?.version === "string") {
-        providerAttributes.version_constraint = normalizeProviderConstraint(
+        provider.version_constraint = normalizeProviderConstraint(
           constraint.version,
         );
       }
-      Sentry.metrics.count("cli.stack.provider", 1, {
-        attributes: providerAttributes,
-      });
+      provider.binding = classifyProviderBinding(source, generatedSources);
+      countInto(providers, index, provider);
     }
   });
+  emitGroups("cli.stack", MAX_STACK_GROUPS, stacks, attributes);
+  emitGroups("cli.stack.provider", MAX_STACK_PROVIDERS, providers, attributes);
+  emitGroups(
+    "cli.stack.override",
+    MAX_STACK_OVERRIDE_TYPES,
+    overrides,
+    attributes,
+  );
 }
 
-// Payload entries are validated one by one: a throw here would be swallowed
-// by sendTelemetry's catch and skip the command metric for the whole run.
-function sourceOf(entry: unknown): string | undefined {
-  return typeof entry === "string" ? entry : undefined;
+// One counter per distinct normalised source; the value is its entries.
+function sendSourceTelemetry(
+  metric: string,
+  attribute: string,
+  sources: string[],
+  normalize: (source: string) => string,
+  attributes: Attributes,
+): void {
+  const groups: MetricGroups = new Map();
+  sources.forEach((source, index) =>
+    countInto(groups, index, { [attribute]: normalize(source) }),
+  );
+  emitGroups(metric, MAX_BINDING_SOURCES, groups, attributes);
 }
 
-// `get` payload: one entry per generated binding, counted per provider and
-// module; only the totals land on the command metric.
-function sendGetTelemetry(targets: unknown[], attributes: Attributes): void {
-  const byType = (type: string) =>
-    targets.flatMap((target: any) => {
-      const source = sourceOf(target?.source);
-      return target?.type === type && source !== undefined ? [source] : [];
-    });
-  const providers = byType("provider");
-  const modules = byType("module");
-  attributes.provider_count = providers.length;
-  attributes.module_count = modules.length;
-  for (const source of providers) {
-    Sentry.metrics.count("cli.get.provider", 1, {
-      attributes: { ...attributes, provider: normalizeProviderSource(source) },
-    });
-  }
-  for (const source of modules) {
-    Sentry.metrics.count("cli.get.module", 1, {
-      attributes: { ...attributes, module: classifyModuleSource(source) },
-    });
-  }
-}
-
-// `init` payload: the providers the new project was created with.
-function sendInitTelemetry(entries: unknown[], attributes: Attributes): void {
-  const providers = entries.flatMap((entry) => sourceOf(entry) ?? []);
-  attributes.provider_count = providers.length;
-  for (const provider of providers) {
-    Sentry.metrics.count("cli.init.provider", 1, {
-      attributes: {
-        ...attributes,
-        provider: normalizeProviderSource(provider),
-      },
-    });
-  }
+// `get` payload: one `{ type, source }` per generated binding
+function targetSources(targets: any[], type: string): string[] {
+  return targets
+    .filter((target) => target.type === type)
+    .map((target) => target.source);
 }
 
 async function commandAttributes(
@@ -661,6 +770,7 @@ export function resetCommandTelemetry(): void {
   state.language = undefined;
   state.packageManager = undefined;
   state.generatedProviderSources = undefined;
+  state.stackMetricsSent = undefined;
 }
 
 // Payload fields reach the attributes only through the allow-lists above.
@@ -696,21 +806,29 @@ export async function sendTelemetry(
       return;
     }
 
-    if (command === "get" && Array.isArray(payload.targets)) {
-      sendGetTelemetry(payload.targets, attributes);
+    const generated =
+      command === "get" && Array.isArray(payload.targets)
+        ? {
+            providers: targetSources(payload.targets, "provider"),
+            modules: targetSources(payload.targets, "module"),
+          }
+        : undefined;
+    const addedProviders: string[] | undefined =
+      command === "init" && Array.isArray(payload.addedProviders)
+        ? payload.addedProviders
+        : undefined;
+    if (generated) {
+      attributes.provider_count = generated.providers.length;
+      attributes.module_count = generated.modules.length;
     }
-    if (command === "init" && Array.isArray(payload.addedProviders)) {
-      sendInitTelemetry(payload.addedProviders, attributes);
+    if (addedProviders) {
+      attributes.provider_count = addedProviders.length;
     }
-    if (Array.isArray(payload.stackMetadata)) {
-      sendStackTelemetry(
-        payload.stackMetadata,
-        Array.isArray(payload.requiredProviders)
-          ? payload.requiredProviders
-          : [],
-        attributes,
-      );
-    }
+
+    // The run's outcome goes first: nothing in the per-source and stack
+    // metrics below can then cost the run its command metric.
+    const nested =
+      state.startedCommand !== undefined && state.startedCommand !== command;
     // a run with failed stacks is not completed: the failure thrown next is
     // counted as cli.command.error by the entrypoint's reporter
     const failedStackCount =
@@ -721,10 +839,7 @@ export async function sendTelemetry(
       Sentry.metrics.count("cli.stack.failed", failedStackCount, {
         attributes,
       });
-    } else if (
-      state.startedCommand === undefined ||
-      state.startedCommand === command
-    ) {
+    } else if (!nested) {
       Sentry.metrics.count("cli.command.completed", 1, { attributes });
     }
     if (typeof payload.totalTime === "number") {
@@ -732,6 +847,48 @@ export async function sendTelemetry(
         unit: "millisecond",
         attributes,
       });
+    }
+
+    if (generated) {
+      sendSourceTelemetry(
+        "cli.get.provider",
+        "provider",
+        generated.providers,
+        normalizeProviderSource,
+        attributes,
+      );
+      sendSourceTelemetry(
+        "cli.get.module",
+        "module",
+        generated.modules,
+        classifyModuleSource,
+        attributes,
+      );
+    }
+    if (addedProviders) {
+      sendSourceTelemetry(
+        "cli.init.provider",
+        "provider",
+        addedProviders,
+        normalizeProviderSource,
+        attributes,
+      );
+    }
+    // A synth nested in another command describes every stack of the app;
+    // the command reports the stacks it selected, under its own name.
+    if (
+      Array.isArray(payload.stackMetadata) &&
+      !state.stackMetricsSent &&
+      !(nested && command === "synth")
+    ) {
+      state.stackMetricsSent = true;
+      sendStackTelemetry(
+        payload.stackMetadata,
+        Array.isArray(payload.requiredProviders)
+          ? payload.requiredProviders
+          : [],
+        attributes,
+      );
     }
   } catch (err) {
     logger.debug(`Could not send telemetry data: ${err}`);
