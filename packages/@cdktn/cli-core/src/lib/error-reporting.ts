@@ -63,7 +63,7 @@ export function persistReportCrashReportDecision(
   persistConsentDecision("sendCrashReports", decision, projectPath);
 }
 
-export function persistSendUsageTelemetryDecision(
+function persistSendUsageTelemetryDecision(
   decision: boolean,
   projectPath = process.cwd(),
 ) {

@@ -78,17 +78,11 @@ async function reportFailure({ message, error }: CliFailure): Promise<number> {
   // The one place a failure that reaches the entrypoint is counted; synth
   // failures that exit inside cli-core count themselves and never get here.
   // A yargs validation failure carries a message but no error.
-  try {
-    await sendTelemetry(Errors.getScope(), {
-      error: true,
-      errorType:
-        error === undefined || error === null
-          ? "Usage"
-          : commandErrorType(error),
-    });
-  } catch {
-    /* never mask the original error */
-  }
+  await sendTelemetry(Errors.getScope(), {
+    error: true,
+    errorType:
+      error === undefined || error === null ? "Usage" : commandErrorType(error),
+  });
   try {
     await flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
   } catch {
