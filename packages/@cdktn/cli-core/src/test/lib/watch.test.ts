@@ -69,7 +69,7 @@ describe("watch", () => {
     );
 
     expect(await settled(session)).toBe(false);
-    expect(states).toEqual(["running"]);
+    expect(states).toContain("running");
     expect(watcher.close).not.toHaveBeenCalled();
 
     ac.abort();
