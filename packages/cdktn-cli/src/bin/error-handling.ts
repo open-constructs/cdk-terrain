@@ -13,8 +13,6 @@ import {
 
 type CliFailure = { message?: string | null; error?: unknown };
 
-const SENTRY_FLUSH_TIMEOUT_MS = 4000;
-
 // yargs' hard-coded flag for a shell completion request (`cdktn diff <TAB>`
 // runs `cdktn --get-yargs-completions cdktn diff ""`); its parsed value is
 // whatever word follows it, so only presence counts (as yargs itself checks).
@@ -83,11 +81,7 @@ async function reportFailure({ message, error }: CliFailure): Promise<number> {
     errorType:
       error === undefined || error === null ? "Usage" : commandErrorType(error),
   });
-  try {
-    await flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
-  } catch {
-    /* never mask the original error */
-  }
+  await flushTelemetry();
   return 1;
 }
 
@@ -146,11 +140,7 @@ export function runCli(y: yargs.Argv): Promise<void> {
       // success / --help / --version: Sentry buffers asynchronously, so flush
       // (bounded) and exit explicitly, or an unresponsive ingest endpoint
       // keeps the transport socket and the process alive.
-      try {
-        await flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
-      } catch {
-        /* never block the exit */
-      }
+      await flushTelemetry();
       await drainStdio();
       process.exit(process.exitCode ?? 0);
     }

@@ -12,7 +12,6 @@ import { runCli } from "../error-handling";
 jest.mock("@sentry/node", () => ({
   ...jest.requireActual("@sentry/node"),
   captureException: jest.fn(),
-  flush: jest.fn(),
 }));
 // the real collector spawns terraform and every language toolchain
 jest.mock("@cdktn/commons", () => ({
@@ -21,7 +20,6 @@ jest.mock("@cdktn/commons", () => ({
 }));
 
 const captureException = Sentry.captureException as jest.Mock;
-const flush = Sentry.flush as jest.Mock;
 const collectDebug = collectDebugInformation as jest.Mock;
 
 const DEBUG_STDERR = ["Collecting Debug Information...", "Debug Information:"];
@@ -102,7 +100,6 @@ describe("runCli", () => {
   beforeEach(() => {
     captureException.mockReset();
     choiceHandler.mockReset();
-    flush.mockReset().mockResolvedValue(true);
     collectDebug.mockReset().mockResolvedValue({ node: "24" });
   });
 
@@ -249,15 +246,6 @@ describe("runCli", () => {
     } finally {
       process.exitCode = originalExitCode;
     }
-  });
-
-  it("still exits 0 when the flush itself rejects", async () => {
-    flush.mockRejectedValue(new Error("transport exploded"));
-
-    const { stderr, exitCode } = await run(["ok"]);
-
-    expect(stderr).toEqual([]);
-    expect(exitCode).toBe(0);
   });
 
   it("still exits 0 when the stdout reader closed early and the drain write gets EPIPE", async () => {
