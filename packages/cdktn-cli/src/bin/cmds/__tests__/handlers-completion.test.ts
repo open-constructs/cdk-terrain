@@ -90,6 +90,7 @@ import {
   watch,
 } from "../handlers";
 import { verifySimilarLibraryVersion } from "../helper/check-environment";
+import { runWatch } from "../ui/watch";
 import { terraformCheck } from "../helper/terraform-check";
 
 // A run that ends without an error counts exactly one cli.command.completed
@@ -168,6 +169,20 @@ describe("completion metric of handlers without an own emitter", () => {
       ]);
     }
     expect(metricCalls("cli.command.error")).toHaveLength(0);
+  });
+
+  it("watch does not count completed when a deploy fails", async () => {
+    (runWatch as jest.Mock).mockRejectedValueOnce(
+      new Error("terraform apply failed"),
+    );
+    Errors.setScope("watch");
+
+    await expect(watch({ autoApprove: true })).rejects.toThrow(
+      "terraform apply failed",
+    );
+
+    expect(metricCalls("cli.command.invoked")).toHaveLength(1);
+    expect(metricCalls("cli.command.completed")).toHaveLength(0);
   });
 
   // needsGet runs a nested get; its own completion must not count
