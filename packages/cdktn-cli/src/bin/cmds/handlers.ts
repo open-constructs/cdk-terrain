@@ -14,7 +14,6 @@ import {
   Language,
   readConfigSync,
   sendTelemetry,
-  flushTelemetry,
   Errors,
   IsErrorType,
   logger,
@@ -399,7 +398,6 @@ export async function init(argv: any) {
         "Local providers have been updated. Running cdktn get to update...",
       );
     }
-    await flushTelemetry();
     await get({
       language,
       output: codeMakerOutput,
@@ -684,7 +682,6 @@ export async function providerAdd(argv: any) {
     console.log(
       "Local providers have been updated. Running cdktn get to update...",
     );
-    await flushTelemetry();
     await get({
       language: language,
       output: config.codeMakerOutput,

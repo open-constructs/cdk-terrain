@@ -52,8 +52,8 @@ type CommandTelemetryState = {
   // re-reading cdktf.json at emission time would consult the wrong project.
   usageTelemetryEnabled?: boolean;
   // The command this run was started as; set once by startCommandTelemetry so
-  // a second reporting init (init runs get, provider add runs get) and the
-  // operations a command drives (a deploy's synth) never count as runs.
+  // the operations a command drives (a deploy's synth, the get of init or
+  // provider add) never count as runs.
   startedCommand?: string;
   // The raw `language` of the project the run started in, so every metric of
   // the run (the error metric has no payload) carries the one `invoked` did.
@@ -102,9 +102,8 @@ export function sendErrorTelemetry(type: string, command: string): void {
   }
 }
 
-// Call before an explicit process.exit() and before reporting is initialized
-// again (a nested get): Sentry buffers asynchronously, and both a hard exit
-// and a replaced client drop the buffer.
+// Call before an explicit process.exit(): Sentry buffers asynchronously and
+// a hard exit drops the buffer.
 export async function flushTelemetry(timeoutMs = 4000): Promise<void> {
   try {
     await Sentry.flush(timeoutMs);
