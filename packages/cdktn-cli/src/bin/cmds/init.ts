@@ -51,7 +51,7 @@ class Command extends BaseCommand {
       })
       .option("enable-usage-telemetry", {
         type: "boolean",
-        desc: "Enable anonymous usage telemetry for the CLI, refer to https://cdktn.io/docs/telemetry for more details",
+        desc: "Enable anonymous usage telemetry for the CLI (never your code, paths or resource names), refer to https://cdktn.io/docs/telemetry for more details",
       })
       .option("providers", {
         describe: "Providers to add to your project",

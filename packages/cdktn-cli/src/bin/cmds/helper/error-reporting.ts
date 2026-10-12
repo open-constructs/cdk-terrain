@@ -16,7 +16,7 @@ export async function askForCrashReportingConsent() {
 export async function askForUsageTelemetryConsent() {
   return await confirm({
     message:
-      "Do you want to send anonymous usage telemetry (command, language, timing) to the CDKTN team? This enables the project to focus on what is actually used by the community to prioritize development. Refer to https://cdktn.io/docs/telemetry for more information",
+      "Help us prioritize features and bolster regression tests: send anonymous usage telemetry (which commands you run, your language, tooling versions and platform; never your code, paths or resource names)? See https://cdktn.io/docs/telemetry",
     default: true,
   });
 }
