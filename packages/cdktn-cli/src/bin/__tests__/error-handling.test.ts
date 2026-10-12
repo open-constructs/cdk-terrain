@@ -22,6 +22,7 @@ const collectDebug = collectDebugInformation as jest.Mock;
 
 const DEBUG_STDERR = ["Collecting Debug Information...", "Debug Information:"];
 const DEBUG_STDOUT = ["node: 24"];
+const choiceHandler = jest.fn();
 
 // `yargs(args)` builds a fresh instance per test, so commands and `.fail()`
 // handlers never leak between cases.
@@ -66,7 +67,7 @@ function makeCli(args: string[], thrown?: unknown) {
           type: "string",
           choices: ["typescript", "python"],
         }),
-      () => {},
+      choiceHandler,
     );
 }
 
@@ -96,6 +97,7 @@ async function run(args: string[], thrown?: unknown) {
 describe("runCli", () => {
   beforeEach(() => {
     captureException.mockReset();
+    choiceHandler.mockReset();
     flush.mockReset().mockResolvedValue(true);
     collectDebug.mockReset().mockResolvedValue({ node: "24" });
   });
@@ -200,6 +202,8 @@ describe("runCli", () => {
     expect(stdout).toEqual(row.stdout);
     expect(stderr).toEqual(row.stderr);
     expect(captureException.mock.calls).toEqual(row.captured.map((e) => [e]));
+    // a rejected argument must stop the command itself, not only fail the exit
+    expect(choiceHandler).not.toHaveBeenCalled();
     expect(exitCode).toBe(1);
   });
 
