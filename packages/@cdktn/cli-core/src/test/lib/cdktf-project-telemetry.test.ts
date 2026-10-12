@@ -155,6 +155,44 @@ describe("CdktfProject stack telemetry", () => {
       expect(thrown).toBe(failures.broken);
     });
 
+    it.each([
+      {
+        title: "waits its turn behind the one that rejected",
+        stacks: [synthesized("first"), synthesized("second")],
+        failing: "first",
+        parallelism: 1,
+      },
+      {
+        title: "depends on the one that rejected",
+        stacks: [synthesized("base"), synthesized("dependant", ["base"])],
+        failing: method === "deploy" ? "base" : "dependant",
+        parallelism: undefined,
+      },
+    ])(
+      "does not count as failed a stack that never ran because it $title",
+      async ({ stacks, failing, parallelism }) => {
+        failures = { [failing]: new Error("terraform exited with 1") };
+        const project = projectWith(stacks);
+
+        let thrown: unknown;
+        await project[method]({
+          skipSynth: true,
+          autoApprove: true,
+          stackNames: stacks.map((stack) => stack.name),
+          parallelism,
+        }).catch((e) => (thrown = e));
+
+        expect(thrown).toBe(failures[failing]);
+        expect(await delivered("cli.stack")).toEqual([
+          { value: 2, command: method },
+        ]);
+        expect(await delivered("cli.stack.failed")).toEqual([
+          { value: 1, command: method },
+        ]);
+        expect(await delivered("cli.command.completed")).toEqual([]);
+      },
+    );
+
     it("reports the stacks of a run whose init rejects, none of them failed, and rethrows that error", async () => {
       initFailure = new Error("terraform init exited with 1");
       const project = projectWith([
