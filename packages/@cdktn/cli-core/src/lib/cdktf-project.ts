@@ -405,11 +405,16 @@ export class CdktfProject {
     const stack = this.getStackExecutor(
       getSingleStack(stacks, opts?.stackName, "diff"),
     );
-    await stack.initalizeTerraform(
-      opts.noColor,
-      opts.skipProviderLock,
-      opts.migrateState,
-    );
+    try {
+      await stack.initalizeTerraform(
+        opts.noColor,
+        opts.skipProviderLock,
+        opts.migrateState,
+      );
+    } catch (e) {
+      await this.reportStackRun("diff", [stack.stack], 0, true);
+      throw e;
+    }
 
     try {
       await stack.diff(opts);

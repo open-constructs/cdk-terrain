@@ -217,5 +217,21 @@ describe("CdktfProject stack telemetry", () => {
       ]);
       expect(await delivered("cli.command.completed")).toEqual([]);
     });
+
+    it("reports the diffed stack, not failed, when the init rejects and rethrows that error", async () => {
+      initFailure = new Error("terraform init exited with 1");
+
+      let thrown: unknown;
+      await projectWith(stacks)
+        .diff({ skipSynth: true, stackName: "diffed-stack" })
+        .catch((e) => (thrown = e));
+
+      expect(thrown).toBe(initFailure);
+      expect(await delivered("cli.stack")).toEqual([
+        { value: 1, command: "diff" },
+      ]);
+      expect(await delivered("cli.stack.failed")).toEqual([]);
+      expect(await delivered("cli.command.completed")).toEqual([]);
+    });
   });
 });
