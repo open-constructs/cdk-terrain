@@ -414,40 +414,60 @@ export class CdktfProject {
     try {
       await stack.diff(opts);
     } catch (e: any) {
+      await this.reportStackRun("diff", [stack.stack], 1);
       throw Errors.External(
         `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
         e,
       );
     }
-    await this.finishStackRun(
-      "diff",
-      [stack.stack],
-      stack.error ? [stack.stack.name] : [],
-      () =>
-        Errors.External(
-          `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
-          new Error(stack.error),
-        ),
-    );
+    await this.reportStackRun("diff", [stack.stack], 0);
   }
 
-  // Reports before throwing, so a failed run still sends its stack metrics.
-  private async finishStackRun(
+  // Best-effort: a failed send never replaces the outcome of the run.
+  private async reportStackRun(
     command: "diff" | "deploy" | "destroy",
     stacks: SynthesizedStack[],
-    failedStacks: string[],
-    failure: (failedStacks: string[]) => Error,
+    failedStackCount: number,
   ): Promise<void> {
     try {
       await this.projectTelemetry(command, {
         ...SynthStack.telemetryPayload(stacks),
-        failedStackCount: failedStacks.length,
+        failedStackCount,
       });
     } catch (e) {
       logger.debug("Failed to send telemetry", e);
     }
-    if (failedStacks.length > 0) {
-      throw failure(failedStacks);
+  }
+
+  // Reports the stack metrics once, whether `execute` rejects or resolves.
+  // A stack still pending afterwards never ran and counts as failed.
+  private async executeAndReport(
+    method: "deploy" | "destroy",
+    stacks: SynthesizedStack[],
+    next: () => Promise<CdktfStack | undefined>,
+    opts: MutationOptions,
+  ): Promise<void> {
+    const failedStacks = () =>
+      this.stacksToRun
+        .filter(
+          (executor) =>
+            executor.currentState === "errored" || executor.isPending,
+        )
+        .map((executor) => executor.stack.name);
+
+    try {
+      await this.execute(method, next, opts);
+    } catch (e) {
+      await this.reportStackRun(method, stacks, failedStacks().length);
+      throw e;
+    }
+
+    const failed = failedStacks();
+    await this.reportStackRun(method, stacks, failed.length);
+    if (failed.length > 0) {
+      throw Errors.External(
+        `Some stacks failed to ${method}: ${failed.join(", ")}. Please check the logs for more information.`,
+      );
     }
   }
 
@@ -539,19 +559,7 @@ export class CdktfProject {
           )
       : () => getStackWithNoUnmetDependencies(this.stacksToRun);
 
-    await this.execute("deploy", next, opts);
-
-    await this.finishStackRun(
-      "deploy",
-      stacksToRun,
-      this.stacksToRun
-        .filter((executor) => executor.isPending)
-        .map((executor) => executor.stack.name),
-      (failedStacks) =>
-        Errors.External(
-          `Some stacks failed to deploy: ${failedStacks.join(", ")}. Please check the logs for more information.`,
-        ),
-    );
+    await this.executeAndReport("deploy", stacksToRun, next, opts);
   }
 
   public async destroy(opts: MutationOptions = {}) {
@@ -601,19 +609,7 @@ export class CdktfProject {
           )
       : () => getStackWithNoUnmetDependants(this.stacksToRun);
 
-    await this.execute("destroy", next, opts);
-
-    await this.finishStackRun(
-      "destroy",
-      stacksToRun,
-      this.stacksToRun
-        .filter((executor) => executor.isPending)
-        .map((executor) => executor.stack.name),
-      (failedStacks) =>
-        Errors.External(
-          `Some stacks failed to destroy: ${failedStacks.join(", ")}. Please check the logs for more information.`,
-        ),
-    );
+    await this.executeAndReport("destroy", stacksToRun, next, opts);
   }
 
   public async projectTelemetry(command: string, payload: any): Promise<void> {
