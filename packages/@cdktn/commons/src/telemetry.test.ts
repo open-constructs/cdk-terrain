@@ -80,6 +80,7 @@ const COMMAND_ATTRIBUTES = [
   "command",
   "language",
   "os",
+  "package_manager",
   "server.address",
   "target_opentofu",
   "target_terraform",
