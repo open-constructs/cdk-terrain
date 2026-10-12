@@ -26,11 +26,12 @@ function synthesized(name: string, dependencies: string[] = []) {
   return stack;
 }
 
-// The executors and the reporting are real; only Terraform is replaced, by a
-// client whose runs reject for the stacks named in `failures`.
+// The executors and the reporting are real; only Terraform is replaced: its
+// init rejects with `initFailure`, its runs for the stacks named in `failures`.
 describe("CdktfProject stack telemetry", () => {
   let envelopeBodies: string[];
   let failures: Record<string, Error>;
+  let initFailure: Error | undefined;
   const originalCheckpointDisable = process.env.CHECKPOINT_DISABLE;
 
   async function delivered(name: string) {
@@ -61,6 +62,7 @@ describe("CdktfProject stack telemetry", () => {
   beforeEach(() => {
     envelopeBodies = [];
     failures = {};
+    initFailure = undefined;
     delete process.env.CHECKPOINT_DISABLE;
     setUsageTelemetryEnabled(true);
     seedTerraformCliProbeForTests(
@@ -78,7 +80,12 @@ describe("CdktfProject stack telemetry", () => {
 
     jest
       .spyOn(CdktfStack.prototype, "initalizeTerraform")
-      .mockResolvedValue(undefined as any);
+      .mockImplementation(async () => {
+        if (initFailure) {
+          throw initFailure;
+        }
+        return undefined as any;
+      });
     jest
       .spyOn(CdktfStack.prototype as any, "terraformClient")
       .mockImplementation(async function (this: CdktfStack) {
@@ -148,12 +155,11 @@ describe("CdktfProject stack telemetry", () => {
       expect(thrown).toBe(failures.broken);
     });
 
-    // Stacks that wait on each other are never started: the run settles
-    // without an error of its own and both stay pending.
-    it("counts stacks that never ran as failed, once, and throws", async () => {
+    it("reports the stacks of a run whose init rejects, none of them failed, and rethrows that error", async () => {
+      initFailure = new Error("terraform init exited with 1");
       const project = projectWith([
-        synthesized("first", ["second"]),
-        synthesized("second", ["first"]),
+        synthesized("first"),
+        synthesized("second"),
       ]);
 
       let thrown: unknown;
@@ -163,16 +169,12 @@ describe("CdktfProject stack telemetry", () => {
         stackNames: ["first", "second"],
       }).catch((e) => (thrown = e));
 
-      expect(IsErrorType(thrown, "External")).toBe(true);
-      expect((thrown as Error).message).toContain(
-        `Some stacks failed to ${method}: first, second`,
-      );
+      expect(thrown).toBe(initFailure);
       expect(await delivered("cli.stack")).toEqual([
         { value: 2, command: method },
       ]);
-      expect(await delivered("cli.stack.failed")).toEqual([
-        { value: 2, command: method },
-      ]);
+      expect(await delivered("cli.stack.failed")).toEqual([]);
+      expect(await delivered("cli.command.completed")).toEqual([]);
     });
   });
 

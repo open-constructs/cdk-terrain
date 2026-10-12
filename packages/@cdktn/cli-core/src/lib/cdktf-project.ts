@@ -414,25 +414,29 @@ export class CdktfProject {
     try {
       await stack.diff(opts);
     } catch (e: any) {
-      await this.reportStackRun("diff", [stack.stack], 1);
+      await this.reportStackRun("diff", [stack.stack], 1, true);
       throw Errors.External(
         `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
         e,
       );
     }
-    await this.reportStackRun("diff", [stack.stack], 0);
+    await this.reportStackRun("diff", [stack.stack], 0, false);
   }
 
   // Best-effort: a failed send never replaces the outcome of the run.
+  // `runFailed` keeps a run that throws from counting as completed even when
+  // none of its stacks errored.
   private async reportStackRun(
     command: "diff" | "deploy" | "destroy",
     stacks: SynthesizedStack[],
     failedStackCount: number,
+    runFailed: boolean,
   ): Promise<void> {
     try {
       await this.projectTelemetry(command, {
         ...SynthStack.telemetryPayload(stacks),
         failedStackCount,
+        runFailed,
       });
     } catch (e) {
       logger.debug("Failed to send telemetry", e);
@@ -440,14 +444,19 @@ export class CdktfProject {
   }
 
   // Reports the stack metrics once, whether `execute` rejects or resolves.
-  // A stack still pending afterwards never ran and counts as failed.
+  // Only a stack whose operation errored counts as failed; one that never ran
+  // fails the run without being counted.
   private async executeAndReport(
     method: "deploy" | "destroy",
     stacks: SynthesizedStack[],
     next: () => Promise<CdktfStack | undefined>,
     opts: MutationOptions,
   ): Promise<void> {
-    const failedStacks = () =>
+    const errored = () =>
+      this.stacksToRun.filter(
+        (executor) => executor.currentState === "errored",
+      );
+    const unfinished = () =>
       this.stacksToRun
         .filter(
           (executor) =>
@@ -458,12 +467,17 @@ export class CdktfProject {
     try {
       await this.execute(method, next, opts);
     } catch (e) {
-      await this.reportStackRun(method, stacks, failedStacks().length);
+      await this.reportStackRun(method, stacks, errored().length, true);
       throw e;
     }
 
-    const failed = failedStacks();
-    await this.reportStackRun(method, stacks, failed.length);
+    const failed = unfinished();
+    await this.reportStackRun(
+      method,
+      stacks,
+      errored().length,
+      failed.length > 0,
+    );
     if (failed.length > 0) {
       throw Errors.External(
         `Some stacks failed to ${method}: ${failed.join(", ")}. Please check the logs for more information.`,
