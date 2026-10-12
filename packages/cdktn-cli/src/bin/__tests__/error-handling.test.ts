@@ -311,7 +311,7 @@ describe("runCli", () => {
     const commandErrors = () =>
       count.mock.calls.filter(([name]) => name === "cli.command.error");
 
-    it.each<[string, string, string[], (() => unknown)?]>([
+    it.each<[string, string, string[], () => unknown]>([
       [
         "a Usage error",
         "Usage",
@@ -336,6 +336,7 @@ describe("runCli", () => {
         "a yargs validation failure (message, no error)",
         "Usage",
         ["choice", "--language=nope"],
+        () => undefined,
       ],
     ])(
       "counts %s once as %s under the command scope",
@@ -343,7 +344,7 @@ describe("runCli", () => {
         setUsageTelemetryEnabled(true);
         Errors.setScope("deploy");
 
-        await run(args, makeThrown?.());
+        await run(args, makeThrown());
 
         expect(commandErrors()).toEqual([
           [
