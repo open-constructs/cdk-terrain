@@ -35,7 +35,6 @@ import {
   logFileName,
   logger,
   Errors,
-  hasCapturedUsageTelemetryDecision,
   ConstructsMakerProviderTarget,
   detectNodePackageManager,
   nodePackageManagerCommand,
@@ -301,14 +300,12 @@ This means that your Terraform state file will be stored locally on disk in a fi
   }
 
   // Initialized against the new project so the init metric honours the consent
-  // persisted there; `convert` drives init and already captured its own.
-  if (!hasCapturedUsageTelemetryDecision()) {
-    await initializErrorReporting(
-      undefined,
-      undefined,
-      path.resolve(destination),
-    );
-  }
+  // persisted there.
+  await initializErrorReporting(
+    undefined,
+    undefined,
+    path.resolve(destination),
+  );
 
   return {
     needsGet,
