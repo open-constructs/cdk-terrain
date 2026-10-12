@@ -4,17 +4,9 @@ import * as yargs from "yargs";
 import * as Sentry from "@sentry/node";
 import { IsErrorType, collectDebugInformation } from "@cdktn/commons";
 
-export type CliFailure = { message?: string | null; error?: unknown };
+type CliFailure = { message?: string | null; error?: unknown };
 
-export interface FailureReporterDeps {
-  log(msg: string): void;
-  logError(msg: string): void;
-  collectDebugInformation(): Promise<Record<string, unknown>>;
-  captureException(error: unknown): void;
-  flushTelemetry(timeoutMs: number): Promise<void>;
-}
-
-export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
+const SENTRY_FLUSH_TIMEOUT_MS = 4000;
 
 // yargs' hard-coded flag for a shell completion request (`cdktn diff <TAB>`
 // runs `cdktn --get-yargs-completions cdktn diff ""`); its parsed value is
@@ -22,7 +14,7 @@ export const SENTRY_FLUSH_TIMEOUT_MS = 4000;
 const YARGS_COMPLETION_KEY = "get-yargs-completions";
 
 // a thrown string or plain object still yields a message, never `undefined`
-export function describeError(e: unknown): { message: string; stack?: string } {
+function describeError(e: unknown): { message: string; stack?: string } {
   if (e instanceof Error) return { message: e.message, stack: e.stack };
   if (typeof e === "string") return { message: e };
   const o = e as { message?: unknown; stack?: unknown } | null;
@@ -43,57 +35,41 @@ export function describeError(e: unknown): { message: string; stack?: string } {
   };
 }
 
-export const defaultDeps: FailureReporterDeps = {
-  log: (msg) => console.log(msg),
-  logError: (msg) => console.error(msg),
-  collectDebugInformation,
-  captureException: (error) => {
-    Sentry.captureException(error);
-  },
-  flushTelemetry: async (timeoutMs) => {
-    await Sentry.flush(timeoutMs);
-  },
-};
-
-export async function reportFailure(
-  f: CliFailure,
-  deps: FailureReporterDeps,
-): Promise<number> {
-  const { message, error } = f;
+async function reportFailure({ message, error }: CliFailure): Promise<number> {
   try {
-    if (message) deps.log(message); // yargs validation text
+    if (message) console.log(message); // yargs validation text
 
     if (IsErrorType(error, "Usage")) {
       // a user mistake, not a crash: not captured
-      deps.logError((error as Error).message);
+      console.error((error as Error).message);
     } else if (IsErrorType(error, "External")) {
       // captured, but printed without stack or debug information
-      deps.logError((error as Error).message);
-      deps.captureException(error);
+      console.error((error as Error).message);
+      Sentry.captureException(error);
     } else if (error !== undefined && error !== null) {
       const { message: m, stack } = describeError(error);
-      deps.logError(m);
-      if (stack) deps.logError(stack);
-      deps.captureException(error);
-      deps.logError("Collecting Debug Information...");
+      console.error(m);
+      if (stack) console.error(stack);
+      Sentry.captureException(error);
+      console.error("Collecting Debug Information...");
       try {
-        const debugOutput = await deps.collectDebugInformation();
-        deps.logError("Debug Information:");
+        const debugOutput = await collectDebugInformation();
+        console.error("Debug Information:");
         Object.entries(debugOutput).forEach(([key, value]) =>
-          deps.log(`${key}: ${value === null ? "null" : value}`),
+          console.log(`${key}: ${value === null ? "null" : value}`),
         );
       } catch (e) {
-        deps.logError(
+        console.error(
           `Could not collect debug information: ${describeError(e).message}`,
         );
       }
     }
   } catch (e) {
-    deps.logError(`Error while reporting failure: ${describeError(e).message}`);
+    console.error(`Error while reporting failure: ${describeError(e).message}`);
   }
 
   try {
-    await deps.flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
+    await Sentry.flush(SENTRY_FLUSH_TIMEOUT_MS);
   } catch {
     /* never mask the original error */
   }
@@ -122,10 +98,7 @@ async function drainStdio(): Promise<void> {
   );
 }
 
-export function runCli(
-  y: yargs.Argv,
-  deps: FailureReporterDeps = defaultDeps,
-): Promise<void> {
+export function runCli(y: yargs.Argv): Promise<void> {
   let failure: CliFailure | undefined;
 
   y.fail((message, error) => {
@@ -148,7 +121,7 @@ export function runCli(
       if (!failure) failure = { message: null, error };
     }
     if (failure) {
-      process.exit(await reportFailure(failure, deps));
+      process.exit(await reportFailure(failure));
     } else if (completionRequest) {
       // yargs does not await an asynchronous completion callback (cdktn.ts
       // reads the manifest), so it prints after parseAsync resolved: exiting
@@ -159,7 +132,7 @@ export function runCli(
       // (bounded) and exit explicitly, or an unresponsive ingest endpoint
       // keeps the transport socket and the process alive.
       try {
-        await deps.flushTelemetry(SENTRY_FLUSH_TIMEOUT_MS);
+        await Sentry.flush(SENTRY_FLUSH_TIMEOUT_MS);
       } catch {
         /* never block the exit */
       }

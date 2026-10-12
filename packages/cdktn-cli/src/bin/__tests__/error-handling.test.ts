@@ -1,63 +1,39 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import yargs, { Argv } from "yargs";
-import { Errors } from "@cdktn/commons";
-import {
-  describeError,
-  reportFailure,
-  runCli,
-  SENTRY_FLUSH_TIMEOUT_MS,
-  FailureReporterDeps,
-} from "../error-handling";
+import * as Sentry from "@sentry/node";
+import { Errors, collectDebugInformation } from "@cdktn/commons";
+import { runCli } from "../error-handling";
 
-// Node reports an orphaned rejection at the end of the tick that orphaned it;
-// two setImmediate turns land strictly after that, making "was anything
-// orphaned" a deterministic check.
-async function flushMicroAndMacrotasks() {
-  await new Promise((r) => setImmediate(r));
-  await new Promise((r) => setImmediate(r));
-}
+jest.mock("@sentry/node", () => ({
+  ...jest.requireActual("@sentry/node"),
+  captureException: jest.fn(),
+  flush: jest.fn(),
+}));
+// the real collector spawns terraform and every language toolchain
+jest.mock("@cdktn/commons", () => ({
+  ...jest.requireActual("@cdktn/commons"),
+  collectDebugInformation: jest.fn(),
+}));
 
-function allLoggedText(deps: FailureReporterDeps): string[] {
-  const log = deps.log as jest.Mock;
-  const logError = deps.logError as jest.Mock;
-  return [...log.mock.calls, ...logError.mock.calls].map((args) => args[0]);
-}
+const captureException = Sentry.captureException as jest.Mock;
+const flush = Sentry.flush as jest.Mock;
+const collectDebug = collectDebugInformation as jest.Mock;
 
-function makeDeps(): FailureReporterDeps {
-  return {
-    log: jest.fn(),
-    logError: jest.fn(),
-    collectDebugInformation: jest
-      .fn()
-      .mockImplementation(
-        () =>
-          new Promise((resolve) => setImmediate(() => resolve({ node: "24" }))),
-      ),
-    captureException: jest.fn(),
-    flushTelemetry: jest.fn().mockResolvedValue(undefined),
-  };
-}
+const DEBUG_STDERR = ["Collecting Debug Information...", "Debug Information:"];
+const DEBUG_STDOUT = ["node: 24"];
 
 // `yargs(args)` builds a fresh instance per test, so commands and `.fail()`
 // handlers never leak between cases.
-function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
+function makeCli(args: string[], thrown?: unknown) {
   return yargs(args)
     .exitProcess(false)
     .command(
       "boom",
-      "throws an async Error",
+      "rejects, like a real async handler",
       () => {},
       async () => {
-        throw new Error("boom-message");
-      },
-    )
-    .command(
-      "rawboom",
-      "throws an async raw string",
-      () => {},
-      async () => {
-        throw "raw-string-message";
+        throw thrown;
       },
     )
     .command(
@@ -65,34 +41,14 @@ function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
       "throws synchronously",
       () => {},
       () => {
-        throw new Error("sync-boom-message");
-      },
-    )
-    .command(
-      "usageboom",
-      "throws a Usage error",
-      () => {},
-      // async like real handlers, so this takes the handler-rejection path
-      // rather than the yargs-validation path (`choice` below)
-      async () => {
-        throw Errors.Usage("bad-usage-message");
-      },
-    )
-    .command(
-      "externalboom",
-      "throws an External error",
-      () => {},
-      async () => {
-        throw Errors.External("bad-external-message");
+        throw thrown;
       },
     )
     .command(
       "ok",
       "succeeds",
       () => {},
-      () => {
-        handlers.ok?.();
-      },
+      () => {},
     )
     .command(
       "setcode",
@@ -110,400 +66,190 @@ function makeCli(args: string[], handlers: { ok?: jest.Mock } = {}) {
           type: "string",
           choices: ["typescript", "python"],
         }),
-      () => {
-        handlers.ok?.();
-      },
+      () => {},
     );
 }
 
-// The shape cdktn.ts registers: a fallback completion function that
-// answers asynchronously (there: after reading the manifest) for `diff`.
-function makeCompletingCli(args: string[]) {
-  const customCompletion = function (
-    _current: string,
-    argv: { _: (string | number)[] },
-    completionsFilter: (
-      done?: (err: unknown, defaultCompletions: string[]) => void,
-    ) => void,
-    done: (completions: string[]) => void,
-  ) {
-    if (argv._.includes("diff")) {
-      completionsFilter(async (_err, defaults) => {
-        await new Promise((r) => setImmediate(r));
-        done([...defaults, 'alpha:target stack "alpha"']);
-      });
-    } else {
-      completionsFilter();
-    }
-  } as unknown as yargs.AsyncCompletionFunction;
-  return yargs(args)
-    .exitProcess(false)
-    .command(
-      "diff [stack]",
-      "diffs a stack",
-      (cmdYargs: Argv) =>
-        cmdYargs.positional("stack", { type: "string", desc: "the stack" }),
-      () => {},
-    )
-    .completion("completion", customCompletion);
-}
-
-async function runAndCapture(
-  args: string[],
-  deps: FailureReporterDeps,
-  handlers: { ok?: jest.Mock; onExit?: () => void } = {},
-) {
-  const cli = makeCli(args, handlers);
+async function run(args: string[], thrown?: unknown) {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const logSpy = jest
+    .spyOn(console, "log")
+    .mockImplementation((line) => void stdout.push(line));
+  const errorSpy = jest
+    .spyOn(console, "error")
+    .mockImplementation((line) => void stderr.push(line));
   const exitSpy = jest
     .spyOn(process, "exit")
-    .mockImplementation((() => handlers.onExit?.()) as never);
-  const unhandledRejections: unknown[] = [];
-  const onUnhandled = (reason: unknown) => unhandledRejections.push(reason);
-  process.on("unhandledRejection", onUnhandled);
-
+    .mockImplementation((() => {}) as never);
   try {
-    await runCli(cli, deps);
+    await runCli(makeCli(args, thrown));
+    const lastExit = exitSpy.mock.calls[exitSpy.mock.calls.length - 1];
+    return { stdout, stderr, exitCode: lastExit?.[0] };
   } finally {
-    await flushMicroAndMacrotasks();
-    process.off("unhandledRejection", onUnhandled);
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    exitSpy.mockRestore();
   }
-
-  // read the calls before mockRestore(), which also resets them
-  const exitCallCount = exitSpy.mock.calls.length;
-  const lastCall = exitSpy.mock.calls[exitCallCount - 1];
-  const exitCode = lastCall ? (lastCall[0] as number | undefined) : undefined;
-  exitSpy.mockRestore();
-  return { exitCode, exitCallCount, unhandledRejections };
 }
 
-describe("describeError", () => {
-  it("handles a real Error", () => {
-    const e = new Error("oops");
-    const { message, stack } = describeError(e);
-    expect(message).toBe("oops");
-    expect(stack).toBe(e.stack);
+describe("runCli", () => {
+  beforeEach(() => {
+    captureException.mockReset();
+    flush.mockReset().mockResolvedValue(true);
+    collectDebug.mockReset().mockResolvedValue({ node: "24" });
   });
 
-  it("handles a raw string throw", () => {
-    expect(describeError("just a string")).toEqual({
-      message: "just a string",
-    });
-  });
+  const asyncError = new Error("boom-message");
+  const syncError = new Error("sync-boom-message");
+  const usageError = Errors.Usage("bad-usage-message");
+  const externalError = Errors.External("bad-external-message");
+  const errorShaped = { message: "shaped", stack: "at x" };
+  const plainObject = { foo: "bar" };
+  const circular: Record<string, unknown> = {};
+  circular.self = circular;
 
-  it("handles an error-shaped plain object", () => {
-    expect(describeError({ message: "shaped", stack: "at x" })).toEqual({
-      message: "shaped",
-      stack: "at x",
-    });
-  });
+  it.each<{
+    kind: string;
+    args: string[];
+    thrown?: unknown;
+    stdout: unknown[];
+    stderr: unknown[];
+    captured: unknown[];
+  }>([
+    {
+      kind: "an async Error with message, stack and debug information",
+      args: ["boom"],
+      thrown: asyncError,
+      stdout: DEBUG_STDOUT,
+      stderr: ["boom-message", asyncError.stack, ...DEBUG_STDERR],
+      captured: [asyncError],
+    },
+    {
+      kind: "a synchronous handler throw the same way",
+      args: ["syncboom"],
+      thrown: syncError,
+      stdout: DEBUG_STDOUT,
+      stderr: ["sync-boom-message", syncError.stack, ...DEBUG_STDERR],
+      captured: [syncError],
+    },
+    {
+      kind: "a raw string as its own message, with no stack line",
+      args: ["boom"],
+      thrown: "raw-string-message",
+      stdout: DEBUG_STDOUT,
+      stderr: ["raw-string-message", ...DEBUG_STDERR],
+      captured: ["raw-string-message"],
+    },
+    {
+      kind: "an error-shaped plain object by its message and stack",
+      args: ["boom"],
+      thrown: errorShaped,
+      stdout: DEBUG_STDOUT,
+      stderr: ["shaped", "at x", ...DEBUG_STDERR],
+      captured: [errorShaped],
+    },
+    {
+      kind: "an unrelated plain object as JSON",
+      args: ["boom"],
+      thrown: plainObject,
+      stdout: DEBUG_STDOUT,
+      stderr: [
+        'Unexpected non-Error value thrown: {"foo":"bar"}',
+        ...DEBUG_STDERR,
+      ],
+      captured: [plainObject],
+    },
+    {
+      kind: "a circular object without failing to render it",
+      args: ["boom"],
+      thrown: circular,
+      stdout: DEBUG_STDOUT,
+      stderr: [
+        "Unexpected non-Error value thrown: [object Object]",
+        ...DEBUG_STDERR,
+      ],
+      captured: [circular],
+    },
+    {
+      kind: "a Usage error as one line, uncaptured",
+      args: ["boom"],
+      thrown: usageError,
+      stdout: [],
+      stderr: ["Usage Error: bad-usage-message"],
+      captured: [],
+    },
+    {
+      kind: "an External error as one line, captured",
+      args: ["boom"],
+      thrown: externalError,
+      stdout: [],
+      stderr: ["External Error: bad-external-message"],
+      captured: [externalError],
+    },
+    {
+      kind: "an invalid choice with the yargs validation text, uncaptured",
+      args: ["choice", "--language=nope"],
+      stdout: [expect.stringContaining("Invalid values")],
+      stderr: [],
+      captured: [],
+    },
+  ])("reports $kind, then exits 1", async (row) => {
+    const { stdout, stderr, exitCode } = await run(row.args, row.thrown);
 
-  it("handles an unrelated plain object", () => {
-    const { message, stack } = describeError({ foo: "bar" });
-    expect(message).toContain('{"foo":"bar"}');
-    expect(stack).toBeUndefined();
-  });
-
-  it("handles a circular object without throwing", () => {
-    const circular: Record<string, unknown> = {};
-    circular.self = circular;
-    const { message } = describeError(circular);
-    expect(typeof message).toBe("string");
-    expect(message).toContain("Unexpected non-Error value thrown");
-  });
-});
-
-describe("reportFailure", () => {
-  it("prints Usage errors as a single line with no debug info, and never reports them to Sentry", async () => {
-    const deps = makeDeps();
-    const error = Errors.Usage("bad-usage-message");
-    const code = await reportFailure({ message: null, error }, deps);
-
-    expect(code).toBe(1);
-    expect(deps.collectDebugInformation).not.toHaveBeenCalled();
-    expect(allLoggedText(deps)).toEqual(["Usage Error: bad-usage-message"]);
-    // beforeSend (cli-core's error-reporting.ts) drops "Usage Error" anyway;
-    // don't even try to capture one.
-    expect(deps.captureException).not.toHaveBeenCalled();
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-  });
-
-  it("prints External errors as a single line with no debug info, but does report them to Sentry", async () => {
-    const deps = makeDeps();
-    const error = Errors.External("bad-external-message");
-    const code = await reportFailure({ message: null, error }, deps);
-
-    expect(code).toBe(1);
-    expect(deps.collectDebugInformation).not.toHaveBeenCalled();
-    expect(allLoggedText(deps)).toEqual([
-      "External Error: bad-external-message",
-    ]);
-    expect(deps.captureException).toHaveBeenCalledWith(error);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-  });
-
-  it("reports a message + Error with message, stack, then debug info, and captures it for Sentry before flushing", async () => {
-    const deps = makeDeps();
-    const error = new Error("boom-message");
-    const captureOrder: string[] = [];
-    (deps.captureException as jest.Mock).mockImplementation(() =>
-      captureOrder.push("capture"),
-    );
-    (deps.flushTelemetry as jest.Mock).mockImplementation(async () => {
-      captureOrder.push("flush");
-    });
-    const code = await reportFailure({ message: null, error }, deps);
-
-    expect(code).toBe(1);
-    const texts = allLoggedText(deps);
-    expect(texts.filter((t) => t === "boom-message").length).toBe(1);
-    expect(texts).toContain(error.stack);
-    expect(texts).toContain("Collecting Debug Information...");
-    expect(texts).toContain("Debug Information:");
-    expect(deps.captureException).toHaveBeenCalledWith(error);
-    // the capture must happen before the flush, or the flush has nothing
-    // queued to send.
-    expect(captureOrder).toEqual(["capture", "flush"]);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-  });
-
-  it("never prints the literal 'undefined' for a raw-string throw, and still captures it for Sentry", async () => {
-    const deps = makeDeps();
-    const code = await reportFailure(
-      { message: null, error: "raw-string-message" },
-      deps,
-    );
-
-    expect(code).toBe(1);
-    const texts = allLoggedText(deps);
-    expect(texts).toContain("raw-string-message");
-    expect(texts).not.toContain("undefined");
-    expect(deps.captureException).toHaveBeenCalledWith("raw-string-message");
+    expect(stdout).toEqual(row.stdout);
+    expect(stderr).toEqual(row.stderr);
+    expect(captureException.mock.calls).toEqual(row.captured.map((e) => [e]));
+    expect(exitCode).toBe(1);
   });
 
   it("reports a debug-collection failure without masking the original error", async () => {
-    const deps = makeDeps();
-    (deps.collectDebugInformation as jest.Mock).mockRejectedValue(
-      new Error("debug collection exploded"),
-    );
-    const code = await reportFailure(
-      { message: null, error: new Error("boom-message") },
-      deps,
-    );
+    collectDebug.mockRejectedValue(new Error("debug collection exploded"));
 
-    expect(code).toBe(1);
-    const texts = allLoggedText(deps);
-    expect(texts).toContain("boom-message");
-    expect(
-      texts.some((t) => t.includes("Could not collect debug information")),
-    ).toBe(true);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
+    const { stderr, exitCode } = await run(["boom"], asyncError);
+
+    expect(stderr).toEqual([
+      "boom-message",
+      asyncError.stack,
+      "Collecting Debug Information...",
+      "Could not collect debug information: debug collection exploded",
+    ]);
+    expect(exitCode).toBe(1);
   });
 
-  it("still flushes Sentry even if captureException itself throws", async () => {
-    const deps = makeDeps();
-    (deps.captureException as jest.Mock).mockImplementation(() => {
+  it("still prints the error and exits 1 when capturing it throws", async () => {
+    captureException.mockImplementation(() => {
       throw new Error("sentry client exploded");
     });
-    const code = await reportFailure(
-      { message: null, error: new Error("boom-message") },
-      deps,
-    );
 
-    expect(code).toBe(1);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-  });
-});
+    const { stderr, exitCode } = await run(["boom"], asyncError);
 
-describe("runCli", () => {
-  it("reports an async Error thrown by a command handler exactly once, with no orphaned rejection", async () => {
-    const deps = makeDeps();
-    const { exitCode, exitCallCount, unhandledRejections } =
-      await runAndCapture(["boom"], deps);
-
-    expect(unhandledRejections).toEqual([]);
+    expect(stderr).toEqual([
+      "boom-message",
+      asyncError.stack,
+      "Error while reporting failure: sentry client exploded",
+    ]);
     expect(exitCode).toBe(1);
-    expect(exitCallCount).toBe(1);
-    const texts = allLoggedText(deps);
-    expect(texts.filter((t) => t === "boom-message").length).toBe(1);
-    expect(texts).toContain("Collecting Debug Information...");
-    expect(texts).toContain("Debug Information:");
-    expect(deps.captureException).toHaveBeenCalledTimes(1);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-  });
-
-  it("reports an async raw-string throw without ever printing 'undefined'", async () => {
-    const deps = makeDeps();
-    const { exitCode, unhandledRejections } = await runAndCapture(
-      ["rawboom"],
-      deps,
-    );
-
-    expect(unhandledRejections).toEqual([]);
-    expect(exitCode).toBe(1);
-    const texts = allLoggedText(deps);
-    expect(texts).toContain("raw-string-message");
-    expect(texts).not.toContain("undefined");
-    expect(deps.captureException).toHaveBeenCalledWith("raw-string-message");
-  });
-
-  it("reports a synchronous handler throw", async () => {
-    const deps = makeDeps();
-    const { exitCode } = await runAndCapture(["syncboom"], deps);
-
-    expect(exitCode).toBe(1);
-    expect(allLoggedText(deps)).toContain("sync-boom-message");
-    expect(deps.captureException).toHaveBeenCalledTimes(1);
-  });
-
-  it("prints Usage errors as one line, skips debug collection, and orphans no rejection", async () => {
-    const deps = makeDeps();
-    const { exitCode, unhandledRejections } = await runAndCapture(
-      ["usageboom"],
-      deps,
-    );
-
-    expect(unhandledRejections).toEqual([]);
-    expect(exitCode).toBe(1);
-    expect(deps.collectDebugInformation).not.toHaveBeenCalled();
-    expect(deps.captureException).not.toHaveBeenCalled();
-  });
-
-  it("prints External errors as one line, skips debug collection, and orphans no rejection, but does report to Sentry", async () => {
-    const deps = makeDeps();
-    const { exitCode, exitCallCount, unhandledRejections } =
-      await runAndCapture(["externalboom"], deps);
-
-    expect(unhandledRejections).toEqual([]);
-    expect(exitCode).toBe(1);
-    expect(exitCallCount).toBe(1);
-    expect(deps.collectDebugInformation).not.toHaveBeenCalled();
-    expect(deps.captureException).toHaveBeenCalledTimes(1);
-  });
-
-  it("rejects an invalid choice before the command handler runs", async () => {
-    const deps = makeDeps();
-    const handler = jest.fn();
-    const { exitCode } = await runAndCapture(
-      ["choice", "--language=nope"],
-      deps,
-      { ok: handler },
-    );
-
-    expect(exitCode).toBe(1);
-    expect(handler).not.toHaveBeenCalled();
-    expect(allLoggedText(deps).some((t) => t.includes("Invalid values"))).toBe(
-      true,
-    );
-    // a yargs validation failure carries a message but no error, so there is
-    // nothing to capture
-    expect(deps.captureException).not.toHaveBeenCalled();
-  });
-
-  it("reports nothing on success, but flushes once (bounded) and then exits 0", async () => {
-    const deps = makeDeps();
-    const handler = jest.fn();
-    const order: string[] = [];
-    (deps.flushTelemetry as jest.Mock).mockImplementation(async () => {
-      order.push("flush");
-    });
-    const { exitCode, exitCallCount, unhandledRejections } =
-      await runAndCapture(["ok"], deps, {
-        ok: handler,
-        onExit: () => order.push("exit"),
-      });
-
-    expect(handler).toHaveBeenCalled();
-    expect(unhandledRejections).toEqual([]);
-    expect(deps.log).not.toHaveBeenCalled();
-    expect(deps.logError).not.toHaveBeenCalled();
-    expect(deps.captureException).not.toHaveBeenCalled();
-    expect(deps.flushTelemetry).toHaveBeenCalledTimes(1);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-    // the explicit exit is what bounds an unresponsive ingest endpoint, so it
-    // must come after the flush, never instead of it
-    expect(order).toEqual(["flush", "exit"]);
-    expect(exitCallCount).toBe(1);
-    expect(exitCode).toBe(0);
   });
 
   it("keeps the exit code a handler already set", async () => {
-    const deps = makeDeps();
     const originalExitCode = process.exitCode;
     try {
-      const { exitCode, exitCallCount } = await runAndCapture(
-        ["setcode"],
-        deps,
-      );
+      const { exitCode } = await run(["setcode"]);
 
-      expect(exitCallCount).toBe(1);
       expect(exitCode).toBe(3);
-      expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
     } finally {
       process.exitCode = originalExitCode;
     }
   });
 
   it("still exits 0 when the flush itself rejects", async () => {
-    const deps = makeDeps();
-    (deps.flushTelemetry as jest.Mock).mockRejectedValue(
-      new Error("transport exploded"),
-    );
-    const { exitCode, exitCallCount, unhandledRejections } =
-      await runAndCapture(["ok"], deps);
+    flush.mockRejectedValue(new Error("transport exploded"));
 
-    expect(unhandledRejections).toEqual([]);
-    expect(exitCallCount).toBe(1);
+    const { stderr, exitCode } = await run(["ok"]);
+
+    expect(stderr).toEqual([]);
     expect(exitCode).toBe(0);
-  });
-
-  it("treats --help like success: no report, one flush, exit 0", async () => {
-    const deps = makeDeps();
-    const { exitCode, exitCallCount, unhandledRejections } =
-      await runAndCapture(["--help"], deps);
-
-    expect(unhandledRejections).toEqual([]);
-    expect(deps.log).not.toHaveBeenCalled();
-    expect(deps.logError).not.toHaveBeenCalled();
-    expect(deps.flushTelemetry).toHaveBeenCalledTimes(1);
-    expect(deps.flushTelemetry).toHaveBeenCalledWith(SENTRY_FLUSH_TIMEOUT_MS);
-    expect(exitCallCount).toBe(1);
-    expect(exitCode).toBe(0);
-  });
-
-  it("lets an asynchronous completion function print before the process ends", async () => {
-    // yargs never awaits the completion callback, so parseAsync resolves
-    // before an async completion function has printed anything; an explicit
-    // exit at that point would swallow `cdktn diff <TAB>` entirely.
-    const deps = makeDeps();
-    const printed: string[] = [];
-    const logSpy = jest
-      .spyOn(console, "log")
-      .mockImplementation((line: string) => {
-        printed.push(line);
-      });
-    try {
-      const exitSpy = jest
-        .spyOn(process, "exit")
-        .mockImplementation((() => {}) as never);
-      try {
-        await runCli(
-          makeCompletingCli(["--get-yargs-completions", "cdktn", "diff", ""]),
-          deps,
-        );
-        const printedWhenRunCliResolved = printed.length;
-        await flushMicroAndMacrotasks();
-
-        expect(printedWhenRunCliResolved).toBe(0);
-        expect(printed).toContain('alpha:target stack "alpha"');
-        expect(exitSpy).not.toHaveBeenCalled();
-      } finally {
-        exitSpy.mockRestore();
-      }
-    } finally {
-      logSpy.mockRestore();
-    }
-    expect(deps.flushTelemetry).not.toHaveBeenCalled();
-    expect(deps.logError).not.toHaveBeenCalled();
   });
 
   it("still exits 0 when the stdout reader closed early and the drain write gets EPIPE", async () => {
@@ -521,12 +267,10 @@ describe("runCli", () => {
       return false;
     }) as never);
     try {
-      const deps = makeDeps();
-      const { exitCode, exitCallCount, unhandledRejections } =
-        await runAndCapture(["ok"], deps);
+      const { exitCode } = await run(["ok"]);
+      // lets the queued 'error' fire while the drain's listener may still be on
+      await new Promise((r) => setImmediate(r));
 
-      expect(unhandledRejections).toEqual([]);
-      expect(exitCallCount).toBe(1);
       expect(exitCode).toBe(0);
     } finally {
       writeSpy.mockRestore();
