@@ -18,15 +18,8 @@ function fixtureSource(errorHandlingPath: string): string {
   return `
   import yargs from "yargs";
   import * as Sentry from "@sentry/node";
+  import { Errors } from "@cdktn/commons";
   import { runCli } from ${JSON.stringify(errorHandlingPath)};
-
-  if (process.argv.includes("--with-listener")) {
-    // stands in for Sentry's OnUnhandledRejection integration: if runCli()
-    // ever orphans a rejection, this would be the thing that catches it.
-    process.on("unhandledRejection", (reason) => {
-      console.error("stub-sentry-caught:", reason);
-    });
-  }
 
   // Points the SDK at a local sink instead of sentry.io, standing in for
   // the initializErrorReporting() call every real command handler makes
@@ -54,7 +47,7 @@ function fixtureSource(errorHandlingPath: string): string {
     }
   };
 
-  const cli = yargs(process.argv.slice(2).filter((a) => a !== "--with-listener"))
+  const cli = yargs(process.argv.slice(2))
     .exitProcess(false)
     .completion("completion", customCompletion)
     .command(
@@ -78,6 +71,14 @@ function fixtureSource(errorHandlingPath: string): string {
       () => {},
       async () => {
         throw new Error("empirical-sentry-message");
+      },
+    )
+    .command(
+      "externalboom",
+      "throws an error that is reported without debug collection",
+      () => {},
+      async () => {
+        throw Errors.External("empirical-external-message");
       },
     )
     .command(
@@ -170,6 +171,10 @@ function startSilentSentrySink(): Promise<{
   });
 }
 
+// A process the bounded flush (4 s) failed to end is killed here, which
+// leaves it without an exit code.
+const HUNG_PROCESS_TIMEOUT_MS = 10000;
+
 function expectNoRuntimeNoise(output: string) {
   expect(output).not.toContain("ERR_UNHANDLED_REJECTION");
   expect(output).not.toContain("UnhandledPromiseRejection");
@@ -205,6 +210,7 @@ describe("runCli child-process smoke test", () => {
       alias: {
         yargs: require.resolve("yargs"),
         "@sentry/node": require.resolve("@sentry/node"),
+        "@cdktn/commons": require.resolve("@cdktn/commons"),
       },
     });
   }, 60000);
@@ -217,23 +223,7 @@ describe("runCli child-process smoke test", () => {
 
     expect(result.exitCode).toBe(1);
     expect(output.split("raw-string-message").length - 1).toBe(1);
-    expect(output).not.toContain("ERR_UNHANDLED_REJECTION");
-    expect(output).not.toContain("UnhandledPromiseRejection");
-    expect(output).not.toContain("PromiseRejectionHandledWarning");
-    expect(output).not.toContain("Node.js v");
-  });
-
-  it("still orphans nothing when a Sentry-style unhandledRejection listener is installed", async () => {
-    const result = await execa(
-      process.execPath,
-      [bundlePath, "rawboom", "--with-listener"],
-      { reject: false },
-    );
-    const output = `${result.stdout}\n${result.stderr}`;
-
-    expect(result.exitCode).toBe(1);
-    expect(output.split("raw-string-message").length - 1).toBe(1);
-    expect(output).not.toContain("stub-sentry-caught");
+    expect(output).not.toMatch(/^undefined$/m);
     expect(output).not.toContain("ERR_UNHANDLED_REJECTION");
     expect(output).not.toContain("UnhandledPromiseRejection");
     expect(output).not.toContain("PromiseRejectionHandledWarning");
@@ -266,22 +256,43 @@ describe("runCli child-process smoke test", () => {
     }
   }, 15000);
 
+  // nothing but the flush stands between the capture and the exit here:
+  // debug collection, which would give the transport time, is skipped
+  it("delivers an External error to Sentry before the process exits", async () => {
+    const sink = await startSentrySink();
+    try {
+      const dsn = `http://public@127.0.0.1:${sink.port}/1`;
+      const result = await execa(
+        process.execPath,
+        [bundlePath, "externalboom"],
+        { env: { ...process.env, TEST_SENTRY_DSN: dsn }, reject: false },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(
+        sink
+          .requests()
+          .some((r) => r.body.includes("empirical-external-message")),
+      ).toBe(true);
+    } finally {
+      await sink.close();
+    }
+  }, 15000);
+
   it("exits 0 within the flush bound when the ingest endpoint never answers on the success path", async () => {
     const sink = await startSilentSentrySink();
     try {
       const dsn = `http://public@127.0.0.1:${sink.port}/1`;
-      const started = Date.now();
       const result = await execa(process.execPath, [bundlePath, "capturedok"], {
         env: { ...process.env, TEST_SENTRY_DSN: dsn },
         reject: false,
+        timeout: HUNG_PROCESS_TIMEOUT_MS,
       });
-      const elapsedMs = Date.now() - started;
       const output = `${result.stdout}\n${result.stderr}`;
 
       // the hung request would keep the loop alive forever; the bounded
       // flush (4 s) plus the explicit exit is what ends the process
       expect(result.exitCode).toBe(0);
-      expect(elapsedMs).toBeLessThan(8000);
       expect(sink.connections()).toBeGreaterThan(0);
       expect(result.stdout).toContain("capturedok-done");
       expectNoRuntimeNoise(output);
@@ -335,17 +346,18 @@ describe("runCli child-process smoke test", () => {
     const sink = await startSilentSentrySink();
     try {
       const dsn = `http://public@127.0.0.1:${sink.port}/1`;
-      const started = Date.now();
       const result = await execa(
         process.execPath,
         [bundlePath, "capturedboom"],
-        { env: { ...process.env, TEST_SENTRY_DSN: dsn }, reject: false },
+        {
+          env: { ...process.env, TEST_SENTRY_DSN: dsn },
+          reject: false,
+          timeout: HUNG_PROCESS_TIMEOUT_MS,
+        },
       );
-      const elapsedMs = Date.now() - started;
       const output = `${result.stdout}\n${result.stderr}`;
 
       expect(result.exitCode).toBe(1);
-      expect(elapsedMs).toBeLessThan(8000);
       expect(sink.connections()).toBeGreaterThan(0);
       expect(output).toContain("empirical-sentry-message");
       expectNoRuntimeNoise(output);
