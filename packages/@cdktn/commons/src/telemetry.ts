@@ -71,8 +71,8 @@ export function setUsageTelemetryEnabled(enabled: boolean | undefined): void {
   state.usageTelemetryEnabled = enabled;
 }
 
-// `init` must not overwrite the decision of a command (`convert`) that
-// drives it inside a throwaway project.
+// Once captured, the decision stands for the process; reporting is not
+// initialized a second time.
 export function hasCapturedUsageTelemetryDecision(): boolean {
   return state.usageTelemetryEnabled !== undefined;
 }

@@ -44,6 +44,19 @@ jest.mock("../ui/list", () => ({
 jest.mock("../ui/output", () => ({
   runOutput: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock("../helper/utilities", () => ({
+  ...jest.requireActual("../helper/utilities"),
+  readStreamAsString: jest.fn().mockResolvedValue("resource {}"),
+}));
+jest.mock("@cdktn/provider-schema", () => ({
+  ...jest.requireActual("@cdktn/provider-schema"),
+  readSchema: jest.fn().mockResolvedValue({ providerSchema: {} }),
+}));
+const mockConvertLib = jest.fn();
+jest.mock("@cdktn/hcl2cdk", () => ({
+  ...jest.requireActual("@cdktn/hcl2cdk"),
+  convert: (...args: unknown[]) => mockConvertLib(...args),
+}));
 jest.mock("ci-info", () => ({ isCI: false, name: null }));
 
 const mockProviderAddLib = jest.fn();
@@ -66,6 +79,7 @@ jest.mock("@cdktn/commons", () => ({
 }));
 
 import {
+  convert,
   get,
   init as initHandler,
   list,
@@ -89,7 +103,6 @@ describe("completion metric of handlers without an own emitter", () => {
   };
   const count = Sentry.metrics.count as jest.Mock;
   const init = Sentry.init as jest.Mock;
-  const flush = Sentry.flush as jest.Mock;
 
   const metricCalls = (name: string) =>
     count.mock.calls.filter(([metric]) => metric === name);
@@ -108,7 +121,6 @@ describe("completion metric of handlers without an own emitter", () => {
     setUsageTelemetryEnabled(undefined);
     count.mockClear();
     init.mockClear();
-    flush.mockClear();
   });
 
   afterEach(() => {
@@ -184,12 +196,6 @@ describe("completion metric of handlers without an own emitter", () => {
             },
           ],
         ]);
-      }
-      // the nested get replaces the client; invoked must be flushed first
-      if (needsGet) {
-        expect(flush.mock.invocationCallOrder[0]).toBeLessThan(
-          init.mock.invocationCallOrder[1],
-        );
       }
     },
   );
@@ -334,6 +340,85 @@ describe("completion metric of handlers without an own emitter", () => {
 
       expect(metricCalls("cli.command.invoked")).toHaveLength(1);
       expect(metricCalls("cli.command.completed")).toHaveLength(0);
+    });
+  });
+
+  // A target other than typescript converts inside a temporary project that
+  // opts out of both flags; with a provider, init runs a nested get there.
+  describe("convert through a temporary project", () => {
+    let temporaryProject: string | undefined;
+
+    beforeEach(() => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+        app: "npx ts-node main.ts",
+        sendCrashReports: true,
+        sendUsageTelemetry: true,
+      });
+      temporaryProject = undefined;
+      // the scaffold persists the flags and providers init was given
+      mockInitLib.mockImplementation(
+        async ({
+          destination,
+          sendCrashReports,
+          sendUsageTelemetry,
+          providers,
+        }) => {
+          temporaryProject = path.resolve(destination);
+          fs.writeJsonSync(path.join(temporaryProject, "cdktf.json"), {
+            language: "typescript",
+            app: "npx ts-node main.ts",
+            sendCrashReports,
+            sendUsageTelemetry,
+            terraformProviders: providers,
+          });
+          return true;
+        },
+      );
+      mockGetLib.mockReset().mockResolvedValue(undefined);
+      mockConvertLib.mockResolvedValue({ all: "", stats: {} });
+      Errors.setScope("convert");
+    });
+
+    afterEach(() => {
+      if (temporaryProject) {
+        fs.removeSync(temporaryProject);
+      }
+    });
+
+    const convertToPython = async () => {
+      const log = jest.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await convert({ language: "python", provider: ["aws@~>5.0"] });
+      } finally {
+        log.mockRestore();
+      }
+      // the bindings were generated in the temporary project, not the user's
+      expect(mockGetLib).toHaveBeenCalledTimes(1);
+      expect(temporaryProject).not.toBe(workdir);
+    };
+
+    it("counts invoked and completed once each under the consent of the user's project", async () => {
+      await convertToPython();
+
+      for (const metric of ["cli.command.invoked", "cli.command.completed"]) {
+        expect(metricCalls(metric)).toEqual([
+          [
+            metric,
+            1,
+            { attributes: expect.objectContaining({ command: "convert" }) },
+          ],
+        ]);
+      }
+    });
+
+    it("keeps reporting crashes under the consent of the user's project", async () => {
+      await convertToPython();
+
+      const event = { message: "crash" };
+      await expect(
+        init.mock.calls.at(-1)![0].beforeSend(event, undefined),
+      ).resolves.toBe(event);
     });
   });
 });

@@ -6,6 +6,7 @@ import {
   getProjectId,
   getUserId,
   getUsageTelemetryConsent,
+  hasCapturedUsageTelemetryDecision,
   setUsageTelemetryEnabled,
   startCommandTelemetry,
   collectDebugInformation,
@@ -85,6 +86,13 @@ export async function initializErrorReporting(
   runUsageTelemetryConsentPrompt?: () => Promise<boolean>,
   projectPath = process.cwd(),
 ) {
+  // The first call decides for the whole process: a command run by another
+  // one (get inside the throwaway project of convert) must not replace the
+  // consent, or the client built from it, with those of its own project.
+  if (hasCapturedUsageTelemetryDecision()) {
+    return;
+  }
+
   let shouldReport = shouldReportCrash(projectPath);
   let usageConsent = getUsageTelemetryConsent(projectPath);
 

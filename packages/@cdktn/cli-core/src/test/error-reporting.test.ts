@@ -432,6 +432,71 @@ describe("consent gating (initializErrorReporting)", () => {
       }
     },
   );
+
+  // A command can run another one inside a different project (convert runs
+  // init and get in a temporary one): the first project decides for the run.
+  describe("a later init against another project", () => {
+    let other: string;
+
+    const initRootThenOther = async (
+      root: Record<string, unknown>,
+      nested: Record<string, unknown>,
+      prompt?: jest.Mock,
+    ) => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), root);
+      fs.writeJsonSync(path.join(other, "cdktf.json"), nested);
+      Errors.setScope("convert");
+      await initializErrorReporting();
+      await initializErrorReporting(prompt, prompt, other);
+    };
+
+    beforeEach(() => {
+      other = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-other-"));
+      setInteractive(false);
+    });
+
+    afterEach(() => {
+      fs.removeSync(other);
+    });
+
+    it("opted in, then a project that opts out -> usage stays on and crashes are still reported", async () => {
+      await initRootThenOther(
+        { sendCrashReports: true, sendUsageTelemetry: true },
+        { sendCrashReports: false, sendUsageTelemetry: false },
+      );
+
+      expect(isUsageTelemetryEnabled(other)).toBe(true);
+      const event = { message: "crash" };
+      await expect(initOptions().beforeSend(event, undefined)).resolves.toBe(
+        event,
+      );
+    });
+
+    it("opted out, then a project that opts in -> usage stays off, no client and no metric", async () => {
+      await initRootThenOther(
+        { sendCrashReports: false, sendUsageTelemetry: false },
+        { sendCrashReports: true, sendUsageTelemetry: true },
+      );
+
+      expect(isUsageTelemetryEnabled(other)).toBe(false);
+      expect(Sentry.init).not.toHaveBeenCalled();
+      expect(Sentry.metrics.count).not.toHaveBeenCalled();
+    });
+
+    it("neither prompts for nor persists the unset flags of the other project", async () => {
+      setInteractive(true);
+      const prompt = jest.fn().mockResolvedValue(true);
+
+      await initRootThenOther(
+        { sendCrashReports: false, sendUsageTelemetry: true },
+        {},
+        prompt,
+      );
+
+      expect(prompt).not.toHaveBeenCalled();
+      expect(fs.readJsonSync(path.join(other, "cdktf.json"))).toEqual({});
+    });
+  });
 });
 
 describe("start-of-command metric (initializErrorReporting)", () => {
