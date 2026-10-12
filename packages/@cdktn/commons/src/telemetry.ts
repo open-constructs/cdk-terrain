@@ -7,7 +7,9 @@ import * as fs from "fs-extra";
 import * as semver from "semver";
 import ciInfo from "ci-info";
 import { logger } from "./logging";
-import { DEFAULT_TARGET_VERSIONS, LANGUAGES } from "./config";
+import { DEFAULT_TARGET_VERSIONS, Language, LANGUAGES } from "./config";
+import { isGradleProject } from "./gradle";
+import { detectNodePackageManager } from "./node-package-manager";
 import { processState } from "./process-state";
 import { terraformCli } from "./terraform";
 
@@ -60,6 +62,8 @@ type CommandTelemetryState = {
   // The raw `language` of the project the run started in, so every metric of
   // the run (the error metric has no payload) carries the one `invoked` did.
   language?: unknown;
+  // detected in the project the run started in, for the same reason
+  packageManager?: PackageManager;
   // captured with the consent decision, for the same reason
   projectTargetAttributes?: Attributes;
 };
@@ -70,6 +74,58 @@ const state = processState<CommandTelemetryState>(
   "cdktn.commandTelemetry",
   () => ({}),
 );
+
+export const PACKAGE_MANAGERS = [
+  "npm",
+  "pnpm",
+  "yarn",
+  "yarn-berry",
+  "pip",
+  "pipenv",
+  "maven",
+  "gradle",
+  "nuget",
+  "go",
+] as const;
+export type PackageManager = (typeof PACKAGE_MANAGERS)[number];
+
+// Only members of the closed set become an attribute: a `packageManager`
+// field carries a version and a hash, and a detector may grow new values.
+export function normalizePackageManager(
+  value: unknown,
+): PackageManager | undefined {
+  return PACKAGE_MANAGERS.find((name) => name === value);
+}
+
+// The package manager `provider add` would drive, decided the way cli-core's
+// PackageManager.forLanguage does. undefined outside a supported project.
+function detectPackageManager(
+  projectPath: string,
+  cdktfJson: Record<string, any>,
+): PackageManager | undefined {
+  try {
+    switch (cdktfJson.language) {
+      case Language.TYPESCRIPT:
+        return normalizePackageManager(detectNodePackageManager(projectPath));
+      case Language.PYTHON:
+        if (typeof cdktfJson.app !== "string") {
+          return undefined;
+        }
+        return cdktfJson.app.includes("pipenv") ? "pipenv" : "pip";
+      case Language.JAVA:
+        return isGradleProject(projectPath) ? "gradle" : "maven";
+      case Language.CSHARP:
+        return "nuget";
+      case Language.GO:
+        return "go";
+      default:
+        return undefined;
+    }
+  } catch (err) {
+    logger.debug(`Could not detect the package manager: ${err}`);
+    return undefined;
+  }
+}
 
 // Free-text payload fields are validated before they become attributes so a
 // misconfigured or hand-edited value never carries arbitrary text.
@@ -197,6 +253,9 @@ async function commandAttributes(
   if (LANGUAGES.includes(language as any)) {
     attributes.language = language as string;
   }
+  if (state.packageManager !== undefined) {
+    attributes.package_manager = state.packageManager;
+  }
   return attributes;
 }
 
@@ -210,7 +269,9 @@ export async function startCommandTelemetry(
     return;
   }
   state.startedCommand = command;
-  state.language = readRawCdktfJson(projectPath).language;
+  const cdktfJson = readRawCdktfJson(projectPath);
+  state.language = cdktfJson.language;
+  state.packageManager = detectPackageManager(projectPath, cdktfJson);
   try {
     if (!isUsageTelemetryEnabled()) {
       return;
@@ -226,6 +287,7 @@ export async function startCommandTelemetry(
 export function resetCommandTelemetry(): void {
   state.startedCommand = undefined;
   state.language = undefined;
+  state.packageManager = undefined;
 }
 
 // Payload fields reach the attributes only through the allow-lists above.

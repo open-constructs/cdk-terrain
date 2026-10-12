@@ -10,6 +10,8 @@ import {
   resetCommandTelemetry,
   getProjectTargetAttributes,
   getUsageTelemetryConsent,
+  normalizePackageManager,
+  PACKAGE_MANAGERS,
   setProjectTargetAttributes,
   setUsageTelemetryEnabled,
 } from "./telemetry";
@@ -251,6 +253,7 @@ describe("telemetry", () => {
         "command",
         "language",
         "os",
+        "package_manager",
         // server.address is the fixed serverName from init
         "server.address",
         "target_opentofu",
@@ -311,6 +314,224 @@ describe("telemetry", () => {
       expect(getProjectTargetAttributes(workdir).target_terraform).toBe(
         expected,
       );
+    });
+  });
+
+  describe("package manager", () => {
+    beforeEach(() => {
+      initSentryWithCapturingTransport();
+    });
+
+    afterEach(() => {
+      jest.dontMock("./node-package-manager");
+    });
+
+    // a copy of the module whose node detector is replaced
+    function telemetryWithNodeDetector(detect: () => string) {
+      let copy!: typeof import("./telemetry");
+      jest.isolateModules(() => {
+        jest.doMock("./node-package-manager", () => ({
+          detectNodePackageManager: detect,
+        }));
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        copy = require("./telemetry");
+      });
+      return copy;
+    }
+
+    // one successful and one failed end, so every command metric is covered
+    async function runMetrics(
+      telemetry: Pick<
+        typeof import("./telemetry"),
+        "startCommandTelemetry" | "sendTelemetry"
+      > = { startCommandTelemetry, sendTelemetry },
+    ): Promise<MetricItem[]> {
+      await telemetry.startCommandTelemetry("synth");
+      await telemetry.sendTelemetry("synth", {});
+      await telemetry.sendTelemetry("synth", { error: true });
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items.map((i) => i.name)).toEqual([
+        "cli.command.invoked",
+        "cli.command.completed",
+        "cli.command.error",
+      ]);
+      return items;
+    }
+
+    it.each([
+      ["no lockfile", "npm", {}],
+      ["a pnpm lockfile", "pnpm", { "pnpm-lock.yaml": "" }],
+      ["a yarn lockfile", "yarn", { "yarn.lock": "" }],
+      ["a .yarnrc.yml", "yarn-berry", { ".yarnrc.yml": "" }],
+      [
+        "a declared npm",
+        "npm",
+        { "package.json": '{"packageManager":"npm@10.8.2"}' },
+      ],
+      [
+        "a declared pnpm with a hash",
+        "pnpm",
+        { "package.json": '{"packageManager":"pnpm@10.26.0+sha512.LEAK"}' },
+      ],
+      [
+        "a declared yarn 1",
+        "yarn",
+        { "package.json": '{"packageManager":"yarn@1.22.22"}' },
+      ],
+      [
+        "a declared yarn 4",
+        "yarn-berry",
+        { "package.json": '{"packageManager":"yarn@4.1.0"}' },
+      ],
+      [
+        "an unknown declared manager",
+        "npm",
+        { "package.json": '{"packageManager":"bun@1.1.0-LEAK"}' },
+      ],
+    ])(
+      "reports a typescript project with %s as %p on every command metric",
+      async (_name, expected, files) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+          language: "typescript",
+        });
+        for (const [name, content] of Object.entries(files)) {
+          fs.writeFileSync(path.join(workdir, name), content as string);
+        }
+
+        for (const item of await runMetrics()) {
+          expect(attributeValues(item).package_manager).toBe(expected);
+        }
+        const bytes = envelopeBodies.join("\n");
+        expect(bytes).not.toContain("LEAK");
+        expect(bytes).not.toContain("10.26.0");
+      },
+    );
+
+    it.each([
+      ["python", { app: "pipenv run python main.py" }, {}, "pipenv"],
+      ["python", { app: "python3 main.py" }, {}, "pip"],
+      ["java", {}, { "build.gradle": "" }, "gradle"],
+      ["java", {}, { "pom.xml": "" }, "maven"],
+      ["csharp", {}, {}, "nuget"],
+      ["go", {}, {}, "go"],
+    ])(
+      "reports a %s project with %j and files %j as %p",
+      async (language, config, files, expected) => {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+          language,
+          ...config,
+        });
+        for (const [name, content] of Object.entries(files)) {
+          fs.writeFileSync(path.join(workdir, name), content as string);
+        }
+
+        for (const item of await runMetrics()) {
+          expect(attributeValues(item).package_manager).toBe(expected);
+        }
+      },
+    );
+
+    it.each([
+      ["no cdktf.json", undefined],
+      ["an unsupported language", { language: "rust" }],
+      ["no language", { app: "pipenv run python main.py" }],
+      ["a python project without an app command", { language: "python" }],
+    ])("omits the attribute with %s", async (_name, cdktfJson) => {
+      if (cdktfJson) {
+        fs.writeJsonSync(path.join(workdir, "cdktf.json"), cdktfJson);
+      }
+      // lockfiles alone never identify a project
+      fs.writeFileSync(path.join(workdir, "pnpm-lock.yaml"), "");
+      fs.writeFileSync(path.join(workdir, "build.gradle"), "");
+
+      for (const item of await runMetrics()) {
+        expect(item.attributes).not.toHaveProperty("package_manager");
+      }
+    });
+
+    it("keeps the value detected at start when the cwd changes before the end", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+      });
+      fs.writeFileSync(path.join(workdir, "pnpm-lock.yaml"), "");
+      const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-else-"));
+
+      try {
+        await startCommandTelemetry("convert");
+        process.chdir(elsewhere);
+        await sendTelemetry("convert", {});
+        await sendTelemetry("convert", { error: true });
+        expect(await Sentry.flush(2000)).toBe(true);
+      } finally {
+        process.chdir(workdir);
+        fs.removeSync(elsewhere);
+      }
+
+      const items = parseMetricItems(envelopeBodies);
+      expect(items).toHaveLength(3);
+      for (const item of items) {
+        expect(attributeValues(item).package_manager).toBe("pnpm");
+      }
+    });
+
+    it("forgets the value with the run", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), { language: "go" });
+
+      await startCommandTelemetry("synth");
+      resetCommandTelemetry();
+      await sendTelemetry("synth", {});
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const completed = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.completed",
+      )!;
+      expect(completed.attributes).not.toHaveProperty("package_manager");
+    });
+
+    it("omits a detector value outside the closed set", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+      });
+      const telemetry = telemetryWithNodeDetector(() => "bun@1.1.0 /Users/x");
+
+      for (const item of await runMetrics(telemetry)) {
+        expect(item.attributes).not.toHaveProperty("package_manager");
+      }
+      expect(envelopeBodies.join("\n")).not.toContain("bun");
+    });
+
+    it("omits the attribute when detection throws", async () => {
+      fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+        language: "typescript",
+      });
+      const telemetry = telemetryWithNodeDetector(() => {
+        throw new Error("EACCES");
+      });
+
+      for (const item of await runMetrics(telemetry)) {
+        expect(item.attributes).not.toHaveProperty("package_manager");
+      }
+    });
+
+    it("normalizes to members of the closed set only", () => {
+      for (const name of PACKAGE_MANAGERS) {
+        expect(normalizePackageManager(name)).toBe(name);
+      }
+      for (const value of [
+        "bun",
+        "NPM",
+        "pnpm@10.26.0+sha512.abc",
+        "/usr/local/bin/npm",
+        "",
+        1,
+        null,
+        undefined,
+        ["npm"],
+      ]) {
+        expect(normalizePackageManager(value)).toBeUndefined();
+      }
     });
   });
 
@@ -414,6 +635,7 @@ describe("telemetry", () => {
       ]);
       expect(attributeValues(items[1])).toMatchObject({
         language: "go",
+        package_manager: "go",
         target_opentofu: ">=1.7.0",
       });
       expect(items[1].attributes).not.toHaveProperty("target_terraform");
