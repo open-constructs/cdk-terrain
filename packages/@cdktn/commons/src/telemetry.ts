@@ -808,8 +808,9 @@ export async function sendTelemetry(
     // metrics below can then cost the run its command metric.
     const nested =
       state.startedCommand !== undefined && state.startedCommand !== command;
-    // a run with failed stacks is not completed: the failure thrown next is
-    // counted as cli.command.error by the entrypoint's reporter
+    // a run that failed, with or without a failed stack, is not completed: the
+    // failure thrown next is counted as cli.command.error by the entrypoint's
+    // reporter
     const failedStackCount =
       typeof payload.failedStackCount === "number"
         ? payload.failedStackCount
@@ -818,7 +819,7 @@ export async function sendTelemetry(
       Sentry.metrics.count("cli.stack.failed", failedStackCount, {
         attributes,
       });
-    } else if (!nested) {
+    } else if (!nested && payload.runFailed !== true) {
       Sentry.metrics.count("cli.command.completed", 1, { attributes });
     }
     if (typeof payload.totalTime === "number") {

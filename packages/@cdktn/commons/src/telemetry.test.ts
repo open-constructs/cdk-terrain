@@ -949,6 +949,20 @@ describe("telemetry", () => {
       expect(envelopeBodies.join("\n")).not.toContain("/Users/x");
     });
 
+    it("counts no completed run and no failed stack for a run that failed before any stack did", async () => {
+      await sendTelemetry("deploy", {
+        stackMetadata,
+        requiredProviders,
+        failedStackCount: 0,
+        runFailed: true,
+      });
+
+      const items = await deliveredItems();
+      expect(metrics(items, "cli.stack")).toHaveLength(2);
+      expect(metrics(items, "cli.stack.failed")).toEqual([]);
+      expect(items.some((i) => i.name === "cli.command.completed")).toBe(false);
+    });
+
     it("never serializes stack names, resource ids or module paths", async () => {
       await sendTelemetry("deploy", {
         language: "typescript",
