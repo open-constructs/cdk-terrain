@@ -479,6 +479,9 @@ export class CdktfProject {
             ? nextRunningExecutor.deploy(opts)
             : nextRunningExecutor.destroy(opts);
 
+        // The loop can throw before the final await below; a stack's failure
+        // must not also surface as an unhandled rejection then.
+        promise.catch(() => undefined);
         allExecutions.push(promise);
       } catch (e) {
         // await next() threw an error because a stack failed to apply/destroy
