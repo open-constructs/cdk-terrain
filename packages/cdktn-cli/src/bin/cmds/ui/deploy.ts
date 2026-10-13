@@ -3,7 +3,8 @@
 import { NestedTerraformOutputs } from "@cdktn/cli-core";
 import { runCdktfProject, Status } from "../helper/project-runner";
 import { StreamRenderer } from "../helper/tty-stream";
-import { renderExecution, renderOutputs } from "../helper/format";
+import { renderExecution } from "../helper/format";
+import { presentOutputs } from "../helper/outputs";
 import {
   promptApprove,
   promptOverride,
@@ -40,7 +41,8 @@ export interface DeployConfig {
  * @param config - All deploy options, forwarded near-verbatim to `CdktfProject.deploy`. `onOutputsRetrieved` is
  *                 invoked once the run completes (or is stopped) with the final outputs map.
  * @returns Promise that resolves when the deploy completes, is stopped, or is dismissed. Rejects with whatever
- *          cli-core rejects with for real failures (terraform error, abort signal, etc.).
+ *          cli-core rejects with for real failures (terraform error, abort signal, etc.). A failure *rendering*
+ *          the fetched outputs is non-fatal and does not cause a rejection.
  */
 export async function runDeploy({
   outDir,
@@ -157,17 +159,12 @@ export async function runDeploy({
       },
     );
 
-    const outputs = project.outputsByConstructId;
-    onOutputsRetrieved(outputs);
-
-    if (outputs && Object.keys(outputs).length > 0) {
-      console.log(renderOutputs(outputs));
-      if (outputsPath) {
-        console.log(`The outputs have been written to ${outputsPath}`);
-      }
-    } else {
-      console.log("No outputs found.");
-    }
+    presentOutputs({
+      outputs: project.outputsByConstructId,
+      onOutputsRetrieved,
+      outputsPath,
+      renderFailureLabel: "Deploy succeeded",
+    });
   } finally {
     stream.stop();
   }

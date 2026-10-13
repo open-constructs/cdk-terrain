@@ -224,10 +224,18 @@ export const getConstructIdsForOutputs = (
   }
   const outputsMapping = stackContent["//"].outputs;
 
+  const omitted: string[] = [];
+
   const mapOutputs = (value: OutputIdMap): NestedTerraformOutputs => {
     return Object.entries(value).reduce((acc, [key, value]) => {
       if (typeof value === "string") {
-        return { ...acc, [key]: outputs[value] };
+        const resolved = outputs[value];
+        // The state can lag behind the synthesized stack, so a declared output may be absent.
+        if (resolved === undefined || resolved === null) {
+          omitted.push(value);
+          return acc;
+        }
+        return { ...acc, [key]: resolved };
       }
 
       const mapped = mapOutputs(value);
@@ -242,5 +250,13 @@ export const getConstructIdsForOutputs = (
     }, {});
   };
 
-  return mapOutputs(outputsMapping);
+  const mapped = mapOutputs(outputsMapping);
+  if (omitted.length > 0) {
+    logger.warn(
+      omitted.length === 1
+        ? `1 output declared by the stack was not returned by terraform and is omitted: ${omitted[0]}`
+        : `${omitted.length} outputs declared by the stack were not returned by terraform and are omitted: ${omitted.join(", ")}`,
+    );
+  }
+  return mapped;
 };

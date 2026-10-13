@@ -1,5 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import stripAnsi from "strip-ansi";
+import { logger } from "@cdktn/commons";
+import { getConstructIdsForOutputs } from "@cdktn/cli-core/src/lib/output";
 import { PROMPT_NEEDS_TTY } from "../../helper/prompts";
 
 // Mock the prompts module so we can control what promptApprove / promptOverride throw.
@@ -142,6 +145,86 @@ describe("runDeploy approval routing", () => {
       expect.stringContaining("Approval prompt cancelled"),
     );
     errSpy.mockRestore();
+  });
+});
+
+describe("runDeploy outputs", () => {
+  const output = (value: string) => ({
+    sensitive: false,
+    type: "string",
+    value,
+  });
+  let logSpy: jest.SpyInstance;
+  let errSpy: jest.SpyInstance;
+  const printed = () => logSpy.mock.calls.map(([line]) => stripAnsi(line));
+
+  const deployed = (outputsByConstructId: unknown) =>
+    mockRunCdktfProject.mockResolvedValue({
+      returnValue: undefined,
+      project: { outputsByConstructId },
+    });
+
+  beforeEach(() => {
+    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it("presents the project's outputs by construct id", async () => {
+    const outputsByConstructId = { db: { host: output("db.example.com") } };
+    deployed(outputsByConstructId);
+    let retrieved: unknown;
+
+    await runDeploy({
+      ...baseConfig,
+      onOutputsRetrieved: (o: unknown) => (retrieved = o),
+      outputsPath: "/tmp/out.json",
+    } as any);
+
+    expect(retrieved).toBe(outputsByConstructId);
+    expect(printed()).toEqual([
+      "db\n  host = db.example.com",
+      "The outputs have been written to /tmp/out.json",
+    ]);
+  });
+
+  it("reports a render failure as following a successful deploy", async () => {
+    deployed({ db: { host: undefined } });
+
+    await runDeploy(baseConfig as any);
+
+    expect(errSpy.mock.calls).toEqual([
+      [expect.stringContaining("Deploy succeeded, but rendering the outputs")],
+    ]);
+  });
+
+  it("completes and prints the remaining outputs when terraform did not return a declared one", async () => {
+    const warnSpy = jest.spyOn(logger, "warn").mockImplementation(() => {});
+    deployed(
+      getConstructIdsForOutputs(
+        {
+          "//": {
+            outputs: {
+              network: { ipv6: "ipv6_address", ipv4: "ipv4_address" },
+              db: { host: "db_host" },
+            },
+          },
+        },
+        { ipv6_address: output("::1"), db_host: output("db.example.com") },
+      ),
+    );
+
+    await runDeploy(baseConfig as any);
+
+    expect(printed()).toEqual([
+      "network\n  ipv6 = ::1\ndb\n  host = db.example.com",
+    ]);
+    expect(errSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });
 

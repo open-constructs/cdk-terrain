@@ -3,7 +3,7 @@
 import { NestedTerraformOutputs } from "@cdktn/cli-core";
 import { runCdktfProject, Status } from "../helper/project-runner";
 import { StreamRenderer } from "../helper/tty-stream";
-import { renderOutputs } from "../helper/format";
+import { presentOutputs } from "../helper/outputs";
 
 /** Options accepted by {@link runOutput}. */
 export interface OutputConfig {
@@ -68,26 +68,21 @@ export async function runOutput({
           });
         },
       },
-      async (project) => {
-        const outputs = await project.fetchOutputs({
+      (project) =>
+        project.fetchOutputs({
           stackNames: targetStacks,
           skipSynth,
           skipProviderLock,
-        });
-        onOutputsRetrieved(outputs);
-        return outputs;
-      },
+        }),
     );
 
     stream.clearBar();
-    if (returnValue && Object.keys(returnValue).length > 0) {
-      console.log(renderOutputs(returnValue));
-      if (outputsPath) {
-        console.log(`The outputs have been written to ${outputsPath}`);
-      }
-    } else {
-      console.log("No outputs found.");
-    }
+    presentOutputs({
+      outputs: returnValue,
+      onOutputsRetrieved,
+      outputsPath,
+      renderFailureLabel: "Outputs fetched",
+    });
   } finally {
     stream.stop();
   }
