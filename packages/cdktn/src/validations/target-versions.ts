@@ -91,7 +91,11 @@ export function resolveTargetVersions(scope: IConstruct): {
       errors.push(
         `targetVersions.${product} "${range}" uses Terraform provider constraint syntax; use npm semver ranges instead (e.g. ">=1.5.7" or "~1.5.7")`,
       );
-    } else if (typeof range !== "string" || semver.validRange(range) === null) {
+    } else if (
+      typeof range !== "string" ||
+      range.trim().length === 0 ||
+      semver.validRange(range) === null
+    ) {
       errors.push(
         `targetVersions.${product} ${JSON.stringify(
           range,
@@ -127,7 +131,7 @@ export function checkFeatureSupportedByTargets(
 
   for (const product of TARGET_PRODUCTS) {
     const targetRange = targets[product];
-    if (!targetRange) continue; // product not targeted by the project
+    if (targetRange === undefined) continue; // product not targeted by the project
 
     const supportedRange = supportedIn[product];
     if (!supportedRange) {
