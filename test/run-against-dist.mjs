@@ -190,14 +190,30 @@ try {
     stdio: ["ignore", "inherit", "inherit"],
   });
 
-  // There's only one version in our local registry, so we don't need to specify
-  // a version here. Retry to ride out transient ECONNRESETs from Verdaccio's
-  // upstream fetch.
+  // Install the tarball itself rather than `cdktn-cli` by name: local builds all
+  // carry the same version, so pnpm can resolve an earlier build it already
+  // holds for it and silently test stale code (#488). The digit keeps
+  // cdktn-cli-core-*.tgz out of the match.
+  const cliTarballs = [];
+  const cliGlob = join(cdktnDist, "js", "cdktn-cli-[0-9]*.tgz").replaceAll(
+    "\\",
+    "/",
+  );
+  for await (const tgz of glob(cliGlob)) {
+    cliTarballs.push(tgz);
+  }
+  if (cliTarballs.length !== 1) {
+    await fail(
+      `Expected exactly one cdktn-cli tarball in dist/js, found ${cliTarballs.length}: ${cliTarballs.join(", ")}`,
+    );
+  }
+
+  // Retry to ride out transient ECONNRESETs from Verdaccio's upstream fetch.
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       await execa(
         packageManagerName,
-        ["add", "cdktn-cli", `--registry=${REGISTRY_URL}`],
+        ["add", cliTarballs[0], `--registry=${REGISTRY_URL}`],
         { cwd: staging, stdio: ["ignore", "inherit", "inherit"] },
       );
       break;

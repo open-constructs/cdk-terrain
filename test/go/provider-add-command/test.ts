@@ -3,6 +3,7 @@
 import {
   onPosix,
   onWindows,
+  providerVersion,
   sanitizeTimestamps,
   TestDriver,
 } from "../../test-helper";
@@ -42,9 +43,9 @@ describe("provider add command", () => {
         // const genVersionsFile = JSON.parse(
         //   driver.readLocalFile("generated/versions.json")
         // );
-        // expect(
-        //   genVersionsFile["registry.terraform.io/hashicorp/local"]
-        // ).toEqual("2.2.3");
+        // expect(providerVersion(genVersionsFile, "hashicorp/local")).toEqual(
+        //   "2.2.3",
+        // );
       },
       240_000,
     );
@@ -73,9 +74,9 @@ describe("provider add command", () => {
         const genVersionsFile = JSON.parse(
           driver.readLocalFile("generated/versions.json"),
         );
-        expect(
-          genVersionsFile["registry.terraform.io/hashicorp/local"],
-        ).toEqual("2.2.3");
+        expect(providerVersion(genVersionsFile, "hashicorp/local")).toEqual(
+          "2.2.3",
+        );
       },
       120_000,
     );

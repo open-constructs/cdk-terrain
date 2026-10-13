@@ -529,7 +529,21 @@ export class ConstructsMaker {
       );
     }
 
+    // Keys are fully qualified and the host is whichever registry the fetching CLI
+    // resolved from, so a provider regenerated this run can arrive under a different
+    // host than the file already holds. Carrying the old key forward as well would
+    // leave two entries for one provider, and the stale one sorts first.
+    const regenerated = new Set(
+      Object.keys(this.versions).map((fqpn) =>
+        fqpn.split("/").slice(1).join("/"),
+      ),
+    );
+
     const versions = allowedConstraints.reduce((acc, constraint) => {
+      if (regenerated.has(constraint.fqn)) {
+        return acc;
+      }
+
       const provider = Object.entries(previousVersions).find(([name]) =>
         // This could be more refined, but it's good enough for now
         name.endsWith(constraint.fqn),
