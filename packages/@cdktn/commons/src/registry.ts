@@ -22,6 +22,12 @@ export interface Registry {
     kind: "provider" | "resource" | "data-source" | "ephemeral-resource",
     name?: string,
   ): string;
+  /**
+   * Documentation link for one generated module. `source` is
+   * `namespace/name/target`; `submodule` is the path a `//` in the source
+   * pointed at. Omitting `version` links to the latest.
+   */
+  moduleDocsUrl(source: string, version?: string, submodule?: string): string;
 }
 
 export const TERRAFORM_REGISTRY: Registry = {
@@ -40,6 +46,10 @@ export const TERRAFORM_REGISTRY: Registry = {
       case "ephemeral-resource":
         return `${base}/ephemeral-resources/${name}`;
     }
+  },
+  moduleDocsUrl(source, version, submodule) {
+    const base = `https://registry.terraform.io/modules/${source}/${version || "latest"}`;
+    return submodule ? `${base}/submodules/${submodule}` : base;
   },
 };
 
@@ -62,6 +72,13 @@ export const OPENTOFU_REGISTRY: Registry = {
       case "data-source":
         return `${base}/datasources/${name}`;
     }
+  },
+  // Module paths mirror getDocumentationUrl.ts too: /module/ singular, a
+  // v-prefixed version, and "submodule" unhyphenated and singular. Without the
+  // v the page silently renders a version list instead of the module.
+  moduleDocsUrl(source, version, submodule) {
+    const base = `https://search.opentofu.org/module/${source}/${version ? `v${version}` : "latest"}`;
+    return submodule ? `${base}/submodule/${submodule}` : base;
   },
 };
 
