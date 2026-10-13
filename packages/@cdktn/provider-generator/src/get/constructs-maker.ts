@@ -95,6 +95,23 @@ export interface ExportDefinition {
   default?: string;
 }
 
+/**
+ * Builds the jsii-pacmak argument list for a generation run.
+ *
+ * Go bindings are emitted without runtime type checking: pacmak's validators are
+ * unexported, so dropping them changes no public API, and they account for ~33% of
+ * the generated Go by size. See the PR description for measurements.
+ */
+export function pacmakArgs(opts: GenerateJSIIOptions): string[] {
+  const args = ["--code-only"];
+  // The flag is global to the pacmak run, so only apply it when Go is the sole target.
+  const goOnly = !!opts.golang && !opts.python && !opts.java && !opts.csharp;
+  if (goOnly) {
+    args.push("--no-runtime-type-checking");
+  }
+  return args;
+}
+
 export async function generateJsiiLanguage(
   code: CodeMaker,
   opts: GenerateJSIIOptions,
@@ -220,7 +237,7 @@ export async function generateJsiiLanguage(
 
     // run pacmak to generate code
     const endJsiiPacmakTimer = logTimespan("jsii-pacmak");
-    await exec(pacmakModule, ["--code-only"], { cwd: staging });
+    await exec(pacmakModule, pacmakArgs(opts), { cwd: staging });
     endJsiiPacmakTimer();
 
     if (opts.python) {
