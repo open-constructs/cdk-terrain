@@ -10,7 +10,7 @@ export interface OutputConfig {
   outDir: string;
   targetStacks?: string[];
   synthCommand: string;
-  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void;
+  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void | Promise<void>;
   outputsPath?: string;
   skipSynth?: boolean;
   skipProviderLock?: boolean;
@@ -39,8 +39,9 @@ function statusBar(status: Status): string {
  * Drive a `cdktn output` invocation. Fetches Terraform outputs (optionally skipping synth/provider-lock), prints them
  * in nested form, and writes them to disk when `outputsPath` is provided.
  *
- * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs before they are printed.
- * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure.
+ * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs after they are printed.
+ * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure, including with a
+ *          Usage or External error when `onOutputsRetrieved` fails.
  */
 export async function runOutput({
   outDir,
@@ -77,7 +78,7 @@ export async function runOutput({
     );
 
     stream.clearBar();
-    presentOutputs({
+    await presentOutputs({
       outputs: returnValue,
       onOutputsRetrieved,
       outputsPath,

@@ -14,10 +14,11 @@ jest.mock("../../helper/project-runner", () => ({
   }),
 }));
 
+const mockStreamStop = jest.fn();
 jest.mock("../../helper/tty-stream", () => ({
   StreamRenderer: jest.fn().mockImplementation(() => ({
     start: jest.fn(),
-    stop: jest.fn(),
+    stop: mockStreamStop,
     setBar: jest.fn(),
     clearBar: jest.fn(),
     appendLog: jest.fn(),
@@ -38,6 +39,7 @@ describe("runOutput", () => {
 
   beforeEach(() => {
     mockFetchOutputs.mockReset();
+    mockStreamStop.mockReset();
     logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -58,7 +60,9 @@ describe("runOutput", () => {
 
     await runOutput({
       ...baseConfig,
-      onOutputsRetrieved: (o) => (retrieved = o),
+      onOutputsRetrieved: (o) => {
+        retrieved = o;
+      },
       outputsPath: "/tmp/out.json",
     });
 
@@ -77,5 +81,22 @@ describe("runOutput", () => {
     expect(errSpy.mock.calls).toEqual([
       [expect.stringContaining("Outputs fetched, but rendering the outputs")],
     ]);
+  });
+
+  it("rejects when the outputs cannot be written, after stopping the stream", async () => {
+    mockFetchOutputs.mockResolvedValue({
+      db: {
+        host: { sensitive: false, type: "string", value: "db.example.com" },
+      },
+    });
+
+    await expect(
+      runOutput({
+        ...baseConfig,
+        onOutputsRetrieved: () => Promise.reject(new Error("disk full")),
+      }),
+    ).rejects.toThrow("External Error: Failed to write outputs: disk full");
+
+    expect(mockStreamStop).toHaveBeenCalled();
   });
 });

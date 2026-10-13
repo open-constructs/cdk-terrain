@@ -212,7 +212,9 @@ export async function deploy(argv: any) {
 
   let outputsPath: string | undefined = undefined;
 
-  let onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void = () => {};
+  let onOutputsRetrieved: (
+    outputs: NestedTerraformOutputs,
+  ) => void | Promise<void> = () => {};
 
   if (argv.outputsFile) {
     outputsPath = normalizeOutputPath(argv.outputsFile);
@@ -560,7 +562,9 @@ export async function output(argv: any) {
   const skipProviderLock = argv.skipProviderLock;
   let outputsPath: string | undefined = undefined;
 
-  let onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void = () => {};
+  let onOutputsRetrieved: (
+    outputs: NestedTerraformOutputs,
+  ) => void | Promise<void> = () => {};
 
   if (argv.outputsFile) {
     outputsPath = normalizeOutputPath(argv.outputsFile);

@@ -25,11 +25,12 @@ jest.mock("../../helper/project-runner", () => ({
     mockRunCdktfProject(opts, cb),
 }));
 
+const mockStreamStop = jest.fn();
 // Suppress noise from the StreamRenderer in unit tests.
 jest.mock("../../helper/tty-stream", () => ({
   StreamRenderer: jest.fn().mockImplementation(() => ({
     start: jest.fn(),
-    stop: jest.fn(),
+    stop: mockStreamStop,
     setBar: jest.fn(),
     clearBar: jest.fn(),
     appendLog: jest.fn(),
@@ -51,6 +52,7 @@ beforeEach(() => {
   mockPromptApprove.mockReset();
   mockPromptOverride.mockReset();
   mockRunCdktfProject.mockReset();
+  mockStreamStop.mockReset();
 });
 
 describe("runDeploy approval routing", () => {
@@ -200,6 +202,19 @@ describe("runDeploy outputs", () => {
     expect(errSpy.mock.calls).toEqual([
       [expect.stringContaining("Deploy succeeded, but rendering the outputs")],
     ]);
+  });
+
+  it("rejects when the outputs cannot be written, after stopping the stream", async () => {
+    deployed({ db: { host: output("db.example.com") } });
+
+    await expect(
+      runDeploy({
+        ...baseConfig,
+        onOutputsRetrieved: () => Promise.reject(new Error("disk full")),
+      } as any),
+    ).rejects.toThrow("External Error: Failed to write outputs: disk full");
+
+    expect(mockStreamStop).toHaveBeenCalled();
   });
 
   it("completes and prints the remaining outputs when terraform did not return a declared one", async () => {

@@ -17,7 +17,7 @@ export interface DeployConfig {
   targetStacks?: string[];
   synthCommand: string;
   autoApprove: boolean;
-  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void;
+  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void | Promise<void>;
   outputsPath?: string;
   ignoreMissingStackDependencies?: boolean;
   parallelism?: number;
@@ -41,8 +41,9 @@ export interface DeployConfig {
  * @param config - All deploy options, forwarded near-verbatim to `CdktfProject.deploy`. `onOutputsRetrieved` is
  *                 invoked once the run completes (or is stopped) with the final outputs map.
  * @returns Promise that resolves when the deploy completes, is stopped, or is dismissed. Rejects with whatever
- *          cli-core rejects with for real failures (terraform error, abort signal, etc.). A failure *rendering*
- *          the fetched outputs is non-fatal and does not cause a rejection.
+ *          cli-core rejects with for real failures (terraform error, abort signal, etc.), or with a Usage or
+ *          External error when `onOutputsRetrieved` fails. A failure *rendering* the fetched outputs is non-fatal
+ *          and does not cause a rejection.
  */
 export async function runDeploy({
   outDir,
@@ -159,7 +160,7 @@ export async function runDeploy({
       },
     );
 
-    presentOutputs({
+    await presentOutputs({
       outputs: project.outputsByConstructId,
       onOutputsRetrieved,
       outputsPath,
