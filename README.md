@@ -38,6 +38,8 @@ Refer to the [documentation](https://cdktn.io/docs) for more detail about how to
 
 - [Examples](https://cdktn.io/docs/examples-and-guides/examples): Reference example projects in every supported language and review explanatory videos and other resources.
 
+- [GitHub Action](https://github.com/cdktn-io/action): Run `cdktn` synth, plan, apply or destroy in a GitHub Actions workflow with OpenTofu or Terraform, and report the result on the pull request.
+
 ## Community
 
 The development team would love your feedback to help guide the project.
