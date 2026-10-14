@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { TerraformStack, Fn, Token, Testing } from "../src";
+import { TerraformOutput, TerraformStack, Fn, Token, Testing } from "../src";
 import {
   conditional,
   propertyAccess,
@@ -180,6 +180,25 @@ test("functions escape string markers", () => {
   expect(
     resolveExpression(call("length", [rawString(`"`)])),
   ).toMatchInlineSnapshot(`"\${length("\\"")}"`);
+});
+
+test("string literals escape quotes for HCL", () => {
+  const rendered = resolveExpression(call("length", ['{"key":"value"}']));
+  expect(rendered).toBe('${length("{\\"key\\":\\"value\\"}")}');
+});
+
+test("JSON synthesis keeps quoted function arguments valid", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformOutput(stack, "digest", {
+    value: Fn.md5(Fn.rawString('{"key":"value"}')),
+  });
+
+  const synthesized = JSON.parse(Testing.synth(stack));
+  expect(synthesized.output.digest.value).toBe(
+    '${md5("{\\"key\\":\\"value\\"}")}',
+  );
 });
 
 test("functions escape object keys", () => {
