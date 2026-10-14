@@ -94,7 +94,7 @@ All sanitization is done at the AST level via a single `visit()` pass. The key a
 
 **`link` nodes**:
 
-- Relative terraform doc links (`/terraform/docs/...`) → absolute URLs (prefixes `https://developer.hashicorp.com`). Temporary workaround; see [#33](https://github.com/open-constructs/cdk-terrain/issues/33).
+- Terraform function JSDoc links are emitted as absolute HashiCorp Developer URLs by the binding generator.
 
 **`code` / `inlineCode` nodes**: skipped — `remark-stringify` outputs their values raw
 
