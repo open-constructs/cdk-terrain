@@ -5,6 +5,7 @@ import { readConfigSync } from "@cdktn/commons";
 import { requireHandlers } from "./helper/utilities";
 import { Errors } from "@cdktn/commons";
 import { BaseCommand } from "./helper/base-command";
+import { noColorDefault } from "./helper/color";
 
 const config = readConfigSync();
 
@@ -80,7 +81,7 @@ class Command extends BaseCommand {
       // causes colors to be disabled too for output that the cdktn-cli itself colors.
       .option("no-color", {
         type: "boolean",
-        default: process.env.FORCE_COLOR === "0",
+        default: noColorDefault(),
         required: false,
         desc: "Disables terminal formatting sequences in the output.",
       })
