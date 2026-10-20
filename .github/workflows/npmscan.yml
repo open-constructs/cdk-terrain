@@ -7,10 +7,7 @@ name: npmscan
 on:
   pull_request:
     paths:
-      - package.json
       - pnpm-lock.yaml
-      - pnpm-workspace.yaml
-      - packages/**/package.json
 
 permissions:
   contents: read
@@ -23,7 +20,7 @@ jobs:
   scan:
     name: "npmscan dependency check"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
       pull-requests: write # for the one report comment; fork PRs get a read-only token and use the job summary
@@ -31,7 +28,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-      - uses: NPMscan/npmscan-action@de14168f65640a4ed1f0e82ad3ad8c80483d360d # v1.3.0
+      - uses: NPMscan/npmscan-action@6e43c93b29e9a844ba3019dce3952d179886d379 # v1.3.1
         with:
           file: pnpm-lock.yaml
           mode: warn
