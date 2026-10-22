@@ -111,6 +111,8 @@ jobs:
       TERRAFORM_VERSION: ${{ matrix.terraform }}
       GITHUB_API_TOKEN_CDKTF: ${{ secrets.GITHUB_TOKEN }}
       SYNTH_HCL_OUTPUT: ${{ matrix.hclOutput }}
+      # jsii >= 1.142 rejects the default cache under HOME, which the container user does not own
+      JSII_RUNTIME_PACKAGE_CACHE_ROOT: /root/.cache/aws/jsii/package-cache
     timeout-minutes: 60
 
     steps:
