@@ -39,6 +39,11 @@ class Command extends BaseCommand {
         desc: "Should the output be in HCL format?",
         default: false,
       })
+      .option("show-performance-info", {
+        type: "boolean",
+        required: false,
+        desc: "Shows performance information after synthesis",
+      })
       .showHelpOnFail(true);
 
   public async handleCommand(argv: any) {

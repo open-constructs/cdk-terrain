@@ -27,8 +27,7 @@ class Command extends BaseCommand {
       .example(
         "cat my-token.txt | cdktn login",
         "Uses a locally stored token directly, instead of going through the interactive login process",
-      )
-      .strict();
+      );
 
   public async handleCommand(argv: any) {
     Errors.setScope("login");
