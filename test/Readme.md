@@ -77,14 +77,25 @@ Which tests execute the binary:
 
 `.terraform.versions.json` at the repository root drives the matrix:
 
-- `available` — versions baked into the CI Docker image (see `Dockerfile`);
-  each is installed as `/usr/local/bin/terraform<version>` with the `default`
-  version symlinked to `terraform`.
+- `available` — Terraform versions baked into the CI Docker image (see
+  `Dockerfile`); each is installed as `/usr/local/bin/terraform<version>` with
+  the `default` version symlinked to `terraform`.
 - `tested` — the subset run in CI workflows, exported as
   `TERRAFORM_BINARY_NAME=terraform<version>` per matrix job.
+- `opentofu.available` / `opentofu.default` — the same for OpenTofu, installed
+  as `tofu<version>` with the default symlinked to `tofu`.
 
-OpenTofu is currently **not** part of the CI image; OpenTofu runs are local
-only for now.
+OpenTofu does not run across the whole integration suite. A test opts in
+through `pinnedRuntimes` in `tools/build-test-matrix.mjs`, which replaces the
+`tested` cross-product for that test with an explicit list of
+`{ product, version }` runtimes; `terraformOnly` marks tests that can never run
+under OpenTofu. Unit tests in packages tagged `unit-test:terraform` also run
+once under OpenTofu (`pr-unit.yml`).
+
+Running under OpenTofu exercises the CLI, not a project that _targets_
+OpenTofu. Code that resolves registries from `targetVersions` only takes its
+OpenTofu path when the project declares it, so cover that with a fixture that
+sets `targetVersions` — see `typescript/opentofu-target`.
 
 ### Local runs
 
