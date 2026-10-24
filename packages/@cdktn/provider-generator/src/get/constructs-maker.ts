@@ -457,7 +457,7 @@ export class ConstructsMaker {
   ) {
     const endTSTimer = logTimespan(`Generate Typescript for ${target.name}`);
     target.spec = schema;
-    new ModuleGenerator(this.code, [target]);
+    new ModuleGenerator(this.code, [target], this.options.targetVersions);
     endTSTimer();
   }
 
