@@ -21,6 +21,7 @@
         "lint:affected": "nx affected -t lint",
         "lint:fix": "nx run-many -t lint --fix",
         "lint:prettier": "prettier --check .",
+        "lint:sherif": "sherif",
         "lint:examples": "node tools/lint-examples.mjs",
         "link-packages": "nx exec -p \"cdktn*\" \"@cdktn/*\" -- pnpm link --global",
         "integration": "cd test && pnpm run edge:install && node run-against-dist.mjs pnpm exec jest --runInBand",
@@ -69,10 +70,21 @@
         "nx": "22.7.9",
         "prettier": "^3.9.6",
         "publib": "^0.3.2",
+        "sherif": "^1.13.0",
         "standard-version": "^9.5.0",
-        "tsc-files": "^1.1.4",
+        "tsc-files": "1.1.4",
         "typescript": "~6.0.0",
         "typescript-eslint": "^8.70.0"
+    },
+    "sherif": {
+        "ignoreRule": [
+            "packages-without-package-json"
+        ],
+        "ignoreDependency": [
+            "@types/prettier",
+            "constructs",
+            "prettier"
+        ]
     },
     "lint-staged": {
         "!(.claude|.agents|.specledger|specledger)/**/*.{ts,tsx,js,css,md}": "prettier --write",

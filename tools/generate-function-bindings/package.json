@@ -24,11 +24,11 @@
     "@cdktn/commons": "workspace:*"
   },
   "devDependencies": {
-    "@babel/generator": "^7.20.4",
-    "@babel/template": "^7.18.10",
-    "@babel/types": "^7.20.2",
-    "@types/babel__generator": "^7.27.0",
-    "@types/babel__template": "^7.4.4",
+    "@babel/generator": "^7.29.7",
+    "@babel/template": "^7.29.7",
+    "@babel/types": "^7.29.7",
+    "@types/babel__generator": "7.27.0",
+    "@types/babel__template": "7.4.4",
     "@types/node": "22.20.1",
     "tsx": "4.23.13",
     "typescript": "~6.0.0"
