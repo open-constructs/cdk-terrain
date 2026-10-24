@@ -39,7 +39,12 @@
     "cdk",
     "cdktf",
     "cdktn",
-    "terraform"
+    "terraform",
+    "cdk for terraform",
+    "terraform-cdk",
+    "cdk terrain",
+    "opentofu",
+    "infrastructure as code"
   ],
   "license": "MPL-2.0",
   "engines": {

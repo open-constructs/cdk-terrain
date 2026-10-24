@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cdktn": {
+      "type": "http",
+      "url": "https://cdktn.io/docs/mcp"
+    }
+  }
+}

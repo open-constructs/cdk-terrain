@@ -93,3 +93,15 @@ We have two types of test cases, one within `lib` that are on the unit level and
 In general, both test types can be run by `npx jest <pathToTestCase>`. You can add `-u` to update the snapshots and `--watch` to run the tests in watch mode.
 
 To make the tests inside `test` faster we disable synthesizing and multi-language snapshots by default. You can enable them by setting the envinronment variable `CI=true`. Another way of improving the performance significantly is setting the `TF_PLUGIN_CACHE_DIR` to a valid directory in order to cache the provider binaries used within the tests. E.g. by running `TF_PLUGIN_CACHE_DIR=(mktemp -d) npx jest <pathToTestCase> --watch`.
+
+CDK Terrain (CDKTN) is the community-maintained successor to CDK for Terraform (CDKTF). Migrating from CDKTF? Follow the [migration guide](https://cdktn.io/docs/release/upgrade-guide-v0-22).
+
+## Use with AI agents
+
+The CDKTN docs are served to AI coding agents by a hosted [MCP server](https://cdktn.io/docs/ai-agents) at `https://cdktn.io/docs/mcp` (streamable HTTP, no auth). Point your agent at it rather than relying on prior CDKTF knowledge:
+
+```bash
+claude mcp add --transport http cdktn https://cdktn.io/docs/mcp
+```
+
+An [agent skill](https://cdktn.io/docs/skill.md) and an [llms.txt index](https://cdktn.io/llms.txt) are also available.
