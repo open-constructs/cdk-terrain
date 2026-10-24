@@ -6,6 +6,7 @@ import {
   getGlobalDispatcher,
   Dispatcher,
 } from "undici";
+import { OPENTOFU_REGISTRY, TERRAFORM_REGISTRY } from "@cdktn/commons";
 import { ProviderConstraint } from "../../../lib/dependencies/dependency-manager";
 import {
   getNpmPackageName,
@@ -197,69 +198,100 @@ describe("prebuilt-providers", () => {
     });
   });
 
-  // TODO rebuild these tests when final url is known
-  describe.skip("getNpmPackageName", () => {
-    it("fails when connection error", async () => {
-      mockAgent
-        .get("https://www.cdk.tf")
-        .intercept({
-          path: "/.well-known/prebuilt-providers.json",
-          method: "GET",
-        })
-        .replyWithError(
-          Object.assign(new Error("connection error"), {
-            code: "ETIMEDOUT",
-          }),
-        );
-
-      await expect(
-        getNpmPackageName(ProviderConstraint.fromConfigEntry("test"), false),
-      ).rejects.toThrow("Connection error");
-    });
-
-    it("succeeds when cdk.tf redirect and Github work", async () => {
-      mockAgent
-        .get("https://www.cdk.tf")
-        .intercept({
-          path: "/.well-known/prebuilt-providers.json",
-          method: "GET",
-        })
-        .reply(307, undefined, {
-          headers: {
-            Location:
-              "https://raw.githubusercontent.com/cdktf/cdktf-repository-manager/main/provider.json",
-          },
-        });
-
+  describe("getNpmPackageName registry matching", () => {
+    // Same shape as the published map: a constraint suffix, and some entries without a namespace.
+    const mockProvidersMap = () =>
       mockAgent
         .get("https://raw.githubusercontent.com")
         .intercept({
-          path: "/cdktf/cdktf-repository-manager/main/provider.json",
+          path: /.*cdktn-repository-manager.*provider\.json/,
           method: "GET",
         })
         .reply(200, {
-          test: "hashicorp/test@~> 0.3.3",
+          aws: "hashicorp/aws@~> 6.0",
+          azurerm: "azurerm@~> 5.0",
+          random: "hashicorp/random@~> 3.1",
         });
 
+    it("finds the package for a Terraform-targeting project", async () => {
+      mockProvidersMap();
+
       await expect(
-        getNpmPackageName(ProviderConstraint.fromConfigEntry("test"), false),
-      ).resolves.toEqual("@cdktf/provider-test");
+        getNpmPackageName(
+          new ProviderConstraint("random", "=3.9.0", TERRAFORM_REGISTRY),
+          true,
+        ),
+      ).resolves.toBe("@cdktn/provider-random");
     });
 
-    it("succeeds when cdk.tf directly returns result", async () => {
-      mockAgent
-        .get("https://www.cdk.tf")
-        .intercept({
-          path: "/.well-known/prebuilt-providers.json",
-          method: "GET",
-        })
-        .reply(200, {
-          test: "hashicorp/test@~> 0.3.3",
-        });
+    it("finds the package for an OpenTofu-only project", async () => {
+      mockProvidersMap();
 
       await expect(
-        getNpmPackageName(ProviderConstraint.fromConfigEntry("test"), false),
-      ).resolves.toEqual("@cdktf/provider-test");
+        getNpmPackageName(
+          new ProviderConstraint("random", "=3.9.0", OPENTOFU_REGISTRY),
+          true,
+        ),
+      ).resolves.toBe("@cdktn/provider-random");
+    });
+
+    it("matches an entry published without a namespace", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint(
+            "hashicorp/azurerm",
+            "~> 5.0",
+            OPENTOFU_REGISTRY,
+          ),
+          true,
+        ),
+      ).resolves.toBe("@cdktn/provider-azurerm");
+    });
+
+    it("fails when the providers map cannot be reached", async () => {
+      mockAgent
+        .get("https://raw.githubusercontent.com")
+        .intercept({
+          path: /.*cdktn-repository-manager.*provider\.json/,
+          method: "GET",
+        })
+        .replyWithError(
+          Object.assign(new Error("connection error"), { code: "ETIMEDOUT" }),
+        );
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint("random", "=3.9.0", TERRAFORM_REGISTRY),
+          true,
+        ),
+      ).rejects.toThrow("Connection error");
+    });
+
+    it("does not match a private registry provider to a public prebuilt", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint(
+            "registry.example.com/hashicorp/random",
+            "=3.9.0",
+          ),
+          true,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it("still reports no package for a provider that has none", async () => {
+      mockProvidersMap();
+
+      await expect(
+        getNpmPackageName(
+          new ProviderConstraint("nope", "=1.0.0", OPENTOFU_REGISTRY),
+          true,
+        ),
+      ).resolves.toBeUndefined();
     });
   });
 
