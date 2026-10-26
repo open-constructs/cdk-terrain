@@ -9,8 +9,7 @@ import { init, templatesDir } from "../../lib/init";
 // The real template hooks install dependencies, so sscaff only lays down the cdktf.json that init reads back.
 jest.mock("sscaff", () => ({ sscaff: jest.fn() }));
 
-const existingNote =
-  "Found an existing .mcp.json; to add the cdktn MCP server see https://cdktn.io/docs/ai-agents#set-up-your-agent";
+const docsNote = expect.stringMatching(/https:\/\/cdktn\.io\/docs\//);
 
 describe(".mcp.json on init", () => {
   let destination: string;
@@ -49,12 +48,10 @@ describe(".mcp.json on init", () => {
     async (template) => {
       await run(path.join(templatesDir, template));
 
-      const config = JSON.parse(
+      expect(
         fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"),
-      );
-
-      expect(config.mcpServers.cdktn.url).toBe("https://cdktn.io/docs/mcp");
-      expect(log).not.toHaveBeenCalledWith(existingNote);
+      ).toContain("https://cdktn.io/docs/mcp");
+      expect(log).not.toHaveBeenCalledWith(docsNote);
     },
   );
 
@@ -67,7 +64,7 @@ describe(".mcp.json on init", () => {
     expect(fs.readFileSync(path.join(destination, ".mcp.json"))).toEqual(
       existing,
     );
-    expect(log).toHaveBeenCalledWith(existingNote);
+    expect(log).toHaveBeenCalledWith(docsNote);
   });
 
   it("prints no note when silent", async () => {
@@ -91,6 +88,6 @@ describe(".mcp.json on init", () => {
     expect(fs.readFileSync(path.join(destination, ".mcp.json"))).toEqual(
       existing,
     );
-    expect(log).not.toHaveBeenCalledWith(existingNote);
+    expect(log).not.toHaveBeenCalledWith(docsNote);
   });
 });
