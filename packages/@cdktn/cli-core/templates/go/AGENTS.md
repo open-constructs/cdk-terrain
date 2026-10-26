@@ -30,4 +30,4 @@ prior CDKTF knowledge.
 - `cdktn deploy [stack]` / `cdktn destroy [stack]`: change real infrastructure; ask before running
 - `go test ./...` (tests live in `main_test.go`): run unit tests
 
-`cat help` prints the full command list for this project.
+The `help` file lists every command for this project.

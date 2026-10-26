@@ -1,10 +1,14 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { readFileSync, readdirSync } from "fs-extra";
+import { existsSync, readFileSync, readdirSync } from "fs-extra";
 import * as path from "path";
 import { CODE_MARKER } from "@cdktn/hcl2cdk";
 
 const templatesDir = path.resolve(__dirname, "..", "..", "templates");
+// Variants such as typescript-pnpm carry no cdktf.json; they ship their base's files.
+const baseTemplates = readdirSync(templatesDir).filter((name) =>
+  existsSync(path.join(templatesDir, name, "cdktf.json")),
+);
 
 describe("Templates", () => {
   describe("Typescript", () => {
@@ -17,25 +21,22 @@ describe("Templates", () => {
 
   // Every scaffolded project points coding agents at the docs MCP server. The config is a dotfile, which npm can drop
   // from the published tarball, so it ships under the `{{}}` prefix that sscaff strips (like `{{}}.gitignore`).
-  describe.each(["typescript", "python", "python-pip", "go", "java", "csharp"])(
-    "%s",
-    (template) => {
-      it("ships AGENTS.md and an MCP config for the docs server", () => {
-        const dir = path.join(templatesDir, template);
-        const mcp = JSON.parse(
-          readFileSync(path.join(dir, "{{}}.mcp.json"), "utf8"),
-        );
+  describe.each(baseTemplates)("%s", (template) => {
+    it("ships AGENTS.md and an MCP config for the docs server", () => {
+      const dir = path.join(templatesDir, template);
+      const mcp = JSON.parse(
+        readFileSync(path.join(dir, "{{}}.mcp.json"), "utf8"),
+      );
 
-        expect(mcp.mcpServers.cdktn).toEqual({
-          type: "http",
-          url: "https://cdktn.io/docs/mcp",
-        });
-        expect(readFileSync(path.join(dir, "AGENTS.md"), "utf8")).toContain(
-          "https://cdktn.io/docs/mcp",
-        );
+      expect(mcp.mcpServers.cdktn).toEqual({
+        type: "http",
+        url: "https://cdktn.io/docs/mcp",
       });
-    },
-  );
+      expect(readFileSync(path.join(dir, "AGENTS.md"), "utf8")).toContain(
+        "https://cdktn.io/docs/mcp",
+      );
+    });
+  });
 
   // The package-manager variants reuse the `typescript` files through template variables. A file duplicated into a
   // variant directory silently replaces the base's copy, and a literal npm command in the base leaks into every variant.
@@ -49,7 +50,7 @@ describe("Templates", () => {
       expect(shadowed).toEqual([]);
     });
 
-    it.each(["cdktf.json", "help", "package.json"])(
+    it.each(["AGENTS.md", "cdktf.json", "help", "package.json"])(
       "the base template's %s takes its package manager commands from variables",
       (file) => {
         const contents = readFileSync(
