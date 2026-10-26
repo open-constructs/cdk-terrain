@@ -19,23 +19,23 @@ describe("Templates", () => {
     });
   });
 
-  // Every scaffolded project points coding agents at the docs MCP server. The config is a dotfile, which npm can drop
-  // from the published tarball, so it ships under the `{{}}` prefix that sscaff strips (like `{{}}.gitignore`).
+  // Every scaffolded project points coding agents at the docs MCP server; init writes the matching .mcp.json.
   describe.each(baseTemplates)("%s", (template) => {
-    it("ships AGENTS.md and an MCP config for the docs server", () => {
-      const dir = path.join(templatesDir, template);
-      const mcp = JSON.parse(
-        readFileSync(path.join(dir, "{{}}.mcp.json"), "utf8"),
-      );
-
-      expect(mcp.mcpServers.cdktn).toEqual({
-        type: "http",
-        url: "https://cdktn.io/docs/mcp",
-      });
-      expect(readFileSync(path.join(dir, "AGENTS.md"), "utf8")).toContain(
-        "https://cdktn.io/docs/mcp",
-      );
+    it("ships AGENTS.md pointing at the docs MCP server", () => {
+      expect(
+        readFileSync(path.join(templatesDir, template, "AGENTS.md"), "utf8"),
+      ).toContain("https://cdktn.io/docs/mcp");
     });
+  });
+
+  // sscaff overwrites unconditionally, so a shipped .mcp.json would replace the user's before init can check for it.
+  it("no template ships an .mcp.json", () => {
+    const shipped = readdirSync(templatesDir).flatMap((template) =>
+      [".mcp.json", "{{}}.mcp.json"]
+        .map((file) => path.join(template, file))
+        .filter((file) => existsSync(path.join(templatesDir, file))),
+    );
+    expect(shipped).toEqual([]);
   });
 
   // The package-manager variants reuse the `typescript` files through template variables. A file duplicated into a

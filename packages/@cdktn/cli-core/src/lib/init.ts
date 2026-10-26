@@ -73,6 +73,12 @@ const TEMPLATE_VARIANTS: Record<
   },
 };
 
+// Points coding agents at the docs MCP server. Written by init instead of shipped as a template file: the empty-directory
+// check ignores dotfiles and sscaff overwrites unconditionally, so a user's existing .mcp.json must be left alone.
+const MCP_CONFIG = {
+  mcpServers: { cdktn: { type: "http", url: "https://cdktn.io/docs/mcp" } },
+};
+
 const availableTemplates = fs
   .readdirSync(templatesDir)
   .filter((x) => !x.startsWith("."));
@@ -120,11 +126,23 @@ export async function init({
     silent,
   };
 
+  const mcpConfigPath = path.join(destination, ".mcp.json");
+  const hasMcpConfig = fs.existsSync(mcpConfigPath);
+
   await sscaff(
     variant ? path.join(templatesDir, variant.base) : templatePath,
     destination,
     variables,
   );
+
+  if (builtInName && !hasMcpConfig) {
+    fs.writeFileSync(mcpConfigPath, JSON.stringify(MCP_CONFIG, null, 2) + "\n");
+  } else if (builtInName && !silent) {
+    console.log(
+      "Found an existing .mcp.json; to add the cdktn MCP server see https://cdktn.io/docs/ai-agents#set-up-your-agent",
+    );
+  }
+
   const cdktfConfig = CdktfConfig.read(destination);
 
   let needsGet = false;

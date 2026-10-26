@@ -76,62 +76,6 @@ export function checkForEmptyDirectory(dir: string) {
     process.exit(1);
   }
 }
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const parseJson = (text: string): unknown => {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-};
-
-// The empty-directory check ignores dotfiles and the template overwrites `.mcp.json`, so an existing config (e.g.
-// from `claude mcp add -s project`) is restored after scaffolding, with the template's `cdktn` server added if absent.
-function preserveMcpConfig(destination: string, silent?: boolean) {
-  const file = path.resolve(destination, ".mcp.json");
-  if (!fs.existsSync(file)) return () => {};
-  const original = fs.readFileSync(file);
-
-  return () => {
-    const scaffolded = fs.existsSync(file)
-      ? parseJson(fs.readFileSync(file, "utf8"))
-      : undefined;
-    fs.writeFileSync(file, original);
-    const entry = isPlainObject(scaffolded)
-      ? (scaffolded.mcpServers as Record<string, unknown> | undefined)?.cdktn
-      : undefined;
-    if (entry === undefined) return;
-
-    const existing = parseJson(original.toString("utf8"));
-    const servers = isPlainObject(existing)
-      ? (existing.mcpServers ?? {})
-      : undefined;
-    if (!isPlainObject(existing) || !isPlainObject(servers)) {
-      if (!silent) {
-        console.log(
-          chalkColour.yellow(
-            `Note: Kept your existing .mcp.json unchanged because it could not be updated. Add the cdktn docs server to its mcpServers manually: "cdktn": ${JSON.stringify(entry)}`,
-          ),
-        );
-      }
-      return;
-    }
-    if ("cdktn" in servers) return;
-
-    fs.writeFileSync(
-      file,
-      JSON.stringify(
-        { ...existing, mcpServers: { ...servers, cdktn: entry } },
-        null,
-        2,
-      ) + "\n",
-    );
-  };
-}
-
 const tfcHostname = "app.terraform.io";
 type GatheredInfo = {
   projectInfo: Project;
@@ -293,25 +237,19 @@ This means that your Terraform state file will be stored locally on disk in a fi
     }
   }
 
-  const restoreMcpConfig = preserveMcpConfig(destination, argv.silent);
-  let needsGet: boolean;
-  try {
-    needsGet = await init({
-      cdktfVersion: argv.cdktfVersion,
-      destination,
-      dist: argv.dist,
-      projectId,
-      projectInfo,
-      templatePath: templateInfo.Path,
-      sendCrashReports: sendCrashReports,
-      sendUsageTelemetry: sendUsageTelemetry,
-      providers,
-      providersForceLocal: argv.providersForceLocal,
-      silent: argv.silent,
-    });
-  } finally {
-    restoreMcpConfig();
-  }
+  const needsGet = await init({
+    cdktfVersion: argv.cdktfVersion,
+    destination,
+    dist: argv.dist,
+    projectId,
+    projectInfo,
+    templatePath: templateInfo.Path,
+    sendCrashReports: sendCrashReports,
+    sendUsageTelemetry: sendUsageTelemetry,
+    providers,
+    providersForceLocal: argv.providersForceLocal,
+    silent: argv.silent,
+  });
 
   if (convertResult && importPath) {
     const { code, cdktfJson } = convertResult;
