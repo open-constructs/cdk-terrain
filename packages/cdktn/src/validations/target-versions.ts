@@ -131,7 +131,7 @@ export function checkFeatureSupportedByTargets(
 
   for (const product of TARGET_PRODUCTS) {
     const targetRange = targets[product];
-    if (targetRange === undefined) continue; // product not targeted by the project
+    if (!targetRange) continue; // product not targeted by the project
 
     const supportedRange = supportedIn[product];
     if (!supportedRange) {

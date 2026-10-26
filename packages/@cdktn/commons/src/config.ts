@@ -372,7 +372,7 @@ export function validateTargetVersions(targetVersions: unknown): string[] {
       );
       continue;
     }
-    if (semver.validRange(range) === null) {
+    if (range.trim().length === 0 || semver.validRange(range) === null) {
       problems.push(
         `targetVersions.${product} "${range}" is not a valid semver range`,
       );

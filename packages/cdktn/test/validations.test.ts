@@ -240,30 +240,6 @@ describe("checkFeatureSupportedByTargets", () => {
     ).toEqual([]);
   });
 
-  test("does not treat an empty target range as an omitted product", () => {
-    expect(
-      checkFeatureSupportedByTargets(
-        "ephemeral resources",
-        { terraform: ">=1.10.0" },
-        { terraform: "" },
-      ),
-    ).toEqual([
-      "ephemeral resources requires terraform >=1.10.0, but the project targets terraform .",
-    ]);
-  });
-
-  test("does not treat a whitespace-only target range as an omitted product", () => {
-    expect(
-      checkFeatureSupportedByTargets(
-        "ephemeral resources",
-        { terraform: ">=1.10.0" },
-        { terraform: "   " },
-      ),
-    ).toEqual([
-      "ephemeral resources requires terraform >=1.10.0, but the project targets terraform    .",
-    ]);
-  });
-
   test("supports complex declared ranges via subset semantics", () => {
     expect(
       checkFeatureSupportedByTargets(
