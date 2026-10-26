@@ -43,7 +43,7 @@
   ],
   "license": "MPL-2.0",
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=22.23.4"
   },
   "files": [
     "bundle"

@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
       packages: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -33,6 +34,20 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # The superchain base image lives on public.ecr.aws. Anonymous pulls from
+      # shared GitHub-hosted runner IPs hit ECR Public's data limit
+      # (toomanyrequests), so pull authenticated via an OIDC-assumed role that
+      # only trusts main. ECR Public auth is only served from us-east-1.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_PULL_ROLE_ARN }}
+          role-session-name: cdktn-docker-ecr-pull
+          aws-region: us-east-1
+      - name: Login to Amazon ECR Public
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: public.ecr.aws
       - id: tf-versions
         run: |
           DEFAULT_TERRAFORM_VERSION=$(cat .terraform.versions.json | jq -r '.default')
