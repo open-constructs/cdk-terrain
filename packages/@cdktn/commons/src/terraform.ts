@@ -1,14 +1,44 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import * as fs from "fs";
+import * as path from "path";
 import { exec } from "./util";
 import { processState } from "./process-state";
+import { targetsOnlyOpenTofu } from "./registry";
 import {
   parseTerraformCliVersion,
   TerraformCliName,
 } from "cdktn/lib/validations";
 
-export const terraformBinaryName =
-  process.env.TERRAFORM_BINARY_NAME || "terraform";
+// Read on each use: the CLI bundle carries several copies of this module, all
+// loaded before the CLI picks the binary.
+export function terraformBinaryName(): string {
+  return process.env.TERRAFORM_BINARY_NAME || "terraform";
+}
+
+/**
+ * Sets `TERRAFORM_BINARY_NAME` to `tofu` when it is unset and the project in
+ * the working directory targets only OpenTofu. Called once at CLI startup,
+ * before anything changes directory, so child processes run the same binary.
+ */
+export function selectTerraformBinaryForProject(): void {
+  if (process.env.TERRAFORM_BINARY_NAME) return;
+  if (targetsOnlyOpenTofu(projectTargetVersions())) {
+    process.env.TERRAFORM_BINARY_NAME = "tofu";
+  }
+}
+
+// Only the key is read: parsing the whole config has side effects, and an
+// invalid one is reported by the command that reads it.
+function projectTargetVersions() {
+  try {
+    return JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), "cdktf.json"), "utf8"),
+    ).targetVersions;
+  } catch {
+    return undefined;
+  }
+}
 
 // The Terraform CLI version parser lives in the cdktn package (its canonical
 // home). It is consumed via subpath because its string-literal union return
@@ -44,7 +74,7 @@ export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
 
 function versionOutput(): Promise<string> {
   if (!probe.output) {
-    const output = exec(terraformBinaryName, ["version"], {
+    const output = exec(terraformBinaryName(), ["version"], {
       timeout: PROBE_TIMEOUT_MS,
     });
     output.catch(() => undefined); // the consumers below handle rejection

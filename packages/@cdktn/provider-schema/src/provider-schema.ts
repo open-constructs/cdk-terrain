@@ -22,6 +22,7 @@ import {
   isNestedTypeAttribute,
   logger,
   parseTerraformCliVersion,
+  terraformBinaryName,
   withTempDir,
 } from "@cdktn/commons";
 import {
@@ -30,13 +31,11 @@ import {
   suggestedEmittingCliVersions,
 } from "./emission-check";
 
-const terraformBinaryName = process.env.TERRAFORM_BINARY_NAME || "terraform";
-
 let fetchingCliVersionPromise: Promise<TerraformCliVersion> | undefined;
 
 /**
  * Determines the version of the fetching CLI (`terraform`/`tofu` binary
- * resolved via `TERRAFORM_BINARY_NAME`) once per process, memoized.
+ * resolved by `terraformBinaryName`) once per process, memoized.
  *
  * Used both to stamp fetched provider schemas (`cli_name`/`cli_version`)
  * and as the cache key suffix in read.ts, since schema emission is fixed
@@ -46,7 +45,7 @@ let fetchingCliVersionPromise: Promise<TerraformCliVersion> | undefined;
  */
 export function getFetchingCliVersion(): Promise<TerraformCliVersion> {
   if (!fetchingCliVersionPromise) {
-    fetchingCliVersionPromise = exec(terraformBinaryName, ["version"], {
+    fetchingCliVersionPromise = exec(terraformBinaryName(), ["version"], {
       cwd: process.cwd(),
     }).then(parseTerraformCliVersion);
   }
@@ -95,7 +94,7 @@ export async function terraformInitWithRetry(
 ): Promise<string> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await exec(terraformBinaryName, ["init"], options);
+      return await exec(terraformBinaryName(), ["init"], options);
     } catch (error: any) {
       const stderr: string = error?.stderr ?? "";
       const transient = TRANSIENT_INIT_ERROR_PATTERNS.some((p) =>
@@ -311,13 +310,13 @@ export async function readProviderSchema(
 
     await terraformInitWithRetry({ cwd: outdir });
     providerSchema = JSON.parse(
-      await exec(terraformBinaryName, ["providers", "schema", "-json"], {
+      await exec(terraformBinaryName(), ["providers", "schema", "-json"], {
         cwd: outdir,
       }),
     ) as ProviderSchema;
 
     const versionSchema = JSON.parse(
-      await exec(terraformBinaryName, ["version", "-json"], {
+      await exec(terraformBinaryName(), ["version", "-json"], {
         cwd: outdir,
       }),
     ) as VersionSchema;
@@ -667,7 +666,7 @@ export function fetchedModuleDir(
 async function tryTerraformGet(outdir: string): Promise<Error | undefined> {
   try {
     await exec(
-      terraformBinaryName,
+      terraformBinaryName(),
       ["get"],
       { cwd: outdir, logStderrAsDebug: true },
       undefined,
@@ -731,7 +730,7 @@ export async function readModuleSchema(target: ConstructsMakerModuleTarget) {
     if (aliases.length > 0) {
       applyModuleProviderAliases(config, target.moduleKey, aliases);
       await fs.writeFile(filePath, JSON.stringify(config));
-      await exec(terraformBinaryName, ["get"], { cwd: outdir });
+      await exec(terraformBinaryName(), ["get"], { cwd: outdir });
     } else if (fetchError) {
       // nothing here was salvageable after all, so report the diagnostics that
       // were held back while the fetch still had a second chance

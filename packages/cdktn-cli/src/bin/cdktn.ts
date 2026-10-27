@@ -8,6 +8,7 @@ import * as os from "os";
 import * as fs from "fs-extra";
 import {
   readCDKTFManifest,
+  selectTerraformBinaryForProject,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
 import { runCli } from "./error-handling";
@@ -39,6 +40,8 @@ const ensurePluginCache = (): string => {
 if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
   process.env.TF_PLUGIN_CACHE_DIR = ensurePluginCache();
 }
+
+selectTerraformBinaryForProject();
 
 const customCompletion = function (
   _current: string,
