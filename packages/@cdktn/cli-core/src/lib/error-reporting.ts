@@ -201,8 +201,7 @@ export async function initializErrorReporting(
 
   if (crashReportingEnabled) {
     logger.debug("Collecting environment information for error reporting");
-    // Not awaited, so a failure here must not become an unhandled rejection,
-    // which would crash the CLI.
+    // not awaited: an unhandled rejection here would crash the CLI
     collectDebugInformation()
       .then((debugOutput) => {
         Sentry.setContext("environment", debugOutput);
