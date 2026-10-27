@@ -1,5 +1,32 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
+exports[`tfExpressions OpenTofu-only assume* functions convert to Fn calls snapshot typescript 1`] = `
+"import { Construct } from "constructs";
+import {
+  VariableType,
+  TerraformVariable,
+  TerraformOutput,
+  Fn,
+  TerraformStack,
+} from "cdktn";
+class MyConvertedCode extends TerraformStack {
+  constructor(scope: Construct, name: string) {
+    super(scope, name);
+    /*Terraform Variables are not always the best fit for getting inputs in the context of Terraform CDK.
+    You can read more about this at https://cdktn.io/docs/concepts/variables-and-outputs#input-variables*/
+    const name = new TerraformVariable(this, "name", {
+      type: VariableType.STRING,
+    });
+    const cdktnTerraformOutputName = new TerraformOutput(this, "name_1", {
+      value: Fn.assumenotnull(name.value),
+    });
+    /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+    cdktnTerraformOutputName.overrideLogicalId("name");
+  }
+}
+"
+`;
+
 exports[`tfExpressions arithmetics snapshot typescript 1`] = `
 "import { Construct } from "constructs";
 import {
@@ -65,6 +92,39 @@ class MyConvertedCode extends TerraformStack {
       kmsKeyId: examplekms.arn,
       source: "index.html",
     });
+  }
+}
+"
+`;
+
+exports[`tfExpressions convert passes the type constraint through as a TypeExpr snapshot typescript 1`] = `
+"import { Construct } from "constructs";
+import {
+  VariableType,
+  TerraformVariable,
+  TerraformOutput,
+  TypeExpr,
+  Fn,
+  TerraformStack,
+} from "cdktn";
+class MyConvertedCode extends TerraformStack {
+  constructor(scope: Construct, name: string) {
+    super(scope, name);
+    /*Terraform Variables are not always the best fit for getting inputs in the context of Terraform CDK.
+    You can read more about this at https://cdktn.io/docs/concepts/variables-and-outputs#input-variables*/
+    const items = new TerraformVariable(this, "items", {
+      type: VariableType.ANY,
+    });
+    const cdktnTerraformOutputItems = new TerraformOutput(this, "items_1", {
+      value: Fn.convert(
+        items.value,
+        TypeExpr.fromString(
+          "list(object({ a = string, b = optional(number, 1) }))"
+        )
+      ),
+    });
+    /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+    cdktnTerraformOutputItems.overrideLogicalId("items");
   }
 }
 "

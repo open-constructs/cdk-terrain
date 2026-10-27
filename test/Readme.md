@@ -83,8 +83,11 @@ Which tests execute the binary:
 - `tested` — the subset run in CI workflows, exported as
   `TERRAFORM_BINARY_NAME=terraform<version>` per matrix job.
 
-OpenTofu is currently **not** part of the CI image; OpenTofu runs are local
-only for now.
+OpenTofu is part of the CI image too: each `opentofu.available` version is
+installed as `/usr/local/bin/tofu<version>`, with `opentofu.default` symlinked
+to `tofu`. OpenTofu is not in the default `tested` cross-product; tests run
+against it only when pinned via `pinnedRuntimes` in
+`tools/build-test-matrix.mjs` (e.g. `typescript/provider-features`).
 
 ### Local runs
 

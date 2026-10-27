@@ -81,11 +81,19 @@ t.addComment(
 );
 
 // these are overwritten in terraform-functions.ts
-const INTERNAL_METHODS = ["join", "bcrypt", "range", "lookup"];
+const INTERNAL_METHODS = ["join", "bcrypt", "range", "lookup", "convert"];
 
 // functions that only exist in OpenTofu, derived from the availability
 // matrix; used to point their docstrings at the OpenTofu docs
 const openTofuOnlyFunctions = new Set<string>();
+
+/**
+ * The OpenTofu docs page of an OpenTofu-only function. The assume* functions
+ * are documented together on a single page.
+ */
+function openTofuDocsPage(name: string): string {
+  return name.startsWith("assume") ? "assume_family/" : name;
+}
 
 /**
  * Loads the function signatures from functions.json (Terraform metadata) and
@@ -278,7 +286,10 @@ function mapParameter(p: Parameter) {
         docstringType: "any",
       };
     }
-    if (type === "dynamic") {
+    // "type" is a type-constraint parameter (e.g. the second argument of
+    // convert). It is not part of AttributeType, but OpenTofu-sourced
+    // signatures may use it, so map it to anyValue instead of throwing.
+    if (type === "dynamic" || (type as string) === "type") {
       return {
         mapper: "anyValue",
         tsType: t.tsAnyKeyword(),
@@ -378,12 +389,20 @@ function renderStaticMethod(
 
   // comment with docstring for method
   const docsUrl = openTofuOnlyFunctions.has(name)
-    ? `https://opentofu.org/docs/language/functions/${name}`
+    ? `https://opentofu.org/docs/language/functions/${openTofuDocsPage(name)}`
     : `https://developer.hashicorp.com/terraform/language/functions/${name}`;
-  const descriptionWithLink = signature.description.replace(
-    `\`${name}\``,
-    `{@link ${docsUrl} ${name}}`,
-  );
+  const link = `{@link ${docsUrl} ${name}}`;
+  const description = signature.description;
+  let descriptionWithLink: string;
+  if (description.includes(`\`${name}\``)) {
+    descriptionWithLink = description.replace(`\`${name}\``, link);
+  } else if (/^`[a-z_]+`/.test(description)) {
+    // some upstream descriptions start with the wrong function name (e.g. the
+    // OpenTofu assumemaplengthmin one says `assummaplengthmin`)
+    descriptionWithLink = description.replace(/^`[a-z_]+`/, link);
+  } else {
+    descriptionWithLink = `${link}: ${description}`;
+  }
   t.addComment(
     method,
     "leading",

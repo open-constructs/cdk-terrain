@@ -521,9 +521,25 @@ function convertFunctionCallExpressionToTs(
     ? mapping.transformer(node)
     : node;
 
-  const argumentExpressions = transformedNode.children.map((child) =>
-    convertTFExpressionAstToTs(scope, child),
-  );
+  const argumentExpressions = transformedNode.children.map((child, index) => {
+    // The second argument of convert() is a type constraint (e.g.
+    // list(string)), not a value expression. Fn.convert() takes a TypeExpr, so
+    // pass the original HCL type expression through verbatim.
+    if (functionName === "convert" && index === 1) {
+      scope.importables.push({
+        constructName: "TypeExpr",
+        provider: "cdktn",
+      });
+      return t.callExpression(
+        t.memberExpression(
+          t.identifier("TypeExpr"),
+          t.identifier("fromString"),
+        ),
+        [t.stringLiteral((child as tex.ExpressionAst).meta.value)],
+      );
+    }
+    return convertTFExpressionAstToTs(scope, child);
+  });
 
   scope.importables.push({
     constructName: "Fn",

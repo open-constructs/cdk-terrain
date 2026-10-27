@@ -11,9 +11,15 @@
 // OpenTofu version is released. Afterwards re-run
 // `pnpm generate-function-availability`.
 //
+// This only moves forward: it adds releases newer than the latest one already
+// in the matrix, so it misses backported patch releases of older minors (e.g.
+// OpenTofu 1.11.x patches released alongside 1.12/1.13). To pick those up, copy
+// RFCS/03-function-availability/functions-matrix.json from the
+// open-constructs/cdktn-planning repo over the vendored matrix instead.
+//
 // A full regeneration from scratch (plus the interactive HTML report) is done
 // with the baseline sweep tooling in the open-constructs/cdktn-planning repo
-// (RFCS/function-availability/scripts).
+// (RFCS/03-function-availability/scripts).
 
 import { execSync } from "child_process";
 import * as fs from "fs";

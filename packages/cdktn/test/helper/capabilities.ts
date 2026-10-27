@@ -8,10 +8,13 @@
 // Windows developer who has enabled Developer Mode, or installed unzip, gets
 // the coverage instead of a permanently skipped suite.
 
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as semver from "semver";
+import { terraformBinaryName } from "../../src/util";
+import { parseTerraformCliVersion } from "../../src/validations/validate-terraform-feature-version";
 
 /**
  * Whether this process can create symlinks. On Windows this requires
@@ -76,3 +79,55 @@ export const testIfPosixPermissionsAndUnzip =
 
 /** `describe` that is skipped unless symlinks can be created. */
 export const describeIfSymlinks = canCreateSymlinks ? describe : describe.skip;
+
+/**
+ * Whether the CLI the testing matchers run (`TERRAFORM_BINARY_NAME`, default
+ * `terraform`) supports the `convert` function (Terraform >= 1.15.0, OpenTofu
+ * >= 1.13.0), and why not if it doesn't. CI runs the unit tests against
+ * older binaries too, which reject any config that calls convert().
+ */
+export const convertSupport: { supported: boolean; reason: string } = (() => {
+  let output: string;
+  try {
+    output = execSync(`${terraformBinaryName} version`, {
+      stdio: ["ignore", "pipe", "ignore"],
+    }).toString();
+  } catch {
+    return {
+      supported: false,
+      reason: `"${terraformBinaryName}" is not available`,
+    };
+  }
+  const { name, version } = parseTerraformCliVersion(output);
+  const minimum =
+    name === "terraform"
+      ? "1.15.0"
+      : name === "opentofu"
+        ? "1.13.0"
+        : undefined;
+  if (!minimum || !version || !semver.valid(version)) {
+    return {
+      supported: false,
+      reason: `"${terraformBinaryName}" reports an unrecognized version`,
+    };
+  }
+  if (semver.lt(version, minimum)) {
+    return {
+      supported: false,
+      reason: `${name} ${version} has no convert() (needs >=${minimum})`,
+    };
+  }
+  return { supported: true, reason: "" };
+})();
+
+/**
+ * `test` that is skipped, with the reason appended to its name, unless the
+ * matchers' CLI supports convert().
+ */
+export const testIfConvertSupported: jest.It = convertSupport.supported
+  ? test
+  : (((name: string, ...rest: any[]) =>
+      (test.skip as any)(
+        `${name} [skipped: ${convertSupport.reason}]`,
+        ...rest,
+      )) as unknown as jest.It);

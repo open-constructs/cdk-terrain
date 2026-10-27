@@ -18,7 +18,7 @@ produces it — the per-release `metadata functions -json` dumps plus the
 `build-matrix.py` / `build-report.py` / `sweep.sh` scripts and the interactive
 HTML report — lives in the planning repo:
 
-> **open-constructs/cdktn-planning** — `RFCS/function-availability/`
+> **open-constructs/cdktn-planning** — `RFCS/03-function-availability/`
 
 To pick up newly released Terraform/OpenTofu versions without a full sweep, run
 the incremental updater (downloads only unseen releases into a temp dir):
@@ -27,6 +27,15 @@ the incremental updater (downloads only unseen releases into a temp dir):
 pnpm --filter generate-function-bindings run update-function-matrix
 pnpm --filter generate-function-bindings run generate-function-availability
 ```
+
+The incremental updater only moves forward: it adds releases newer than the
+latest one already in the matrix. Backported patch releases of older minors
+(e.g. OpenTofu 1.11.x patches released alongside 1.12/1.13) are not picked up. To
+ingest those, copy the planning repo's
+`RFCS/03-function-availability/functions-matrix.json` over
+`function-availability/functions-matrix.json` and re-run
+`generate-function-availability` (and `generate`). Running
+`update-function-matrix` afterwards should report the matrix as up to date.
 
 A full regeneration from scratch is done with the sweep tooling in the planning
 repo.

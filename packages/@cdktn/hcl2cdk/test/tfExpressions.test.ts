@@ -297,4 +297,41 @@ ITEM
       resources: [],
     },
   );
+
+  testCase.test(
+    "convert passes the type constraint through as a TypeExpr",
+    `
+      variable "items" {
+        type = any
+      }
+      output "items" {
+        value = convert(var.items, list(object({ a = string, b = optional(number, 1) })))
+      }`,
+    [],
+    Snapshot.yes,
+    // synth would fail: convert() needs targetVersions beyond the defaults
+    Synth.never,
+    {
+      resources: [],
+    },
+  );
+
+  testCase.test(
+    "OpenTofu-only assume* functions convert to Fn calls",
+    `
+      variable "name" {
+        type = string
+      }
+      output "name" {
+        value = assumenotnull(var.name)
+      }`,
+    [],
+    Snapshot.yes,
+    // synth would fail: assumenotnull() is OpenTofu-only (>=1.13.0) and the
+    // default targetVersions include Terraform
+    Synth.never,
+    {
+      resources: [],
+    },
+  );
 });

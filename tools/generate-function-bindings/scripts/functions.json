@@ -182,7 +182,7 @@
       "return_type": "dynamic",
       "parameters": [
         { "name": "list", "type": "dynamic" },
-        { "name": "value", "type": "dynamic" }
+        { "name": "value", "is_nullable": true, "type": "dynamic" }
       ]
     },
     "convert": {
@@ -374,7 +374,7 @@
       "return_type": "dynamic",
       "parameters": [
         { "name": "list", "type": "dynamic" },
-        { "name": "value", "type": "dynamic" }
+        { "name": "value", "is_nullable": true, "type": "dynamic" }
       ]
     },
     "core::convert": {

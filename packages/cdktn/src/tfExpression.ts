@@ -595,3 +595,112 @@ export type Expression =
   | null
   | any // ultimately any valid Terraform type can be used as an expression
   | any[];
+
+/**
+ * Internal model of a Terraform/OpenTofu type constraint expression, e.g.
+ * `list(string)` or `object({a = string, b = optional(number, 1)})`.
+ * Rendered verbatim (never quoted) - see TypeExpr in type-expr.ts.
+ */
+export type TypeConstraintSpec =
+  | { kind: "keyword"; name: string }
+  | {
+      kind: "collection";
+      ctor: "list" | "set" | "map";
+      element: TypeConstraintSpec;
+    }
+  | { kind: "tuple"; elements: TypeConstraintSpec[] }
+  | { kind: "object"; attributes: Record<string, TypeConstraintSpec> }
+  | {
+      kind: "optional";
+      type: TypeConstraintSpec;
+      hasDefault: boolean;
+      defaultValue?: any;
+    }
+  | { kind: "raw"; expr: string };
+
+/**
+ * Escapes `\\`, `"` and `%{` in the literal strings of an optional() default
+ * (recursing into plain lists and objects, including their keys), so a
+ * default always renders as valid HCL. `${` in values is escaped later by
+ * resolveArg; in keys it is escaped here. Token markers
+ * contain none of these characters, and the values of tokens and references
+ * are substituted after this step, so they are never double-escaped.
+ */
+function escapeDefaultLiterals(value: any): any {
+  if (typeof value === "string") {
+    return value
+      .replace(/\\/g, () => "\\\\")
+      .replace(/"/g, () => '\\"')
+      .replace(/%\{/g, () => "%%{");
+  }
+  if (Array.isArray(value)) {
+    return value.map(escapeDefaultLiterals);
+  }
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    // object keys are emitted as `"<key>" = ...` without any escaping, so
+    // `${` has to be escaped here as well (but not in a token key)
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [
+        Token.isUnresolved(k)
+          ? k
+          : escapeDefaultLiterals(k).replace(/\$\{/g, () => "$${"),
+        escapeDefaultLiterals(v),
+      ]),
+    );
+  }
+  return value;
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+class TypeConstraintExpression extends TFExpression {
+  constructor(private readonly spec: TypeConstraintSpec) {
+    super(spec);
+  }
+
+  public resolve(context: IResolveContext): string {
+    // A type constraint is never wrapped in ${}: inside a function call it is
+    // emitted as a bare type expression; at the top level (e.g. a
+    // TerraformVariable `type` field) it renders as the plain type string.
+    const suppressBraces = context.suppressBraces;
+    context.suppressBraces = true;
+    const out = this.render(context, this.spec);
+    context.suppressBraces = suppressBraces;
+    return out;
+  }
+
+  private render(context: IResolveContext, spec: TypeConstraintSpec): string {
+    switch (spec.kind) {
+      case "keyword":
+        return spec.name;
+      case "raw":
+        return spec.expr;
+      case "collection":
+        return `${spec.ctor}(${this.render(context, spec.element)})`;
+      case "tuple":
+        return `tuple([${spec.elements.map((e) => this.render(context, e)).join(", ")}])`;
+      case "object":
+        return `object({${Object.keys(spec.attributes)
+          .map((k) => `${k} = ${this.render(context, spec.attributes[k])}`)
+          .join(", ")}})`;
+      case "optional":
+        return spec.hasDefault
+          ? `optional(${this.render(context, spec.type)}, ${this.resolveArg(context, escapeDefaultLiterals(spec.defaultValue))})`
+          : `optional(${this.render(context, spec.type)})`;
+    }
+  }
+
+  public toString() {
+    return Token.asString(this);
+  }
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+export function typeConstraintExpression(
+  spec: TypeConstraintSpec,
+): IResolvable {
+  return new TypeConstraintExpression(spec);
+}

@@ -49,6 +49,166 @@ export class FnGenerated {
     return asBoolean(terraformFunction("anytrue", [listOf(anyValue)])(list));
   }
   /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumeequal} returns the second argument if it is equal to the first argument, or raises an error otherwise.
+   * @param {any} actual_value
+   * @param {any} expected_value
+   */
+  static assumeequal(actual_value: any, expected_value: any) {
+    return asAny(
+      terraformFunction("assumeequal", [anyValue, anyValue])(
+        actual_value,
+        expected_value,
+      ),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumelistlength} returns the given list only if its length is in the given bounds, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Array<any>} value
+   * @param {number} min_length
+   * @param {number} max_length
+   */
+  static assumelistlength(
+    value: any[],
+    min_length: number,
+    max_length: number,
+  ) {
+    return asList(
+      terraformFunction("assumelistlength", [
+        listOf(anyValue),
+        numericValue,
+        numericValue,
+      ])(value, min_length, max_length),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumelistlengthmax} returns the given list only if it is at most as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Array<any>} value
+   * @param {number} max_length
+   */
+  static assumelistlengthmax(value: any[], max_length: number) {
+    return asList(
+      terraformFunction("assumelistlengthmax", [
+        listOf(anyValue),
+        numericValue,
+      ])(value, max_length),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumelistlengthmin} returns the given list only if it is at least as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Array<any>} value
+   * @param {number} min_length
+   */
+  static assumelistlengthmin(value: any[], min_length: number) {
+    return asList(
+      terraformFunction("assumelistlengthmin", [
+        listOf(anyValue),
+        numericValue,
+      ])(value, min_length),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumemaplength} returns the given map only if its length is in the given bounds, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Object<string, any>} value
+   * @param {number} min_length
+   * @param {number} max_length
+   */
+  static assumemaplength(value: any, min_length: number, max_length: number) {
+    return asAny(
+      terraformFunction("assumemaplength", [
+        mapValue,
+        numericValue,
+        numericValue,
+      ])(value, min_length, max_length),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumemaplengthmax} returns the given map only if it is at most as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Object<string, any>} value
+   * @param {number} max_length
+   */
+  static assumemaplengthmax(value: any, max_length: number) {
+    return asAny(
+      terraformFunction("assumemaplengthmax", [mapValue, numericValue])(
+        value,
+        max_length,
+      ),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumemaplengthmin} returns the given map only if it is at least as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Object<string, any>} value
+   * @param {number} min_length
+   */
+  static assumemaplengthmin(value: any, min_length: number) {
+    return asAny(
+      terraformFunction("assumemaplengthmin", [mapValue, numericValue])(
+        value,
+        min_length,
+      ),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumenotnull} returns the given value only if it isn't null, and then tells OpenTofu to assume the result isn't null for subsequent analysis.
+   * @param {any} value
+   */
+  static assumenotnull(value: any) {
+    return asAny(terraformFunction("assumenotnull", [anyValue])(value));
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumesetlength} returns the given set only if its length is in the given bounds, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Array<any>} value
+   * @param {number} min_length
+   * @param {number} max_length
+   */
+  static assumesetlength(value: any[], min_length: number, max_length: number) {
+    return asList(
+      terraformFunction("assumesetlength", [
+        listOf(anyValue),
+        numericValue,
+        numericValue,
+      ])(value, min_length, max_length),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumesetlengthmax} returns the given set only if it is at most as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Array<any>} value
+   * @param {number} max_length
+   */
+  static assumesetlengthmax(value: any[], max_length: number) {
+    return asList(
+      terraformFunction("assumesetlengthmax", [listOf(anyValue), numericValue])(
+        value,
+        max_length,
+      ),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumesetlengthmin} returns the given set only if it is at least as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.
+   * @param {Array<any>} value
+   * @param {number} min_length
+   */
+  static assumesetlengthmin(value: any[], min_length: number) {
+    return asList(
+      terraformFunction("assumesetlengthmin", [listOf(anyValue), numericValue])(
+        value,
+        min_length,
+      ),
+    );
+  }
+  /**
+   * {@link https://opentofu.org/docs/language/functions/assume_family/ assumestringprefix} returns the given string only if it has the given prefix, and then tells OpenTofu to assume the result has that prefix for subsequent analysis.
+   * @param {string} value
+   * @param {string} prefix
+   */
+  static assumestringprefix(value: string, prefix: string) {
+    return asString(
+      terraformFunction("assumestringprefix", [stringValue, stringValue])(
+        value,
+        prefix,
+      ),
+    );
+  }
+  /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/base64decode base64decode} takes a string containing a Base64 character sequence and returns the original string.
    * @param {string} str
    */
@@ -248,11 +408,12 @@ export class FnGenerated {
     );
   }
   /**
+   * @internal
    * {@link https://developer.hashicorp.com/terraform/language/functions/convert convert} converts a value to the given type constraint.
    * @param {any} value
    * @param {any} type
    */
-  static convert(value: any, type: any) {
+  static _convert(value: any, type: any) {
     return asAny(
       terraformFunction("convert", [anyValue, anyValue])(value, type),
     );

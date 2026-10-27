@@ -67,7 +67,19 @@
    "1.15.3",
    "1.15.4",
    "1.15.5",
-   "1.15.6"
+   "1.15.6",
+   "1.15.7",
+   "1.15.8",
+   "1.15.9",
+   "1.16.0",
+   "1.16.1",
+   "1.16.2",
+   "1.16.3",
+   "1.16.4",
+   "1.16.5",
+   "1.16.6",
+   "1.16.7",
+   "1.17.0"
   ],
   "opentofu": [
    "1.6.0",
@@ -122,8 +134,25 @@
    "1.11.6",
    "1.11.7",
    "1.11.8",
+   "1.11.9",
+   "1.11.10",
+   "1.11.11",
+   "1.11.12",
+   "1.11.13",
+   "1.11.14",
    "1.12.0",
-   "1.12.1"
+   "1.12.1",
+   "1.12.2",
+   "1.12.3",
+   "1.12.4",
+   "1.12.5",
+   "1.12.6",
+   "1.12.7",
+   "1.12.8",
+   "1.12.9",
+   "1.13.0",
+   "1.13.1",
+   "1.13.2"
   ]
  },
  "functions": {
@@ -144,13 +173,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -171,13 +200,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -201,13 +230,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -231,13 +260,426 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
+    }
+   }
+  },
+  "assumeequal": {
+   "signature": {
+    "description": "`assumeequal` returns the second argument if it is equal to the first argument, or raises an error otherwise.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "actual_value",
+      "description": "actual_value",
+      "is_nullable": true,
+      "type": "dynamic"
+     },
+     {
+      "name": "expected_value",
+      "description": "expected_value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumelistlength": {
+   "signature": {
+    "description": "`assumelistlength` returns the given list only if its length is in the given bounds, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "list",
+      "is_nullable": true,
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "min_length",
+      "description": "min",
+      "type": "number"
+     },
+     {
+      "name": "max_length",
+      "description": "max",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumelistlengthmax": {
+   "signature": {
+    "description": "`assumelistlengthmax` returns the given list only if it is at most as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "list",
+      "is_nullable": true,
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "max_length",
+      "description": "max",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumelistlengthmin": {
+   "signature": {
+    "description": "`assumelistlengthmin` returns the given list only if it is at least as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "list",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "list",
+      "is_nullable": true,
+      "type": [
+       "list",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "min_length",
+      "description": "min",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumemaplength": {
+   "signature": {
+    "description": "`assumemaplength` returns the given map only if its length is in the given bounds, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "map",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "map",
+      "is_nullable": true,
+      "type": [
+       "map",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "min_length",
+      "description": "min",
+      "type": "number"
+     },
+     {
+      "name": "max_length",
+      "description": "max",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumemaplengthmax": {
+   "signature": {
+    "description": "`assumelistlengthmax` returns the given map only if it is at most as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "map",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "map",
+      "is_nullable": true,
+      "type": [
+       "map",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "max_length",
+      "description": "max",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumemaplengthmin": {
+   "signature": {
+    "description": "`assummaplengthmin` returns the given map only if it is at least as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "map",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "map",
+      "is_nullable": true,
+      "type": [
+       "map",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "min_length",
+      "description": "min",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumenotnull": {
+   "signature": {
+    "description": "`assumenotnull` returns the given value only if it isn't null, and then tells OpenTofu to assume the result isn't null for subsequent analysis.",
+    "return_type": "dynamic",
+    "parameters": [
+     {
+      "name": "value",
+      "description": "value",
+      "is_nullable": true,
+      "type": "dynamic"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumesetlength": {
+   "signature": {
+    "description": "`assumesetlength` returns the given set only if its length is in the given bounds, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "set",
+      "is_nullable": true,
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "min_length",
+      "description": "min",
+      "type": "number"
+     },
+     {
+      "name": "max_length",
+      "description": "max",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumesetlengthmax": {
+   "signature": {
+    "description": "`assumesetlength` returns the given set only if it is at most as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "set",
+      "is_nullable": true,
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "max_length",
+      "description": "max",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumesetlengthmin": {
+   "signature": {
+    "description": "`assumesetlength` returns the given set only if it is at least as long as specified, and then tells OpenTofu to assume the result has such a length for subsequent analysis.",
+    "return_type": [
+     "set",
+     "dynamic"
+    ],
+    "parameters": [
+     {
+      "name": "value",
+      "description": "set",
+      "is_nullable": true,
+      "type": [
+       "set",
+       "dynamic"
+      ]
+     },
+     {
+      "name": "min_length",
+      "description": "min",
+      "type": "number"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
+   }
+  },
+  "assumestringprefix": {
+   "signature": {
+    "description": "`assumestringprefix` returns the given string only if it has the given prefix, and then tells OpenTofu to assume the result has that prefix for subsequent analysis.",
+    "return_type": "string",
+    "parameters": [
+     {
+      "name": "value",
+      "description": "string",
+      "is_nullable": true,
+      "type": "string"
+     },
+     {
+      "name": "prefix",
+      "description": "prefix",
+      "type": "string"
+     }
+    ],
+    "variadic_parameter": null
+   },
+   "products": {
+    "terraform": null,
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
     }
    }
   },
@@ -258,13 +700,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -285,13 +727,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -313,7 +755,7 @@
      "introduced": "1.7.0",
      "removed": null,
      "gaps": [],
-     "count": 50
+     "count": 67
     }
    }
   },
@@ -334,13 +776,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -361,13 +803,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -388,13 +830,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -415,13 +857,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -446,13 +888,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -473,13 +915,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -500,13 +942,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -527,13 +969,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -568,13 +1010,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -602,7 +1044,7 @@
      "introduced": "1.7.0",
      "removed": null,
      "gaps": [],
-     "count": 50
+     "count": 67
     }
    }
   },
@@ -629,13 +1071,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -657,13 +1099,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -695,13 +1137,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -729,13 +1171,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -755,13 +1197,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -782,13 +1224,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -815,13 +1257,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -840,13 +1282,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -861,6 +1303,7 @@
      },
      {
       "name": "value",
+      "is_nullable": true,
       "type": "dynamic"
      }
     ],
@@ -871,13 +1314,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -903,9 +1346,14 @@
      "introduced": "1.15.0",
      "removed": null,
      "gaps": [],
-     "count": 7
+     "count": 19
     },
-    "opentofu": null
+    "opentofu": {
+     "introduced": "1.13.0",
+     "removed": null,
+     "gaps": [],
+     "count": 3
+    }
    }
   },
   "csvdecode": {
@@ -925,13 +1373,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -952,13 +1400,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -985,13 +1433,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1016,13 +1464,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1047,13 +1495,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1075,13 +1523,13 @@
      "introduced": "1.10.0",
      "removed": null,
      "gaps": [],
-     "count": 37
+     "count": 49
     },
     "opentofu": {
      "introduced": "1.11.0",
      "removed": null,
      "gaps": [],
-     "count": 11
+     "count": 28
     }
    }
   },
@@ -1102,13 +1550,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1129,13 +1577,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1156,13 +1604,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1183,13 +1631,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1210,13 +1658,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1237,13 +1685,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1271,13 +1719,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1298,13 +1746,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1325,13 +1773,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1352,13 +1800,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1379,13 +1827,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1406,13 +1854,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1437,13 +1885,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1468,13 +1916,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1502,13 +1950,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1534,13 +1982,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1565,13 +2013,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1593,13 +2041,13 @@
      "introduced": "1.8.0",
      "removed": null,
      "gaps": [],
-     "count": 52
+     "count": 64
     },
     "opentofu": {
      "introduced": "1.7.0",
      "removed": null,
      "gaps": [],
-     "count": 50
+     "count": 67
     }
    }
   },
@@ -1628,13 +2076,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1655,13 +2103,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1683,13 +2131,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1711,13 +2159,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1738,13 +2186,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1769,13 +2217,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1804,13 +2252,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1831,13 +2279,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1878,13 +2326,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1903,13 +2351,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1930,13 +2378,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1956,13 +2404,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -1981,13 +2429,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2009,13 +2457,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2036,13 +2484,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2067,13 +2515,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2094,13 +2542,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2116,13 +2564,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2147,13 +2595,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2175,13 +2623,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2206,13 +2654,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2240,13 +2688,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2275,13 +2723,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2302,13 +2750,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2333,13 +2781,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2361,13 +2809,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2400,13 +2848,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2426,13 +2874,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2466,13 +2914,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2505,13 +2953,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2532,13 +2980,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2559,13 +3007,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2586,13 +3034,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2613,13 +3061,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2648,13 +3096,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2681,13 +3129,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2715,13 +3163,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2746,13 +3194,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2777,13 +3225,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2804,13 +3252,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2839,13 +3287,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2866,13 +3314,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2897,13 +3345,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2930,13 +3378,13 @@
      "introduced": "1.9.0",
      "removed": null,
      "gaps": [],
-     "count": 46
+     "count": 58
     },
     "opentofu": {
      "introduced": "1.7.0",
      "removed": null,
      "gaps": [],
-     "count": 50
+     "count": 67
     }
    }
   },
@@ -2961,13 +3409,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -2992,13 +3440,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3023,13 +3471,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3054,13 +3502,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3076,13 +3524,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3103,13 +3551,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3131,13 +3579,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3162,13 +3610,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3193,13 +3641,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3221,13 +3669,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3252,13 +3700,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3280,13 +3728,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3319,13 +3767,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3351,13 +3799,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3382,13 +3830,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3409,13 +3857,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3440,13 +3888,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3465,13 +3913,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3492,13 +3940,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3520,7 +3968,7 @@
      "introduced": "1.7.0",
      "removed": null,
      "gaps": [],
-     "count": 50
+     "count": 67
     }
    }
   },
@@ -3541,13 +3989,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3563,13 +4011,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3594,13 +4042,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3621,13 +4069,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3648,13 +4096,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3676,13 +4124,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   },
@@ -3710,13 +4158,13 @@
      "introduced": "1.5.7",
      "removed": null,
      "gaps": [],
-     "count": 66
+     "count": 78
     },
     "opentofu": {
      "introduced": "1.6.0",
      "removed": null,
      "gaps": [],
-     "count": 54
+     "count": 71
     }
    }
   }

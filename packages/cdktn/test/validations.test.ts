@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import * as child_process from "child_process";
-import { App, Fn, TerraformStack, Testing } from "../src";
+import { App, Fn, TerraformStack, Testing, TypeExpr } from "../src";
 
 import { Construct, IValidation } from "constructs";
 import { TestResource } from "./helper/resource";
@@ -474,6 +474,61 @@ describe("ValidateFunctionVersionSupport", () => {
     });
     new TestResource(testResource, "usesCidrcontains", {
       name: Fn.cidrcontains("10.0.0.0/8", "10.1.0.0").toString(),
+    });
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("fails Fn.convert against the default baseline targets on both products", () => {
+    const { app, testResource } = appWithStack();
+    new TestResource(testResource, "usesConvert", {
+      name: Fn.convert(42, TypeExpr.STRING),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+     "Validation failed with the following errors:
+       [MyStack] Terraform function "convert" requires terraform >=1.15.0, but the project targets terraform >=1.5.7. It is available in terraform >=1.15.0 and opentofu >=1.13.0.
+       [MyStack] Terraform function "convert" requires opentofu >=1.13.0, but the project targets opentofu >=1.6.0. It is available in terraform >=1.15.0 and opentofu >=1.13.0.
+
+     If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+     "
+    `);
+  });
+
+  test("passes Fn.convert when the declared targets are within its availability", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.15.0", opentofu: ">=1.13.0" },
+    });
+    new TestResource(testResource, "usesConvert", {
+      name: Fn.convert(42, TypeExpr.STRING),
+    });
+
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test("fails Fn.assumenotnull as not supported by terraform", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: ">=1.15.0" },
+    });
+    new TestResource(testResource, "usesAssumenotnull", {
+      name: Fn.assumenotnull("foo"),
+    });
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+     "Validation failed with the following errors:
+       [MyStack] Terraform function "assumenotnull" is not supported by terraform, but the project targets terraform >=1.15.0. It is available in opentofu >=1.13.0.
+
+     If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+     "
+    `);
+  });
+
+  test("passes Fn.assumenotnull when only OpenTofu >=1.13.0 is targeted", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { opentofu: ">=1.13.0" },
+    });
+    new TestResource(testResource, "usesAssumenotnull", {
+      name: Fn.assumenotnull("foo"),
     });
 
     expect(() => app.synth()).not.toThrow();

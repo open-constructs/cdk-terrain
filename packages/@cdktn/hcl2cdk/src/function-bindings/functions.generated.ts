@@ -40,6 +40,156 @@ export const functionsMapGenerated = {
       },
     ],
   },
+  assumeequal: {
+    name: "assumeequal",
+    returnType: "dynamic",
+    parameters: [
+      {
+        type: "dynamic",
+      },
+      {
+        type: "dynamic",
+      },
+    ],
+  },
+  assumelistlength: {
+    name: "assumelistlength",
+    returnType: ["list", "dynamic"],
+    parameters: [
+      {
+        type: ["list", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumelistlengthmax: {
+    name: "assumelistlengthmax",
+    returnType: ["list", "dynamic"],
+    parameters: [
+      {
+        type: ["list", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumelistlengthmin: {
+    name: "assumelistlengthmin",
+    returnType: ["list", "dynamic"],
+    parameters: [
+      {
+        type: ["list", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumemaplength: {
+    name: "assumemaplength",
+    returnType: ["map", "dynamic"],
+    parameters: [
+      {
+        type: ["map", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumemaplengthmax: {
+    name: "assumemaplengthmax",
+    returnType: ["map", "dynamic"],
+    parameters: [
+      {
+        type: ["map", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumemaplengthmin: {
+    name: "assumemaplengthmin",
+    returnType: ["map", "dynamic"],
+    parameters: [
+      {
+        type: ["map", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumenotnull: {
+    name: "assumenotnull",
+    returnType: "dynamic",
+    parameters: [
+      {
+        type: "dynamic",
+      },
+    ],
+  },
+  assumesetlength: {
+    name: "assumesetlength",
+    returnType: ["set", "dynamic"],
+    parameters: [
+      {
+        type: ["set", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumesetlengthmax: {
+    name: "assumesetlengthmax",
+    returnType: ["set", "dynamic"],
+    parameters: [
+      {
+        type: ["set", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumesetlengthmin: {
+    name: "assumesetlengthmin",
+    returnType: ["set", "dynamic"],
+    parameters: [
+      {
+        type: ["set", "dynamic"],
+      },
+      {
+        type: "number",
+      },
+    ],
+  },
+  assumestringprefix: {
+    name: "assumestringprefix",
+    returnType: "string",
+    parameters: [
+      {
+        type: "string",
+      },
+      {
+        type: "string",
+      },
+    ],
+  },
   base64decode: {
     name: "base64decode",
     returnType: "string",
@@ -244,18 +394,6 @@ export const functionsMapGenerated = {
   },
   contains: {
     name: "contains",
-    returnType: "dynamic",
-    parameters: [
-      {
-        type: "dynamic",
-      },
-      {
-        type: "dynamic",
-      },
-    ],
-  },
-  convert: {
-    name: "convert",
     returnType: "dynamic",
     parameters: [
       {

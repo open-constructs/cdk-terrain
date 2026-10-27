@@ -3,6 +3,7 @@
 import { conditional, Expression, propertyAccess, rawString, Token } from ".";
 import { asAny } from "./functions/helpers";
 import { FnGenerated } from "./functions/terraform-functions.generated";
+import { TypeExpr } from "./type-expr";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class Fn extends FnGenerated {
@@ -16,6 +17,40 @@ export class Fn extends FnGenerated {
     // There is currently nothing in the schema that represents this runtime check:
     // https://github.com/hashicorp/terraform/blob/6ab3faf5f65a90ae1e5bd0625fa9e83c0b34c5e1/internal/lang/funcs/crypto.go#L115-L117
     return Fn._bcrypt(str, cost ? [cost] : []);
+  }
+
+  /**
+   * {@link https://developer.hashicorp.com/terraform/language/functions/convert convert} converts a value to the given type constraint
+   * (Terraform >= 1.15, OpenTofu >= 1.13; declare matching `targetVersions`, the default targets fail synth).
+   *
+   * The type is rendered as a bare type expression, e.g.
+   * `Fn.convert(v, TypeExpr.list(TypeExpr.STRING))` -> `convert(v, list(string))`.
+   * Optional object attributes and their defaults are applied as in a variable `type`:
+   * `Fn.convert(v, TypeExpr.list(TypeExpr.object({ a: TypeExpr.STRING, b: TypeExpr.optional(TypeExpr.NUMBER, 1) })))`.
+   *
+   * Terraform and OpenTofu differ for values that are unknown during plan (e.g. computed attributes)
+   * whose type cannot be converted (e.g. a string to an object): Terraform plans the result as
+   * `(known after apply)` and only fails at apply, whereas OpenTofu already fails at plan.
+   * Neither catches it at `validate`. If only the value cannot be converted (e.g. a non-numeric
+   * string to a number), both fail at apply.
+   * @param {any} value
+   * @param {TypeExpr} targetType a TypeExpr (anything else throws); `TypeExpr.optional()` is not allowed at the top level
+   */
+  static convert(value: any, targetType: TypeExpr): any {
+    // overwritten because the type argument is a type expression, not a value:
+    // passing it through anyValue would render a quoted string, which both
+    // Terraform and OpenTofu reject ("Invalid type specification").
+    if (!TypeExpr.isTypeExpr(targetType)) {
+      throw new Error(
+        "Fn.convert(): type must be a TypeExpr, e.g. TypeExpr.list(TypeExpr.STRING)",
+      );
+    }
+    if (targetType._isOptional) {
+      throw new Error(
+        "Fn.convert(): TypeExpr.optional() is only valid as an attribute type inside TypeExpr.object()",
+      );
+    }
+    return Fn._convert(value, targetType);
   }
 
   /**

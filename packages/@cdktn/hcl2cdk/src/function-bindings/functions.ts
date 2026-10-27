@@ -87,6 +87,13 @@ export const functionsMap: Record<string, FunctionMeta> = {
       { type: "number", optional: true },
     ],
   },
+  // the second parameter is a type constraint; convertFunctionCallExpressionToTs
+  // renders it as TypeExpr.fromString("<original type expression>")
+  convert: {
+    name: "convert",
+    returnType: "dynamic",
+    parameters: [{ type: "dynamic" }, { type: "dynamic" }],
+  },
   lookup: {
     name: "lookup",
     returnType: "dynamic",
