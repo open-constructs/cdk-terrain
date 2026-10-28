@@ -14,5 +14,5 @@ global.beforeAll = function beforeAllWithDefaultTimeout(setup, timeout = DEFAULT
 
 jest.retryTimes(1)
 
-// remove the working directories TestDriver.switchToTempDir() created for this test file
+// remove the temp dirs TestDriver.switchToTempDir() and shadowBinary() created for this test file
 afterAll(() => require("./test-helper").removeTempDirs());

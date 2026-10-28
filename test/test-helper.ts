@@ -40,9 +40,9 @@ function killProcessTree(child: ReturnType<typeof spawn>) {
   }
 }
 
-// Working dirs created by switchToTempDir(). Drivers are mostly constructed inside
-// beforeAll, where Jest no longer accepts hooks, so jest.setup.js registers the
-// afterAll that calls removeTempDirs() instead.
+// Temp dirs created by switchToTempDir() and shadowBinary(). Drivers are constructed
+// inside hooks or test bodies, where Jest no longer accepts hooks, so jest.setup.js
+// registers the afterAll that calls removeTempDirs() instead.
 const tempDirs: string[] = [];
 let initialDir: string | undefined;
 
@@ -166,6 +166,7 @@ export class TestDriver {
    */
   shadowBinary = (name: string, script?: string) => {
     const shims = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-shim-"));
+    tempDirs.push(shims);
     fs.symlinkSync(process.execPath, path.join(shims, "node"));
     if (script) {
       fs.writeFileSync(path.join(shims, name), script, { mode: 0o755 });
