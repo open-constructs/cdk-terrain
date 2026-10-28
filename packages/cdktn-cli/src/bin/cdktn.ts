@@ -24,6 +24,7 @@ import watchCmd from "./cmds/watch";
 import outputCmd from "./cmds/output";
 import debugCmd from "./cmds/debug";
 import providerCmd from "./cmds/provider";
+import { rejectUnknownOptions } from "./unknown-options";
 
 const ensurePluginCache = (): string => {
   const pluginCachePath =
@@ -135,6 +136,9 @@ const cli = yargs
   .parserConfiguration({
     "boolean-negation": false,
   })
+  // Fail on unknown options instead of silently ignoring them (a typo like
+  // `--skip-synth-typo` would otherwise still run a full synth)
+  .middleware(rejectUnknownOptions as unknown as yargs.MiddlewareFunction)
   .command({
     command: "*", // catches everything not previously matched
     handler: (argv) => {

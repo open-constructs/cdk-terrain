@@ -85,8 +85,7 @@ class Command extends BaseCommand {
       .option("tfe-hostname", {
         type: "string",
         desc: "The hostname of the Terraform Enterprise instance to use for remote state storage",
-      })
-      .strict();
+      });
 
   public async handleCommand(argv: any) {
     Errors.setScope("init");
