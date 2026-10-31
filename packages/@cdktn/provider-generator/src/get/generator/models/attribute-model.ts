@@ -38,6 +38,7 @@ export interface AttributeModelOptions {
   required: boolean;
   forcePlainGetterType?: boolean; // used for skipping attribute type attributes that use the SkippedAttributeTypeModel which returns an interpolation and has no stored type
   isWriteOnly?: boolean; // provider protocol write-only attribute: providers never persist/return its value, see RFC-04
+  nullWhenUnset?: boolean; // non-optional key of a cty object type: Terraform requires it to be present, so emit null when unset
 }
 
 export function escapeAttributeName(name: string) {
@@ -76,6 +77,7 @@ export class AttributeModel {
   public forcePlainGetterType?: boolean;
   private loggedStoredClassUnavailable = false;
   public isWriteOnly: boolean;
+  public nullWhenUnset: boolean;
 
   constructor(options: AttributeModelOptions) {
     this.storageName = options.storageName;
@@ -90,6 +92,7 @@ export class AttributeModel {
     this.required = options.required;
     this.forcePlainGetterType = options.forcePlainGetterType;
     this.isWriteOnly = !!options.isWriteOnly;
+    this.nullWhenUnset = !!options.nullWhenUnset;
   }
 
   public get typeDefinition() {

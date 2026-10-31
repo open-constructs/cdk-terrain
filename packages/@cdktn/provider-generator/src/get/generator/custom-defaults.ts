@@ -1,5 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+// Keys of object-typed attributes (e.g. `set(object({...}))`) get a null
+// default derived from the schema (see `nullWhenUnset` in resource-parser.ts);
+// this map is for explicit overrides only.
 export const CUSTOM_DEFAULTS: { [fullName: string]: any } = {
   "aws.security_group.ingress.cidr_blocks": null,
   "aws.security_group.ingress.description": null,
