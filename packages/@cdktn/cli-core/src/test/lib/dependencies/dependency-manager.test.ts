@@ -1,10 +1,20 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import * as fs from "fs-extra";
+import * as os from "os";
+import * as path from "path";
+import {
+  MockAgent,
+  setGlobalDispatcher,
+  getGlobalDispatcher,
+  Dispatcher,
+} from "undici";
 import { Language, OPENTOFU_REGISTRY } from "@cdktn/commons";
 import {
   ProviderConstraint,
   DependencyManager,
 } from "../../../lib/dependencies/dependency-manager";
+import { resetFetchCache } from "../../../lib/dependencies/prebuilt-providers";
 
 describe("dependency manager", () => {
   describe("ProviderConstraint", () => {
@@ -128,6 +138,136 @@ describe("dependency manager", () => {
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         `"Usage Error: Could not find a version for the provider 'registry.terraform.io/hashicorp/aaawwwwwssss' in the public registry. This could be due to a typo, please take a look at https://registry.terraform.io/browse/providers to find all supported providers."`,
       );
+    });
+  });
+
+  describe("prebuilt providers installed in a Go project", () => {
+    let originalDispatcher: Dispatcher;
+    let mockAgent: MockAgent;
+    let projectDir: string;
+    let previousCwd: string;
+
+    const goSum = (...modules: string[]) =>
+      fs.writeFileSync(
+        path.join(projectDir, "go.sum"),
+        modules.map((m) => `${m} h1:AAAA=\n`).join(""),
+      );
+    const mockProvidersMap = () =>
+      mockAgent
+        .get("https://raw.githubusercontent.com")
+        .intercept({
+          path: /.*cdktn-repository-manager.*provider\.json/,
+          method: "GET",
+        })
+        .reply(200, {
+          awscc: "hashicorp/awscc@~> 1.0",
+          googlebeta: "hashicorp/google-beta@~> 8.0",
+        });
+    const mockNpm = (npmPath: string, status: number, body: any) =>
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: npmPath, method: "GET" })
+        .reply(status, body);
+    const repository = (slug: string) => ({
+      repository: { type: "git", url: `git+https://github.com/${slug}.git` },
+    });
+
+    beforeEach(() => {
+      originalDispatcher = getGlobalDispatcher();
+      mockAgent = new MockAgent();
+      mockAgent.disableNetConnect();
+      setGlobalDispatcher(mockAgent);
+      projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "go-prebuilt"));
+      fs.writeFileSync(
+        path.join(projectDir, "cdktf.json"),
+        JSON.stringify({ language: "go", app: "go run main.go" }),
+      );
+      previousCwd = process.cwd();
+    });
+
+    afterEach(() => {
+      expect(mockAgent.pendingInterceptors()).toHaveLength(0);
+      process.chdir(previousCwd);
+      fs.removeSync(projectDir);
+      resetFetchCache();
+      setGlobalDispatcher(originalDispatcher);
+    });
+
+    it("finds a provider published only under @cdktn", async () => {
+      goSum("github.com/cdktn-io/cdktn-provider-awscc-go/awscc v2.0.0");
+      mockProvidersMap();
+      mockNpm("/@cdktf/provider-awscc", 404, "Not found");
+      mockNpm(
+        "/@cdktn/provider-awscc",
+        200,
+        repository("cdktn-io/cdktn-provider-awscc"),
+      );
+
+      const mgr = new DependencyManager(Language.GO, "0.25.0", projectDir);
+      await expect(
+        mgr.getCurrentlyInstalledVersion(
+          ProviderConstraint.fromConfigEntry("hashicorp/awscc"),
+        ),
+      ).resolves.toBe("v2.0.0");
+    });
+
+    it("finds a dashed provider under its dash-free Go package", async () => {
+      goSum(
+        "github.com/cdktn-io/cdktn-provider-googlebeta-go/googlebeta v22.0.0",
+      );
+      mockProvidersMap();
+      mockNpm(
+        "/@cdktf/provider-google-beta",
+        200,
+        repository("cdktf/cdktf-provider-googlebeta"),
+      );
+      mockNpm(
+        "/@cdktn/provider-google-beta",
+        200,
+        repository("cdktn-io/cdktn-provider-googlebeta"),
+      );
+
+      const mgr = new DependencyManager(Language.GO, "0.25.0", projectDir);
+      await expect(
+        mgr.getCurrentlyInstalledVersion(
+          ProviderConstraint.fromConfigEntry("hashicorp/google-beta"),
+        ),
+      ).resolves.toBe("v22.0.0");
+    });
+
+    it("lists a dashed provider by its npm package", async () => {
+      goSum(
+        "github.com/cdktn-io/cdktn-provider-googlebeta-go/googlebeta v22.0.0",
+      );
+      mockProvidersMap();
+      mockNpm("/@cdktn/provider-google-beta/22.0.0", 200, {
+        name: "@cdktn/provider-google-beta",
+        version: "22.0.0",
+        cdktn: {
+          provider: {
+            name: "registry.terraform.io/hashicorp/google-beta",
+            version: "6.50.0",
+          },
+        },
+        peerDependencies: { cdktn: "^0.25.0" },
+      });
+      process.chdir(projectDir);
+
+      const mgr = new DependencyManager(Language.GO, "0.25.0", projectDir);
+      await expect(mgr.allProviders()).resolves.toEqual({
+        local: [],
+        prebuilt: [
+          {
+            packageName:
+              "github.com/cdktn-io/cdktn-provider-googlebeta-go/googlebeta",
+            packageVersion: "22.0.0",
+            providerName: "google-beta",
+            providerVersion: "6.50.0",
+            cdktfVersion: undefined,
+            cdktnVersion: "^0.25.0",
+          },
+        ],
+      });
     });
   });
 });
