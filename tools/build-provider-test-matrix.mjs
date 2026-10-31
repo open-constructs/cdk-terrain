@@ -4,7 +4,7 @@
  */
 
 // Builds the GitHub Actions matrix for the provider integration tests workflow. Each provider listed in
-// `test/provider-tests/providers.json` is materialised as a separate matrix entry by `test-provider.sh`, which copies
+// `test/provider-tests/providers.json` is materialised as a separate matrix entry by `test-provider.mjs`, which copies
 // `test/provider-tests/template/test.ts` into `test/provider-tests/providers/<name>/`.
 //
 // Because every provider uses the same template, the HCL synth path's coverage is a property of the template, not of

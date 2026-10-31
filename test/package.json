@@ -8,8 +8,7 @@
     "edge:translateTests": "node ./translate-edge-tests.js",
     "preedge:update": "npm run edge:install",
     "edge:update": "./run-against-dist.mjs ./update-edge.sh",
-    "test:provider": "./provider-tests/test-provider.sh",
-    "test:provider:windows": "./provider-tests/test-provider.bat"
+    "test:provider": "node ./provider-tests/test-provider.mjs"
   },
   "license": "MPL-2.0",
   "devDependencies": {
