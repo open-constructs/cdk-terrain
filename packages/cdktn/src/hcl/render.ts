@@ -2,6 +2,7 @@
  * Copyright (c) HashiCorp, Inc.
  * SPDX-License-Identifier: MPL-2.0
  */
+import { quotedStringKey } from "./quoted-string-key";
 import { Tokenization } from "../tokens/token";
 
 /**
@@ -19,7 +20,7 @@ function escapeQuotes(str: string): string {
  *
  */
 function wrapIdentifierInQuotesIfNeeded(key: string): string {
-  return /(^\d)|[^A-Za-z0-9_-]/.test(key) ? `"${key}"` : key;
+  return /(^\d)|[^A-Za-z0-9_-]/.test(key) ? quotedStringKey(key, true) : key;
 }
 
 /**
