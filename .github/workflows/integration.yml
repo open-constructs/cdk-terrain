@@ -38,7 +38,7 @@ jobs:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
     env:
       CHECKPOINT_DISABLE: "1"
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -68,9 +68,11 @@ jobs:
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
       - name: install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: build and package
         if: ${{ !inputs.skip_setup }}
+        timeout-minutes: 30
         run: |
           pnpm run build
           pnpm run package
@@ -92,6 +94,7 @@ jobs:
           path: packages/@cdktn/provider-generator/edge-provider-bindings
           if-no-files-found: error
       - name: installing test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: Build test matrix
         id: build-test-matrix
@@ -113,7 +116,7 @@ jobs:
       SYNTH_HCL_OUTPUT: ${{ matrix.hclOutput }}
       # jsii >= 1.142 rejects the default cache under HOME, which the container user does not own
       JSII_RUNTIME_PACKAGE_CACHE_ROOT: /root/.cache/aws/jsii/package-cache
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -171,8 +174,10 @@ jobs:
           name: ${{ inputs.edge_bindings_artifact_name }}
           path: test/edge-provider-bindings
       - name: install test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: integration tests
+        timeout-minutes: 20
         run: cd test && ./run-against-dist.mjs pnpm exec jest ${TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}

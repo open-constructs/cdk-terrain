@@ -38,7 +38,7 @@ jobs:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
     env:
       CHECKPOINT_DISABLE: "1"
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -66,12 +66,15 @@ jobs:
             go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-
             go-${{ runner.os }}-
       - name: Install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: Build packages
+        timeout-minutes: 30
         run: pnpm run build
         env:
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
       - name: Create dist bundle
+        timeout-minutes: 30
         run: pnpm run package
         env:
           GOCACHE: ${{ steps.global-cache-dir-path.outputs.go }}
@@ -98,7 +101,7 @@ jobs:
       CHECKPOINT_DISABLE: "1"
       # jsii >= 1.142 rejects the default cache under HOME, which the container user does not own
       JSII_RUNTIME_PACKAGE_CACHE_ROOT: /root/.cache/aws/jsii/package-cache
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -154,8 +157,10 @@ jobs:
           name: dist-examples
           path: dist
       - name: Install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: Install test dependencies
+        timeout-minutes: 15
         run: cd test && pnpm ci
       - name: Recreate packages/cdktn/dist/go layout for Go examples
         # Go examples' go.mod files use `replace ... => ../../../packages/cdktn/dist/go/cdktn`,
@@ -166,6 +171,7 @@ jobs:
           mkdir -p packages/cdktn/dist/go
           ln -sfn "$PWD/dist/go/cdktn" packages/cdktn/dist/go/cdktn
       - name: examples integration tests
+        timeout-minutes: 30
         run: test/run-against-dist.mjs node tools/build-example.mjs ${TEST_TARGET}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
