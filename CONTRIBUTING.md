@@ -333,7 +333,7 @@ Sometimes, after re-packaging the cdktn package for C#, an already initialized e
 
 ### Outside of this Monorepo
 
-If you want to use the libraries and cli from the repo for local development, you can make use of `pnpm link --global`. See the [pnpm link documentation](https://pnpm.io/cli/link) for full details.
+If you want to use the libraries and cli from the repo for local development, you can make use of `npm link`. pnpm 10 and later removed `pnpm link --global`, so the `link-packages` script uses npm to create the global links. See the [npm link documentation](https://docs.npmjs.com/cli/commands/npm-link) for full details.
 
 ### Create link
 
@@ -345,7 +345,7 @@ $ cdktn --version
 0.0.0
 ```
 
-When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktn-cli` with `npm` or `pnpm`.
+When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktn-cli` with `npm` or `pnpm`. If the command is not found, make sure the npm global `bin` directory (`npm prefix -g`) is in your `PATH`.
 
 ### Build & Package
 
@@ -368,8 +368,10 @@ Reference the previously [linked](#create-link) `cdktn` package in our newly cre
 
 ```shell
 $ cd ~/my-local-cdktn-example
-$ pnpm link --global cdktn
+$ npm link cdktn
 ```
+
+In a project that uses pnpm, run `pnpm link <path to this repository>/packages/cdktn` instead.
 
 From here on both, the `cli` and the `cdktn` packages are linked and changes will be reflected immediatlely.
 
