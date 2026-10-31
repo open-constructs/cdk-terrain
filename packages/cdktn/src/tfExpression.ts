@@ -7,26 +7,12 @@ import { App } from "./app";
 import { TerraformStack } from "./terraform-stack";
 import { ITerraformDependable } from "./terraform-dependable";
 import { Construct } from "constructs";
+import {
+  quotedStringKey,
+  quotedStringKeyFragment,
+} from "./hcl/quoted-string-key";
 
 const TERRAFORM_IDENTIFIER_REGEX = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
-
-/**
- * Serializes an object key as a Terraform quoted-string literal:
- * `JSON.stringify` covers quotes, backslashes and control characters, and
- * `$${`/`%%{` are Terraform's own escapes for what would otherwise become
- * template interpolation/directive sequences inside the quoted string. The
- * pre-existing direct-object branches of `resolveExpressionPart` still
- * interpolate keys unescaped - tracked in
- * https://github.com/open-constructs/cdk-terrain/issues/350.
- */
-function quotedStringKey(key: string): string {
-  // Replacer functions, not replacement strings: in a replacement string
-  // `$$` is itself an escape (for a literal `$`), so `"$${"` would emit
-  // just `${` - silently undoing the escape this exists to produce.
-  return JSON.stringify(key)
-    .replace(/\$\{/g, () => "$${")
-    .replace(/%\{/g, () => "%%{");
-}
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 class TFExpression extends Intrinsic implements IResolvable {
@@ -73,7 +59,7 @@ class TFExpression extends Intrinsic implements IResolvable {
         return `{${Object.keys(resolvedArg)
           .map(
             (key) =>
-              `${quotedStringKey(key)} = ${this.resolveArg(context, resolvedArg[key])}`,
+              `${this.resolveObjectKey(context, key)} = ${this.resolveArg(context, resolvedArg[key])}`,
           )
           .join(", ")}}`;
       }
@@ -86,8 +72,21 @@ class TFExpression extends Intrinsic implements IResolvable {
     }
 
     if (typeof resolvedArg === "object" && resolvedArg !== null) {
-      return `{${Object.keys(resolvedArg)
-        .map((key) => `"${key}" = ${this.resolveArg(context, arg[key])}`)
+      // Use arg's own keys, not resolvedArg's: context.resolve() deep-resolves
+      // object keys too, replacing a token placeholder with its resolved
+      // reference text and dropping the `${...}` wrapper, so resolvedArg's
+      // keys no longer look like tokens and no longer match `arg`'s.
+      // context.resolve() also drops undefined-valued entries (mirroring
+      // JSON.stringify), so filter those out here to match resolvedArg's keys.
+      // A resolvable value (e.g. Lazy.anyValue()) only reveals `undefined`
+      // once resolved, so resolve the value - not just check `arg[key]` - to
+      // detect it.
+      return `{${Object.keys(arg)
+        .filter((key) => context.resolve(arg[key]) !== undefined)
+        .map(
+          (key) =>
+            `${this.resolveObjectKey(context, key)} = ${this.resolveArg(context, arg[key])}`,
+        )
         .join(", ")}}`;
     }
 
@@ -118,6 +117,72 @@ class TFExpression extends Intrinsic implements IResolvable {
     }
 
     return this.resolveExpressionPart(context, arg);
+  }
+
+  // An object key built from a token (e.g. `{[res.id]: "v"}`) is a JS string
+  // holding the token's placeholder by the time it reaches here, and reads
+  // identically to a literal key unless we check for the placeholder.
+  // HCL has no object-key interpolation syntax, so a token key can only be
+  // expressed as a parenthesised key expression, e.g. `(resource.id) = "v"`.
+  private resolveObjectKey(context: IResolveContext, key: string): string {
+    const tokenList = Tokenization.reverseString(key);
+    const hasToken = tokenList.tokens.length + tokenList.intrinsic.length > 0;
+
+    if (!hasToken) {
+      return quotedStringKey(key);
+    }
+
+    return `(${this.resolveTokenKey(context, key)})`;
+  }
+
+  // A mixed literal/token key (e.g. `{[`prefix-${res.id}`]: "v"}`) must stay a
+  // key expression, not go through resolveArg()'s resolveString(), which
+  // escapes a literal fragment for use as a Terraform *value* (only `\n` and
+  // `${`) rather than as a quoted-string *key* (which also needs quotes and
+  // backslashes escaped).
+  private resolveTokenKey(context: IResolveContext, key: string): string {
+    const tokenList = Tokenization.reverseString(key);
+    const numberOfTokens = tokenList.tokens.length + tokenList.intrinsic.length;
+
+    // A key that is only a token (no literal fragments) is a bare reference
+    // expression, not a quoted string - e.g. `(resource.id) = "v"`.
+    if (
+      tokenList.literals.length === 0 &&
+      tokenList.escapes.length === 0 &&
+      numberOfTokens === 1
+    ) {
+      return context.resolve(key);
+    }
+
+    const joinResult = tokenList.join({
+      join: (left, right) => {
+        const leftTokens = Tokenization.reverse(left);
+        const leftTokenList = Tokenization.reverseString(left);
+        const rightTokens = Tokenization.reverse(right);
+
+        const leftTokenCount =
+          leftTokenList.intrinsic.length + leftTokenList.tokens.length;
+
+        let leftValue = left;
+
+        if (leftTokenList.literals.length === 1 && leftTokenCount === 0) {
+          leftValue = quotedStringKeyFragment(left);
+        }
+
+        if (leftTokenList.literals.length === 0 && leftTokenCount === 1) {
+          leftValue = `\${${leftTokens[0]}}`;
+        }
+
+        const rightValue =
+          rightTokens.length === 0
+            ? quotedStringKeyFragment(right)
+            : `\${${rightTokens[0]}}`;
+
+        return `${leftValue}${rightValue}`;
+      },
+    });
+
+    return `"${joinResult}"`;
   }
 
   /**
