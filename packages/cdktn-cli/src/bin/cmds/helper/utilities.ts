@@ -27,9 +27,9 @@ export const projectRootPath = () => {
 
 // deferred require to keep cdktn-cli main entrypoint small (e.g. for fast shell completions)
 export const requireHandlers = () => {
-  // if file exists relative to this file return its file path
-  // otherwise return the file path relative to the project root
-  const filePath = path.join(__dirname, "..", "handlers.js");
+  // Once bundled, __dirname is <outdir>/bin: a bundle loads its own handlers
+  // wherever it was built. Unbundled code falls back to the shipped bundle.
+  const filePath = path.join(__dirname, "cmds", "handlers.js");
   if (fs.existsSync(filePath)) {
     return localRequire(filePath);
   }

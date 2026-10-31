@@ -17,9 +17,12 @@ import {
   tryReadGeneratedConfigurationFile,
   tryRemoveGeneratedConfigurationFile,
 } from "./models/terraform-cli";
-import { ProviderConstraint } from "./dependencies/dependency-manager";
 import { terraformJsonSchema, TerraformStack } from "./terraform-json";
-import { TerraformProviderLock } from "./terraform-provider-lock";
+import {
+  TerraformProviderLock,
+  needsLockfileUpdate,
+  needsUpgrade,
+} from "./terraform-provider-lock";
 import { convertConfigurationFile } from "./convert";
 
 export type StackUpdate =
@@ -299,15 +302,7 @@ export class CdktfStack {
   private requiredProviders() {
     // Read required providers from the stack output
     const requiredProviders = this.parsedContent.terraform?.required_providers;
-
-    return Object.values(requiredProviders || {}).reduce(
-      (acc, obj) => {
-        const constraint = new ProviderConstraint(obj.source, obj.version);
-        acc[constraint.source] = constraint;
-        return acc;
-      },
-      {} as Record<string, ProviderConstraint>,
-    );
+    return Object.values(requiredProviders || {});
   }
 
   private async checkNeedsLockfileUpdate(): Promise<boolean> {
@@ -323,46 +318,12 @@ export class CdktfStack {
       return true;
     }
 
-    const requiredProviders = this.requiredProviders();
-
-    for (const provider of Object.values(requiredProviders)) {
-      const hasProvider = await lock.hasMatchingProvider(provider);
-      if (!hasProvider) {
-        // If we don't have a provider or version doesn't match, we need to init
-        return true;
-      }
-    }
-
-    return false;
+    return needsLockfileUpdate(this.requiredProviders(), lock);
   }
 
   private async checkNeedsUpgrade(): Promise<boolean> {
     const lock = new TerraformProviderLock(this.stack.workingDirectory);
-    const allProviders = this.requiredProviders();
-    const lockedProviders = Object.values(await lock.providers());
-
-    // Check if any provider contained in `providers` violates constraints in `lockedProviders`
-    // Upgrade if some provider constraint not met
-    // If a provider wasn't preset in lockedProviders, that's fine; it will just get added
-    return lockedProviders.some((lockedProvider) => {
-      const lockedConstraint = lockedProvider.constraints;
-      if (!lockedConstraint) {
-        // Provider lock doesn't have a constraint specified, so we can't check.
-        // This shouldn't happen
-        logger.debug(
-          `Provider lock doesn't have a constraint for ${lockedProvider.name}`,
-        );
-        return false;
-      }
-
-      const provider = allProviders[lockedConstraint.source];
-      if (!provider) {
-        // else no longer using this provider, so won't cause problems
-        return;
-      }
-
-      return !lockedConstraint.matchesVersion(provider.version ?? ">0");
-    });
+    return needsUpgrade(this.requiredProviders(), lock);
   }
 
   private async run(cb: () => Promise<void>) {
@@ -534,6 +495,7 @@ new SomeResource(...).importFrom("some_id")
       if (!cancelled) {
         const outputs = await terraform.output();
         const outputsByConstructId = getConstructIdsForOutputs(
+          this.stack.name,
           JSON.parse(this.stack.content),
           outputs,
         );
@@ -629,6 +591,7 @@ new SomeResource(...).importFrom("some_id")
 
       const outputs = await terraform.output();
       const outputsByConstructId = getConstructIdsForOutputs(
+        this.stack.name,
         JSON.parse(this.stack.content),
         outputs,
       );

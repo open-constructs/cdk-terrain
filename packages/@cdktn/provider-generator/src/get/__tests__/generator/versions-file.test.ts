@@ -33,7 +33,8 @@ describe("versions.json file generation", () => {
       fqn: "kreuzwerker/docker",
       name: "docker",
       source: "kreuzwerker/docker",
-      version: "2.16.0",
+      // OpenTofu rejects everything below 3.7.0 as unsigned; see #440.
+      version: "3.9.0",
     },
   ];
 
@@ -62,10 +63,14 @@ describe("versions.json file generation", () => {
         path.join(workdir, "versions.json"),
         "utf-8",
       );
-      expect(Object.keys(JSON.parse(output))).toEqual(
-        expect.arrayContaining(
-          constraints.map((c) => `registry.terraform.io/${c.fqn}`),
-        ),
+      // versions.json is keyed by fully qualified name, and the host is
+      // whichever registry the fetching CLI used - terraform's or tofu's - so
+      // assert on the provider part rather than pinning one registry.
+      const keys = Object.keys(JSON.parse(output)).map((k) =>
+        k.split("/").slice(1).join("/"),
+      );
+      expect(keys).toEqual(
+        expect.arrayContaining(constraints.map((c) => c.fqn)),
       );
     },
   );

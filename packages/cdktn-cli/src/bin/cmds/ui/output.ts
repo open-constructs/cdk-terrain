@@ -3,14 +3,14 @@
 import { NestedTerraformOutputs } from "@cdktn/cli-core";
 import { runCdktfProject, Status } from "../helper/project-runner";
 import { StreamRenderer } from "../helper/tty-stream";
-import { renderOutputs } from "../helper/format";
+import { presentOutputs } from "../helper/outputs";
 
 /** Options accepted by {@link runOutput}. */
 export interface OutputConfig {
   outDir: string;
   targetStacks?: string[];
   synthCommand: string;
-  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void;
+  onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void | Promise<void>;
   outputsPath?: string;
   skipSynth?: boolean;
   skipProviderLock?: boolean;
@@ -39,8 +39,9 @@ function statusBar(status: Status): string {
  * Drive a `cdktn output` invocation. Fetches Terraform outputs (optionally skipping synth/provider-lock), prints them
  * in nested form, and writes them to disk when `outputsPath` is provided.
  *
- * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs before they are printed.
- * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure.
+ * @param config - Output options. `onOutputsRetrieved` is called with the fetched outputs after they are printed.
+ * @returns Promise that resolves when outputs have been fetched and printed, rejects on failure, including with a
+ *          Usage or External error when `onOutputsRetrieved` fails.
  */
 export async function runOutput({
   outDir,
@@ -68,26 +69,21 @@ export async function runOutput({
           });
         },
       },
-      async (project) => {
-        const outputs = await project.fetchOutputs({
+      (project) =>
+        project.fetchOutputs({
           stackNames: targetStacks,
           skipSynth,
           skipProviderLock,
-        });
-        onOutputsRetrieved(outputs);
-        return outputs;
-      },
+        }),
     );
 
     stream.clearBar();
-    if (returnValue && Object.keys(returnValue).length > 0) {
-      console.log(renderOutputs(returnValue));
-      if (outputsPath) {
-        console.log(`The outputs have been written to ${outputsPath}`);
-      }
-    } else {
-      console.log("No outputs found.");
-    }
+    await presentOutputs({
+      outputs: returnValue,
+      onOutputsRetrieved,
+      outputsPath,
+      renderFailureLabel: "Outputs fetched",
+    });
   } finally {
     stream.stop();
   }

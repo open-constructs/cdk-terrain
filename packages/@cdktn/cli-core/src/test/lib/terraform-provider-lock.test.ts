@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { TerraformProviderLock } from "../../lib/terraform-provider-lock";
+import {
+  TerraformProviderLock,
+  needsLockfileUpdate,
+  needsUpgrade,
+} from "../../lib/terraform-provider-lock";
 import { readFile, stat } from "fs/promises";
 import * as path from "path";
 import { ProviderConstraint } from "../../lib/dependencies/dependency-manager";
@@ -201,5 +205,87 @@ describe("TerraformProviderLock", () => {
 
     expect(await lock.hasProviderLockFile()).toBeFalsy();
     expect(stat).toHaveBeenCalledWith(path.join("test", ".terraform.lock.hcl"));
+  });
+});
+
+describe("lock decisions", () => {
+  const terraformEntry = "registry.terraform.io/hashicorp/test";
+  const opentofuEntry = "registry.opentofu.org/hashicorp/test";
+  const bare = [{ source: "hashicorp/test", version: "1.2" }];
+
+  const lockWith = (
+    entries: { name: string; version: string; constraints: string }[],
+  ) => {
+    (readFile as jest.Mock).mockResolvedValue(
+      generateProviderLockFileContents(entries),
+    );
+    return new TerraformProviderLock("test");
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe("needsLockfileUpdate", () => {
+    it.each([
+      ["Terraform", terraformEntry],
+      ["OpenTofu", opentofuEntry],
+    ])("accepts a bare source locked by %s", async (_cli, name) => {
+      const lock = lockWith([{ name, version: "1.2.3", constraints: "1.2" }]);
+      await expect(needsLockfileUpdate(bare, lock)).resolves.toBe(false);
+    });
+
+    it("refreshes when the provider is not locked at all", async () => {
+      const lock = lockWith([]);
+      await expect(needsLockfileUpdate(bare, lock)).resolves.toBe(true);
+    });
+
+    it("does not let a different public registry satisfy an explicit host", async () => {
+      const lock = lockWith([
+        { name: opentofuEntry, version: "1.2.3", constraints: "1.2" },
+      ]);
+      await expect(
+        needsLockfileUpdate([{ source: terraformEntry, version: "1.2" }], lock),
+      ).resolves.toBe(true);
+    });
+  });
+
+  describe("needsUpgrade", () => {
+    // A project deployed with Terraform and then bumped under OpenTofu: without
+    // `-upgrade`, OpenTofu rejects the plain init.
+    it("upgrades a bump locked under the other CLI's registry", async () => {
+      const lock = lockWith([
+        { name: terraformEntry, version: "1.0.0", constraints: "1.0.0" },
+      ]);
+      await expect(needsUpgrade(bare, lock)).resolves.toBe(true);
+    });
+
+    it("does not upgrade when the locked version still satisfies the requirement", async () => {
+      const lock = lockWith([
+        { name: opentofuEntry, version: "1.2.3", constraints: "1.2" },
+      ]);
+      await expect(needsUpgrade(bare, lock)).resolves.toBe(false);
+    });
+
+    // After a switch the lock can hold both; a stale entry costs one extra
+    // `-upgrade`, which is safe.
+    it("upgrades when either registry's entry conflicts", async () => {
+      const lock = lockWith([
+        { name: terraformEntry, version: "1.0.0", constraints: "1.0.0" },
+        { name: opentofuEntry, version: "1.2.3", constraints: "1.2" },
+      ]);
+      await expect(needsUpgrade(bare, lock)).resolves.toBe(true);
+    });
+
+    it("ignores a locked provider the stack no longer requires", async () => {
+      const lock = lockWith([
+        {
+          name: "registry.terraform.io/hashicorp/other",
+          version: "1.0.0",
+          constraints: "1.0.0",
+        },
+      ]);
+      await expect(needsUpgrade(bare, lock)).resolves.toBe(false);
+    });
   });
 });

@@ -6,7 +6,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { ProviderConstraint } from "./dependencies/dependency-manager";
-import { logger } from "@cdktn/commons";
+import { PUBLIC_REGISTRIES, logger } from "@cdktn/commons";
 
 const TerraformLockFileName = ".terraform.lock.hcl";
 
@@ -21,6 +21,73 @@ type TerraformProviderLockFileData = {
     [name: string]: TerraformProviderLockFileEntry;
   };
 };
+
+type RequiredProvider = { source: string; version?: string };
+
+// A source that names a host is locked under exactly that host. A bare one is
+// locked under whichever public registry the CLI resolved it from, so either
+// counts: OpenTofu migrates a Terraform entry itself on init.
+function lockAddressesFor(
+  source: string,
+  version?: string,
+): ProviderConstraint[] {
+  if (source.split("/").length === 3) {
+    return [new ProviderConstraint(source, version)];
+  }
+  return PUBLIC_REGISTRIES.map(
+    (registry) => new ProviderConstraint(source, version, registry),
+  );
+}
+
+/** Whether `init` should be followed by a `providers lock` refresh. */
+export async function needsLockfileUpdate(
+  required: RequiredProvider[],
+  lock: TerraformProviderLock,
+): Promise<boolean> {
+  for (const { source, version } of required) {
+    let locked = false;
+    for (const address of lockAddressesFor(source, version)) {
+      if (await lock.hasMatchingProvider(address)) {
+        locked = true;
+        break;
+      }
+    }
+    if (!locked) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Whether a locked version no longer satisfies a requirement, needing `init -upgrade`. */
+export async function needsUpgrade(
+  required: RequiredProvider[],
+  lock: TerraformProviderLock,
+): Promise<boolean> {
+  const lockedProviders = Object.values(await lock.providers());
+  return lockedProviders.some((lockedProvider) => {
+    const lockedConstraint = lockedProvider.constraints;
+    if (!lockedConstraint) {
+      // Provider lock doesn't have a constraint specified, so we can't check.
+      logger.debug(
+        `Provider lock doesn't have a constraint for ${lockedProvider.name}`,
+      );
+      return false;
+    }
+
+    const provider = required.find(({ source, version }) =>
+      lockAddressesFor(source, version).some(
+        (address) => address.source === lockedConstraint.source,
+      ),
+    );
+    // No longer required by this stack, so it can't block the upgrade.
+    if (!provider) {
+      return false;
+    }
+
+    return !lockedConstraint.matchesVersion(provider.version ?? ">0");
+  });
+}
 
 export class TerraformProviderLock {
   private _providerLockData: TerraformProviderLockFileData | null;

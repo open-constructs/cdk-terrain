@@ -10,6 +10,8 @@ env:
   HUSKY: "0"
   SENTRY_ORG: cdktn
   SENTRY_PROJECT: cdktn
+  # Published artifacts are never built from a shared remote Nx cache.
+  NX_SKIP_REMOTE_CACHE: "true"
 
 concurrency:
   group: release
@@ -71,6 +73,7 @@ jobs:
           node tools/align-version.mjs
           pnpm run build
           pnpm run package
+          pnpm run build:edge-bindings
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: Add sourcemap and commit info to sentry
@@ -92,6 +95,7 @@ jobs:
         with:
           name: edge-provider-bindings-release
           path: packages/@cdktn/provider-generator/edge-provider-bindings
+          if-no-files-found: error
 
   # ---------------------------------------------------------------------------
   # Next channel: always bumps to a fresh prerelease version on each push to
@@ -158,6 +162,7 @@ jobs:
           pnpm ci
           pnpm run build
           pnpm run package
+          pnpm run build:edge-bindings
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: Add sourcemap and commit info to sentry
@@ -177,8 +182,9 @@ jobs:
         with:
           name: edge-provider-bindings-next
           path: packages/@cdktn/provider-generator/edge-provider-bindings
+          if-no-files-found: error
       - name: publish tag
-        run: git push --follow-tags
+        run: git push origin "v${{ steps.get_version.outputs.version }}"
 
   # ---------------------------------------------------------------------------
   # Test fan-out — release channel

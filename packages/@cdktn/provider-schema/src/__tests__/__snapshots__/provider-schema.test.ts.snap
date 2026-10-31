@@ -748,7 +748,7 @@ exports[`readSchema generates a single provider schema 1`] = `
   "cli_version": "STUBBED VERSION",
   "format_version": "STUBBED VERSION",
   "provider_schemas": {
-    "registry.terraform.io/hashicorp/null": {
+    "STUBBED_REGISTRY/hashicorp/null": {
       "data_source_schemas": {
         "null_data_source": {
           "block": {
@@ -834,7 +834,7 @@ exports[`readSchema generates a single provider schema 1`] = `
     }
   },
   "provider_versions": {
-    "registry.terraform.io/hashicorp/null": "3.1.0"
+    "STUBBED_REGISTRY/hashicorp/null": "3.1.0"
   }
 }"
 `;

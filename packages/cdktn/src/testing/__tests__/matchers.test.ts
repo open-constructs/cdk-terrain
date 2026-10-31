@@ -5,6 +5,7 @@ import { TestResource, DockerImage } from "../../../test/helper/resource";
 import {
   toBeValidTerraform,
   toPlanSuccessfully,
+  warmUpProviderLockFileCache,
   getToHaveResourceWithProperties,
   getToHaveProviderWithProperties,
   getToHaveDataSourceWithProperties,
@@ -13,8 +14,15 @@ import {
 import { TestDataSource } from "../../../test/helper/data-source";
 import { TerraformStack } from "../../terraform-stack";
 import { DockerProvider } from "../../../test/helper/provider";
+import { S3Backend } from "../../backends/s3-backend";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
+
+function findCachedLockFile(cacheRoot: string): string {
+  const [hashDir] = fs.readdirSync(cacheRoot);
+  return path.join(cacheRoot, hashDir, ".terraform.lock.hcl");
+}
 
 function corruptSynthesizedStack(stackPath: string) {
   const manifest = JSON.parse(
@@ -349,6 +357,238 @@ describe("matchers", () => {
       expect(res.message).toEqual(
         expect.stringContaining("Expected subject to plan successfully"),
       );
+    });
+
+    it("succeeds with { backend: false } by substituting a local backend", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new S3Backend(stack, {
+        bucket: "nope",
+        key: "k",
+        region: "us-east-1",
+      });
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack), {
+        backend: false,
+      });
+
+      expect(res.pass).toBeTruthy();
+    });
+
+    it("renders terraform diagnostics in the failure message", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      // The provider schema requires a string; this type mismatch is caught by `plan`'s
+      // implicit validate step and reported as a `-json` diagnostic, not a parse error.
+      new DockerImage(stack, "test", { name: { not: "a string" } as any });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack), {
+        backend: false,
+      });
+      expect(res.pass).toBeFalsy();
+      expect(res.message).toEqual(expect.stringContaining("Diagnostics:"));
+    });
+
+    it("removes the local backend override after the plan, so a later real-backend call still fails", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new S3Backend(stack, {
+        bucket: "nope",
+        key: "k",
+        region: "us-east-1",
+      });
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      expect(
+        toPlanSuccessfully(synthesized, { backend: false }).pass,
+      ).toBeTruthy();
+      // If the override file had leaked, this would also pass against the local backend
+      // instead of failing against the unreachable S3 one.
+      expect(toPlanSuccessfully(synthesized).pass).toBeFalsy();
+    });
+
+    it("warmUpProviderLockFileCache seeds the cache ahead of a matcher call", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      // Resolving up front should not itself be observable as a failure, and the matcher
+      // should still succeed against the lock file the warm-up seeded.
+      expect(() => warmUpProviderLockFileCache([synthesized])).not.toThrow();
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+    });
+
+    it("reuses the lock file seeded by a prior warm-up across multiple matcher calls", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      warmUpProviderLockFileCache([synthesized]);
+
+      // Both calls should seed from the lock file the warm-up cached, rather than one of them
+      // racing a fresh provider resolution against the shared plugin cache.
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+    });
+
+    describe("provider lock-file cache", () => {
+      let cacheRoot: string;
+      let pluginCacheDir: string;
+      let originalCacheRoot: string | undefined;
+      let originalPluginCacheDir: string | undefined;
+
+      beforeEach(() => {
+        cacheRoot = fs.mkdtempSync(
+          path.join(os.tmpdir(), "cdktn-test-lockfile-cache-"),
+        );
+        originalCacheRoot = process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR;
+        process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR = cacheRoot;
+
+        pluginCacheDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), "cdktn-test-plugin-cache-"),
+        );
+        originalPluginCacheDir = process.env.TF_PLUGIN_CACHE_DIR;
+        process.env.TF_PLUGIN_CACHE_DIR = pluginCacheDir;
+      });
+
+      afterEach(() => {
+        fs.rmSync(cacheRoot, { recursive: true, force: true });
+        fs.rmSync(pluginCacheDir, { recursive: true, force: true });
+        if (originalCacheRoot === undefined) {
+          delete process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR;
+        } else {
+          process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR = originalCacheRoot;
+        }
+        if (originalPluginCacheDir === undefined) {
+          delete process.env.TF_PLUGIN_CACHE_DIR;
+        } else {
+          process.env.TF_PLUGIN_CACHE_DIR = originalPluginCacheDir;
+        }
+      });
+
+      it("writes a resolved lock file to the configured cache root", () => {
+        const app = Testing.app();
+        const stack = new TerraformStack(app, "test");
+        new DockerProvider(stack, "provider", {});
+        new DockerImage(stack, "test", { name: "test" });
+
+        warmUpProviderLockFileCache([Testing.fullSynth(stack)]);
+
+        expect(fs.existsSync(findCachedLockFile(cacheRoot))).toBe(true);
+      });
+
+      it("seeds a matcher's working directory from the warmed-up lock file", () => {
+        const app = Testing.app();
+        const warmupStack = new TerraformStack(app, "warmup");
+        new DockerProvider(warmupStack, "provider", {});
+        new DockerImage(warmupStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(warmupStack)]);
+
+        // A marker appended to the cached lock file survives into the matcher's working
+        // directory only if it was copied verbatim rather than independently re-resolved.
+        const cachedLockFile = findCachedLockFile(cacheRoot);
+        fs.appendFileSync(cachedLockFile, "\n# cdktn-test-marker\n");
+
+        const subjectStack = new TerraformStack(app, "subject");
+        new DockerProvider(subjectStack, "provider", {});
+        new DockerImage(subjectStack, "test", { name: "test" });
+        const synthesized = Testing.fullSynth(subjectStack);
+
+        expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+          true,
+        );
+
+        const manifest = JSON.parse(
+          fs.readFileSync(path.resolve(synthesized, "manifest.json"), "utf8"),
+        );
+        const [, stack] = Object.entries(manifest.stacks)[0] as [
+          string,
+          { workingDirectory: string },
+        ];
+        const seededLockFile = fs.readFileSync(
+          path.resolve(
+            synthesized,
+            stack.workingDirectory,
+            ".terraform.lock.hcl",
+          ),
+          "utf8",
+        );
+        expect(seededLockFile).toContain("# cdktn-test-marker");
+      });
+
+      it("re-resolves and repopulates a cleared plugin cache on every warm-up, even with a fresh cached lock file", () => {
+        const app = Testing.app();
+        const firstStack = new TerraformStack(app, "first");
+        new DockerProvider(firstStack, "provider", {});
+        new DockerImage(firstStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(firstStack)]);
+
+        expect(fs.readdirSync(pluginCacheDir).length).toBeGreaterThan(0);
+
+        // Simulate the plugin cache being cleared (or TF_PLUGIN_CACHE_DIR moving) while the
+        // lock-file cache is still within its TTL.
+        fs.rmSync(pluginCacheDir, { recursive: true, force: true });
+        fs.mkdirSync(pluginCacheDir, { recursive: true });
+
+        const secondStack = new TerraformStack(app, "second");
+        new DockerProvider(secondStack, "provider", {});
+        new DockerImage(secondStack, "test", { name: "test" });
+        const synthesized = Testing.fullSynth(secondStack);
+        warmUpProviderLockFileCache([synthesized]);
+
+        expect(fs.readdirSync(pluginCacheDir).length).toBeGreaterThan(0);
+        expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+          true,
+        );
+      });
+
+      it("lets an expired cached lock file be re-resolved on warm-up instead of carrying it forward", () => {
+        const app = Testing.app();
+        const firstStack = new TerraformStack(app, "first");
+        new DockerProvider(firstStack, "provider", {});
+        new DockerImage(firstStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(firstStack)]);
+
+        // A marker on the stale entry would only survive a second warm-up if it were
+        // (wrongly) seeded into the working directory before `init` instead of being left
+        // for `init` to re-resolve from scratch.
+        const cachedLockFile = findCachedLockFile(cacheRoot);
+        fs.appendFileSync(cachedLockFile, "\n# cdktn-test-marker\n");
+        const expiredMtime = new Date(Date.now() - 25 * 60 * 60 * 1000);
+        fs.utimesSync(cachedLockFile, expiredMtime, expiredMtime);
+
+        const secondStack = new TerraformStack(app, "second");
+        new DockerProvider(secondStack, "provider", {});
+        new DockerImage(secondStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(secondStack)]);
+
+        expect(fs.readFileSync(cachedLockFile, "utf8")).not.toContain(
+          "# cdktn-test-marker",
+        );
+      });
     });
   });
 });

@@ -58,6 +58,8 @@ export async function runGet({
   stream?.start();
   stream?.setBar(`${GetStatus.STARTING}...`, { spinner: true });
 
+  // the generator reports one target at a time; sent as one `get` metric
+  const generatedTargets: { type: string; source: string }[] = [];
   try {
     await get({
       constraints,
@@ -67,12 +69,14 @@ export async function runGet({
         stream?.setBar(`${status}...`, { spinner: true });
       },
       providerSchemaCachePath,
-      reportTelemetry: async (payload) =>
-        sendTelemetry("get", {
-          language: payload.targetLanguage,
-          ...payload.trackingPayload,
-        }),
+      reportTelemetry: async ({ trackingPayload }) => {
+        generatedTargets.push({
+          type: trackingPayload.type,
+          source: trackingPayload.source,
+        });
+      },
     });
+    await sendTelemetry("get", { language, targets: generatedTargets });
   } catch (e: any) {
     stream?.stop();
     if (!IsErrorType(e, "Usage")) {

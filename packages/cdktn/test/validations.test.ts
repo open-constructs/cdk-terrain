@@ -136,6 +136,25 @@ describe("resolveTargetVersions", () => {
     ]);
   });
 
+  test("reports empty string ranges as invalid", () => {
+    const stack = stackWithContext({
+      targetVersions: { terraform: "" },
+    });
+    expect(resolveTargetVersions(stack).errors).toEqual([
+      `targetVersions.terraform "" is not a valid semver range`,
+    ]);
+  });
+
+  test("reports whitespace-only ranges as invalid", () => {
+    const stack = stackWithContext({
+      targetVersions: { terraform: "   ", opentofu: "\t" },
+    });
+    expect(resolveTargetVersions(stack).errors).toEqual([
+      `targetVersions.terraform "   " is not a valid semver range`,
+      `targetVersions.opentofu "\\t" is not a valid semver range`,
+    ]);
+  });
+
   test("rejects Terraform provider constraint syntax with a hint", () => {
     const stack = stackWithContext({
       targetVersions: { terraform: "~> 1.5" },
@@ -382,6 +401,52 @@ describe("ValidateFeatureTargetSupport", () => {
     expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
       "Validation failed with the following errors:
         [MyStack/testResource] targetVersions has unknown product "tofu" (expected "terraform" or "opentofu")
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("cannot be bypassed with a blank targetVersions range", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: "" },
+    });
+    testResource.node.addValidation(
+      new ValidateFeatureTargetSupport(
+        testResource,
+        "S3 native state locking",
+        {
+          terraform: ">=1.10.0",
+        },
+      ),
+    );
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] targetVersions.terraform "" is not a valid semver range
+
+      If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+      "
+    `);
+  });
+
+  test("cannot be bypassed with a whitespace-only targetVersions range", () => {
+    const { app, testResource } = appWithStack({
+      targetVersions: { terraform: "   " },
+    });
+    testResource.node.addValidation(
+      new ValidateFeatureTargetSupport(
+        testResource,
+        "S3 native state locking",
+        {
+          terraform: ">=1.10.0",
+        },
+      ),
+    );
+
+    expect(() => app.synth()).toThrowErrorMatchingInlineSnapshot(`
+      "Validation failed with the following errors:
+        [MyStack/testResource] targetVersions.terraform "   " is not a valid semver range
 
       If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
       "

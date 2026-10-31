@@ -6,8 +6,9 @@ import { logger } from "./logging";
 import { exec } from "./util";
 import { terraformVersion } from "./terraform";
 import { DISPLAY_VERSION } from "./version";
-import { pathExists, readFileSync } from "fs-extra";
+import { readFileSync } from "fs-extra";
 import { getGradlePackageVersion, isGradleProject } from "./gradle";
+import { detectNodePackageManager } from "./node-package-manager";
 
 export function getLanguage(projectPath = process.cwd()): string | undefined {
   try {
@@ -81,11 +82,7 @@ export function getNodeVersion() {
 async function getNodeModuleVersion(
   packageName: string,
 ): Promise<string | undefined> {
-  // Use the presence of the pnpm lock file as a signal that
-  // we should interrogate packages via pnpm instead of npm.
-  const usingPnpm = await pathExists("pnpm-lock.yaml");
-
-  return usingPnpm
+  return detectNodePackageManager(process.cwd()) === "pnpm"
     ? getPnpmNodeModuleVersion(packageName)
     : getNpmNodeModuleVersion(packageName);
 }
@@ -404,7 +401,7 @@ export async function collectDebugInformation() {
     debugOutput["constructs"] = (await constructs) ?? null;
     debugOutput["jsii"] = (await jsii) ?? null;
   }
-  debugOutput["terraform"] = await terraformVersion;
+  debugOutput["terraform"] = (await terraformVersion()) ?? null;
   debugOutput["arch"] = os.arch();
   debugOutput["os"] = `${os.platform()} ${os.release()}`;
 

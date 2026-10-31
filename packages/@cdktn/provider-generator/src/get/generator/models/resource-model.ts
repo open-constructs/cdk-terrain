@@ -115,6 +115,11 @@ export class ResourceModel {
     return this.escapeSchema(JSON.stringify(this.schema, undefined, 2));
   }
 
+  /** Registry that linkToDocs points at, for use in the surrounding prose. */
+  public get docsRegistryName(): string {
+    return registryForTargetVersions(this.targetVersions).displayName;
+  }
+
   public get linkToDocs(): string {
     // Keyed off the project's declared targets, not the FQPN hostname: that
     // hostname reflects whichever CLI fetched the schema, which would make the

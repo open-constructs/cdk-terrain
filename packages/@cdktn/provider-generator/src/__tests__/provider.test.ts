@@ -70,6 +70,27 @@ function resourceTypesPresentInSnapshot(
   return resources;
 }
 
+/**
+ * Rewrites the registry host in any fully-qualified-name key. The host records
+ * which CLI fetched the schema - terraform's or tofu's - rather than anything
+ * about the generated code, so one snapshot serves both.
+ */
+function stubRegistryHosts(value: any): any {
+  if (Array.isArray(value)) return value.map(stubRegistryHosts);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [
+        k.replace(
+          /^registry\.(?:terraform\.io|opentofu\.org)\//,
+          "STUBBED_REGISTRY/",
+        ),
+        stubRegistryHosts(v),
+      ]),
+    );
+  }
+  return value;
+}
+
 describe("Provider", () => {
   it("generates a provider", async () => {
     const constraint = new TerraformProviderConstraint(
@@ -86,7 +107,7 @@ describe("Provider", () => {
         process.env.CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH,
       );
       await maker.generate([constraint]);
-      const snapshot = directorySnapshot(workdir);
+      const snapshot = stubRegistryHosts(directorySnapshot(workdir));
       expect(snapshot).toMatchSnapshot();
     });
   }, 600_000);
@@ -103,7 +124,7 @@ describe("Provider", () => {
         targetLanguage: Language.TYPESCRIPT,
       });
       await maker.generate([constraint]);
-      const snapshot = directorySnapshot(workdir);
+      const snapshot = stubRegistryHosts(directorySnapshot(workdir));
 
       const terraformResourceTypesPresent: string[] =
         resourceTypesPresentInSnapshot(snapshot, "datadog");
@@ -127,7 +148,7 @@ describe("Provider", () => {
     const constraint = new TerraformProviderConstraint({
       name: "dockerr",
       source: "registry.terraform.io/kreuzwerker/docker",
-      version: "3.0.2",
+      version: "3.9.0",
     });
     return await mkdtemp(async (workdir) => {
       const jsiiPath = path.join(workdir, ".jsii");
@@ -140,7 +161,7 @@ describe("Provider", () => {
         process.env.CDKTF_EXPERIMENTAL_PROVIDER_SCHEMA_CACHE_PATH,
       );
       await maker.generate([constraint]);
-      const snapshot = directorySnapshot(workdir);
+      const snapshot = stubRegistryHosts(directorySnapshot(workdir));
 
       const terraformResourceTypesPresent: string[] =
         resourceTypesPresentInSnapshot(snapshot, "dockerr");
@@ -160,11 +181,13 @@ describe("Provider", () => {
       version: "2.51.0",
       source: "DrFaust92/bitbucket",
     });
+    // andsafe-AG/bitbucket is Terraform-registry only; zahiar/bitbucket is
+    // mirrored on both, so this runs under either CLI.
     const constraint2 = new TerraformProviderConstraint({
       name: "abitbucket",
-      namespace: "andsafe-AG",
-      version: "2.5.0",
-      source: "andsafe-AG/bitbucket",
+      namespace: "zahiar",
+      version: "0.3.0",
+      source: "zahiar/bitbucket",
     });
     return await mkdtemp(async (workdir) => {
       const jsiiPath = path.join(workdir, ".jsii");
@@ -178,7 +201,7 @@ describe("Provider", () => {
       );
       await maker.generate([constraint, constraint2]);
       console.log("workdir", workdir);
-      const snapshot = directorySnapshot(workdir);
+      const snapshot = stubRegistryHosts(directorySnapshot(workdir));
       expect(snapshot).toMatchSnapshot();
     });
   }, 600_000);

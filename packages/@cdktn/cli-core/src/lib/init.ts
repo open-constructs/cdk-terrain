@@ -34,7 +34,7 @@ export interface RemoteProject extends LocalProject {
 export type Project = LocalProject | RemoteProject;
 
 export type InitArgs = {
-  cdktfVersion?: string;
+  cdktnVersion?: string;
   destination: string;
   dist?: string;
   providers?: string[];
@@ -43,10 +43,41 @@ export type InitArgs = {
   projectInfo: Project;
   templatePath: string;
   sendCrashReports: boolean;
+  sendUsageTelemetry: boolean;
   silent?: boolean;
 };
 
 export const templatesDir = path.join(__dirname, "..", "..", "templates");
+
+const DEFAULT_TEMPLATE_VARIABLES: Record<string, string> = {
+  packageManager: "npm",
+  pmRun: "npm run",
+  pmAdd: "npm install",
+  pmExec: "npx",
+};
+
+// Templates consuming the template variables. A variant directory carries only the files the base lacks and has no
+// hooks of its own; the base hook copies them in before it installs dependencies.
+const TEMPLATE_VARIANTS: Record<
+  string,
+  { base: string; variables: Record<string, string> }
+> = {
+  "typescript-pnpm": {
+    base: "typescript",
+    variables: {
+      packageManager: "pnpm",
+      pmRun: "pnpm run",
+      pmAdd: "pnpm add",
+      pmExec: "pnpm exec",
+    },
+  },
+};
+
+// Points coding agents at the docs MCP server. Written by init instead of shipped as a template file: the empty-directory
+// check ignores dotfiles and sscaff overwrites unconditionally, so a user's existing .mcp.json must be left alone.
+const MCP_CONFIG = {
+  mcpServers: { cdktn: { type: "http", url: "https://cdktn.io/docs/mcp" } },
+};
 
 const availableTemplates = fs
   .readdirSync(templatesDir)
@@ -57,35 +88,61 @@ for (const template of availableTemplates) {
 }
 
 export async function init({
-  cdktfVersion,
+  cdktnVersion,
   destination,
   dist,
   projectId,
   projectInfo,
   templatePath,
   sendCrashReports,
+  sendUsageTelemetry,
   providers,
   providersForceLocal,
   silent,
 }: InitArgs) {
-  const deps: any = await determineDeps(
-    cdktfVersion,
-    dist,
-    path.basename(templatePath),
-  );
+  // A remote template name should not collide with a template shipped with the CLI
+  const builtInName =
+    path.dirname(path.resolve(templatePath)) === path.resolve(templatesDir)
+      ? path.basename(templatePath)
+      : undefined;
+  const variant = builtInName ? TEMPLATE_VARIANTS[builtInName] : undefined;
+
+  const deps = await determineDeps(cdktnVersion, dist, builtInName);
 
   const futureFlags = Object.entries(FUTURE_FLAGS)
     .map(([key, value]) => `    "${key}": "${value}"`)
     .join(`,\n`);
 
-  await sscaff(templatePath, destination, {
+  const variables = {
+    ...DEFAULT_TEMPLATE_VARIABLES,
+    ...variant?.variables,
+    ...(variant ? { variant: builtInName } : {}),
     ...deps,
     ...projectInfo,
     futureFlags,
     projectId,
-    sendCrashReports,
-    silent,
-  });
+    sendCrashReports: String(!!sendCrashReports),
+    sendUsageTelemetry: String(!!sendUsageTelemetry),
+    silent: String(!!silent),
+  };
+
+  const mcpConfigPath = path.join(destination, ".mcp.json");
+  const hasMcpConfig = fs.existsSync(mcpConfigPath);
+
+  await sscaff(
+    variant ? path.join(templatesDir, variant.base) : templatePath,
+    destination,
+    variables,
+  );
+
+  if (builtInName && !hasMcpConfig) {
+    fs.writeFileSync(mcpConfigPath, JSON.stringify(MCP_CONFIG, null, 2) + "\n");
+  } else if (builtInName && !silent) {
+    console.log(
+      "Found an existing .mcp.json; to add the cdktn MCP server see https://cdktn.io/docs/ai-agents#set-up-your-agent",
+    );
+  }
+
   const cdktfConfig = CdktfConfig.read(destination);
 
   let needsGet = false;
@@ -94,6 +151,7 @@ export async function init({
       providers: providers,
       language: cdktfConfig.language,
       projectDirectory: destination,
+      cdktfVersion: cdktnVersion,
       forceLocal: providersForceLocal,
       dist,
     });
@@ -157,10 +215,13 @@ export async function determineDeps(
 
     // If we know the template, only validate its artifact; otherwise fall
     // back to validating everything (preserves prior behavior for unknown /
-    // remote templates).
+    // remote templates). Variants share their base's artifact.
+    const distTemplate = template
+      ? (TEMPLATE_VARIANTS[template]?.base ?? template)
+      : template;
     const keysToValidate: DistKey[] =
-      template && distKeysByTemplate[template]
-        ? distKeysByTemplate[template]
+      distTemplate && distKeysByTemplate[distTemplate]
+        ? distKeysByTemplate[distTemplate]
         : (Object.keys(ret) as DistKey[]);
 
     for (const key of keysToValidate) {
@@ -187,7 +248,7 @@ export async function determineDeps(
 
   if (version === "0.0.0") {
     throw Errors.Usage(
-      `cannot use version 0.0.0, use --cdktf-version, --dist or CDKTF_DIST to install from a "dist" directory`,
+      `cannot use version 0.0.0, use --cdktn-version, --dist or CDKTF_DIST to install from a "dist" directory`,
     );
   }
 

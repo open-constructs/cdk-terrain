@@ -194,15 +194,6 @@ import { Documentation, Language } from "jsii-docgen";
           });
         }
 
-        if (node.type === "link") {
-          // Make relative terraform doc links absolute
-          if (
-            node.url &&
-            node.url.startsWith("/terraform/docs/")
-          ) {
-            node.url = `https://developer.hashicorp.com${node.url}`;
-          }
-        }
       });
     };
   }

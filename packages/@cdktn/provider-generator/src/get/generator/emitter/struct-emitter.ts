@@ -61,13 +61,13 @@ export class StructEmitter {
         comment.line(att.description);
         comment.line(``);
         comment.line(
-          `Docs at Terraform Registry: {@link ${resource.linkToDocs}#${att.terraformName} ${resource.className}#${att.terraformName}}`,
+          `Docs at ${resource.docsRegistryName}: {@link ${resource.linkToDocs}#${att.terraformName} ${resource.className}#${att.terraformName}}`,
         );
         this.warnAboutIdField(att);
         comment.end();
       } else {
         comment.line(
-          `Docs at Terraform Registry: {@link ${resource.linkToDocs}#${att.terraformName} ${resource.className}#${att.terraformName}}`,
+          `Docs at ${resource.docsRegistryName}: {@link ${resource.linkToDocs}#${att.terraformName} ${resource.className}#${att.terraformName}}`,
         );
         this.warnAboutIdField(att);
         comment.end();

@@ -5,7 +5,16 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "nx": {
-    "tags": ["unit-test"]
+    "tags": ["unit-test"],
+    "targets": {
+      "build": {
+        "outputs": [
+          "{projectRoot}/build",
+          "{projectRoot}/main.wasm.gz",
+          "{projectRoot}/wasm/wasm_exec.js"
+        ]
+      }
+    }
   },
   "publishConfig": {
     "access": "public"
@@ -38,7 +47,7 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "fs-extra": "11.3.6"
+    "fs-extra": "^11.3.6"
   },
   "devDependencies": {
     "@types/fs-extra": "11.0.4",

@@ -13,8 +13,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "test:watch": "jest --watch",
-    "upgrade": "npm i cdktn@latest cdktn-cli@latest",
-    "upgrade:next": "npm i cdktn@next cdktn-cli@next"
+    "upgrade": "{{ pmAdd }} cdktn@latest cdktn-cli@latest",
+    "upgrade:next": "{{ pmAdd }} cdktn@next cdktn-cli@next"
   },
   "engines": {
     "node": ">=22.0"

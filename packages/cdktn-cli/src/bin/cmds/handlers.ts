@@ -21,9 +21,14 @@ import {
   getPackageVersion,
   TerraformDependencyConstraint,
   ConstructsMakerProviderTarget,
+  registryForTargetVersions,
 } from "@cdktn/commons";
 
-import { checkForEmptyDirectory, runInit } from "./helper/init";
+import {
+  checkForEmptyDirectory,
+  runInit,
+  type RunInitOptions,
+} from "./helper/init";
 import { terraformCheck } from "./helper/terraform-check";
 import * as terraformCloudClient from "./helper/terraform-cloud-client";
 import { TerraformLogin } from "./helper/terraform-login";
@@ -57,7 +62,10 @@ import {
   verifySimilarLibraryVersion,
 } from "./helper/check-environment";
 import { sanitizeVarFiles } from "./helper/var-files";
-import { askForCrashReportingConsent } from "./helper/error-reporting";
+import {
+  askForCrashReportingConsent,
+  askForUsageTelemetryConsent,
+} from "./helper/error-reporting";
 import { startPerformanceMonitoring } from "./helper/performance";
 import path from "path";
 import os from "os";
@@ -90,7 +98,12 @@ export async function convert({
   stack,
   experimentalProviderSchemaCachePath,
 }: any) {
-  await initializErrorReporting();
+  // Consent is read and persisted against the user's project before the
+  // conversion chdirs into a throwaway one.
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   await displayVersionMessage();
 
   const pkg = readPackageJson();
@@ -146,16 +159,17 @@ export async function convert({
       projectDescription: "Temporary project for conversion",
       local: true,
       enableCrashReporting: false,
+      enableUsageTelemetry: false,
       fromTerraformProject: "no",
       dist: pkg.version === "0.0.0" ? dist : undefined,
-      cdktfVersion: pkg.version,
+      cdktnVersion: pkg.version,
       silent: true,
       nonInteractive: true,
     });
     logger.useDefaultLevel();
   }
 
-  let output;
+  let output: string | undefined;
   try {
     const { all, stats } = await hcl2cdkConvert(input, {
       language,
@@ -177,7 +191,10 @@ export async function convert({
 }
 
 export async function deploy(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -200,7 +217,9 @@ export async function deploy(argv: any) {
 
   let outputsPath: string | undefined = undefined;
 
-  let onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void = () => {};
+  let onOutputsRetrieved: (
+    outputs: NestedTerraformOutputs,
+  ) => void | Promise<void> = () => {};
 
   if (argv.outputsFile) {
     outputsPath = normalizeOutputPath(argv.outputsFile);
@@ -229,7 +248,10 @@ export async function deploy(argv: any) {
 }
 
 export async function destroy(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -267,7 +289,10 @@ export async function destroy(argv: any) {
 }
 
 export async function diff(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -315,7 +340,10 @@ export async function get(argv: {
   try {
     throwIfNotProjectDirectory();
     await displayVersionMessage();
-    await initializErrorReporting(askForCrashReportingConsent);
+    await initializErrorReporting(
+      askForCrashReportingConsent,
+      askForUsageTelemetryConsent,
+    );
     await checkEnvironment();
     await verifySimilarLibraryVersion();
     const config = readConfigSync(); // read config again to be up-to-date (if called via 'add' command)
@@ -332,6 +360,7 @@ export async function get(argv: {
       logger.warn(
         `WARNING: No providers or modules found in "cdktf.json" config file, therefore cdktn get does nothing.`,
       );
+      await sendTelemetry("get", {});
       return;
     }
 
@@ -354,12 +383,15 @@ export async function get(argv: {
   }
 }
 
-export async function init(argv: any) {
+export async function init(argv: RunInitOptions) {
   await terraformCheck();
   await displayVersionMessage();
   await checkEnvironment();
 
-  if (["", ".", process.cwd()].includes(argv.fromTerraformProject)) {
+  if (
+    argv.fromTerraformProject !== undefined &&
+    ["", ".", process.cwd()].includes(argv.fromTerraformProject)
+  ) {
     throw Errors.Usage(
       "--from-terraform-project requires a path to an existing Terraform project to be set, e.g. --from-terraform-project=../my-tf-codebase This folder can not be the same as the current working directory since cdktn init will initialize the new project in that folder.",
     );
@@ -367,7 +399,8 @@ export async function init(argv: any) {
 
   checkForEmptyDirectory(".");
 
-  const { needsGet, codeMakerOutput, language } = await runInit(argv);
+  const { needsGet, codeMakerOutput, language, telemetry } =
+    await runInit(argv);
 
   if (needsGet) {
     if (!argv.silent) {
@@ -388,10 +421,14 @@ export async function init(argv: any) {
       "Run 'go mod tidy' after adding imports for any needed modules such as prebuilt providers",
     );
   }
+  await sendTelemetry("init", telemetry);
 }
 
 export async function list(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -400,6 +437,7 @@ export async function list(argv: any) {
 
   await terraformCheck();
   await runList({ outDir, synthCommand: command });
+  await sendTelemetry("list", {});
 }
 
 export async function login(argv: { tfeHostname: string }) {
@@ -451,7 +489,10 @@ export async function synth(argv: any) {
     : () => {};
 
   try {
-    await initializErrorReporting(askForCrashReportingConsent);
+    await initializErrorReporting(
+      askForCrashReportingConsent,
+      askForUsageTelemetryConsent,
+    );
     throwIfNotProjectDirectory();
     await displayVersionMessage();
     await checkEnvironment();
@@ -464,10 +505,9 @@ export async function synth(argv: any) {
       checkCodeMakerOutput &&
       !(await fs.pathExists(config.codeMakerOutput))
     ) {
-      console.error(
-        `ERROR: synthesis failed, run "cdktn get" to generate providers in ${config.codeMakerOutput}`,
+      throw Errors.Usage(
+        `synthesis failed, run "cdktn get" to generate providers in ${config.codeMakerOutput}`,
       );
-      process.exit(1);
     }
 
     await terraformCheck();
@@ -482,7 +522,10 @@ export async function synth(argv: any) {
 }
 
 export async function watch(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   const command = argv.app;
@@ -493,10 +536,9 @@ export async function watch(argv: any) {
   const parallelism = argv.parallelism;
 
   if (!autoApprove) {
-    console.error(
-      chalkColour`{redBright ERROR: The watch command always automatically deploys and approves changes. To make this behaviour explicit the --auto-approve flag must be set}`,
+    throw Errors.Usage(
+      "The watch command always automatically deploys and approves changes. To make this behaviour explicit the --auto-approve flag must be set",
     );
-    process.exit(1);
   }
 
   await terraformCheck();
@@ -508,10 +550,15 @@ export async function watch(argv: any) {
     terraformParallelism,
     parallelism,
   });
+  // runWatch resolves once the watch is stopped gracefully
+  await sendTelemetry("watch", {});
 }
 
 export async function output(argv: any) {
-  await initializErrorReporting(askForCrashReportingConsent);
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   throwIfNotProjectDirectory();
   await displayVersionMessage();
   await checkEnvironment();
@@ -523,7 +570,9 @@ export async function output(argv: any) {
   const skipProviderLock = argv.skipProviderLock;
   let outputsPath: string | undefined = undefined;
 
-  let onOutputsRetrieved: (outputs: NestedTerraformOutputs) => void = () => {};
+  let onOutputsRetrieved: (
+    outputs: NestedTerraformOutputs,
+  ) => void | Promise<void> = () => {};
 
   if (argv.outputsFile) {
     outputsPath = normalizeOutputPath(argv.outputsFile);
@@ -541,6 +590,7 @@ export async function output(argv: any) {
     skipSynth,
     skipProviderLock,
   });
+  await sendTelemetry("output", {});
 }
 
 export async function debug(argv: any) {
@@ -617,6 +667,10 @@ export async function debug(argv: any) {
 }
 
 export async function providerAdd(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
   const language = config.language;
 
@@ -653,9 +707,14 @@ export async function providerAdd(argv: any) {
       "After adding this module to your imports, please run 'go mod tidy' to resolve newly added modules",
     );
   }
+  await sendTelemetry("provider add", {});
 }
 
 export async function providerUpgrade(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
 
   const language = config.language;
@@ -676,8 +735,13 @@ export async function providerUpgrade(argv: any) {
 
   const constraintsToUpdate: ProviderConstraint[] = [];
 
+  // Resolve an unqualified argument the way this project's cdktf.json entries
+  // resolve. Defaulting to Terraform made `upgrade` normalize to a different
+  // host than the config, so an installed provider looked missing.
+  const registry = registryForTargetVersions(config.targetVersions);
+
   for (const provider of argv.provider) {
-    const constraint = ProviderConstraint.fromConfigEntry(provider);
+    const constraint = ProviderConstraint.fromConfigEntry(provider, registry);
     const { addedLocalProvider } = await manager.upgradeProvider(constraint);
     if (addedLocalProvider) {
       constraintsToUpdate.push(constraint);
@@ -713,7 +777,12 @@ export async function providerUpgrade(argv: any) {
       constraints,
       cleanDirectory: false,
       constraintsToGenerate: constraintsToUpdate.map(
-        (c) => new TerraformProviderConstraint(c),
+        (c) =>
+          new TerraformProviderConstraint(
+            c.version
+              ? `${c.requiredProvidersSource}@${c.version}`
+              : c.requiredProvidersSource,
+          ),
       ),
     });
   }
@@ -723,9 +792,14 @@ export async function providerUpgrade(argv: any) {
       "Update your imports to reflect this modules upgrade, then please run 'go mod tidy' to resolve newly added modules",
     );
   }
+  await sendTelemetry("provider upgrade", {});
 }
 
 export async function providerList(argv: any) {
+  await initializErrorReporting(
+    askForCrashReportingConsent,
+    askForUsageTelemetryConsent,
+  );
   const config = CdktfConfig.read();
   const language = config.language;
 
@@ -745,6 +819,7 @@ export async function providerList(argv: any) {
   const allProviders = await manager.allProviders();
   if (argv.json) {
     console.log(JSON.stringify(allProviders));
+    await sendTelemetry("provider list", {});
     return;
   }
   const data = [];
@@ -772,4 +847,5 @@ export async function providerList(argv: any) {
   }
   await terraformCheck();
   printProviderList(data);
+  await sendTelemetry("provider list", {});
 }

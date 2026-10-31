@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: MPL-2.0
 import {
   Errors,
+  SynthOrigin,
   ensureAllSettledBeforeThrowing,
   logger,
   readConfigSync,
   sendTelemetry,
 } from "@cdktn/commons";
-import { SynthesizedStack, SynthOrigin, SynthStack } from "./synth-stack";
+import { SynthesizedStack, SynthStack } from "./synth-stack";
 import { printAnnotations } from "./synth";
 import {
   CdktfStack,
@@ -404,43 +405,88 @@ export class CdktfProject {
     const stack = this.getStackExecutor(
       getSingleStack(stacks, opts?.stackName, "diff"),
     );
-    await stack.initalizeTerraform(
-      opts.noColor,
-      opts.skipProviderLock,
-      opts.migrateState,
-    );
+    try {
+      await stack.initalizeTerraform(
+        opts.noColor,
+        opts.skipProviderLock,
+        opts.migrateState,
+      );
+    } catch (e) {
+      await this.reportStackRun("diff", [stack.stack], 0, true);
+      throw e;
+    }
 
     try {
       await stack.diff(opts);
     } catch (e: any) {
+      await this.reportStackRun("diff", [stack.stack], 1, true);
       throw Errors.External(
         `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
         e,
       );
     }
-    if (stack.error) {
-      throw Errors.External(
-        `Stack failed to plan: ${stack.stack.name}. Please check the logs for more information.`,
-        new Error(stack.error),
-      );
-    }
+    await this.reportStackRun("diff", [stack.stack], 0, false);
+  }
 
+  // Best-effort: a failed send never replaces the outcome of the run.
+  // `runFailed` keeps a run that throws from counting as completed even when
+  // none of its stacks errored.
+  private async reportStackRun(
+    command: "diff" | "deploy" | "destroy",
+    stacks: SynthesizedStack[],
+    failedStackCount: number,
+    runFailed: boolean,
+  ): Promise<void> {
     try {
-      await this.projectTelemetry("diff", {
-        stackMetadata: stacks.map((stack) =>
-          JSON.parse(stack.content)["//"]
-            ? JSON.parse(stack.content)["//"].metadata
-            : {},
-        ),
-        errors: stack.error,
-        requiredProviders: stacks.map((stack: any) =>
-          JSON.parse(stack.content)["terraform"]
-            ? JSON.parse(stack.content)["terraform"].required_providers
-            : {},
-        ),
+      await this.projectTelemetry(command, {
+        ...SynthStack.telemetryPayload(stacks),
+        failedStackCount,
+        runFailed,
       });
     } catch (e) {
       logger.debug("Failed to send telemetry", e);
+    }
+  }
+
+  // Reports the stack metrics once, whether `execute` rejects or resolves.
+  // Only a stack whose operation errored counts as failed; one that never ran
+  // fails the run without being counted.
+  private async executeAndReport(
+    method: "deploy" | "destroy",
+    stacks: SynthesizedStack[],
+    next: () => Promise<CdktfStack | undefined>,
+    opts: MutationOptions,
+  ): Promise<void> {
+    const errored = () =>
+      this.stacksToRun.filter(
+        (executor) => executor.currentState === "errored",
+      );
+    const unfinished = () =>
+      this.stacksToRun
+        .filter(
+          (executor) =>
+            executor.currentState === "errored" || executor.isPending,
+        )
+        .map((executor) => executor.stack.name);
+
+    try {
+      await this.execute(method, next, opts);
+    } catch (e) {
+      await this.reportStackRun(method, stacks, errored().length, true);
+      throw e;
+    }
+
+    const failed = unfinished();
+    await this.reportStackRun(
+      method,
+      stacks,
+      errored().length,
+      failed.length > 0,
+    );
+    if (failed.length > 0) {
+      throw Errors.External(
+        `Some stacks failed to ${method}: ${failed.join(", ")}. Please check the logs for more information.`,
+      );
     }
   }
 
@@ -479,6 +525,9 @@ export class CdktfProject {
             ? nextRunningExecutor.deploy(opts)
             : nextRunningExecutor.destroy(opts);
 
+        // The loop can throw before the final await below; a stack's failure
+        // must not also surface as an unhandled rejection then.
+        promise.catch(() => undefined);
         allExecutions.push(promise);
       } catch (e) {
         // await next() threw an error because a stack failed to apply/destroy
@@ -529,36 +578,7 @@ export class CdktfProject {
           )
       : () => getStackWithNoUnmetDependencies(this.stacksToRun);
 
-    await this.execute("deploy", next, opts);
-
-    const unprocessedStacks = this.stacksToRun.filter(
-      (executor) => executor.isPending,
-    );
-    if (unprocessedStacks.length > 0) {
-      throw Errors.External(
-        `Some stacks failed to deploy: ${unprocessedStacks
-          .map((s) => s.stack.name)
-          .join(", ")}. Please check the logs for more information.`,
-      );
-    }
-
-    try {
-      await this.projectTelemetry("deploy", {
-        stackMetadata: stacksToRun.map((stack) =>
-          JSON.parse(stack.content)["//"]
-            ? JSON.parse(stack.content)["//"].metadata
-            : {},
-        ),
-        failedStacks: unprocessedStacks.map((stack) => stack.error),
-        requiredProviders: stacksToRun.map((stack: any) =>
-          JSON.parse(stack.content)["terraform"]
-            ? JSON.parse(stack.content)["terraform"].required_providers
-            : {},
-        ),
-      });
-    } catch (e) {
-      logger.debug("Failed to send telemetry", e);
-    }
+    await this.executeAndReport("deploy", stacksToRun, next, opts);
   }
 
   public async destroy(opts: MutationOptions = {}) {
@@ -608,36 +628,7 @@ export class CdktfProject {
           )
       : () => getStackWithNoUnmetDependants(this.stacksToRun);
 
-    await this.execute("destroy", next, opts);
-
-    const unprocessedStacks = this.stacksToRun.filter(
-      (executor) => executor.isPending,
-    );
-    if (unprocessedStacks.length > 0) {
-      throw Errors.External(
-        `Some stacks failed to destroy: ${unprocessedStacks
-          .map((s) => s.stack.name)
-          .join(", ")}. Please check the logs for more information.`,
-      );
-    }
-
-    try {
-      await this.projectTelemetry("destroy", {
-        stackMetadata: stacksToRun.map((stack) =>
-          JSON.parse(stack.content)["//"]
-            ? JSON.parse(stack.content)["//"].metadata
-            : {},
-        ),
-        failedStacks: unprocessedStacks.map((stack) => stack.error),
-        requiredProviders: stacksToRun.map((stack: any) =>
-          JSON.parse(stack.content)["terraform"]
-            ? JSON.parse(stack.content)["terraform"].required_providers
-            : {},
-        ),
-      });
-    } catch (e) {
-      logger.debug("Failed to send telemetry", e);
-    }
+    await this.executeAndReport("destroy", stacksToRun, next, opts);
   }
 
   public async projectTelemetry(command: string, payload: any): Promise<void> {

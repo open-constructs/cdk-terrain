@@ -1,12 +1,13 @@
 {
   "language": "typescript",
-  "app": "npx tsx main.ts",
+  "app": "{{ pmExec }} tsx main.ts",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
   "targetVersions": {
     "terraform": ">=1.5.7",
     "opentofu": ">=1.6.0"
   },
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
   "terraformProviders": [],
   "terraformModules": [],
   "context": {

@@ -446,13 +446,20 @@ export function sanitizeProviderSchema(schema: ProviderSchema): ProviderSchema {
 export interface ModuleProviderAlias {
   /** local name the module knows the provider by, e.g. `aws` */
   localName: string;
-  /** alias part of the reference, e.g. `global_region` */
-  alias: string;
+  /**
+   * alias part of the reference, e.g. `global_region`; absent when the module
+   * lists the bare local name (`configuration_aliases = [aws]`), which
+   * requires the caller to pass its default configuration explicitly
+   */
+  alias?: string;
   /** provider source the module declared for `localName`, if it declared one */
   source?: string;
 }
 
-const CONFIGURATION_ALIAS = /^([\w-]+)\.([\w-]+)$/;
+const CONFIGURATION_ALIAS = /^([\w-]+)(?:\.([\w-]+))?$/;
+
+const providerReference = ({ localName, alias }: ModuleProviderAlias) =>
+  alias ? `${localName}.${alias}` : localName;
 
 // hcl2json hands HCL expressions back as interpolations, so a
 // `configuration_aliases = [aws.global_region]` entry arrives as the string
@@ -518,11 +525,16 @@ export function collectModuleProviderAliases(
           if (!match) continue;
 
           const [, localName, alias] = match;
-          const key = `${localName}.${alias}`;
+          const entryAlias: ModuleProviderAlias = {
+            localName,
+            alias,
+            source: provider?.source,
+          };
+          const key = providerReference(entryAlias);
           if (seen.has(key)) continue;
           seen.add(key);
 
-          aliases.push({ localName, alias, source: provider?.source });
+          aliases.push(entryAlias);
         }
       }
     }
@@ -536,7 +548,7 @@ export function collectModuleProviderAliases(
  * root config and passes them into the module call, which is what Terraform
  * demands of anyone calling a module with `configuration_aliases`.
  *
- * The alias blocks stay empty: `terraform get` only builds the configuration
+ * The provider blocks stay empty: `terraform get` only builds the configuration
  * tree, it never configures or installs a provider. Sources are mirrored from
  * the module's own `required_providers` so a module referring to, say,
  * hashicorp/aws under a non-default local name still resolves to the same
@@ -552,7 +564,8 @@ export function applyModuleProviderAliases(
   const moduleCall = config.module?.[moduleKey];
   if (!moduleCall || aliases.length === 0) return config;
 
-  for (const { localName, alias, source } of aliases) {
+  for (const entry of aliases) {
+    const { localName, alias, source } = entry;
     if (source) {
       config.terraform.required_providers = {
         ...config.terraform.required_providers,
@@ -563,13 +576,14 @@ export function applyModuleProviderAliases(
     config.provider = config.provider || {};
     const blocks = toArray(config.provider[localName]);
     if (!blocks.some((block) => block.alias === alias)) {
-      blocks.push({ alias });
+      blocks.push(alias ? { alias } : {});
     }
     config.provider[localName] = blocks;
 
+    const reference = providerReference(entry);
     moduleCall.providers = {
       ...moduleCall.providers,
-      [`${localName}.${alias}`]: `${localName}.${alias}`,
+      [reference]: reference,
     };
   }
 

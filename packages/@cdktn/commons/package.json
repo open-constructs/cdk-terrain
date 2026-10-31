@@ -38,17 +38,17 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "@sentry/node": "7.120.4",
+    "@sentry/node": "10.73.0",
     "cdktn": "workspace:*",
-    "ci-info": "4.4.0",
+    "ci-info": "^4.4.0",
     "codemaker": "1.140.0",
-    "cross-spawn": "7.0.6",
-    "follow-redirects": "1.16.0",
-    "fs-extra": "11.3.6",
-    "log4js": "6.9.1",
-    "semver": "7.8.5",
-    "strip-ansi": "6.0.1",
-    "validator": "13.15.35"
+    "cross-spawn": "^7.0.6",
+    "follow-redirects": "^1.16.0",
+    "fs-extra": "^11.3.6",
+    "log4js": "^6.9.1",
+    "semver": "^7.8.5",
+    "strip-ansi": "^6.0.1",
+    "validator": "^13.15.35"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

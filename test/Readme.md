@@ -44,7 +44,7 @@ Test Environment:
 
 To test all edge cases without building all providers we create an edge provider that contains all these edge cases.
 The provider lives under `packages/@cdktn/provider-generator/lib/__tests__/edge-provider-schema` and the provider bindings are tested there through snapshots.
-We generate the schema into `packages/@cdktn/provider-generator/edge-provider-bindings` on build and copy them through GH Actions or the `edge:install` command.
+The root `build:edge-bindings` script generates the bindings into `packages/@cdktn/provider-generator/edge-provider-bindings`; GH Actions uploads them from there, and the `edge:install` command runs it and copies the result for a local run.
 
 We also build a helper to translate an initial version of these tests through the different languages, `edge:translateTests` takes the typescript `main.ts` and translates it to the other languages. The translation is not perfect, but a good start.
 
@@ -77,14 +77,25 @@ Which tests execute the binary:
 
 `.terraform.versions.json` at the repository root drives the matrix:
 
-- `available` — versions baked into the CI Docker image (see `Dockerfile`);
-  each is installed as `/usr/local/bin/terraform<version>` with the `default`
-  version symlinked to `terraform`.
+- `available` — Terraform versions baked into the CI Docker image (see
+  `Dockerfile`); each is installed as `/usr/local/bin/terraform<version>` with
+  the `default` version symlinked to `terraform`.
 - `tested` — the subset run in CI workflows, exported as
   `TERRAFORM_BINARY_NAME=terraform<version>` per matrix job.
+- `opentofu.available` / `opentofu.default` — the same for OpenTofu, installed
+  as `tofu<version>` with the default symlinked to `tofu`.
 
-OpenTofu is currently **not** part of the CI image; OpenTofu runs are local
-only for now.
+OpenTofu does not run across the whole integration suite. A test opts in
+through `pinnedRuntimes` in `tools/build-test-matrix.mjs`, which replaces the
+`tested` cross-product for that test with an explicit list of
+`{ product, version }` runtimes; `terraformOnly` marks tests that can never run
+under OpenTofu. Unit tests in packages tagged `unit-test:terraform` also run
+once under OpenTofu (`pr-unit.yml`).
+
+Running under OpenTofu exercises the CLI, not a project that _targets_
+OpenTofu. Code that resolves registries from `targetVersions` only takes its
+OpenTofu path when the project declares it, so cover that with a fixture that
+sets `targetVersions` — see `typescript/opentofu-target`.
 
 ### Local runs
 

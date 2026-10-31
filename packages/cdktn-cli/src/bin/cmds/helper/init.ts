@@ -16,6 +16,7 @@ import {
   Project,
   CdktfConfig,
   getAllPrebuiltProviders,
+  initializErrorReporting,
 } from "@cdktn/cli-core";
 import {
   convertProject,
@@ -34,19 +35,33 @@ import {
   logFileName,
   logger,
   Errors,
-  sendTelemetry,
   ConstructsMakerProviderTarget,
+  detectNodePackageManager,
+  nodePackageManagerCommand,
 } from "@cdktn/commons";
 import { templates, templatesDir } from "@cdktn/cli-core";
 import ciDetect from "@npmcli/ci-detect";
 import { isInteractiveTerminal } from "./check-environment";
 import { getTerraformVersion } from "./terraform-check";
 import * as semver from "semver";
-import { askForCrashReportingConsent } from "./error-reporting";
+import {
+  askForCrashReportingConsent,
+  askForUsageTelemetryConsent,
+} from "./error-reporting";
 
 const chalkColour = new chalk.Instance();
 
 const isReadme = (file: string) => file.toLowerCase() === "readme.md";
+
+// Matches the `typescript` template and its package-manager variants (e.g. `typescript-pnpm`).
+const isTypescriptTemplate = (name: string) =>
+  name === "typescript" || name.startsWith("typescript-");
+
+// A remote template's name is derived from the user-supplied URL, so only
+// built-in names are sent.
+export function templateTelemetryName(name: string): string {
+  return templates.includes(name) ? name : "remote";
+}
 
 export function checkForEmptyDirectory(dir: string) {
   if (
@@ -66,24 +81,25 @@ type GatheredInfo = {
   projectInfo: Project;
   useTerraformCloud: boolean | undefined;
 };
-type Options = {
+export type RunInitOptions = {
   local?: boolean;
   template?: string;
   projectName?: string;
   projectDescription?: string;
-  cdktfVersion?: string;
+  cdktnVersion?: string;
   dist?: string;
   providers?: string[];
   providersForceLocal?: boolean;
-  destination: string;
+  destination?: string;
   fromTerraformProject?: string;
   enableCrashReporting?: boolean;
+  enableUsageTelemetry?: boolean;
   tfeHostname?: string;
   silent?: boolean;
   nonInteractive?: boolean;
 };
 
-export async function runInit(argv: Options) {
+export async function runInit(argv: RunInitOptions) {
   const telemetryData: Record<string, unknown> = {};
   const destination = argv.destination || ".";
   const terraformRemoteHostname = argv.tfeHostname || tfcHostname;
@@ -101,7 +117,7 @@ export async function runInit(argv: Options) {
 This means that your Terraform state file will be stored locally on disk in a file 'terraform.<STACK NAME>.tfstate' in the root of your project.}`);
     }
   }
-  const isRemote = token != "";
+  const isRemote = token !== "";
 
   // Check if template was specified by the user
   let template = "";
@@ -121,7 +137,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
     template,
     argv.nonInteractive ?? false,
   );
-  telemetryData.template = templateInfo.Name;
+  telemetryData.template = templateTelemetryName(templateInfo.Name);
 
   if (!argv.projectName && argv.nonInteractive) {
     throw Errors.Usage(
@@ -141,11 +157,10 @@ This means that your Terraform state file will be stored locally on disk in a fi
     argv.projectDescription,
   );
   const projectId = randomUUID();
-  telemetryData.projectId = projectId;
 
   let fromTerraformProject = argv.fromTerraformProject || undefined;
   if (!fromTerraformProject) {
-    if (templateInfo.Name === "typescript") {
+    if (isTypescriptTemplate(templateInfo.Name)) {
       fromTerraformProject = await getTerraformProject(
         argv.nonInteractive ?? false,
       );
@@ -173,9 +188,13 @@ This means that your Terraform state file will be stored locally on disk in a fi
   }
 
   const ci: string | false = ciDetect();
+  const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
   const sendCrashReports =
     argv.enableCrashReporting ??
-    (ci ? false : await askForCrashReportingConsent());
+    (interactive ? await askForCrashReportingConsent() : false);
+  const sendUsageTelemetry =
+    argv.enableUsageTelemetry ??
+    (interactive ? await askForUsageTelemetryConsent() : true);
   const providers =
     argv.providers?.length || argv.nonInteractive
       ? argv.providers
@@ -183,9 +202,9 @@ This means that your Terraform state file will be stored locally on disk in a fi
 
   let convertResult, importPath;
   if (fromTerraformProject) {
-    if (templateInfo.Name !== "typescript") {
+    if (!isTypescriptTemplate(templateInfo.Name)) {
       console.error(
-        `The --from-terraform-project flag is only supported with the typescript template. The command will continue and ignore the flag.`,
+        `The --from-terraform-project flag is only supported with the typescript templates. The command will continue and ignore the flag.`,
       );
     }
 
@@ -219,20 +238,21 @@ This means that your Terraform state file will be stored locally on disk in a fi
   }
 
   const needsGet = await init({
-    cdktfVersion: argv.cdktfVersion,
+    cdktnVersion: argv.cdktnVersion,
     destination,
     dist: argv.dist,
     projectId,
     projectInfo,
     templatePath: templateInfo.Path,
     sendCrashReports: sendCrashReports,
+    sendUsageTelemetry: sendUsageTelemetry,
     providers,
     providersForceLocal: argv.providersForceLocal,
     silent: argv.silent,
   });
 
   if (convertResult && importPath) {
-    const { code, cdktfJson, stats } = convertResult;
+    const { code, cdktfJson } = convertResult;
 
     const mainTs = fs.readFileSync(
       path.resolve(destination, "main.ts"),
@@ -262,16 +282,17 @@ This means that your Terraform state file will be stored locally on disk in a fi
     }
 
     if (terraformModules.length + terraformProviders.length > 0) {
-      const npmRunGetOptions: ExecSyncOptions = {
+      const runGetOptions: ExecSyncOptions = {
         cwd: destination,
       };
       if (argv.silent) {
-        npmRunGetOptions.stdio = "ignore";
+        runGetOptions.stdio = "ignore";
       }
-      execSync("npm run get", { cwd: destination });
+      const command = nodePackageManagerCommand(
+        detectNodePackageManager(destination),
+      );
+      execSync(`${command} run get`, runGetOptions);
     }
-
-    telemetryData.conversionStats = stats;
   }
 
   if (templateInfo.cleanupTemporaryFiles) {
@@ -284,15 +305,19 @@ This means that your Terraform state file will be stored locally on disk in a fi
     telemetryData.addedProviders = providers;
   }
 
-  await sendTelemetry("init", {
-    ...telemetryData,
-    language: cdktfConfig.language,
-  });
+  // Initialized against the new project so the init metric honours the consent
+  // persisted there.
+  await initializErrorReporting(
+    undefined,
+    undefined,
+    path.resolve(destination),
+  );
 
   return {
     needsGet,
     codeMakerOutput: cdktfConfig.codeMakerOutput,
     language: cdktfConfig.language,
+    telemetry: { ...telemetryData, language: cdktfConfig.language },
   };
 }
 

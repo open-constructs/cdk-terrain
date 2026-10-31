@@ -726,6 +726,32 @@ describe("parseConfig", () => {
     });
   });
 
+  describe("consent flags", () => {
+    it.each([
+      [true, true],
+      [false, false],
+      // the init templates render the flags as strings
+      ["true", true],
+      ["false", false],
+      ["yes", undefined],
+      [1, undefined],
+      [null, undefined],
+    ])("normalises %p to %p", (value, expected) => {
+      const config = parseConfig(
+        JSON.stringify({ sendCrashReports: value, sendUsageTelemetry: value }),
+      );
+      expect(config.sendCrashReports).toBe(expected);
+      expect(config.sendUsageTelemetry).toBe(expected);
+      expect("sendUsageTelemetry" in config).toBe(expected !== undefined);
+    });
+
+    it("leaves an absent flag absent", () => {
+      const config = parseConfig(JSON.stringify({ sendCrashReports: true }));
+      expect(config.sendCrashReports).toBe(true);
+      expect("sendUsageTelemetry" in config).toBe(false);
+    });
+  });
+
   describe("targetVersions", () => {
     const ENV_KEY = "CDKTF_CONTEXT_JSON";
     let envBefore: string | undefined;
@@ -804,6 +830,18 @@ describe("parseConfig", () => {
       expect(() =>
         parseConfig(JSON.stringify({ targetVersions: { terraform: 1.5 } })),
       ).toThrow(`targetVersions.terraform must be a semver range string`);
+    });
+
+    it("rejects empty string ranges", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: { terraform: "" } })),
+      ).toThrow(`targetVersions.terraform "" is not a valid semver range`);
+    });
+
+    it("rejects whitespace-only ranges", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: { terraform: "   " } })),
+      ).toThrow(`targetVersions.terraform "   " is not a valid semver range`);
     });
   });
 });

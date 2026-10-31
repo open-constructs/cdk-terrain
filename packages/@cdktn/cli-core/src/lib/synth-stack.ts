@@ -11,7 +11,16 @@ import {
   TerraformStackMetadata,
 } from "cdktn";
 import { performance } from "perf_hooks";
-import { logger, readConfigSync, sendTelemetry, shell } from "@cdktn/commons";
+import {
+  Errors,
+  SynthOrigin,
+  commandErrorType,
+  flushTelemetry,
+  logger,
+  readConfigSync,
+  sendTelemetry,
+  shell,
+} from "@cdktn/commons";
 import { CdktfConfig } from "./cdktf-config";
 import { format } from "@cdktn/hcl-tools";
 
@@ -67,8 +76,6 @@ interface ManifestJson {
   version: string;
   stacks: StackManifest[];
 }
-
-export type SynthOrigin = "watch";
 
 export class SynthStack {
   public static async synth(
@@ -164,12 +171,13 @@ Command output on stdout:
 `
     : ""
 }`;
-      await this.synthErrorTelemetry(synthOrigin);
       if (graceful) {
         e.errorOutput = errorOutput;
         throw e;
       }
       console.error(`ERROR: ${errorOutput}`);
+      await this.synthErrorTelemetry(e, synthOrigin);
+      await flushTelemetry();
       process.exit(1);
     }
 
@@ -190,6 +198,8 @@ Command output on stdout:
         throw new Error(errorMessage);
       }
       logger.error(errorMessage);
+      await this.synthErrorTelemetry(e, synthOrigin);
+      await flushTelemetry();
       process.exit(1);
     }
 
@@ -269,6 +279,21 @@ Command output on stdout:
     return stacks;
   }
 
+  // Per stack, only the metadata block and `required_providers`: resource
+  // config and outputs never enter the payload.
+  public static telemetryPayload(stacks: SynthesizedStack[]): {
+    stackMetadata: unknown[];
+    requiredProviders: unknown[];
+  } {
+    const contents = stacks.map((stack) => JSON.parse(stack.content));
+    return {
+      stackMetadata: contents.map((c) => c?.["//"]?.metadata ?? {}),
+      requiredProviders: contents.map(
+        (c) => c?.terraform?.required_providers ?? {},
+      ),
+    };
+  }
+
   public static async synthTelemetry(
     totalTime: number,
     stacks: SynthesizedStack[],
@@ -280,18 +305,21 @@ Command output on stdout:
       totalTime: totalTime,
       language: config.language,
       synthOrigin,
-      stackMetadata: stacks.map(
-        (stack) => JSON.parse(stack.content)["//"].metadata,
-      ),
-      requiredProviders: stacks.map(
-        (stack: any) =>
-          JSON.parse(stack.content)["terraform"].required_providers,
-      ),
+      ...SynthStack.telemetryPayload(stacks),
     });
   }
 
-  public static async synthErrorTelemetry(synthOrigin?: SynthOrigin) {
-    await sendTelemetry("synth", { error: true, synthOrigin });
+  // Only for the self-exiting paths above, under the running command (a deploy's
+  // synth fails the deploy); a thrown error is counted by the entrypoint.
+  public static async synthErrorTelemetry(
+    error: unknown,
+    synthOrigin?: SynthOrigin,
+  ) {
+    await sendTelemetry(Errors.getScope(), {
+      error: true,
+      errorType: commandErrorType(error),
+      synthOrigin,
+    });
   }
 }
 

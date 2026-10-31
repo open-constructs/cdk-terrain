@@ -20,13 +20,27 @@
     "nx": {
         "tags": [
             "unit-test:terraform"
-        ]
+        ],
+        "targets": {
+            "build": {
+                "outputs": [
+                    "{projectRoot}/lib",
+                    "{projectRoot}/.jsii",
+                    "{projectRoot}/tsconfig.json"
+                ]
+            }
+        }
     },
     "keywords": [
         "cdk",
         "cdktf",
         "cdktn",
-        "terraform"
+        "terraform",
+        "cdk for terraform",
+        "terraform-cdk",
+        "cdk terrain",
+        "opentofu",
+        "infrastructure as code"
     ],
     "jsii": {
         "outdir": "dist",

@@ -5,14 +5,33 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "nx": {
-    "tags": ["unit-test:terraform"]
+    "tags": ["unit-test:terraform"],
+    "targets": {
+      "build": {
+        "inputs": [
+          "production",
+          "^production",
+          "{projectRoot}/src/__tests__/edge-provider-schema/**"
+        ]
+      },
+      "build:edge-bindings": {
+        "dependsOn": ["build"],
+        "inputs": [
+          "production",
+          "^production",
+          "{projectRoot}/src/__tests__/edge-provider-schema/**"
+        ],
+        "outputs": ["{projectRoot}/edge-provider-bindings"],
+        "cache": true
+      }
+    }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "tsc",
-    "postbuild": "node ./build/__tests__/edge-provider-schema/cli.js ./edge-provider-bindings",
+    "build:edge-bindings": "node ./build/__tests__/edge-provider-schema/cli.js ./edge-provider-bindings",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u",
@@ -42,8 +61,8 @@
     "cdktn": "workspace:*",
     "codemaker": "1.140.0",
     "constructs": "10.8.1",
-    "fs-extra": "11.3.6",
-    "glob": "13.0.6",
+    "fs-extra": "^11.3.6",
+    "glob": "^13.0.6",
     "jsii": "~6.0.0",
     "jsii-pacmak": "1.140.0"
   },

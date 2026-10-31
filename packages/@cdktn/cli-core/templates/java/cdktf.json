@@ -3,6 +3,7 @@
   "app": "./gradlew run",
   "projectId": "{{projectId}}",
   "sendCrashReports": "{{sendCrashReports}}",
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
   "codeMakerOutput": "imports",
   "targetVersions": {
     "terraform": ">=1.5.7",

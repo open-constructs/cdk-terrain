@@ -18,7 +18,16 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "nx": {
-    "tags": ["unit-test"]
+    "tags": ["unit-test"],
+    "targets": {
+      "build": {
+        "outputs": [
+          "{projectRoot}/build",
+          "{projectRoot}/main.wasm.gz",
+          "{projectRoot}/wasm/wasm_exec.js"
+        ]
+      }
+    }
   },
   "scripts": {
     "build": "tsc && bash build-go.sh",

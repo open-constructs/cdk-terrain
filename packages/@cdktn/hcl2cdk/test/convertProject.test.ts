@@ -14,7 +14,7 @@ import { createTmpHelper } from "./helpers/tmp";
 
 const tmp = createTmpHelper();
 
-const providerRequirements = ["kreuzwerker/docker@ ~>2.15.0"];
+const providerRequirements = ["kreuzwerker/docker@ =3.9.0"];
 const CDKTF_CLI = path.resolve(
   __dirname,
   "..",
@@ -171,6 +171,11 @@ function resources(plan: any) {
 }
 
 let cachedProviderSchema: any;
+// Skipped because the fixture's camptocamp/k3s/docker module uses the
+// module_variable_optional_attrs language experiment, removed in Terraform
+// 1.3. `getTerraformPlan` runs a real init, so this cannot pass on any
+// supported Terraform, and every published version of that module - up to
+// 1.0.1 - still uses it. Needs a different module in the fixture; see #461.
 describe.skip("convertProject", () => {
   beforeAll(async () => {
     // Get all the provider schemas
@@ -192,7 +197,7 @@ describe.skip("convertProject", () => {
         required_providers {
           docker = {
             source  = "kreuzwerker/docker"
-            version = "2.14.0"
+            version = "3.9.0"
           }
         }
       }
@@ -208,7 +213,7 @@ describe.skip("convertProject", () => {
           }
 
           resource "docker_container" "foo" {
-            image = docker_image.ubuntu.latest
+            image = docker_image.ubuntu.name
             name  = "foo"
           }`,
       ],

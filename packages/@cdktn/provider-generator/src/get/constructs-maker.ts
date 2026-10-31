@@ -17,7 +17,11 @@ import {
   type LanguageOptions,
   type TerraformTargetVersions,
 } from "@cdktn/commons";
-import { DISPLAY_VERSION, Language } from "@cdktn/commons";
+import {
+  DISPLAY_VERSION,
+  Language,
+  registryForTargetVersions,
+} from "@cdktn/commons";
 import { TerraformProviderGenerator } from "./generator/provider-generator";
 import { ModuleGenerator } from "./generator/module-generator";
 import { glob } from "glob";
@@ -275,11 +279,13 @@ type ConstraintFile = {
   providers: Record<string, string>;
   cdktf: string;
   /**
-   * The project's declared targetVersions (cdktf.json), stamped for
-   * diagnostics/cache debugging. Purely informational - never read back to
-   * decide whether cached output is stale, since it doesn't affect the
-   * generated surface (the full surface is always generated; narrowing
-   * happens at synth).
+   * The project's declared targetVersions (cdktf.json). Read back by
+   * `filterAlreadyGenerated` to compare registry *classes*: which registry the
+   * generated docs links point at follows from this, so output produced for the
+   * other class is stale. The version ranges themselves do not affect the
+   * generated surface - the full surface is always generated and narrowing
+   * happens at synth - so a range moving within a class is not a reason to
+   * regenerate.
    */
   targetVersions?: TerraformTargetVersions;
   /**
@@ -407,6 +413,22 @@ export class ConstructsMaker {
       return constraints;
     }
 
+    // Generated docs links, and the prose naming the registry around them, follow
+    // the project's declared targets, so output from the other registry class is
+    // stale even when every provider version still matches.
+    const previousRegistry = registryForTargetVersions(
+      previousConstraints.targetVersions,
+    );
+    const currentRegistry = registryForTargetVersions(
+      this.options.targetVersions,
+    );
+    if (previousRegistry.hostname !== currentRegistry.hostname) {
+      logger.info(
+        `The target registry has changed from ${previousRegistry.displayName} to ${currentRegistry.displayName}, generating all constraints.`,
+      );
+      return constraints;
+    }
+
     const constraintsToGenerate = constraints.filter((constraint) => {
       const constraintMatches =
         previousConstraints.providers![constraint.fqn] === constraint.version;
@@ -457,7 +479,7 @@ export class ConstructsMaker {
   ) {
     const endTSTimer = logTimespan(`Generate Typescript for ${target.name}`);
     target.spec = schema;
-    new ModuleGenerator(this.code, [target]);
+    new ModuleGenerator(this.code, [target], this.options.targetVersions);
     endTSTimer();
   }
 
@@ -529,7 +551,21 @@ export class ConstructsMaker {
       );
     }
 
+    // Keys are fully qualified and the host is whichever registry the fetching CLI
+    // resolved from, so a provider regenerated this run can arrive under a different
+    // host than the file already holds. Carrying the old key forward as well would
+    // leave two entries for one provider, and the stale one sorts first.
+    const regenerated = new Set(
+      Object.keys(this.versions).map((fqpn) =>
+        fqpn.split("/").slice(1).join("/"),
+      ),
+    );
+
     const versions = allowedConstraints.reduce((acc, constraint) => {
+      if (regenerated.has(constraint.fqn)) {
+        return acc;
+      }
+
       const provider = Object.entries(previousVersions).find(([name]) =>
         // This could be more refined, but it's good enough for now
         name.endsWith(constraint.fqn),

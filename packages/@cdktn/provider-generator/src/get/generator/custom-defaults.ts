@@ -74,6 +74,7 @@ export const CUSTOM_DEFAULTS: { [fullName: string]: any } = {
   "aws.route_table.route.destination_prefix_list_id": null,
   "aws.route_table.route.carrier_gateway_id": null,
   "aws.route_table.route.core_network_arn": null,
+  "aws.route_table.route.odb_network_arn": null,
 
   "aws.default_security_group.ingress.cidr_blocks": null,
   "aws.default_security_group.ingress.description": null,

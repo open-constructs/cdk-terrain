@@ -96,6 +96,8 @@ jobs:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
     env:
       CHECKPOINT_DISABLE: "1"
+      # jsii >= 1.142 rejects the default cache under HOME, which the container user does not own
+      JSII_RUNTIME_PACKAGE_CACHE_ROOT: /root/.cache/aws/jsii/package-cache
     timeout-minutes: 60
     steps:
       - name: Checkout

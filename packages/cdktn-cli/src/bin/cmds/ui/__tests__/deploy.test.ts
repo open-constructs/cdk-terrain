@@ -1,5 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import stripAnsi from "strip-ansi";
+import { logger } from "@cdktn/commons";
+import { getConstructIdsForOutputs } from "@cdktn/cli-core/src/lib/output";
 import { PROMPT_NEEDS_TTY } from "../../helper/prompts";
 
 // Mock the prompts module so we can control what promptApprove / promptOverride throw.
@@ -22,11 +25,12 @@ jest.mock("../../helper/project-runner", () => ({
     mockRunCdktfProject(opts, cb),
 }));
 
+const mockStreamStop = jest.fn();
 // Suppress noise from the StreamRenderer in unit tests.
 jest.mock("../../helper/tty-stream", () => ({
   StreamRenderer: jest.fn().mockImplementation(() => ({
     start: jest.fn(),
-    stop: jest.fn(),
+    stop: mockStreamStop,
     setBar: jest.fn(),
     clearBar: jest.fn(),
     appendLog: jest.fn(),
@@ -48,6 +52,7 @@ beforeEach(() => {
   mockPromptApprove.mockReset();
   mockPromptOverride.mockReset();
   mockRunCdktfProject.mockReset();
+  mockStreamStop.mockReset();
 });
 
 describe("runDeploy approval routing", () => {
@@ -142,6 +147,107 @@ describe("runDeploy approval routing", () => {
       expect.stringContaining("Approval prompt cancelled"),
     );
     errSpy.mockRestore();
+  });
+});
+
+describe("runDeploy outputs", () => {
+  const output = (value: string) => ({
+    sensitive: false,
+    type: "string",
+    value,
+  });
+  let logSpy: jest.SpyInstance;
+  let errSpy: jest.SpyInstance;
+  const printed = () => logSpy.mock.calls.map(([line]) => stripAnsi(line));
+
+  const deployed = (outputsByConstructId: unknown) =>
+    mockRunCdktfProject.mockResolvedValue({
+      returnValue: undefined,
+      project: { outputsByConstructId },
+    });
+
+  beforeEach(() => {
+    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it("presents the project's outputs by construct id", async () => {
+    const outputsByConstructId = { db: { host: output("db.example.com") } };
+    deployed(outputsByConstructId);
+    let retrieved: unknown;
+
+    await runDeploy({
+      ...baseConfig,
+      onOutputsRetrieved: (o: unknown) => (retrieved = o),
+      outputsPath: "/tmp/out.json",
+    } as any);
+
+    expect(retrieved).toBe(outputsByConstructId);
+    expect(printed()).toEqual([
+      "db\n  host = db.example.com",
+      "The outputs have been written to /tmp/out.json",
+    ]);
+  });
+
+  it("reports a render failure as following a successful deploy", async () => {
+    deployed({ db: { host: undefined } });
+
+    await runDeploy(baseConfig as any);
+
+    expect(errSpy.mock.calls).toEqual([
+      [expect.stringContaining("Deploy succeeded, but rendering the outputs")],
+    ]);
+  });
+
+  it("rejects when the outputs cannot be written, after stopping the stream", async () => {
+    deployed({ db: { host: output("db.example.com") } });
+
+    // Handled up front, so a dropped promise fails the assertion instead of crashing the test run.
+    const write = Promise.reject(new Error("disk full"));
+    write.catch(() => {});
+
+    await expect(
+      runDeploy({
+        ...baseConfig,
+        onOutputsRetrieved: () => write,
+      } as any),
+    ).rejects.toThrow("Failed to write outputs");
+
+    expect(mockStreamStop).toHaveBeenCalled();
+  });
+
+  it("completes and prints the remaining outputs when terraform did not return a declared one", async () => {
+    const warnSpy = jest.spyOn(logger, "warn").mockImplementation(() => {});
+    try {
+      deployed(
+        getConstructIdsForOutputs(
+          "app",
+          {
+            "//": {
+              outputs: {
+                network: { ipv6: "ipv6_address", ipv4: "ipv4_address" },
+                db: { host: "db_host" },
+              },
+            },
+          },
+          { ipv6_address: output("::1"), db_host: output("db.example.com") },
+        ),
+      );
+
+      await runDeploy(baseConfig as any);
+
+      expect(printed()).toEqual([
+        "network\n  ipv6 = ::1\ndb\n  host = db.example.com",
+      ]);
+      expect(errSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });
 

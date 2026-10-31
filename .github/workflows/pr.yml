@@ -51,6 +51,16 @@ jobs:
       concurrency_group_prefix: pr
     secrets: inherit
 
+  telemetry_e2e:
+    name: "Telemetry E2E"
+    needs: [quality, build]
+    permissions:
+      contents: read
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci/skip-unit') }}
+    uses: ./.github/workflows/telemetry-e2e.yml
+    with:
+      concurrency_group_prefix: pr
+
   examples:
     name: "Examples Integration Tests - PR"
     needs: [all_unit_tests]
@@ -88,6 +98,7 @@ jobs:
         quality,
         build,
         all_unit_tests,
+        telemetry_e2e,
         examples,
         integration_test,
         provider_integration_test,

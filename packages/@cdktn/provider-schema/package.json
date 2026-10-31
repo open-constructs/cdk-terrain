@@ -38,9 +38,9 @@
   "dependencies": {
     "@cdktn/commons": "workspace:*",
     "@cdktn/hcl2json": "workspace:*",
-    "deepmerge": "4.3.1",
-"fs-extra": "11.3.6",
-    "semver": "7.8.5"
+    "deepmerge": "^4.3.1",
+    "fs-extra": "^11.3.6",
+    "semver": "^7.8.5"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

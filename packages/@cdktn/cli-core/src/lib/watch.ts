@@ -8,7 +8,7 @@ import {
 } from "./cdktf-project";
 import * as fs from "fs";
 import * as chokidar from "chokidar";
-import { logger, Errors, sendTelemetry } from "@cdktn/commons";
+import { logger, Errors } from "@cdktn/commons";
 import { CdktfStack } from "./cdktf-stack";
 
 // In this very first iteration we will find out which files to watch by asking the user to provide the files
@@ -109,7 +109,26 @@ export async function watch(
     onStateChange(state);
   };
 
-  async function run() {
+  let resolveSession!: (outcome: Promise<void> | void) => void;
+  const session = new Promise<void>((resolve) => {
+    resolveSession = resolve;
+  });
+
+  // Idempotent: a failing run and an abort can both ask for the end.
+  function endSession(failed?: { error: unknown }) {
+    if (state.type === "stopped") {
+      return;
+    }
+    const inFlight = state.type === "running" ? state.currentRun : undefined;
+    changeState({ type: "stopped" });
+    resolveSession(
+      watcher
+        .close()
+        .then(() => (failed ? Promise.reject(failed.error) : inFlight)),
+    );
+  }
+
+  async function deployOnce() {
     logger.debug("Running cdktn deploy");
     const project = new CdktfProject({
       synthOrigin: "watch",
@@ -125,34 +144,53 @@ export async function watch(
     });
     const abort = () => project.hardAbort();
     abortSignal.addEventListener("abort", abort);
-    await project.deploy(mutationOptions);
-    abortSignal.removeEventListener("abort", abort);
-    logger.debug("cdktn deploy finished");
-
-    if (state.type !== "running") {
-      throw Errors.Internal(
-        "Watch was in a state where the state was not running in the run phase",
-      );
+    try {
+      await project.deploy(mutationOptions);
+    } finally {
+      abortSignal.removeEventListener("abort", abort);
     }
+    logger.debug("cdktn deploy finished");
+    return project;
+  }
 
-    if (state.nextRunQueued) {
-      logger.debug("Next run was queued, starting it now");
+  // One promise covers a run and every re-run queued behind it.
+  async function runUntilIdle() {
+    let rerun: boolean;
+    do {
+      const project = await deployOnce();
+      if (state.type !== "running") {
+        return;
+      }
+      rerun = state.nextRunQueued;
       changeState({
         ...state,
         nextRunQueued: false,
-        currentRun: run(),
         ...projectStatus(project),
       });
-    } else {
-      logger.debug("Nothing queued, waiting for changes");
-      changeState({ type: "waiting" });
-    }
+    } while (rerun);
+    logger.debug("Nothing queued, waiting for changes");
+    changeState({ type: "waiting" });
   }
 
+  // The only place a run starts, so every run has its failure observed.
+  // hardAbort rejects the in-flight deploy after the abort has already
+  // stopped the session, which makes that rejection a no-op here.
+  function startRun() {
+    const currentRun = runUntilIdle().catch((error) => endSession({ error }));
+    changeState({
+      type: "running",
+      nextRunQueued: false,
+      currentRun,
+      ...projectStatus(),
+    });
+  }
+
+  // Without a failure the session ends only on abort: the CLI exits as soon
+  // as its handler returns, so resolving earlier would end `cdktn watch`
+  // after the first run.
   abortSignal.addEventListener("abort", () => {
     logger.debug("Abort signal received, stopping watch");
-    watcher.close();
-    changeState({ type: "stopped" });
+    endSession();
   });
 
   const onFileChange = () => {
@@ -165,17 +203,12 @@ export async function watch(
       return;
     }
 
-    changeState({
-      type: "running",
-      nextRunQueued: false,
-      currentRun: run(),
-      ...projectStatus(),
-    });
+    startRun();
   };
 
   watcher.on("all", onFileChange);
   // initially run once
   onFileChange();
 
-  await sendTelemetry("watch", { event: "start" });
+  await session;
 }
