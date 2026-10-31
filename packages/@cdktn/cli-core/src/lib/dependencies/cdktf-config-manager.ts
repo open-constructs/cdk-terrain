@@ -37,36 +37,45 @@ export class CdktfConfigManager {
     );
   }
 
-  private async setProvider(constraint: ProviderConstraint): Promise<void> {
+  /** Returns the entry as written to cdktf.json. */
+  private async setProvider(
+    constraint: ProviderConstraint,
+  ): Promise<string | TerraformDependencyConstraint> {
     const registry = this.registry;
     const isSame = (provider: string | TerraformDependencyConstraint) =>
       ProviderConstraint.fromConfigEntry(provider, registry).source ===
       constraint.source;
+    const withVersion = (source: string) =>
+      source + (constraint.version ? `@${constraint.version}` : "");
 
-    // An update keeps the entry's own spelling, so a host the user wrote stays.
+    // An update keeps the entry's own form, so a host the user wrote stays.
     const existing = this.config.terraformProviders.find(isSame);
-    const source =
-      typeof existing === "string"
-        ? existing.split("@")[0].trim()
-        : simplifySource(constraint.source, registry);
+    let provider: string | TerraformDependencyConstraint;
+    if (existing === undefined) {
+      provider = withVersion(simplifySource(constraint.source, registry));
+    } else if (typeof existing === "string") {
+      provider = withVersion(existing.split("@")[0].trim());
+    } else {
+      provider = { ...existing, version: constraint.version };
+    }
 
     // excluding the constraint to be added (if it already existed)
     const currentProviders = this.config.terraformProviders.filter(
       (provider) => !isSame(provider),
     );
 
-    const provider =
-      source + (constraint.version ? `@${constraint.version}` : "");
-
     currentProviders.push(provider);
     this.config.writeTerraformProviders(currentProviders);
+    return provider;
   }
 
   public async addProvider(constraint: ProviderConstraint): Promise<void> {
     await this.setProvider(constraint);
   }
 
-  public async updateProvider(constraint: ProviderConstraint): Promise<void> {
-    await this.setProvider(constraint);
+  public async updateProvider(
+    constraint: ProviderConstraint,
+  ): Promise<string | TerraformDependencyConstraint> {
+    return this.setProvider(constraint);
   }
 }

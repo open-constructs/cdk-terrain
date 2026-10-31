@@ -53,14 +53,26 @@ function versionOutput(): Promise<string> {
   return probe.output;
 }
 
-/** Binary and version for usage telemetry; never rejects. */
-export function terraformCli(): Promise<TerraformCliProbe> {
-  return versionOutput()
-    .then((output) => parseTerraformCliVersion(output))
+function toProbe(output: Promise<string>): Promise<TerraformCliProbe> {
+  return output
+    .then((out) => parseTerraformCliVersion(out))
     .catch((err) => ({
       name:
         err?.code === "ENOENT" ? ("missing" as const) : ("unknown" as const),
     }));
+}
+
+/** Binary and version for usage telemetry; never rejects. */
+export function terraformCli(): Promise<TerraformCliProbe> {
+  return toProbe(versionOutput());
+}
+
+/**
+ * Like `terraformCli`, but waits for `version` however long it takes, so a
+ * check that must not pass unverified never sees a timeout. Not cached.
+ */
+export function identifyTerraformCli(): Promise<TerraformCliProbe> {
+  return toProbe(exec(terraformBinaryName, ["version"], {}));
 }
 
 // `undefined` when the probe fails: building an Errors.Usage here would
