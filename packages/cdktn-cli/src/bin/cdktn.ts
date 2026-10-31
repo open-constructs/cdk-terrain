@@ -96,6 +96,26 @@ const cli = yargs
   .command(debugCmd)
   .command(providerCmd)
   .recommendCommands()
+  // `.env("CDKTF")` turns every CDKTF_* variable into an argument, so strict
+  // validation would reject variables that belong to other features.
+  .middleware((argv) => {
+    // getOptions is not part of the public typings
+    const { key } = (yargs as any).getOptions() as {
+      key: Record<string, unknown>;
+    };
+    const declared = new Set(Object.keys(key));
+    for (const envKey of Object.keys(process.env)) {
+      if (!envKey.startsWith("CDKTF_")) continue;
+      const name = envKey
+        .slice("CDKTF_".length)
+        .toLowerCase()
+        .replace(/_/g, "-");
+      if (declared.has(name)) continue;
+      delete argv[name];
+      delete argv[name.replace(/-(.)/g, (_, c: string) => c.toUpperCase())];
+    }
+  }, true)
+  .strictOptions()
   .exitProcess(false)
   .wrap(yargs.terminalWidth())
   .showHelpOnFail(false)
