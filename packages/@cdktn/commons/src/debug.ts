@@ -244,7 +244,7 @@ async function getCSharpPackageVersion(packageName: string) {
 
   const versionLine = output
     .split(/\r\n|\r|\n/)
-    .find((line) => line.includes(`> ${cSharpPackageName}`));
+    .find((line) => /^\s*>\s+(\S+)/.exec(line)?.[1] === cSharpPackageName);
 
   if (!versionLine) {
     logger.debug(
