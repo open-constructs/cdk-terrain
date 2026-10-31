@@ -295,12 +295,23 @@ describe("prebuilt-providers", () => {
     });
   });
 
-  describe.skip("getPrebuiltProviderVersion", () => {
-    it("returns null on connection error with github", async () => {
+  describe("getPrebuiltProviderVersions with the providers map", () => {
+    const mockProvidersMap = () =>
       mockAgent
-        .get("https://www.cdk.tf")
+        .get("https://raw.githubusercontent.com")
         .intercept({
-          path: "/.well-known/prebuilt-providers.json",
+          path: /.*cdktn-repository-manager.*provider\.json/,
+          method: "GET",
+        })
+        .reply(200, {
+          test: "hashicorp/test@~> 0.3.3",
+        });
+
+    it("fails on connection error with github", async () => {
+      mockAgent
+        .get("https://raw.githubusercontent.com")
+        .intercept({
+          path: /.*cdktn-repository-manager.*provider\.json/,
           method: "GET",
         })
         .replyWithError(
@@ -317,17 +328,8 @@ describe("prebuilt-providers", () => {
       ).rejects.toThrow("Connection error");
     });
 
-    it("returns null on connection error with npm", async () => {
-      mockAgent
-        .get("https://www.cdk.tf")
-        .intercept({
-          path: "/.well-known/prebuilt-providers.json",
-          method: "GET",
-        })
-        .reply(200, {
-          test: "hashicorp/test@~> 0.3.3",
-        });
-
+    it("fails on connection error with npm", async () => {
+      mockProvidersMap();
       mockAgent
         .get("https://registry.npmjs.org")
         .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
@@ -345,27 +347,26 @@ describe("prebuilt-providers", () => {
       ).rejects.toThrow("Connection error");
     });
 
-    it("succeeds when both cdk.tf and npm work", async () => {
-      mockAgent
-        .get("https://www.cdk.tf")
-        .intercept({
-          path: "/.well-known/prebuilt-providers.json",
-          method: "GET",
-        })
-        .reply(200, {
-          test: "hashicorp/test@~> 0.3.3",
-        });
+    it("succeeds when both github and npm work", async () => {
+      mockProvidersMap();
       mockAgent
         .get("https://registry.npmjs.org")
         .intercept({ path: new RegExp("/@cdktf/.*"), method: "GET" })
         .reply(200, buildNpmResponse("2.3.0"));
+      mockAgent
+        .get("https://registry.npmjs.org")
+        .intercept({ path: new RegExp("/@cdktn/.*"), method: "GET" })
+        .reply(200, buildNpmResponse("2.4.0", "test", "^0.12.2", true, true));
 
       await expect(
         getPrebuiltProviderVersions(
           ProviderConstraint.fromConfigEntry("test"),
           "0.12.2",
         ),
-      ).resolves.toEqual(["2.3.0"]);
+      ).resolves.toEqual([
+        { name: "@cdktn/provider-test", version: "2.4.0" },
+        { name: "@cdktf/provider-test", version: "2.3.0" },
+      ]);
     });
   });
 });
