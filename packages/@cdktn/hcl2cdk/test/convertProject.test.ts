@@ -37,7 +37,7 @@ const createTSCdkProject = (cwd: string) =>
       "cdktf.json",
       `{
 "language": "typescript",
-"app": "npm run --silent compile && node main.js",
+"app": "npx tsx main.ts",
 "terraformProviders": [],
 "terraformModules": [],
 "context": {}}`,
@@ -88,6 +88,7 @@ app.synth();`,
         },
         "devDependencies": {
           "@types/node": "^22.20.1",
+          "tsx": "4.23.13",
           "typescript": "^5.4.5",
           "cdktn-cli": "${CDKTF_CLI}"
         }
@@ -171,12 +172,7 @@ function resources(plan: any) {
 }
 
 let cachedProviderSchema: any;
-// Skipped because the fixture's camptocamp/k3s/docker module uses the
-// module_variable_optional_attrs language experiment, removed in Terraform
-// 1.3. `getTerraformPlan` runs a real init, so this cannot pass on any
-// supported Terraform, and every published version of that module - up to
-// 1.0.1 - still uses it. Needs a different module in the fixture; see #461.
-describe.skip("convertProject", () => {
+describe("convertProject", () => {
   beforeAll(async () => {
     // Get all the provider schemas
     const { providerSchema } = await readSchema(
@@ -219,13 +215,11 @@ describe.skip("convertProject", () => {
       ],
       [
         "cluster.tf",
-        `module "k3s" {
-        source  = "camptocamp/k3s/docker"
-        version = "0.11.0"
-
-        cluster_endpoint = ""
-        cluster_name = "cdktf"
-        network_name = ""
+        `module "label" {
+        source    = "cloudposse/label/null"
+        version   = "0.25.0"
+        namespace = "cdktf"
+        name      = "example"
       }`,
       ],
     ]);
