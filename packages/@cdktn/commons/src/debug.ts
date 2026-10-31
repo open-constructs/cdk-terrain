@@ -220,7 +220,6 @@ async function getPythonPackageVersion(
   return version;
 }
 
-// Once https://github.com/NuGet/Home/issues/7752 gets resolved we can also try with --json
 async function getCSharpPackageVersion(packageName: string) {
   const translationMap: Record<string, string> = {
     jsii: "Amazon.JSII.Runtime",
@@ -244,7 +243,11 @@ async function getCSharpPackageVersion(packageName: string) {
 
   const versionLine = output
     .split(/\r\n|\r|\n/)
-    .find((line) => line.includes(`> ${cSharpPackageName}`));
+    .find(
+      (line) =>
+        /^\s*>\s+(\S+)/.exec(line)?.[1].toLowerCase() ===
+        cSharpPackageName.toLowerCase(),
+    );
 
   if (!versionLine) {
     logger.debug(
