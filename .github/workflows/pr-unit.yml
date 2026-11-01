@@ -38,7 +38,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
 
       - name: Derive base/head SHAs for nx affected
-        uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+        uses: nrwl/nx-set-shas@e602fada7ad5987b0f7b1905e7a99ea1c661514c # v5.1.0
 
       - name: Get cache directory paths
         id: global-cache-dir-path
@@ -128,7 +128,7 @@ jobs:
         uses: ./.github/actions/setup-corepack-pnpm
 
       - name: Derive base/head SHAs for nx affected
-        uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+        uses: nrwl/nx-set-shas@e602fada7ad5987b0f7b1905e7a99ea1c661514c # v5.1.0
 
       - name: Get cache directory paths
         id: global-cache-dir-path
