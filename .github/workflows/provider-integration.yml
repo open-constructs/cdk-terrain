@@ -200,7 +200,7 @@ jobs:
         run: cd test && pnpm ci
       - name: integration tests
         timeout-minutes: 30
-        run: cd test && ./provider-tests/test-provider.bat ${env:TEST_TARGET}
+        run: cd test && pnpm run test:provider ${env:TEST_TARGET}
         env:
           TEST_TARGET: ${{ matrix.target }}
           NODE_OPTIONS: "--max-old-space-size=7168"
