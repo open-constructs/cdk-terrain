@@ -83,7 +83,11 @@ export function snakeCase(str: string): string {
  * Transforms all keys in a object to snake case
  */
 export function keysToSnakeCase(object: any): any {
-  if (Tokenization.isResolvable(object)) {
+  if (
+    object === null ||
+    object === undefined ||
+    Tokenization.isResolvable(object)
+  ) {
     return object;
   }
   if (Array.isArray(object)) {

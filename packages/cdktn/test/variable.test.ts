@@ -61,6 +61,18 @@ test("default value", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
+test("null default value", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "string",
+    default: null,
+  });
+
+  expect(Testing.synth(stack)).toContain('"default": null');
+});
+
 test("description", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");
