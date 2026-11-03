@@ -11,6 +11,10 @@ import { Aspects, IAspect } from "../aspect";
 import { StackAnnotation } from "../manifest";
 import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
+import {
+  OPENTOFU_SETTINGS_FILE,
+  TERRAFORM_SETTINGS_FILE,
+} from "../terraform-product-settings";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class StackSynthesizer implements IStackSynthesizer {
@@ -57,6 +61,11 @@ export class StackSynthesizer implements IStackSynthesizer {
       stackManifest.workingDirectory,
     );
     if (!fs.existsSync(workingDirectory)) fs.mkdirSync(workingDirectory);
+
+    // remove settings files from a previous synth; TerraformProductSettings rewrites them if still present
+    for (const file of [TERRAFORM_SETTINGS_FILE, OPENTOFU_SETTINGS_FILE]) {
+      fs.rmSync(path.join(workingDirectory, file), { force: true });
+    }
 
     // call custom synthesis on child nodes (leafs first)
     this.stack.node
