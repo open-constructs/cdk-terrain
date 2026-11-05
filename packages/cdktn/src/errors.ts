@@ -661,6 +661,24 @@ export const unknownProviderFeature = (feature: string) =>
     `Unknown provider-protocol feature "${feature}" passed to registerProviderFeatureUsage. This is an internal cdktn API intended to be called by generated provider bindings, not user code; if you did not call it directly, please file a bug report.`,
   );
 
+export const productSettingsWithoutProducts = (constructPath: string) =>
+  new Error(
+    `TerraformProductSettings at '${constructPath}' needs at least one of 'terraform' or 'opentofu' set.`,
+  );
+
+export const productSettingsEmpty = (constructPath: string, product: string) =>
+  new Error(
+    `TerraformProductSettings at '${constructPath}' sets '${product}' without any settings.`,
+  );
+
+export const productSettingsAlreadyDefined = (
+  stackPath: string,
+  existingPath: string,
+) =>
+  new Error(
+    `Stack '${stackPath}' already has a TerraformProductSettings at '${existingPath}'. Only one is allowed per stack.`,
+  );
+
 export const terraformModuleHasChildren = (pathName: string) => {
   return new Error(
     `Trying to add children to a TerraformModule at '${pathName}'. TerraformModules cannot have children, if you want to group resources or constructs in general together please use the Constructs class instead. See https://cdktn.io/docs/concepts/constructs for more details.`,
