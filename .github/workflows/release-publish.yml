@@ -28,8 +28,6 @@ on:
         required: true
       MAVEN_GPG_PRIVATE_KEY_PASSPHRASE:
         required: true
-      NUGET_API_KEY:
-        required: true
       # Credentials of the CDKTN Maintainers GitHub App (the same app
       # release-please.yml and pnpm-upgrade.yml authenticate with);
       # release_golang mints a per-run installation token from them. Callers
