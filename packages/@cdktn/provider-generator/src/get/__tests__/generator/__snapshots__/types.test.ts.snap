@@ -1737,15 +1737,15 @@ export function computedOptionalComplexEgressToTerraform(struct?: ComputedOption
     throw new Error("A complex element was used as configuration, this is not supported: https://cdktn.io/docs/concepts/resources#references");
   }
   return {
-    cidr_blocks: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.cidrBlocks),
-    description: cdktn.stringToTerraform(struct!.description),
-    from_port: cdktn.numberToTerraform(struct!.fromPort),
-    ipv6_cidr_blocks: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.ipv6CidrBlocks),
-    prefix_list_ids: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.prefixListIds),
-    protocol: cdktn.stringToTerraform(struct!.protocol),
-    security_groups: cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.securityGroups),
-    self: cdktn.booleanToTerraform(struct!.selfAttribute),
-    to_port: cdktn.numberToTerraform(struct!.toPort),
+    cidr_blocks: struct!.cidrBlocks === undefined ? null : cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.cidrBlocks),
+    description: struct!.description === undefined ? null : cdktn.stringToTerraform(struct!.description),
+    from_port: struct!.fromPort === undefined ? null : cdktn.numberToTerraform(struct!.fromPort),
+    ipv6_cidr_blocks: struct!.ipv6CidrBlocks === undefined ? null : cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.ipv6CidrBlocks),
+    prefix_list_ids: struct!.prefixListIds === undefined ? null : cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.prefixListIds),
+    protocol: struct!.protocol === undefined ? null : cdktn.stringToTerraform(struct!.protocol),
+    security_groups: struct!.securityGroups === undefined ? null : cdktn.listMapper(cdktn.stringToTerraform, false)(struct!.securityGroups),
+    self: struct!.selfAttribute === undefined ? null : cdktn.booleanToTerraform(struct!.selfAttribute),
+    to_port: struct!.toPort === undefined ? null : cdktn.numberToTerraform(struct!.toPort),
   }
 }
 
@@ -1757,55 +1757,55 @@ export function computedOptionalComplexEgressToHclTerraform(struct?: ComputedOpt
   }
   const attrs = {
     cidr_blocks: {
-      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.cidrBlocks),
+      value: struct!.cidrBlocks === undefined ? null : cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.cidrBlocks),
       isBlock: false,
       type: "list",
       storageClassType: "stringList",
     },
     description: {
-      value: cdktn.stringToHclTerraform(struct!.description),
+      value: struct!.description === undefined ? null : cdktn.stringToHclTerraform(struct!.description),
       isBlock: false,
       type: "simple",
       storageClassType: "string",
     },
     from_port: {
-      value: cdktn.numberToHclTerraform(struct!.fromPort),
+      value: struct!.fromPort === undefined ? null : cdktn.numberToHclTerraform(struct!.fromPort),
       isBlock: false,
       type: "simple",
       storageClassType: "number",
     },
     ipv6_cidr_blocks: {
-      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.ipv6CidrBlocks),
+      value: struct!.ipv6CidrBlocks === undefined ? null : cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.ipv6CidrBlocks),
       isBlock: false,
       type: "list",
       storageClassType: "stringList",
     },
     prefix_list_ids: {
-      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.prefixListIds),
+      value: struct!.prefixListIds === undefined ? null : cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.prefixListIds),
       isBlock: false,
       type: "list",
       storageClassType: "stringList",
     },
     protocol: {
-      value: cdktn.stringToHclTerraform(struct!.protocol),
+      value: struct!.protocol === undefined ? null : cdktn.stringToHclTerraform(struct!.protocol),
       isBlock: false,
       type: "simple",
       storageClassType: "string",
     },
     security_groups: {
-      value: cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.securityGroups),
+      value: struct!.securityGroups === undefined ? null : cdktn.listMapperHcl(cdktn.stringToHclTerraform, false)(struct!.securityGroups),
       isBlock: false,
       type: "set",
       storageClassType: "stringList",
     },
     self: {
-      value: cdktn.booleanToHclTerraform(struct!.selfAttribute),
+      value: struct!.selfAttribute === undefined ? null : cdktn.booleanToHclTerraform(struct!.selfAttribute),
       isBlock: false,
       type: "simple",
       storageClassType: "boolean",
     },
     to_port: {
-      value: cdktn.numberToHclTerraform(struct!.toPort),
+      value: struct!.toPort === undefined ? null : cdktn.numberToHclTerraform(struct!.toPort),
       isBlock: false,
       type: "simple",
       storageClassType: "number",

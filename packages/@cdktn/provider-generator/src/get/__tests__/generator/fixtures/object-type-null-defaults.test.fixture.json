@@ -1,0 +1,50 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/example": {
+      "resource_schemas": {
+        "example_route_table": {
+          "version": 0,
+          "block": {
+            "attributes": {
+              "route": {
+                "type": [
+                  "set",
+                  [
+                    "object",
+                    {
+                      "cidr_block": "string",
+                      "gateway_id": "string",
+                      "odb_network_arn": "string"
+                    }
+                  ]
+                ],
+                "optional": true,
+                "computed": true
+              },
+              "options": {
+                "type": [
+                  "object",
+                  {
+                    "mode": "string",
+                    "timeout": "number"
+                  },
+                  ["timeout"]
+                ],
+                "optional": true
+              },
+              "nested": {
+                "nested_type": {
+                  "attributes": {
+                    "name": { "type": "string", "optional": true }
+                  },
+                  "nesting_mode": "list"
+                },
+                "optional": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
