@@ -39,20 +39,35 @@ const DefaultTestingAppConfig: TestingAppConfig = {
   fakeCdktfJsonPath: false,
 };
 
+// Temp outdirs created by Testing.app() and Testing.fullSynth(), removed by Testing.cleanup()
+const tempOutdirs: string[] = [];
+let exitHookRegistered = false;
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+function makeTempOutdir(): string {
+  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  tempOutdirs.push(outdir);
+  if (!exitHookRegistered) {
+    // Never fires under Jest, which gives each test file a sandboxed `process`;
+    // Jest users call Testing.cleanup() from an afterAll hook instead.
+    process.once("exit", () => Testing.cleanup());
+    exitHookRegistered = true;
+  }
+  return outdir;
+}
+
 /**
  * Testing utilities for cdktf applications.
  */
 export class Testing {
   /**
    * Returns an app for testing with the following properties:
-   * - Output directory is a temp dir.
+   * - Output directory is a temp dir, removed by `Testing.cleanup()` or when the process exits.
    */
   public static app(options: TestingAppConfig = {}): App {
     const appConfig = { ...DefaultTestingAppConfig, ...options };
     if (!appConfig.outdir) {
-      appConfig.outdir = fs.mkdtempSync(
-        path.join(os.tmpdir(), "cdktf.outdir."),
-      );
+      appConfig.outdir = makeTempOutdir();
     }
 
     const app = new App({
@@ -171,8 +186,12 @@ export class Testing {
     return config.hcl;
   }
 
+  /**
+   * Synthesizes the stack into a temp dir and returns its path. The dir is removed by
+   * `Testing.cleanup()` or when the process exits.
+   */
   public static fullSynth(stack: TerraformStack): string {
-    const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+    const outdir = makeTempOutdir();
 
     const manifest = new Manifest("stubbed", outdir, false);
 
@@ -184,6 +203,30 @@ export class Testing {
     manifest.writeToFile();
 
     return outdir;
+  }
+
+  /**
+   * Removes the temp dirs created by `Testing.app()` (when no `outdir` is given) and
+   * `Testing.fullSynth()`.
+   *
+   * They are also removed when the process exits, but Jest runs each test file in a
+   * sandbox where that never happens, so call this from an `afterAll` hook, e.g. in
+   * the Jest setup file that calls `Testing.setupJest()`.
+   */
+  public static cleanup(): void {
+    for (const outdir of tempOutdirs.splice(0)) {
+      try {
+        // Windows can briefly hold handles on just-written files (EBUSY/EPERM), so retry
+        fs.rmSync(outdir, {
+          recursive: true,
+          force: true,
+          maxRetries: 5,
+          retryDelay: 100,
+        });
+      } catch {
+        // best effort: a temp dir that can't be removed must not fail a test run or process exit
+      }
+    }
   }
 
   public static renderConstructTree(construct: IConstruct): string {
