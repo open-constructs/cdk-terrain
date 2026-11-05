@@ -661,6 +661,11 @@ export const unknownProviderFeature = (feature: string) =>
     `Unknown provider-protocol feature "${feature}" passed to registerProviderFeatureUsage. This is an internal cdktn API intended to be called by generated provider bindings, not user code; if you did not call it directly, please file a bug report.`,
   );
 
+export const targetVersionsRangeWithAlternatives = (range: string) =>
+  new Error(
+    `targetVersions range "${range}" uses "||", which can't be written as a required_version constraint. Use a single range, e.g. ">=1.9.0 <1.12.0".`,
+  );
+
 export const terraformModuleHasChildren = (pathName: string) => {
   return new Error(
     `Trying to add children to a TerraformModule at '${pathName}'. TerraformModules cannot have children, if you want to group resources or constructs in general together please use the Constructs class instead. See https://cdktn.io/docs/concepts/constructs for more details.`,
