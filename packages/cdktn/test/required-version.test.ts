@@ -71,7 +71,8 @@ test("writes no settings file for a product the project doesn't target", () => {
 
 test("writes a settings file without required_version for a range that allows every version", () => {
   const outdir = Testing.fullSynth(
-    stackTargeting({ terraform: ">=1.9.0", opentofu: "*" }),
+    // the Terraform range must accept every OpenTofu release before 1.8, since those read settings.tf.json
+    stackTargeting({ terraform: "<2.0.0", opentofu: "*" }),
   );
 
   // an empty settings.tofu.json stops OpenTofu 1.8-1.11 from enforcing the Terraform constraint
@@ -115,7 +116,7 @@ test("removes settings files from a previous synth that no longer apply", () => 
 
 test("writes HCL settings files with HCL output, replacing JSON ones from a previous synth", () => {
   const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
-  const targets = { terraform: "^1.9.0", opentofu: "*" };
+  const targets = { terraform: "<2.0.0", opentofu: "*" };
 
   new StackSynthesizer(stackTargeting(targets)).synthesize({
     outdir,
@@ -127,7 +128,7 @@ test("writes HCL settings files with HCL output, replacing JSON ones from a prev
   });
 
   expect(readStackFile(outdir, "settings.tf")).toEqual(
-    'terraform {\n  required_version = ">= 1.9.0, < 2.0.0"\n}\n',
+    'terraform {\n  required_version = "< 2.0.0"\n}\n',
   );
   expect(readStackFile(outdir, "settings.tofu")).toEqual("");
   expect(readStackFile(outdir, "settings.tf.json")).toBeUndefined();
