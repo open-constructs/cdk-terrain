@@ -154,6 +154,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -175,7 +178,8 @@ jobs:
       - name: Release
         run: npx --no publib-nuget
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_TRUSTED_PUBLISHER: 1
+          NUGET_USERNAME: cdktn
 
   release_golang:
     name: Release Go to Github Repo (${{ inputs.channel }})
