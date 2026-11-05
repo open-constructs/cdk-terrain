@@ -130,6 +130,32 @@ class TFExpression extends Intrinsic implements IResolvable {
       .replace(/\${/g, "$$${"); // escape ${ to $${
   }
 
+  protected escapeStringLiteral(str: string, preserveQuotedLiteral = false) {
+    if (preserveQuotedLiteral) {
+      return this.escapeString(str);
+    }
+
+    let escaped = "";
+
+    for (let i = 0; i < str.length; i++) {
+      const character = str[i];
+      if (character === '"') {
+        let backslashes = 0;
+        for (let j = i - 1; j >= 0 && str[j] === "\\"; j--) {
+          backslashes++;
+        }
+        if (backslashes % 2 === 0) {
+          escaped += "\\";
+        }
+      }
+      escaped += character;
+    }
+
+    return escaped
+      .replace(/\n/g, "\\n") // escape newlines
+      .replace(/\${/g, "$$${"); // escape ${ to $${
+  }
+
   private resolveString(str: string, resolvedArg: any) {
     const tokenList = Tokenization.reverseString(str);
     const numberOfTokens = tokenList.tokens.length + tokenList.intrinsic.length;
@@ -140,7 +166,7 @@ class TFExpression extends Intrinsic implements IResolvable {
         resolvedArg.startsWith('"') &&
         resolvedArg.endsWith('"')
         ? this.escapeString(resolvedArg)
-        : `"${this.escapeString(resolvedArg)}"`;
+        : `"${this.escapeStringLiteral(resolvedArg)}"`;
     }
 
     // Only a token reference
@@ -167,7 +193,7 @@ class TFExpression extends Intrinsic implements IResolvable {
 
         // if left is a string literal, then we need to escape it
         if (leftTokenList.literals.length === 1 && leftTokenCount === 0) {
-          leftValue = this.escapeString(left);
+          leftValue = this.escapeStringLiteral(left, true);
         }
 
         // if left is only a token, needs to be wrapped as terraform expression
@@ -177,7 +203,7 @@ class TFExpression extends Intrinsic implements IResolvable {
 
         const rightValue =
           rightTokens.length === 0
-            ? this.escapeString(right)
+            ? this.escapeStringLiteral(right, true)
             : `\${${rightTokens[0]}}`;
 
         return `${leftValue}${rightValue}`;
@@ -201,7 +227,7 @@ class RawString extends TFExpression {
 
   public resolve(context: IResolveContext) {
     const qts = context.suppressBraces ? `"` : ``;
-    return `${qts}${this.escapeString(this.str).replace(/\"/g, '\\"')}${qts}`; // eslint-disable-line no-useless-escape
+    return `${qts}${this.escapeStringLiteral(this.str)}${qts}`;
   }
 
   public toString() {
