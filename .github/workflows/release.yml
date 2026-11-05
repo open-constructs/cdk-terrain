@@ -326,7 +326,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     needs:
       - prepare-release
       - integration_test
@@ -354,13 +353,24 @@ jobs:
         run: pnpm run release-github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # skip-github-release in release-please-config.json means release-please
+  # never sees this release finalized, so it never flips the merged release
+  # PR's label from "autorelease: pending" to "autorelease: tagged" itself.
+  # Without this, release-please permanently refuses to open the next
+  # release PR ("There are untagged, merged release PRs outstanding").
+  # The "autorelease: tagged" label itself is created once, repo-wide.
+  # Runs outside the jsii-terraform container, whose gh is too old for `pr edit`.
+  mark_release_pr_tagged:
+    name: Mark merged release PR as tagged
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    needs:
+      - release_github
+    steps:
       - name: Mark merged release PR as tagged
-        # skip-github-release in release-please-config.json means release-please
-        # never sees this release finalized, so it never flips the merged release
-        # PR's label from "autorelease: pending" to "autorelease: tagged" itself.
-        # Without this, release-please permanently refuses to open the next
-        # release PR ("There are untagged, merged release PRs outstanding").
-        # The "autorelease: tagged" label itself is created once, repo-wide.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -502,6 +512,7 @@ jobs:
       - quality_next
       - examples_next
       - release_github
+      - mark_release_pr_tagged
       - publish_release
       - release_sentry
       - publish_next
