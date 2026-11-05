@@ -38,6 +38,8 @@ export async function resetFetchCache() {
   fetchCache.clear();
 }
 
+export class PrebuiltProviderNotFoundError extends Error {}
+
 async function fetchWrapped<T>(url: string): Promise<T> {
   let response;
   try {
@@ -61,7 +63,9 @@ async function fetchWrapped<T>(url: string): Promise<T> {
       );
     }
     if (response.status === 404) {
-      throw new Error(`Pre-built provider information not found`);
+      throw new PrebuiltProviderNotFoundError(
+        `Pre-built provider information not found`,
+      );
     }
     if (response.status >= 400) {
       const responseText = await response.text();
@@ -108,9 +112,24 @@ export async function getNpmPackageName(
   if (!entry) {
     return undefined; // no pre-built provider found for this constraint
   }
-  const name = entry[0];
+  // The map key drops dashes (it names the repo); the package keeps them.
+  const name = ProviderConstraint.fromConfigEntry(entry[1]).name;
 
   return useCdktn ? `@cdktn/provider-${name}` : `@cdktf/provider-${name}`;
+}
+
+// Restores the dashes a language package name drops or turns into underscores.
+export async function getListedNpmPackageName(
+  packageName: string,
+): Promise<string> {
+  const match = /^(@cdkt[fn]\/provider-)(.+)$/.exec(packageName);
+  if (!match) return packageName;
+
+  const providers = await getAllPrebuiltProviders();
+  const entry = providers[match[2].replace(/[-_]/g, "").toLowerCase()];
+  if (!entry) return packageName;
+
+  return match[1] + ProviderConstraint.fromConfigEntry(entry).name;
 }
 
 type PackageJson = {
@@ -261,6 +280,21 @@ export async function getAllPrebuiltProviderVersions(
   return versions;
 }
 
+// A provider may be published under only one of the two scopes.
+async function getPublishedPrebuiltProviderVersions(
+  packageName: string,
+): Promise<PrebuiltProviderVersion[]> {
+  try {
+    return await getAllPrebuiltProviderVersions(packageName);
+  } catch (e) {
+    if (e instanceof PrebuiltProviderNotFoundError) {
+      logger.debug(`${packageName} is not published to npm`);
+      return [];
+    }
+    throw e;
+  }
+}
+
 function cdktfVersionMatches(
   cdktfVersion: string,
   cdktfPeerDependencyConstraint: string,
@@ -281,7 +315,7 @@ export async function getPrebuiltProviderVersions(
   }
 
   const cdktfVersions = cdktfProviderName
-    ? await getAllPrebuiltProviderVersions(cdktfProviderName)
+    ? await getPublishedPrebuiltProviderVersions(cdktfProviderName)
     : ([] as PrebuiltProviderVersion[]);
   logger.debug(
     `Found versions for ${cdktfProviderName}: ${JSON.stringify(
@@ -292,7 +326,7 @@ export async function getPrebuiltProviderVersions(
   );
 
   const cdktnVersions = cdktnProviderName
-    ? await getAllPrebuiltProviderVersions(cdktnProviderName)
+    ? await getPublishedPrebuiltProviderVersions(cdktnProviderName)
     : ([] as PrebuiltProviderVersion[]);
   logger.debug(
     `Found versions for ${cdktnProviderName}: ${JSON.stringify(cdktnVersions, null, 2)}`,

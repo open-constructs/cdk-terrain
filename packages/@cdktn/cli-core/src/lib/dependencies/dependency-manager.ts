@@ -18,7 +18,9 @@ import {
   getNpmPackageName,
   getPrebuiltProviderRepositoryName,
   getPrebuiltProviderVersionInformation,
+  getListedNpmPackageName,
   getPrebuiltProviderVersions,
+  PrebuiltProviderNotFoundError,
 } from "./prebuilt-providers";
 import { getLatestVersion, registryForConstraint } from "./registry-api";
 import { versionMatchesConstraint } from "./version-constraints";
@@ -302,7 +304,12 @@ export class DependencyManager {
 
     if (!npmPackageName) return;
 
-    return this.tryGetLanguagePackageName(npmPackageName);
+    try {
+      return await this.tryGetLanguagePackageName(npmPackageName);
+    } catch (e) {
+      if (e instanceof PrebuiltProviderNotFoundError) return;
+      throw e;
+    }
   }
 
   private async tryGetLanguagePackageName(
@@ -432,13 +439,14 @@ export class DependencyManager {
    */
   private convertPackageNameCdktf(name: string, repository: string): string {
     const providerName = name.replace("@cdktf/provider-", "");
+    const goName = providerName.replace(/-/g, "");
     switch (this.targetLanguage) {
       case Language.GO: // e.g. github.com/cdktf/cdktf-provider-opentelekomcloud-go/opentelekomcloud
         if (repository) {
-          return `${repository}-go/${providerName}`;
+          return `${repository}-go/${goName}`;
         }
 
-        return `github.com/cdktf/cdktf-provider-${providerName}-go/${providerName}`;
+        return `github.com/cdktf/cdktf-provider-${goName}-go/${goName}`;
       case Language.TYPESCRIPT: // e.g. @cdktf/provider-random
         return name; // already the correct name
       case Language.CSHARP: // e.g. HashiCorp.Cdktf.Providers.Opentelekomcloud
@@ -462,13 +470,14 @@ export class DependencyManager {
     repository: string,
   ): string | undefined {
     const providerName = name.replace("@cdktn/provider-", "");
+    const goName = providerName.replace(/-/g, "");
     switch (this.targetLanguage) {
       case Language.GO: // e.g. github.com/cdktf/cdktf-provider-opentelekomcloud-go/opentelekomcloud
         if (repository) {
-          return `${repository}-go/${providerName}`;
+          return `${repository}-go/${goName}`;
         }
 
-        return `github.com/cdktn-io/cdktn-provider-${providerName}-go/${providerName}`;
+        return `github.com/cdktn-io/cdktn-provider-${goName}-go/${goName}`;
       case Language.TYPESCRIPT: // e.g. @cdktf/provider-random
         return name; // already the correct name
       case Language.CSHARP: // e.g. HashiCorp.Cdktf.Providers.Opentelekomcloud
@@ -488,14 +497,21 @@ export class DependencyManager {
    * Converts an package name of a pre-built provider package in target language to the name in npm
    * Inverse of: `convertPackageName`
    */
-  private convertFromPackageNameToNpm(name: string): string {
+  private async convertFromPackageNameToNpm(name: string): Promise<string> {
+    if (this.targetLanguage === Language.TYPESCRIPT) {
+      return name; // already the npm name
+    }
+
     const regexes = {
+      // e.g. github.com/cdktf/cdktf-provider-opentelekomcloud-go/opentelekomcloud
       [Language.GO]:
         /github.com\/(?:cdktf|hashicorp|cdktn-io)\/cdkt([fn])-provider-(.+)-go\//i,
-      [Language.TYPESCRIPT]: /(.+)/i,
+      // e.g. HashiCorp.Cdktf.Providers.Opentelekomcloud
       [Language.CSHARP]: /(?:HashiCorp|Io)\.Cdkt([fn])\.Providers\.(.+)/i,
+      // e.g. com.hashicorp.cdktf-provider-opentelekomcloud
       [Language.JAVA]:
         /(?:com\.hashicorp|io\.cdktn)\.cdkt([fn])-provider-(.+)/i,
+      // e.g. cdktf-cdktf-provider-opentelekomcloud
       [Language.PYTHON]: /(?:cdktf-)?cdkt([fn])-provider-(.+)/i,
     };
     const regex = regexes[this.targetLanguage];
@@ -508,24 +524,11 @@ export class DependencyManager {
       throw new Error(`Package name is not in expected format: ${name}`);
     }
 
-    const npmPackagePrefix = `@cdkt${match[1]}/provider-`;
-
-    switch (this.targetLanguage) {
-      case Language.GO: // e.g. github.com/cdktf/cdktf-provider-opentelekomcloud-go/opentelekomcloud
-        return npmPackagePrefix + match[2];
-      case Language.TYPESCRIPT: // e.g. @cdktf/provider-random
-        return match[1]; // already the correct name
-      case Language.CSHARP: // e.g. HashiCorp.Cdktf.Providers.Opentelekomcloud
-        return npmPackagePrefix + toSnakeCase(match[2]);
-      case Language.JAVA: // e.g. com.hashicorp.opentelekomcloud
-        return npmPackagePrefix + match[2];
-      case Language.PYTHON: // e.g. cdktf-cdktf-provider-opentelekomcloud
-        return npmPackagePrefix + match[2];
-      default:
-        throw new Error(
-          `converting package name for language ${this.targetLanguage} not implemented yet`,
-        );
-    }
+    const providerName =
+      this.targetLanguage === Language.CSHARP
+        ? toSnakeCase(match[2])
+        : match[2];
+    return getListedNpmPackageName(`@cdkt${match[1]}/provider-${providerName}`);
   }
 
   public async allProviders() {
@@ -538,7 +541,7 @@ export class DependencyManager {
 
     const prebuiltProvidersInfo = await Promise.all(
       prebuiltProviderConfigs.map(async (prebuiltProviderConfig) => {
-        const packageName = this.convertFromPackageNameToNpm(
+        const packageName = await this.convertFromPackageNameToNpm(
           prebuiltProviderConfig.name,
         );
 
