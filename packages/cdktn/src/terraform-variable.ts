@@ -45,7 +45,7 @@ export abstract class VariableType {
   }
 
   public static tuple(...elements: string[]) {
-    return `tuple(${elements.join(", ")})`;
+    return `tuple([${elements.join(", ")}])`;
   }
 
   public static object(attributes: { [key: string]: string }) {
