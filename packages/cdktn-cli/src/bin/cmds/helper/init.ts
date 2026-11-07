@@ -38,6 +38,9 @@ import {
   ConstructsMakerProviderTarget,
   detectNodePackageManager,
   nodePackageManagerCommand,
+  InitTarget,
+  initTargetVersions,
+  selectTerraformBinary,
 } from "@cdktn/commons";
 import { templates, templatesDir } from "@cdktn/cli-core";
 import ciDetect from "@npmcli/ci-detect";
@@ -97,11 +100,22 @@ export type RunInitOptions = {
   tfeHostname?: string;
   silent?: boolean;
   nonInteractive?: boolean;
+  target?: InitTarget;
 };
 
 export async function runInit(argv: RunInitOptions) {
   const telemetryData: Record<string, unknown> = {};
   const destination = argv.destination || ".";
+  const ci: string | false = ciDetect();
+  const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
+
+  // First, so every later step runs the binary the project targets
+  const target =
+    argv.target ?? (interactive ? await askForTarget() : undefined);
+  if (target) {
+    selectTerraformBinary(initTargetVersions(target));
+  }
+
   const terraformRemoteHostname = argv.tfeHostname || tfcHostname;
   let token = "";
   if (!argv.local) {
@@ -187,8 +201,6 @@ This means that your Terraform state file will be stored locally on disk in a fi
     }
   }
 
-  const ci: string | false = ciDetect();
-  const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
   const sendCrashReports =
     argv.enableCrashReporting ??
     (interactive ? await askForCrashReportingConsent() : false);
@@ -249,6 +261,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
     providers,
     providersForceLocal: argv.providersForceLocal,
     silent: argv.silent,
+    target,
   });
 
   if (convertResult && importPath) {
@@ -319,6 +332,18 @@ This means that your Terraform state file will be stored locally on disk in a fi
     language: cdktfConfig.language,
     telemetry: { ...telemetryData, language: cdktfConfig.language },
   };
+}
+
+async function askForTarget(): Promise<InitTarget> {
+  return select<InitTarget>({
+    message: "Which CLI will run this project?",
+    choices: [
+      { name: "Terraform", value: "terraform" },
+      { name: "OpenTofu", value: "opentofu" },
+      { name: "Both", value: "both" },
+    ],
+    default: "both",
+  });
 }
 
 async function askForProviders(): Promise<string[] | undefined> {

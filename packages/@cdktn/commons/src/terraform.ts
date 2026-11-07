@@ -5,6 +5,7 @@ import * as path from "path";
 import { exec } from "./util";
 import { processState } from "./process-state";
 import { targetsOnlyOpenTofu } from "./registry";
+import type { TerraformTargetVersions } from "./config";
 import {
   parseTerraformCliVersion,
   TerraformCliName,
@@ -17,15 +18,24 @@ export function terraformBinaryName(): string {
 }
 
 /**
- * Sets `TERRAFORM_BINARY_NAME` to `tofu` when it is unset and the project in
- * the working directory targets only OpenTofu. Called once at CLI startup,
- * before anything changes directory, so child processes run the same binary.
+ * Sets `TERRAFORM_BINARY_NAME` to `tofu` when it is unset and `targetVersions`
+ * declares only OpenTofu, so child processes run the same binary.
  */
-export function selectTerraformBinaryForProject(): void {
+export function selectTerraformBinary(
+  targetVersions?: TerraformTargetVersions,
+): void {
   if (process.env.TERRAFORM_BINARY_NAME) return;
-  if (targetsOnlyOpenTofu(projectTargetVersions())) {
+  if (targetsOnlyOpenTofu(targetVersions)) {
     process.env.TERRAFORM_BINARY_NAME = "tofu";
   }
+}
+
+/**
+ * {@link selectTerraformBinary} for the project in the working directory.
+ * Called once at CLI startup, before anything changes directory.
+ */
+export function selectTerraformBinaryForProject(): void {
+  selectTerraformBinary(projectTargetVersions());
 }
 
 // Only the key is read: parsing the whole config has side effects, and an

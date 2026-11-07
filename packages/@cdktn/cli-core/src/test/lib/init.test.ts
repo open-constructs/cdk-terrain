@@ -4,10 +4,13 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { sscaff } from "sscaff";
+import { InitTarget } from "@cdktn/commons";
 import { init, templatesDir } from "../../lib/init";
+import { providerAdd } from "../../lib/provider-add";
 
 // The real template hooks install dependencies, so sscaff only lays down the cdktf.json that init reads back.
 jest.mock("sscaff", () => ({ sscaff: jest.fn() }));
+jest.mock("../../lib/provider-add", () => ({ providerAdd: jest.fn() }));
 
 const docsNote = expect.stringMatching(/https:\/\/cdktn\.io\/docs\//);
 
@@ -89,5 +92,66 @@ describe(".mcp.json on init", () => {
       existing,
     );
     expect(log).not.toHaveBeenCalledWith(docsNote);
+  });
+});
+
+describe("targetVersions on init", () => {
+  let destination: string;
+  const template = { terraform: ">=1.9.0", opentofu: ">=1.9.0" };
+  const readTargets = () =>
+    fs.readJsonSync(path.join(destination, "cdktf.json")).targetVersions;
+
+  const run = (target?: InitTarget) =>
+    init({
+      cdktnVersion: "1.0.0",
+      destination,
+      projectId: "test",
+      projectInfo: { Name: "test", Description: "test" },
+      templatePath: path.join(templatesDir, "typescript"),
+      sendCrashReports: false,
+      sendUsageTelemetry: false,
+      silent: true,
+      providers: ["random"],
+      target,
+    });
+
+  beforeEach(() => {
+    destination = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-init-"));
+    (sscaff as jest.Mock).mockImplementation(async (_src, target) => {
+      fs.writeJsonSync(path.join(target, "cdktf.json"), {
+        language: "typescript",
+        app: "npx tsx main.ts",
+        targetVersions: template,
+      });
+    });
+  });
+
+  afterEach(() => fs.removeSync(destination));
+
+  // provider add picks its registry from targetVersions
+  it.each([
+    ["terraform", { terraform: ">=1.5.7" }],
+    ["opentofu", { opentofu: ">=1.6.0" }],
+    ["both", { terraform: ">=1.5.7", opentofu: ">=1.6.0" }],
+  ] as const)(
+    "writes the %s targets before adding providers",
+    async (target, expected) => {
+      (providerAdd as jest.Mock).mockImplementation(async () => {
+        expect(readTargets()).toEqual(expected);
+        return false;
+      });
+
+      await run(target);
+
+      expect(providerAdd).toHaveBeenCalled();
+    },
+  );
+
+  it("keeps the template's targets without a target", async () => {
+    (providerAdd as jest.Mock).mockResolvedValue(false);
+
+    await run();
+
+    expect(readTargets()).toEqual(template);
   });
 });
