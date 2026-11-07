@@ -175,7 +175,7 @@ describe("CdktfProject with validateInstalledBinary", () => {
       identify.mockResolvedValue({ name: "terraform", version: "1.6.5" });
 
       await expect(run(project(), method)).rejects.toThrow(
-        `The installed binary "terraform" is terraform 1.6.5, which is outside the project's declared targetVersions.terraform range ">=1.10.0"`,
+        `is terraform 1.6.5, which is outside the project's declared targetVersions.terraform range ">=1.10.0"`,
       );
       expect(initialize).not.toHaveBeenCalled();
     },

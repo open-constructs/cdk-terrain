@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // Import via the package barrel so the util.ts ↔ logging.ts module-init cycle
+import * as fs from "fs";
 import { exec } from "./index";
 import { getLogger } from "log4js";
 
@@ -109,12 +110,17 @@ describe("exec() failure decoration", () => {
 });
 
 describe("exec() timeout", () => {
+  // A killed orphan stays a zombie where PID 1 never reaps, as in a CI container.
   const isAlive = (pid: number) => {
     try {
       process.kill(pid, 0);
-      return true;
     } catch {
       return false;
+    }
+    try {
+      return !/\) Z /.test(fs.readFileSync(`/proc/${pid}/stat`, "utf8"));
+    } catch {
+      return true;
     }
   };
 
