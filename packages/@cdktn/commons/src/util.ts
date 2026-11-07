@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { SpawnOptions } from "child_process";
+import { ChildProcess, SpawnOptions, spawnSync } from "child_process";
 import { spawn } from "cross-spawn";
 import * as fs from "fs-extra";
 import { https, http } from "follow-redirects";
@@ -103,6 +103,23 @@ export async function mkdtemp(closure: (dir: string) => Promise<void>) {
   }
 }
 
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
+// Kills a timed child and everything it started: `taskkill /t` on Windows, and
+// elsewhere the process group the child leads (timed children are detached).
+function killProcessTree(child: ChildProcess) {
+  if (!child.pid) return;
+  try {
+    if (process.platform === "win32") {
+      spawnSync("taskkill", ["/pid", String(child.pid), "/t", "/f"]);
+    } else {
+      process.kill(-child.pid, "SIGKILL");
+    }
+  } catch {
+    // Already exited between the timeout firing and the kill.
+  }
+}
+
 /**
  * Spawn a child process and resolve with its stdout, or reject with a decorated Error on non-zero exit.
  *
@@ -139,14 +156,43 @@ export const exec = async (
 
   // Drop spawn's `signal` option: the child already gets the interrupt via the process group, and a second signal
   // aborts terraform's graceful shutdown. Just wait for its own "close".
-  const { signal: _signal, logStderrAsDebug, ...spawnOptions } = options;
+  const {
+    signal: _signal,
+    logStderrAsDebug,
+    timeout,
+    ...spawnOptions
+  } = options;
 
   const logStderr = logStderrAsDebug ? processLoggerDebug : processLoggerError;
 
+  // setTimeout fires at once for anything above its maximum, Infinity included.
+  const timeoutMs = timeout ? Math.min(timeout, MAX_TIMEOUT_MS) : undefined;
+
   return new Promise((ok, ko) => {
-    const child = spawn(command, args, spawnOptions);
+    // A timed child leads its own process group on POSIX so a timeout can kill
+    // what it forked. It then misses the terminal's interrupt, which only the
+    // short `version` probe sets a timeout for.
+    const child = spawn(command, args, {
+      ...spawnOptions,
+      detached: timeoutMs !== undefined && process.platform !== "win32",
+    });
     const out = new Array<string>();
     const err = new Array<string>();
+
+    // Not spawn's own `timeout`: that kills only the direct child and then waits
+    // for "close", which a descendant holding the pipes can delay indefinitely.
+    const timer = timeoutMs
+      ? setTimeout(() => {
+          killProcessTree(child);
+          child.stdout?.destroy();
+          child.stderr?.destroy();
+          const error = new Error(
+            `${command} ${args.join(" ")} timed out after ${timeout}ms`,
+          );
+          attachProcessOutput(error, err.join(""), out.join(""));
+          ko(error);
+        }, timeoutMs)
+      : undefined;
     if (stdout !== undefined) {
       child.stdout?.on("data", (chunk: Buffer) => {
         const sanitizedChunk = options.noColor
@@ -188,8 +234,12 @@ export const exec = async (
         err.push(sanitizedChunk);
       });
     }
-    child.once("error", (err: any) => ko(err));
+    child.once("error", (err: any) => {
+      clearTimeout(timer);
+      ko(err);
+    });
     child.once("close", (code: number) => {
+      clearTimeout(timer);
       if (code !== 0) {
         const error = new Error(
           `${command} ${args.join(" ")} exited with code ${code}`,

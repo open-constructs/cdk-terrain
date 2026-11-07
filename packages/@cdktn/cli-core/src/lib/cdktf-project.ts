@@ -4,10 +4,13 @@ import {
   Errors,
   SynthOrigin,
   ensureAllSettledBeforeThrowing,
+  identifyTerraformCli,
   logger,
   readConfigSync,
   sendTelemetry,
+  terraformBinaryName,
 } from "@cdktn/commons";
+import { checkInstalledBinaryAgainstTargets } from "./installed-binary-check";
 import { SynthesizedStack, SynthStack } from "./synth-stack";
 import { printAnnotations } from "./synth";
 import {
@@ -399,6 +402,7 @@ export class CdktfProject {
   }
 
   public async diff(opts: DiffOptions = {}) {
+    await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
       : await this.synth(opts.noColor);
@@ -553,6 +557,7 @@ export class CdktfProject {
   }
 
   public async deploy(opts: MutationOptions = {}) {
+    await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
       : await this.synth(opts.noColor);
@@ -582,6 +587,7 @@ export class CdktfProject {
   }
 
   public async destroy(opts: MutationOptions = {}) {
+    await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
       : await this.synth(opts.noColor);
@@ -631,6 +637,28 @@ export class CdktfProject {
     await this.executeAndReport("destroy", stacksToRun, next, opts);
   }
 
+  /**
+   * When the project opts in via `validateInstalledBinary: true` in
+   * cdktf.json, verifies the installed Terraform-compatible binary against
+   * the project's declared `targetVersions`, once per command and before any
+   * stack runs.
+   */
+  private async validateInstalledBinaryIfConfigured() {
+    const config = readConfigSync();
+    if (!config.validateInstalledBinary) {
+      return;
+    }
+
+    const errors = checkInstalledBinaryAgainstTargets(
+      await identifyTerraformCli(),
+      config.targetVersions,
+      terraformBinaryName,
+    );
+    if (errors.length > 0) {
+      throw Errors.Usage(errors.join("\n"));
+    }
+  }
+
   public async projectTelemetry(command: string, payload: any): Promise<void> {
     const config = readConfigSync();
     await sendTelemetry(command, {
@@ -640,6 +668,7 @@ export class CdktfProject {
   }
 
   public async fetchOutputs(opts: FetchOutputOptions) {
+    await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
       : await this.synth();

@@ -116,4 +116,18 @@ describe("terraform binary probe", () => {
 
     await expect(terraformCli()).resolves.toEqual({ name: "unknown" });
   });
+
+  // validateInstalledBinary must not pass a binary it could not check.
+  it("identifies a binary whose `version` outlives the telemetry probe's timeout", async () => {
+    const binary = path.join(fixtureDir, "terraform");
+    fs.writeFileSync(binary, "#!/bin/sh\nsleep 2\necho 'Terraform v1.12.6'\n", {
+      mode: 0o755,
+    });
+    const { identifyTerraformCli } = loadProbe(binary);
+
+    await expect(identifyTerraformCli()).resolves.toEqual({
+      name: "terraform",
+      version: "1.12.6",
+    });
+  }, 10000);
 });

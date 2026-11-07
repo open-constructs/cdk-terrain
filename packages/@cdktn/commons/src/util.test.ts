@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // Import via the package barrel so the util.ts ↔ logging.ts module-init cycle
+import * as fs from "fs";
 import { exec } from "./index";
 import { getLogger } from "log4js";
 
@@ -105,5 +106,61 @@ describe("exec() failure decoration", () => {
 
     expect(`${error}`).toContain(STDERR_PAYLOAD);
     expect(`${error}`).toContain("exited with code 6");
+  });
+});
+
+describe("exec() timeout", () => {
+  // A killed orphan stays a zombie where PID 1 never reaps, as in a CI container.
+  const isAlive = (pid: number) => {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      return false;
+    }
+    try {
+      return !/\) Z /.test(fs.readFileSync(`/proc/${pid}/stat`, "utf8"));
+    } catch {
+      return true;
+    }
+  };
+
+  // A wrapper that forks the real binary instead of exec'ing it.
+  it("kills what the timed-out command started", async () => {
+    const parent = [
+      `const c = require("child_process").spawn(process.execPath, ["-e", "setTimeout(() => {}, 30000)"], { stdio: "ignore" })`,
+      `process.stdout.write(String(c.pid))`,
+      `setTimeout(() => {}, 30000)`,
+    ].join("; ");
+
+    const error: DecoratedError = await exec(
+      process.execPath,
+      ["-e", parent],
+      { timeout: 1000 },
+      undefined,
+      () => {},
+    ).then(
+      () => {
+        throw new Error("exec() resolved unexpectedly");
+      },
+      (e) => e,
+    );
+    expect(error.message).toContain("timed out after 1000ms");
+
+    const grandchild = Number(error.stdout);
+    expect(grandchild).toBeGreaterThan(0);
+    for (let i = 0; i < 40 && isAlive(grandchild); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(isAlive(grandchild)).toBe(false);
+  }, 10000);
+
+  it("treats an infinite timeout as none", async () => {
+    await expect(
+      exec(
+        process.execPath,
+        ["-e", `setTimeout(() => process.stdout.write("done"), 50)`],
+        { timeout: Infinity },
+      ),
+    ).resolves.toBe("done");
   });
 });

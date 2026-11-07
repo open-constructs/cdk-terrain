@@ -58,24 +58,12 @@ export class ProviderConstraint {
   // TODO: add examples to cli command description (i.e. =,~>.> etc.)
   // if no version constraint is specified, we assume the latest version
   // if specific version is specified without e.g. =, we allow patch level increments (e.g. ~>2.12 for "2.12")
-  /** Whether the source as given named a host, rather than gaining one here. */
-  private readonly namedHost: boolean;
-
   constructor(
     source: string,
     public readonly version: string | undefined,
     registry: Registry = TERRAFORM_REGISTRY,
   ) {
     this.source = normalizeProviderSource(source, registry);
-    this.namedHost = source.split("/").length === 3;
-  }
-
-  /**
-   * Source for a `required_providers` block. Keeps a host the user wrote; drops
-   * one added by normalization, since a host pins the CLI to that registry.
-   */
-  public get requiredProvidersSource(): string {
-    return this.namedHost ? this.source : `${this.namespace}/${this.name}`;
   }
 
   static fromConfigEntry(
@@ -190,7 +178,17 @@ export class DependencyManager {
     }
   }
 
-  async upgradeProvider(constraint: ProviderConstraint) {
+  /**
+   * For a local provider, also returns its updated cdktf.json entry, which is
+   * what bindings should be generated from.
+   */
+  async upgradeProvider(constraint: ProviderConstraint): Promise<
+    | { addedLocalProvider: false }
+    | {
+        addedLocalProvider: true;
+        updatedEntry: string | TerraformDependencyConstraint;
+      }
+  > {
     console.log(`Upgrading ${constraint.simplifiedName}...`);
     const cdktfJson = new CdktfConfigManager();
     const prebuiltVersion = await this.getCurrentlyInstalledVersion(constraint);
@@ -199,8 +197,8 @@ export class DependencyManager {
       return { addedLocalProvider: false };
     }
     if (await cdktfJson.hasProvider(constraint)) {
-      await cdktfJson.updateProvider(constraint);
-      return { addedLocalProvider: true };
+      const updatedEntry = await cdktfJson.updateProvider(constraint);
+      return { addedLocalProvider: true, updatedEntry };
     }
 
     throw Errors.Usage(
