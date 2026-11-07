@@ -272,7 +272,7 @@ export class CdktfStack {
     const problems = checkInstalledBinaryAgainstTargets(
       await terraform.version(),
       config.targetVersions,
-      terraformBinaryName,
+      terraformBinaryName(),
     );
     if (problems.length > 0) {
       throw Errors.Usage(problems.join("\n"));

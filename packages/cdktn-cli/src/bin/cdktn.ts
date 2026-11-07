@@ -8,6 +8,7 @@ import * as os from "os";
 import * as fs from "fs-extra";
 import {
   readCDKTFManifest,
+  selectTerraformBinaryForProject,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
 import { runCli } from "./error-handling";
@@ -39,6 +40,8 @@ const ensurePluginCache = (): string => {
 if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
   process.env.TF_PLUGIN_CACHE_DIR = ensurePluginCache();
 }
+
+selectTerraformBinaryForProject();
 
 const customCompletion = function (
   _current: string,
@@ -117,6 +120,16 @@ const cli = yargs
     default: false,
     required: false,
     desc: "Dont set TF_PLUGIN_CACHE_DIR automatically. This is useful when the plugin cache is configured differently. Supported using the env CDKTF_DISABLE_PLUGIN_CACHE_ENV.",
+  })
+  .option("binary", {
+    type: "string",
+    required: false,
+    desc: "The Terraform-compatible CLI to run, e.g. tofu. Defaults to the TERRAFORM_BINARY_NAME env, then to tofu when targetVersions declares only opentofu, then to terraform.",
+  })
+  .middleware((argv) => {
+    if (argv.binary) {
+      process.env.TERRAFORM_BINARY_NAME = String(argv.binary);
+    }
   })
   .option("log-level", {
     type: "string",

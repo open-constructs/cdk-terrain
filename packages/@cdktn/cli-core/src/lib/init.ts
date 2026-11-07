@@ -3,7 +3,7 @@
 import * as path from "path";
 import * as fs from "fs-extra";
 import * as pkgUp from "pkg-up";
-import { Errors } from "@cdktn/commons";
+import { Errors, InitTarget, initTargetVersions } from "@cdktn/commons";
 
 import { sscaff } from "sscaff";
 import { FUTURE_FLAGS } from "cdktn/lib/features";
@@ -45,6 +45,8 @@ export type InitArgs = {
   sendCrashReports: boolean;
   sendUsageTelemetry: boolean;
   silent?: boolean;
+  /** Replaces the template's `targetVersions`; left as the template has it when unset. */
+  target?: InitTarget;
 };
 
 export const templatesDir = path.join(__dirname, "..", "..", "templates");
@@ -99,6 +101,7 @@ export async function init({
   providers,
   providersForceLocal,
   silent,
+  target,
 }: InitArgs) {
   // A remote template name should not collide with a template shipped with the CLI
   const builtInName =
@@ -140,6 +143,17 @@ export async function init({
   } else if (builtInName && !silent) {
     console.log(
       "Found an existing .mcp.json; to add the cdktn MCP server see https://cdktn.io/docs/ai-agents#set-up-your-agent",
+    );
+  }
+
+  // Before providers are added: the targets pick the registry they are looked up in
+  if (target) {
+    const configPath = path.join(destination, "cdktf.json");
+    const config = fs.readJsonSync(configPath);
+    fs.writeJsonSync(
+      configPath,
+      { ...config, targetVersions: initTargetVersions(target) },
+      { spaces: 2 },
     );
   }
 
