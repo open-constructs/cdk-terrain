@@ -121,6 +121,16 @@ const cli = yargs
     required: false,
     desc: "Dont set TF_PLUGIN_CACHE_DIR automatically. This is useful when the plugin cache is configured differently. Supported using the env CDKTF_DISABLE_PLUGIN_CACHE_ENV.",
   })
+  .option("binary", {
+    type: "string",
+    required: false,
+    desc: "The Terraform-compatible CLI to run, e.g. tofu. Defaults to the TERRAFORM_BINARY_NAME env, then to tofu when targetVersions declares only opentofu, then to terraform.",
+  })
+  .middleware((argv) => {
+    if (argv.binary) {
+      process.env.TERRAFORM_BINARY_NAME = String(argv.binary);
+    }
+  })
   .option("log-level", {
     type: "string",
     required: false,
