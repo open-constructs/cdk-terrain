@@ -70,13 +70,13 @@ export const TERRAFORM_REGISTRY: Registry = {
 // Paths follow getDocumentationUrl.ts in opentofu/registry-ui: /provider/
 // singular, a v-prefixed version, and "datasources" unhyphenated. That UI has
 // no ephemeral-resource route yet (opentofu/registry-ui#348), so those fall
-// back to the provider page.
+// back to the provider page. Its paths are lowercase only.
 export const OPENTOFU_REGISTRY: Registry = {
   hostname: "registry.opentofu.org",
   displayName: "OpenTofu Registry",
   browseUrl: "https://search.opentofu.org/providers",
   docsUrl(namespace, provider, version, kind, name) {
-    const base = `https://search.opentofu.org/provider/${namespace}/${provider}/v${version}/docs`;
+    const base = `https://search.opentofu.org/provider/${namespace.toLowerCase()}/${provider.toLowerCase()}/v${version}/docs`;
     switch (kind) {
       case "provider":
       case "ephemeral-resource":
@@ -92,7 +92,7 @@ export const OPENTOFU_REGISTRY: Registry = {
   // v the page silently renders a version list instead of the module.
   moduleDocsUrl(source, version, submodule) {
     const exact = exactModuleVersion(version);
-    const base = `https://search.opentofu.org/module/${source}/${exact ? `v${exact}` : "latest"}`;
+    const base = `https://search.opentofu.org/module/${source.toLowerCase()}/${exact ? `v${exact}` : "latest"}`;
     return submodule ? `${base}/submodule/${submodule}` : base;
   },
 };
