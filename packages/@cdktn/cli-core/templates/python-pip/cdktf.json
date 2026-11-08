@@ -1,4 +1,5 @@
 {
+  "{{ schemaKey }}": "https://cdn.jsdelivr.net/gh/open-constructs/cdk-terrain@v{{cdktf_version}}/cdktf.schema.json",
   "language": "python",
   "app": "python3 ./main.py",
   "projectId": "{{projectId}}",

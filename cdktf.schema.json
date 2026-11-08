@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cdn.jsdelivr.net/gh/open-constructs/cdk-terrain/cdktf.schema.json",
+  "title": "CDK Terrain project configuration (cdktf.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "URI of the JSON schema used to validate this file."
+    },
+    "language": {
+      "description": "Language the project is written in. Defaults to \"typescript\".",
+      "enum": ["typescript", "python", "csharp", "java", "go"]
+    },
+    "app": {
+      "type": "string",
+      "description": "Command that runs the app and synthesizes its stacks, e.g. \"npx tsx main.ts\"."
+    },
+    "output": {
+      "type": "string",
+      "description": "Directory synthesized stacks are written to.",
+      "default": "cdktf.out"
+    },
+    "codeMakerOutput": {
+      "type": "string",
+      "description": "Directory generated provider and module bindings are written to.",
+      "default": ".gen"
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Anonymous project identifier attached to telemetry and crash reports."
+    },
+    "sendCrashReports": {
+      "$ref": "#/definitions/booleanish",
+      "description": "Whether the CLI sends crash reports."
+    },
+    "sendUsageTelemetry": {
+      "$ref": "#/definitions/booleanish",
+      "description": "Whether the CLI sends anonymous usage telemetry."
+    },
+    "terraformProviders": {
+      "type": "array",
+      "description": "Providers to generate bindings for with `cdktn get`.",
+      "items": {
+        "$ref": "#/definitions/dependency",
+        "examples": ["hashicorp/aws@~> 5.0"]
+      }
+    },
+    "terraformModules": {
+      "type": "array",
+      "description": "Modules to generate bindings for with `cdktn get`.",
+      "items": {
+        "$ref": "#/definitions/dependency",
+        "examples": ["terraform-aws-modules/vpc/aws@~> 5.0"]
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "Context values passed to the app, including feature flags."
+    },
+    "targetVersions": {
+      "type": "object",
+      "description": "npm semver ranges of the Terraform-compatible CLIs the project supports, written to required_version.",
+      "properties": {
+        "terraform": {
+          "type": "string",
+          "description": "Supported Terraform versions, e.g. \">=1.5.7\"."
+        },
+        "opentofu": {
+          "type": "string",
+          "description": "Supported OpenTofu versions, e.g. \">=1.6.0\"."
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "watchPattern": {
+      "type": "array",
+      "description": "Glob patterns `cdktn watch` watches. Written with the language's default on the first run if unset.",
+      "items": { "type": "string" }
+    },
+    "validateInstalledBinary": {
+      "type": "boolean",
+      "description": "When true, diff, deploy and destroy check the installed binary satisfies targetVersions before running it."
+    },
+    "languageOptions": {
+      "type": "object",
+      "description": "Language-specific code generation options.",
+      "properties": {
+        "importExtension": {
+          "type": "string",
+          "description": "TypeScript only. Suffix appended to relative imports in generated code; use \".js\" or \".ts\" for ESM.",
+          "default": ""
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "booleanish": {
+      "oneOf": [{ "type": "boolean" }, { "enum": ["true", "false"] }]
+    },
+    "dependency": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Source with an optional version constraint, e.g. \"<source>@<version>\"."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "source": { "type": "string" },
+            "version": { "type": "string" },
+            "namespace": { "type": "string" }
+          },
+          "required": ["name", "source"]
+        }
+      ]
+    }
+  }
+}

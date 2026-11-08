@@ -50,6 +50,8 @@ export type InitArgs = {
 export const templatesDir = path.join(__dirname, "..", "..", "templates");
 
 const DEFAULT_TEMPLATE_VARIABLES: Record<string, string> = {
+  // Templated so editors don't try to load the unrendered schema URL from the template source
+  schemaKey: "$schema",
   packageManager: "npm",
   pmRun: "npm run",
   pmAdd: "npm install",
