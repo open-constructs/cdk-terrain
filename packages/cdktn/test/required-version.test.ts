@@ -5,7 +5,6 @@ import * as os from "node:os";
 import * as path from "node:path";
 import {
   AnnotationMetadataEntryType,
-  App,
   Manifest,
   TerraformStack,
   Testing,
@@ -37,10 +36,9 @@ const requiredVersion = (constraint: string) => ({
   terraform: { required_version: constraint },
 });
 
-// Testing.app enables every future flag, including requiredVersionFromTargetVersions
-const stackTargeting = (targetVersions?: TerraformTargetVersions, app?: App) =>
+const stackTargeting = (targetVersions?: TerraformTargetVersions) =>
   new TerraformStack(
-    app ?? Testing.app({ context: targetVersions && { targetVersions } }),
+    Testing.app({ context: targetVersions && { targetVersions } }),
     "test",
   );
 
@@ -110,17 +108,6 @@ test("writes a settings file without required_version for a range that allows ev
 
 test("writes no settings files when targetVersions isn't declared", () => {
   const outdir = Testing.fullSynth(stackTargeting());
-
-  expect(readSettingsFile(outdir, "settings.tf.json")).toBeUndefined();
-  expect(readSettingsFile(outdir, "settings.tofu.json")).toBeUndefined();
-});
-
-test("writes no settings files when the feature flag is disabled", () => {
-  const app = Testing.app({
-    enableFutureFlags: false,
-    context: { targetVersions: { terraform: ">=1.5.7", opentofu: ">=1.6.0" } },
-  });
-  const outdir = Testing.fullSynth(stackTargeting(undefined, app));
 
   expect(readSettingsFile(outdir, "settings.tf.json")).toBeUndefined();
   expect(readSettingsFile(outdir, "settings.tofu.json")).toBeUndefined();

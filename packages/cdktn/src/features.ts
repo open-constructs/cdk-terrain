@@ -47,21 +47,7 @@ export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
  */
 export const CANONICAL_ASSET_HASHES = "canonicalAssetHashes";
 
-/**
- * When enabled and the project declares `targetVersions`, each stack's
- * directory gets a `settings.tf.json` holding the Terraform range and a
- * `settings.tofu.json` holding the OpenTofu range, both as
- * `terraform.required_version`. Terraform ignores `.tofu.json` files, and
- * OpenTofu 1.8+ loads `settings.tofu.json` in place of `settings.tf.json`,
- * so each binary enforces only its own range.
- *
- * When disabled, `targetVersions` only drives synth-time validation.
- */
-export const REQUIRED_VERSION_FROM_TARGET_VERSIONS =
-  "requiredVersionFromTargetVersions";
-
 export const FUTURE_FLAGS = {
   [FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS]: "true",
   [CANONICAL_ASSET_HASHES]: "true",
-  [REQUIRED_VERSION_FROM_TARGET_VERSIONS]: "true",
 };

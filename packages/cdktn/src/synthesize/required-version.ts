@@ -5,7 +5,6 @@ import * as fs from "fs";
 import * as semver from "semver";
 import { IConstruct } from "constructs";
 import { Annotations } from "../annotations";
-import { REQUIRED_VERSION_FROM_TARGET_VERSIONS } from "../features";
 import {
   resolveTargetVersions,
   TARGET_VERSIONS_CONTEXT_KEY,
@@ -32,16 +31,13 @@ const OPENTOFU_FIRST_RELEASE = "1.6.0";
 const OPENTOFU_TOFU_FILES_SINCE = "1.8.0";
 
 /**
- * Checks whether `required_version` should be written from `targetVersions` for the given scope: the feature flag is
- * on and `targetVersions` is declared, rather than falling back to the defaults.
+ * Checks whether `required_version` should be written from `targetVersions` for the given scope: `targetVersions` is
+ * declared, rather than falling back to the defaults.
  * @param scope - construct whose context is read, usually a stack
  * @returns true if the settings files should be written
  */
 export function writesRequiredVersion(scope: IConstruct): boolean {
-  return (
-    !!scope.node.tryGetContext(REQUIRED_VERSION_FROM_TARGET_VERSIONS) &&
-    scope.node.tryGetContext(TARGET_VERSIONS_CONTEXT_KEY) !== undefined
-  );
+  return scope.node.tryGetContext(TARGET_VERSIONS_CONTEXT_KEY) !== undefined;
 }
 
 /**
@@ -204,7 +200,7 @@ function renderHclSettings(requiredVersion: string | undefined): string {
 
 /**
  * Removes the settings files, in either format, written by a previous synth, so they don't outlive a change to
- * `targetVersions`, the feature flag or the output format.
+ * `targetVersions` or the output format.
  * @param workingDirectory - absolute path of the stack's working directory
  */
 export function removeRequiredVersionFiles(workingDirectory: string): void {
