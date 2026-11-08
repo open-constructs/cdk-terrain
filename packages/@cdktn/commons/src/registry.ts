@@ -1,5 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import { targetsOnlyOpenTofu } from "cdktn/lib/validations";
 import { TerraformTargetVersions } from "./config";
 
 /** A provider registry and the URL shapes that go with it. */
@@ -97,14 +98,7 @@ export function registryForTargetVersions(
     : TERRAFORM_REGISTRY;
 }
 
-export function targetsOnlyOpenTofu(
-  targetVersions?: TerraformTargetVersions,
-): boolean {
-  return (
-    targetVersions?.opentofu !== undefined &&
-    targetVersions?.terraform === undefined
-  );
-}
+export { targetsOnlyOpenTofu };
 
 /** The registries cdktn knows how to query for available versions. */
 export const PUBLIC_REGISTRIES: readonly Registry[] = [

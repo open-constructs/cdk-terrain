@@ -1,13 +1,12 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import * as fs from "fs";
-import * as path from "path";
 import { exec } from "./util";
 import { processState } from "./process-state";
 import { targetsOnlyOpenTofu } from "./registry";
 import type { TerraformTargetVersions } from "./config";
 import {
   parseTerraformCliVersion,
+  projectTargetVersions,
   TerraformCliName,
 } from "cdktn/lib/validations";
 
@@ -31,23 +30,11 @@ export function selectTerraformBinary(
 }
 
 /**
- * {@link selectTerraformBinary} for the project in the working directory.
- * Called once at CLI startup, before anything changes directory.
+ * {@link selectTerraformBinary} for the project at or above the working
+ * directory. Called once at CLI startup, before anything changes directory.
  */
 export function selectTerraformBinaryForProject(): void {
   selectTerraformBinary(projectTargetVersions());
-}
-
-// Only the key is read: parsing the whole config has side effects, and an
-// invalid one is reported by the command that reads it.
-function projectTargetVersions() {
-  try {
-    return JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), "cdktf.json"), "utf8"),
-    ).targetVersions;
-  } catch {
-    return undefined;
-  }
 }
 
 // The Terraform CLI version parser lives in the cdktn package (its canonical

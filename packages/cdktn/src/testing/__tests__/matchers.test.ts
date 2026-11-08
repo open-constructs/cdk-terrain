@@ -314,6 +314,58 @@ describe("matchers", () => {
         expect.stringMatching(new RegExp(`${tf1_3}|${tf1_4}|${tf1_5}`)),
       );
     });
+
+    // The CLI's choice; its cases are covered in commons
+    it("runs tofu for a project that targets only OpenTofu", () => {
+      const synth = Testing.fullSynth(
+        new TerraformStack(Testing.app(), "test"),
+      );
+      const project = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-tofu-"));
+      fs.writeFileSync(
+        path.join(project, "cdktf.json"),
+        JSON.stringify({ targetVersions: { opentofu: ">=1.6.0" } }),
+      );
+      // A tofu on PATH that records its arguments and reports the stack valid
+      const calls = path.join(project, "calls");
+      const script = path.join(project, "fake-tofu.js");
+      fs.writeFileSync(
+        script,
+        `require("fs").appendFileSync(${JSON.stringify(calls)}, process.argv.slice(2).join(" ") + "\\n");` +
+          `console.log('{"valid":true}');`,
+      );
+      fs.writeFileSync(
+        path.join(project, "tofu"),
+        `#!/bin/sh\nexec node "${script}" "$@"\n`,
+        { mode: 0o755 },
+      );
+      fs.writeFileSync(
+        path.join(project, "tofu.cmd"),
+        `@node "${script}" %*\r\n`,
+      );
+
+      const { TERRAFORM_BINARY_NAME, PATH } = process.env;
+      const cwd = process.cwd();
+      delete process.env.TERRAFORM_BINARY_NAME;
+      process.env.PATH = `${project}${path.delimiter}${PATH}`;
+      process.chdir(project);
+      let res: ReturnType<typeof toBeValidTerraform>;
+      let ran: string;
+      try {
+        res = toBeValidTerraform(synth);
+        ran = fs.readFileSync(calls, "utf8");
+      } finally {
+        process.chdir(cwd);
+        process.env.PATH = PATH;
+        if (TERRAFORM_BINARY_NAME !== undefined)
+          process.env.TERRAFORM_BINARY_NAME = TERRAFORM_BINARY_NAME;
+        fs.rmSync(project, { recursive: true, force: true });
+      }
+
+      expect(res.pass).toBe(true);
+      expect(ran).toContain(
+        "init -backend=false -input=false\nvalidate -json\n",
+      );
+    });
   });
 
   describe("toPlanSuccessfully", () => {

@@ -60,6 +60,17 @@ describe("selectTerraformBinaryForProject", () => {
     expect(terraformBinaryName()).toBe("tofu");
   });
 
+  it("runs tofu from a subdirectory of the project", () => {
+    writeConfig(opentofuOnly);
+    const subdirectory = path.join(projectDir, "src", "stacks");
+    fs.mkdirpSync(subdirectory);
+    process.chdir(subdirectory);
+
+    selectTerraformBinaryForProject();
+
+    expect(terraformBinaryName()).toBe("tofu");
+  });
+
   it.each([
     [
       "a project that targets both",

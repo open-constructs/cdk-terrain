@@ -5,7 +5,8 @@ import * as os from "os";
 import * as path from "path";
 import * as crypto from "crypto";
 import { execSync, SpawnSyncReturns } from "child_process";
-import { snakeCase, terraformBinaryName } from "../util";
+import { snakeCase } from "../util";
+import { inferTerraformBinaryName } from "../validations/target-versions";
 import {
   invalidStack,
   matchersFoundErrorsInStack,
@@ -525,6 +526,7 @@ function getManifestStacks(
  * @param received one or more `fullSynth` output directories to warm up
  */
 export function warmUpProviderLockFileCache(received: string[]): void {
+  const terraformBinaryName = inferTerraformBinaryName();
   received
     .flatMap((dir) =>
       getManifestStacks(dir).map(([, stack]) =>
@@ -560,6 +562,7 @@ export function toBeValidTerraform(received: string): AssertionReturn {
   }
 
   try {
+    const terraformBinaryName = inferTerraformBinaryName();
     const stacks = getManifestStacks(received);
 
     stacks.forEach(([name, stack]) => {
@@ -651,6 +654,7 @@ export function toPlanSuccessfully(
   }
 
   try {
+    const terraformBinaryName = inferTerraformBinaryName();
     const stacks = getManifestStacks(received);
 
     stacks.forEach(([, stack]) => {
