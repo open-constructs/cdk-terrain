@@ -62,4 +62,60 @@ describeIfBundleExists("binary selection", () => {
     project({ opentofu: ">=1.6.0" });
     expect(await binarySeenBy([])).toBe("tofu");
   });
+
+  it("lets init --target terraform run terraform inside an OpenTofu-only project", async () => {
+    project({ opentofu: ">=1.6.0" });
+    // terraform and tofu on PATH that record each call
+    const bin = path.join(cwd, "bin");
+    const calls = path.join(cwd, "calls");
+    fs.mkdirSync(bin);
+    for (const name of ["terraform", "tofu"]) {
+      const script = path.join(bin, `${name}.js`);
+      fs.writeFileSync(
+        script,
+        `require("fs").appendFileSync(${JSON.stringify(calls)}, ${JSON.stringify(name)} + " " + process.argv.slice(2).join(" ") + "\\n");`,
+      );
+      fs.writeFileSync(
+        path.join(bin, name),
+        `#!/bin/sh\nexec node "${script}" "$@"\n`,
+        { mode: 0o755 },
+      );
+      fs.writeFileSync(
+        path.join(bin, `${name}.cmd`),
+        `@node "${script}" %*\r\n`,
+      );
+    }
+    const newProject = path.join(cwd, "new");
+    fs.mkdirSync(newProject);
+
+    const { TERRAFORM_BINARY_NAME: _, ...parentEnv } = process.env;
+    const pathKey =
+      Object.keys(parentEnv).find((key) => key.toUpperCase() === "PATH") ??
+      "PATH";
+    // An unknown template stops init after its version probe
+    await execa(
+      cdktnBin,
+      [
+        "init",
+        "--target",
+        "terraform",
+        "--local",
+        "--template",
+        "not-a-template",
+      ],
+      {
+        cwd: newProject,
+        reject: false,
+        env: {
+          ...parentEnv,
+          [pathKey]: `${bin}${path.delimiter}${parentEnv[pathKey]}`,
+        },
+        extendEnv: false,
+      },
+    );
+
+    const ran = fs.readFileSync(calls, "utf8");
+    expect(ran).toContain("terraform version");
+    expect(ran).not.toContain("tofu");
+  });
 });

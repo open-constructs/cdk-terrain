@@ -41,8 +41,6 @@ if (!CDKTF_DISABLE_PLUGIN_CACHE_ENV) {
   process.env.TF_PLUGIN_CACHE_DIR = ensurePluginCache();
 }
 
-selectTerraformBinaryForProject();
-
 const customCompletion = function (
   _current: string,
   argv: any,
@@ -129,6 +127,9 @@ const cli = yargs
   .middleware((argv) => {
     if (argv.binary) {
       process.env.TERRAFORM_BINARY_NAME = String(argv.binary);
+    } else if (argv._[0] !== "init") {
+      // init takes its binary from the project it creates, not one around it
+      selectTerraformBinaryForProject();
     }
   })
   .option("log-level", {
