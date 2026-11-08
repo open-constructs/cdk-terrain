@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://cdn.jsdelivr.net/gh/open-constructs/cdk-terrain/cdktf.schema.json",
+  "$id": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/main/cdktf.schema.json",
   "title": "CDK Terrain project configuration (cdktf.json)",
   "type": "object",
   "properties": {

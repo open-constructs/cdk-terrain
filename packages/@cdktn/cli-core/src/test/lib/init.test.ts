@@ -141,7 +141,7 @@ describe("cdktf.json schema", () => {
       const config = fs.readJsonSync(path.join(destination, "cdktf.json"));
 
       expect(config.$schema).toBe(
-        "https://cdn.jsdelivr.net/gh/open-constructs/cdk-terrain@v1.2.3/cdktf.schema.json",
+        "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v1.2.3/cdktf.schema.json",
       );
       expect(validate(config) ? [] : validate.errors).toEqual([]);
     },

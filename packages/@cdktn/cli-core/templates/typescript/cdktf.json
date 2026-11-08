@@ -1,5 +1,5 @@
 {
-  "{{ schemaKey }}": "https://cdn.jsdelivr.net/gh/open-constructs/cdk-terrain@v{{cdktf_version}}/cdktf.schema.json",
+  "{{ schemaKey }}": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
   "language": "typescript",
   "app": "{{ pmExec }} tsx main.ts",
   "projectId": "{{projectId}}",
