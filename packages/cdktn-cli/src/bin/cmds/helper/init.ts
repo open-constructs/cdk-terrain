@@ -109,13 +109,6 @@ export async function runInit(argv: RunInitOptions) {
   const ci: string | false = ciDetect();
   const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
 
-  // First, so every later step runs the binary the project targets
-  const target =
-    argv.target ?? (interactive ? await askForTarget() : undefined);
-  if (target) {
-    selectTerraformBinary(initTargetVersions(target));
-  }
-
   const terraformRemoteHostname = argv.tfeHostname || tfcHostname;
   let token = "";
   if (!argv.local) {
@@ -261,7 +254,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
     providers,
     providersForceLocal: argv.providersForceLocal,
     silent: argv.silent,
-    target,
+    target: argv.target,
   });
 
   if (convertResult && importPath) {
@@ -332,6 +325,23 @@ This means that your Terraform state file will be stored locally on disk in a fi
     language: cdktfConfig.language,
     telemetry: { ...telemetryData, language: cdktfConfig.language },
   };
+}
+
+/**
+ * The CLI the new project targets, asked for when interactive, and selects
+ * its binary for the rest of init.
+ */
+export async function chooseInitTarget(
+  argv: Pick<RunInitOptions, "target" | "nonInteractive">,
+): Promise<InitTarget | undefined> {
+  const interactive =
+    !ciDetect() && !argv.nonInteractive && isInteractiveTerminal();
+  const target =
+    argv.target ?? (interactive ? await askForTarget() : undefined);
+  if (target) {
+    selectTerraformBinary(initTargetVersions(target));
+  }
+  return target;
 }
 
 async function askForTarget(): Promise<InitTarget> {

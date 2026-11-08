@@ -13,6 +13,9 @@ const bundleExists = fs.existsSync(path.join(cdktnCliRoot, "bundle/bin"));
 // Needs the bundled CLI, which `build` produces
 const describeIfBundleExists = bundleExists ? describe : describe.skip;
 
+// Each test starts the CLI, and synth starts the app too
+jest.setTimeout(30_000);
+
 // The synth app is a child process, so it sees the binary every later step runs
 describeIfBundleExists("binary selection", () => {
   let cwd: string;
