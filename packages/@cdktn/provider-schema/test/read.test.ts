@@ -17,9 +17,10 @@ import * as path from "path";
 describe("read", () => {
   describe("disabled cache", () => {
     it("can generate a provider schema", async () => {
+      // Downloads the provider for real under Jest's default 5s timeout, so use a small one
       const schema = await readSchema([
         new ConstructsMakerProviderTarget(
-          new TerraformProviderConstraint("kreuzwerker/docker@=3.9.0"),
+          new TerraformProviderConstraint("hashicorp/null@=3.2.1"),
           Language.TYPESCRIPT,
         ),
       ]);
@@ -29,7 +30,7 @@ describe("read", () => {
         Object.keys(schema.providerSchema.provider_schemas ?? {}).map((fqpn) =>
           fqpn.split("/").slice(1).join("/"),
         ),
-      ).toContain("kreuzwerker/docker");
+      ).toContain("hashicorp/null");
     });
   });
 
