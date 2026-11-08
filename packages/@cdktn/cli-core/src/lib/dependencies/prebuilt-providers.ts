@@ -21,16 +21,17 @@ type ProvidersMap = {
   [name: string]: string;
 };
 
-const fetchCache = new Map<string, any>();
-async function cachedFetch<T>(url: string): Promise<T> {
-  if (fetchCache.has(url)) {
-    return fetchCache.get(url) as T;
+// Holds in-flight requests too, so concurrent callers share one; failures are not kept.
+const fetchCache = new Map<string, Promise<any>>();
+function cachedFetch<T>(url: string): Promise<T> {
+  let response = fetchCache.get(url);
+  if (!response) {
+    response = fetchWrapped<T>(url);
+    fetchCache.set(url, response);
+    response.catch(() => fetchCache.delete(url));
   }
 
-  const responseBody = await fetchWrapped<T>(url);
-  fetchCache.set(url, responseBody);
-
-  return responseBody as T;
+  return response as Promise<T>;
 }
 
 // For testing purposes only
@@ -119,13 +120,20 @@ export async function getNpmPackageName(
 }
 
 // Restores the dashes a language package name drops or turns into underscores.
+// Best-effort: without the provider list, the derived name is kept.
 export async function getListedNpmPackageName(
   packageName: string,
 ): Promise<string> {
   const match = /^(@cdkt[fn]\/provider-)(.+)$/.exec(packageName);
   if (!match) return packageName;
 
-  const providers = await getAllPrebuiltProviders();
+  let providers: ProvidersMap;
+  try {
+    providers = await getAllPrebuiltProviders();
+  } catch (e) {
+    logger.debug(`Keeping ${packageName}, provider list unavailable: ${e}`);
+    return packageName;
+  }
   const entry = providers[match[2].replace(/[-_]/g, "").toLowerCase()];
   if (!entry) return packageName;
 

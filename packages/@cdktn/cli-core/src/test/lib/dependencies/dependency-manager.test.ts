@@ -244,37 +244,70 @@ describe("dependency manager", () => {
       ).resolves.toBe("v22.0.0");
     });
 
-    it("lists a dashed provider by its npm package", async () => {
-      goSum(
-        "github.com/cdktn-io/cdktn-provider-googlebeta-go/googlebeta v22.0.0",
-      );
-      mockProvidersMap();
-      mockNpm("/@cdktn/provider-google-beta/22.0.0", 200, {
-        name: "@cdktn/provider-google-beta",
-        version: "22.0.0",
-        cdktn: {
+    const mockNpmVersion = (scope: "cdktf" | "cdktn", provider: string) =>
+      mockNpm(`/@${scope}/provider-${provider}/1.0.0`, 200, {
+        name: `@${scope}/provider-${provider}`,
+        version: "1.0.0",
+        [scope]: {
           provider: {
-            name: "registry.terraform.io/hashicorp/google-beta",
+            name: `registry.terraform.io/hashicorp/${provider}`,
             version: "6.50.0",
           },
         },
-        peerDependencies: { cdktn: "^0.25.0" },
+        peerDependencies: { [scope]: "^0.25.0" },
       });
+
+    it("lists dashed providers by their npm packages", async () => {
+      goSum(
+        "github.com/cdktn-io/cdktn-provider-googlebeta-go/googlebeta v1.0.0",
+        "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta v1.0.0",
+      );
+      mockProvidersMap(); // a single reply: both lookups must share it
+      mockNpmVersion("cdktn", "google-beta");
+      mockNpmVersion("cdktf", "google-beta");
       process.chdir(projectDir);
 
       const mgr = new DependencyManager(Language.GO, "0.25.0", projectDir);
       await expect(mgr.allProviders()).resolves.toEqual({
         local: [],
         prebuilt: [
-          {
+          expect.objectContaining({
             packageName:
               "github.com/cdktn-io/cdktn-provider-googlebeta-go/googlebeta",
-            packageVersion: "22.0.0",
             providerName: "google-beta",
-            providerVersion: "6.50.0",
-            cdktfVersion: undefined,
             cdktnVersion: "^0.25.0",
-          },
+          }),
+          expect.objectContaining({
+            packageName:
+              "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta",
+            providerName: "google-beta",
+            cdktfVersion: "^0.25.0",
+          }),
+        ],
+      });
+    });
+
+    it("lists providers when the provider list is unreachable", async () => {
+      goSum("github.com/cdktn-io/cdktn-provider-random-go/random v1.0.0");
+      mockAgent
+        .get("https://raw.githubusercontent.com")
+        .intercept({
+          path: /.*cdktn-repository-manager.*provider\.json/,
+          method: "GET",
+        })
+        .reply(503, "Unavailable");
+      mockNpmVersion("cdktn", "random");
+      process.chdir(projectDir);
+
+      const mgr = new DependencyManager(Language.GO, "0.25.0", projectDir);
+      await expect(mgr.allProviders()).resolves.toEqual({
+        local: [],
+        prebuilt: [
+          expect.objectContaining({
+            packageName: "github.com/cdktn-io/cdktn-provider-random-go/random",
+            providerName: "random",
+            providerVersion: "6.50.0",
+          }),
         ],
       });
     });
