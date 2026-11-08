@@ -420,7 +420,7 @@ describe("output", () => {
     `);
   });
 
-  test("deeply nested map ", async () => {
+  test("deeply nested map", async () => {
     const app = Testing.app();
     const stack = new TerraformStack(app, "test");
 

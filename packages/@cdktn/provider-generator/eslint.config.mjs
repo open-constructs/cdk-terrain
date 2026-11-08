@@ -10,4 +10,15 @@ export default [
     ignores: ["edge-provider-bindings/providers/**", "build/**", "dist/**"],
   },
   ...rootConfig,
+  {
+    files: ["**/*.test.ts"],
+
+    rules: {
+      // Treat onTf1_6AndNewer as a test block.
+      "jest/no-standalone-expect": [
+        "error",
+        { additionalTestBlockFunctions: ["onTf1_6AndNewer"] },
+      ],
+    },
+  },
 ];

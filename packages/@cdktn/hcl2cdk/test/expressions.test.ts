@@ -31,7 +31,7 @@ function getPropertyAccessPath(input: string): string[] {
     .map((p) => (p.startsWith(`"`) && p.endsWith(`"`) ? p.slice(1, -1) : p));
 }
 
-export function referenceToAst(scope: ProgramScope, ref: Reference) {
+function referenceToAst(scope: ProgramScope, ref: Reference) {
   const [resource, , ...selector] = ref.referencee.full.split(".");
 
   const variableReference = t.identifier(

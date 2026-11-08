@@ -543,7 +543,7 @@ describe("expressionToTs", () => {
     );
   });
 
-  test("for list expression ", async () => {
+  test("for list expression", async () => {
     const expression = "[for s in var.list : upper(s)]";
 
     const scope = getScope();

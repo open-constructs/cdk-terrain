@@ -329,13 +329,11 @@ describe("consent gating (initializErrorReporting)", () => {
 
       expect(crashPrompt).not.toHaveBeenCalled();
       expect(usagePrompt).not.toHaveBeenCalled();
-      if (hasProject) {
-        const persisted = fs.readJsonSync(path.join(workdir, "cdktf.json"));
-        expect(persisted.sendCrashReports).toBeUndefined();
-        expect(persisted.sendUsageTelemetry).toBeUndefined();
-      } else {
-        expect(fs.existsSync(path.join(workdir, "cdktf.json"))).toBe(false);
-      }
+      const configPath = path.join(workdir, "cdktf.json");
+      expect(fs.existsSync(configPath)).toBe(hasProject);
+      const persisted = hasProject ? fs.readJsonSync(configPath) : {};
+      expect(persisted.sendCrashReports).toBeUndefined();
+      expect(persisted.sendUsageTelemetry).toBeUndefined();
       expect(Sentry.init).toHaveBeenCalledTimes(1);
     },
   );
