@@ -7,9 +7,14 @@ jest.mock("./terraform", () => ({
   terraformVersion: jest.fn(() => Promise.resolve("1.7.5")),
 }));
 
-import { collectDebugInformation } from "./debug";
+jest.mock("./util", () => {
+  const actual = jest.requireActual("./util");
+  return { ...actual, exec: jest.fn(actual.exec) };
+});
+
+import { collectDebugInformation, getPackageVersion } from "./debug";
 import { terraformVersion } from "./terraform";
-import { withTempDir } from "./util";
+import { exec, withTempDir } from "./util";
 
 function writeInstalledPackage(packageName: string, version: string) {
   const packageDir = path.join(process.cwd(), "node_modules", packageName);
@@ -82,5 +87,64 @@ describe("collectDebugInformation()", () => {
         expect.objectContaining({ terraform: null }),
       );
     });
+  });
+});
+
+describe("getPackageVersion() for csharp", () => {
+  const dotnetOutput = (topLevel: string[], transitive: string[]) =>
+    [
+      "Project 'app' has the following package references",
+      "   [net8.0]:",
+      "   Top-level Package      Requested   Resolved",
+      ...topLevel.map((l) => `   > ${l}`),
+      "",
+      "   Transitive Package     Resolved",
+      ...transitive.map((l) => `   > ${l}`),
+    ].join("\n");
+
+  it("returns the core cdktn version, not a colliding provider version", async () => {
+    jest
+      .mocked(exec)
+      .mockResolvedValueOnce(
+        dotnetOutput(
+          ["Io.Cdktn.Providers.Aws       1.2.0   1.2.0"],
+          ["Io.Cdktn                     0.22.0"],
+        ),
+      );
+
+    await expect(getPackageVersion("csharp", "cdktn")).resolves.toBe("0.22.0");
+  });
+
+  it("returns the legacy cdktf version, not a colliding provider version", async () => {
+    jest
+      .mocked(exec)
+      .mockResolvedValueOnce(
+        dotnetOutput(
+          ["HashiCorp.Cdktf.Providers.Aws   1.2.0   1.2.0"],
+          ["HashiCorp.Cdktf                 0.20.11"],
+        ),
+      );
+
+    await expect(getPackageVersion("csharp", "cdktf")).resolves.toBe("0.20.11");
+  });
+
+  it("matches package names case-insensitively", async () => {
+    jest
+      .mocked(exec)
+      .mockResolvedValueOnce(
+        dotnetOutput(["io.cdktn      0.22.0   0.22.0"], []),
+      );
+
+    await expect(getPackageVersion("csharp", "cdktn")).resolves.toBe("0.22.0");
+  });
+
+  it("returns undefined when only a provider package is present", async () => {
+    jest
+      .mocked(exec)
+      .mockResolvedValueOnce(
+        dotnetOutput(["Io.Cdktn.Providers.Aws   1.2.0   1.2.0"], []),
+      );
+
+    await expect(getPackageVersion("csharp", "cdktn")).resolves.toBeUndefined();
   });
 });

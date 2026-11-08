@@ -15,6 +15,14 @@ import {
   DependencyManager,
 } from "../../../lib/dependencies/dependency-manager";
 import { resetFetchCache } from "../../../lib/dependencies/prebuilt-providers";
+import { getLatestVersion } from "../../../lib/dependencies/registry-api";
+
+jest.mock("../../../lib/dependencies/registry-api", () => ({
+  ...jest.requireActual("../../../lib/dependencies/registry-api"),
+  getLatestVersion: jest.fn(),
+}));
+
+const mockedGetLatestVersion = jest.mocked(getLatestVersion);
 
 describe("dependency manager", () => {
   describe("ProviderConstraint", () => {
@@ -127,6 +135,7 @@ describe("dependency manager", () => {
 
   describe("addLocalProvider", () => {
     it("throws if the provider is not found", async () => {
+      mockedGetLatestVersion.mockResolvedValue(null);
       const mgr = new DependencyManager(
         Language.TYPESCRIPT,
         "0.11.2",

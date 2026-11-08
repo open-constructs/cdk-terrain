@@ -103,6 +103,14 @@ function fetchFunctionMetadata(
   }
 }
 
+/**
+ * Some descriptions link to /language/xy whereas the developer portal expects
+ * /terraform/language/xy.
+ */
+function fixProductRelativeLinks(content: string): string {
+  return content.replace(/\(\/language\//g, "(/terraform/language/");
+}
+
 function applyRelease(
   matrix: FunctionsMatrix,
   product: ProductName,
@@ -119,7 +127,7 @@ function applyRelease(
     if (!entry) {
       entry = {
         signature: {
-          description: signature.description ?? "",
+          description: fixProductRelativeLinks(signature.description ?? ""),
           return_type: signature.return_type,
           parameters: signature.parameters ?? [],
           variadic_parameter: signature.variadic_parameter ?? null,
@@ -133,7 +141,7 @@ function applyRelease(
       // newest wording wins when the function exists in terraform, otherwise
       // opentofu's. Releases are applied in ascending version order.
       entry.signature = {
-        description: signature.description ?? "",
+        description: fixProductRelativeLinks(signature.description ?? ""),
         return_type: signature.return_type,
         parameters: signature.parameters ?? [],
         variadic_parameter: signature.variadic_parameter ?? null,
@@ -146,11 +154,9 @@ function applyRelease(
         introduced: version,
         removed: null,
         gaps: [],
-        count: 1,
       };
       console.log(`  ${name}: first ${product} release is ${version}`);
     } else {
-      availability.count += 1;
       if (availability.removed) {
         // function came back after being marked removed — record the gap
         console.warn(
