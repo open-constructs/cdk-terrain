@@ -8,15 +8,11 @@ import jsdoc from "eslint-plugin-jsdoc";
 import noInstanceof from "eslint-plugin-no-instanceof";
 
 export default [
-  {
-    ignores: ["**/test", "**/*.test*.ts"],
-  },
   ...rootConfig,
   {
     files: ["**/*.ts"],
 
     plugins: {
-      jsdoc,
       "no-instanceof": noInstanceof,
     },
 
@@ -24,14 +20,23 @@ export default [
       "@typescript-eslint/no-empty-interface": 0,
       "@typescript-eslint/no-unused-vars": "off",
 
+      "no-instanceof/no-instanceof": "error",
+    },
+  },
+  {
+    files: ["src/**/*.ts"],
+
+    plugins: {
+      jsdoc,
+    },
+
+    rules: {
       "jsdoc/require-jsdoc": [
         "error",
         {
           contexts: ["ClassDeclaration"],
         },
       ],
-
-      "no-instanceof/no-instanceof": "error",
     },
   },
 ];

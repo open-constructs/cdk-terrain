@@ -15,8 +15,8 @@ import {
 import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "../src/features";
 
 import { version } from "../package.json";
-import fs = require("fs");
-import path = require("path");
+import * as fs from "fs";
+import * as path from "path";
 import { Aspects } from "../src/aspect";
 import { IConstruct } from "constructs";
 import { setupJest } from "../src/testing/adapters/jest";

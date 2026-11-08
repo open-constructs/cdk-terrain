@@ -6,7 +6,7 @@ import {
   replaceGoImports,
   replaceJavaImports,
   replacePythonImports,
-} from "../jsii-rosetta-workarounds";
+} from "../src/jsii-rosetta-workarounds";
 
 describe("jsii-rosetta-workarounds", () => {
   describe("replacePythonImports", () => {

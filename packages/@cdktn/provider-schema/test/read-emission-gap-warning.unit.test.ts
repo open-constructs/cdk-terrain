@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 
-jest.mock("../provider-schema", () => ({
-  ...jest.requireActual("../provider-schema"),
+jest.mock("../src/provider-schema", () => ({
+  ...jest.requireActual("../src/provider-schema"),
   readProviderSchema: jest.fn(),
   getFetchingCliVersion: jest.fn(),
 }));
@@ -15,8 +15,11 @@ import {
   ProviderSchema,
   TerraformProviderConstraint,
 } from "@cdktn/commons";
-import { readSchema } from "../read";
-import { getFetchingCliVersion, readProviderSchema } from "../provider-schema";
+import { readSchema } from "../src/read";
+import {
+  getFetchingCliVersion,
+  readProviderSchema,
+} from "../src/provider-schema";
 
 const readProviderSchemaMock = readProviderSchema as unknown as jest.Mock;
 const getFetchingCliVersionMock = getFetchingCliVersion as unknown as jest.Mock;
