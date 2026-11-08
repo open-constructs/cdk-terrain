@@ -13,7 +13,6 @@ import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
 import {
   removeRequiredVersionFiles,
-  ValidateRequiredVersionTargets,
   writeRequiredVersionFiles,
   writesRequiredVersion,
 } from "./required-version";
@@ -51,13 +50,6 @@ export class StackSynthesizer implements IStackSynthesizer {
       );
     }
 
-    const writeRequiredVersion = writesRequiredVersion(this.stack);
-    if (writeRequiredVersion) {
-      this.stack.node.addValidation(
-        new ValidateRequiredVersionTargets(this.stack, this.hclOutput),
-      );
-    }
-
     if (!session.skipValidation) {
       this.stack.runAllValidations();
     }
@@ -72,7 +64,7 @@ export class StackSynthesizer implements IStackSynthesizer {
     if (!fs.existsSync(workingDirectory)) fs.mkdirSync(workingDirectory);
 
     removeRequiredVersionFiles(workingDirectory);
-    if (writeRequiredVersion) {
+    if (writesRequiredVersion(this.stack)) {
       writeRequiredVersionFiles(this.stack, workingDirectory, this.hclOutput);
     }
 

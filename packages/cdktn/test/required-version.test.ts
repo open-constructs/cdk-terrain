@@ -1,9 +1,15 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import { App, Manifest, TerraformStack, Testing } from "../src";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import {
+  AnnotationMetadataEntryType,
+  App,
+  Manifest,
+  TerraformStack,
+  Testing,
+} from "../src";
 import { StackSynthesizer } from "../src/synthesize/synthesizer";
 import { TerraformTargetVersions } from "../src/validations/target-versions";
 
@@ -18,6 +24,14 @@ const readSettingsFile = (outdir: string, file: string) => {
   const content = readStackFile(outdir, file);
   return content === undefined ? undefined : JSON.parse(content);
 };
+
+const warnings = (outdir: string): string[] =>
+  JSON.parse(fs.readFileSync(path.join(outdir, Manifest.fileName), "utf-8"))
+    .stacks.test.annotations.filter(
+      (annotation: { level: string }) =>
+        annotation.level === AnnotationMetadataEntryType.WARN,
+    )
+    .map((annotation: { message: string }) => annotation.message);
 
 const requiredVersion = (constraint: string) => ({
   terraform: { required_version: constraint },
@@ -60,21 +74,36 @@ test("writes each targeted product's range to its own settings file", () => {
   );
 });
 
-test("writes no settings file for a product the project doesn't target", () => {
-  const outdir = Testing.fullSynth(stackTargeting({ opentofu: ">=1.8.0" }));
+test("writes no OpenTofu settings file when the project doesn't target OpenTofu", () => {
+  const outdir = Testing.fullSynth(stackTargeting({ terraform: ">=1.9.0" }));
 
-  expect(readSettingsFile(outdir, "settings.tf.json")).toBeUndefined();
+  expect(readSettingsFile(outdir, "settings.tf.json")).toEqual(
+    requiredVersion(">= 1.9.0"),
+  );
+  expect(readSettingsFile(outdir, "settings.tofu.json")).toBeUndefined();
+});
+
+test("writes the OpenTofu range to both settings files when the project doesn't target Terraform", () => {
+  const outdir = Testing.fullSynth(stackTargeting({ opentofu: ">=1.9.0" }));
+
+  // OpenTofu 1.6 and 1.7 only read settings.tf.json
+  expect(readSettingsFile(outdir, "settings.tf.json")).toEqual(
+    requiredVersion(">= 1.9.0"),
+  );
   expect(readSettingsFile(outdir, "settings.tofu.json")).toEqual(
-    requiredVersion(">= 1.8.0"),
+    requiredVersion(">= 1.9.0"),
   );
 });
 
 test("writes a settings file without required_version for a range that allows every version", () => {
   const outdir = Testing.fullSynth(
-    // the Terraform range must accept every OpenTofu release before 1.8, since those read settings.tf.json
-    stackTargeting({ terraform: "<2.0.0", opentofu: "*" }),
+    stackTargeting({ terraform: ">=1.5.7", opentofu: "*" }),
   );
 
+  // every OpenTofu release satisfies ">= 1.5.7", so settings.tf.json is still written
+  expect(readSettingsFile(outdir, "settings.tf.json")).toEqual(
+    requiredVersion(">= 1.5.7"),
+  );
   // an empty settings.tofu.json stops OpenTofu 1.8-1.11 from enforcing the Terraform constraint
   expect(readSettingsFile(outdir, "settings.tofu.json")).toEqual({});
 });
@@ -116,7 +145,7 @@ test("removes settings files from a previous synth that no longer apply", () => 
 
 test("writes HCL settings files with HCL output, replacing JSON ones from a previous synth", () => {
   const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
-  const targets = { terraform: "<2.0.0", opentofu: "*" };
+  const targets = { terraform: ">=1.5.7", opentofu: "*" };
 
   new StackSynthesizer(stackTargeting(targets)).synthesize({
     outdir,
@@ -128,26 +157,53 @@ test("writes HCL settings files with HCL output, replacing JSON ones from a prev
   });
 
   expect(readStackFile(outdir, "settings.tf")).toEqual(
-    'terraform {\n  required_version = "< 2.0.0"\n}\n',
+    'terraform {\n  required_version = ">= 1.5.7"\n}\n',
   );
   expect(readStackFile(outdir, "settings.tofu")).toEqual("");
   expect(readStackFile(outdir, "settings.tf.json")).toBeUndefined();
   expect(readStackFile(outdir, "settings.tofu.json")).toBeUndefined();
 });
 
-test("fails synth for a range with alternatives", () => {
-  const stack = stackTargeting({ terraform: "1.9.x || 1.11.x" });
+test("warns and skips settings.tf.json for a Terraform range with alternatives", () => {
+  const outdir = Testing.fullSynth(
+    stackTargeting({ terraform: "1.9.x || 1.11.x", opentofu: ">=1.8.0" }),
+  );
 
-  expect(() => Testing.fullSynth(stack)).toThrow(
-    `targetVersions range "1.9.x || 1.11.x" uses "||", which can't be written as a required_version constraint.`,
+  expect(warnings(outdir)).toEqual([
+    `targetVersions.terraform "1.9.x || 1.11.x" uses "||", which can't be written as a required_version constraint, so settings.tf.json isn't written.`,
+  ]);
+  expect(readSettingsFile(outdir, "settings.tf.json")).toBeUndefined();
+  expect(readSettingsFile(outdir, "settings.tofu.json")).toEqual(
+    requiredVersion(">= 1.8.0"),
   );
 });
 
-test("fails synth when the Terraform range rejects targeted OpenTofu releases before 1.8", () => {
-  // OpenTofu 1.7 reads settings.tf.json, whose ">= 1.8.0" rejects it
-  const stack = stackTargeting({ terraform: ">=1.8.0", opentofu: ">=1.7.0" });
+test("warns and writes settings.tofu.json without required_version for an OpenTofu range with alternatives", () => {
+  const outdir = Testing.fullSynth(
+    stackTargeting({ terraform: ">=1.5.7", opentofu: "1.9.x || 1.11.x" }),
+  );
 
-  expect(() => Testing.fullSynth(stack)).toThrow(
-    `targetVersions.opentofu ">=1.7.0" allows OpenTofu releases before 1.8.0, which read settings.tf.json instead of settings.tofu.json, and targetVersions.terraform ">=1.8.0" would reject some of them.`,
+  expect(warnings(outdir)).toEqual([
+    `targetVersions.opentofu "1.9.x || 1.11.x" uses "||", which can't be written as a required_version constraint, so settings.tofu.json is written without one.`,
+  ]);
+  expect(readSettingsFile(outdir, "settings.tf.json")).toEqual(
+    requiredVersion(">= 1.5.7"),
+  );
+  // an empty settings.tofu.json stops OpenTofu 1.8-1.11 from enforcing the Terraform constraint
+  expect(readSettingsFile(outdir, "settings.tofu.json")).toEqual({});
+});
+
+test("warns and skips settings.tf.json when the Terraform range rejects targeted OpenTofu releases before 1.8", () => {
+  // OpenTofu 1.7 reads settings.tf.json, whose ">= 1.8.0" would reject it
+  const outdir = Testing.fullSynth(
+    stackTargeting({ terraform: ">=1.8.0", opentofu: ">=1.7.0" }),
+  );
+
+  expect(warnings(outdir)).toEqual([
+    `targetVersions.opentofu ">=1.7.0" allows OpenTofu releases before 1.8.0, which read settings.tf.json instead of settings.tofu.json, and targetVersions.terraform ">=1.8.0" would reject some of them, so settings.tf.json isn't written. Set targetVersions.opentofu to ">=1.8.0" or narrower to constrain Terraform as well.`,
+  ]);
+  expect(readSettingsFile(outdir, "settings.tf.json")).toBeUndefined();
+  expect(readSettingsFile(outdir, "settings.tofu.json")).toEqual(
+    requiredVersion(">= 1.7.0"),
   );
 });

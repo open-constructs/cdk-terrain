@@ -3,14 +3,16 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as semver from "semver";
-import { IConstruct, IValidation } from "constructs";
+import { IConstruct } from "constructs";
+import { Annotations } from "../annotations";
 import { REQUIRED_VERSION_FROM_TARGET_VERSIONS } from "../features";
 import {
   resolveTargetVersions,
   TARGET_VERSIONS_CONTEXT_KEY,
   TerraformTargetVersions,
 } from "../validations/target-versions";
-import { targetVersionsRangeWithAlternatives } from "../errors";
+
+type Product = keyof TerraformTargetVersions;
 
 /**
  * Names of the files, in the stack's working directory, that hold each product's `required_version`, in the stack's
@@ -18,13 +20,13 @@ import { targetVersionsRangeWithAlternatives } from "../errors";
  * `.tofu.json` files. OpenTofu 1.8+ loads the OpenTofu file in place of the Terraform file of the same format, and
  * OpenTofu 1.12+ only reads `required_version` from `.tofu` / `.tofu.json` files.
  */
-const SETTINGS_FILES: Record<
-  "json" | "hcl",
-  Record<keyof TerraformTargetVersions, string>
-> = {
+const SETTINGS_FILES: Record<"json" | "hcl", Record<Product, string>> = {
   json: { terraform: "settings.tf.json", opentofu: "settings.tofu.json" },
   hcl: { terraform: "settings.tf", opentofu: "settings.tofu" },
 };
+
+// The first OpenTofu release
+const OPENTOFU_FIRST_RELEASE = "1.6.0";
 
 // The first OpenTofu release that loads the OpenTofu settings file in place of the Terraform one
 const OPENTOFU_TOFU_FILES_SINCE = "1.8.0";
@@ -43,19 +45,15 @@ export function writesRequiredVersion(scope: IConstruct): boolean {
 }
 
 /**
- * Converts an npm semver range into a Terraform version constraint, e.g. `^1.8.0` into `>= 1.8.0, < 2.0.0`. npm
- * normalises every range into comparators that Terraform's syntax can express, except alternatives (`||`).
- * @param range - a valid npm semver range
- * @returns the Terraform version constraint, or `undefined` when the range allows every version
- * @throws if the range has alternatives (`||`)
+ * Converts one comparator set of a normalised npm range into a Terraform version constraint, e.g. the set for `^1.8.0`
+ * into `>= 1.8.0, < 2.0.0`. Terraform's syntax can express any single comparator set, but not alternatives (`||`).
+ * @param comparators - the comparators of a range without alternatives
+ * @returns the Terraform version constraint, or `undefined` when the comparators allow every version
  */
-export function toTerraformConstraint(range: string): string | undefined {
-  const comparatorSets = new semver.Range(range).set;
-  if (comparatorSets.length > 1) {
-    throw targetVersionsRangeWithAlternatives(range);
-  }
-
-  const constraints = comparatorSets[0]
+function toTerraformConstraint(
+  comparators: readonly semver.Comparator[],
+): string | undefined {
+  const constraints = comparators
     .filter((comparator) => comparator.value !== "") // "*" normalises to a comparator that matches any version
     .map(
       (comparator) =>
@@ -83,60 +81,35 @@ function constraintVersion(comparator: semver.Comparator): string {
 }
 
 /**
- * Validates that the project's `targetVersions` can be written as `required_version` constraints. Added to a stack
- * only when {@link writesRequiredVersion} is true.
+ * Narrows an OpenTofu range to the released versions that read the Terraform settings file: 1.6 and 1.7.
+ * @param opentofu - the project's OpenTofu range
+ * @returns an npm range of the targeted OpenTofu releases that don't load the OpenTofu settings file
  */
-export class ValidateRequiredVersionTargets implements IValidation {
-  /**
-   * @param scope - construct whose `targetVersions` context is validated, usually a stack
-   * @param hclOutput - whether the stack is synthesized as HCL, which names the settings files in the error message
-   */
-  constructor(
-    private readonly scope: IConstruct,
-    private readonly hclOutput: boolean,
-  ) {}
-
-  /**
-   * Fails for ranges with alternatives (`||`), and for an OpenTofu range that allows releases before 1.8 that the
-   * Terraform constraint would reject: those releases read the Terraform settings file, not the OpenTofu one.
-   * @returns the validation errors, empty when the targets can be written
-   */
-  public validate(): string[] {
-    const { targets, errors } = resolveTargetVersions(this.scope);
-    if (!targets) {
-      return errors;
-    }
-
-    const withAlternatives = Object.values(targets).filter(
-      (range) => new semver.Range(range).set.length > 1,
-    );
-    if (withAlternatives.length > 0) {
-      return withAlternatives.map(
-        (range) => targetVersionsRangeWithAlternatives(range).message,
-      );
-    }
-
-    if (targets.terraform && targets.opentofu) {
-      const opentofuReadingTfFiles = `${
-        new semver.Range(targets.opentofu).range
-      } <${OPENTOFU_TOFU_FILES_SINCE}`;
-      if (!semver.subset(opentofuReadingTfFiles, targets.terraform)) {
-        const files = SETTINGS_FILES[this.hclOutput ? "hcl" : "json"];
-        return [
-          `targetVersions.opentofu "${targets.opentofu}" allows OpenTofu releases before ${OPENTOFU_TOFU_FILES_SINCE}, which read ${files.terraform} instead of ${files.opentofu}, and targetVersions.terraform "${targets.terraform}" would reject some of them. Set targetVersions.opentofu to ">=${OPENTOFU_TOFU_FILES_SINCE}" or narrower, or widen targetVersions.terraform to include them.`,
-        ];
-      }
-    }
-
-    return [];
-  }
+function opentofuReadingTerraformFile(opentofu: string): string {
+  return new semver.Range(opentofu).set
+    .map((comparators) =>
+      [
+        ...comparators.map((comparator) => comparator.value),
+        `>=${OPENTOFU_FIRST_RELEASE}`,
+        `<${OPENTOFU_TOFU_FILES_SINCE}`,
+      ].join(" "),
+    )
+    .join(" || ");
 }
 
 /**
- * Writes the settings file for each product in `targetVersions` into the stack's working directory, in the stack's
- * output format. A product that isn't targeted gets no file, and a product whose range allows every version gets a
- * file without `required_version` so that OpenTofu doesn't fall back to the Terraform constraint.
- * @param scope - construct whose `targetVersions` context is read, usually a stack
+ * Writes a settings file for each product in `targetVersions` into the stack's working directory, in the stack's
+ * output format:
+ *
+ * - A product that isn't targeted gets no file, except that an OpenTofu-only project also writes its OpenTofu
+ *   constraint to the Terraform file, which OpenTofu 1.6 and 1.7 read in place of the OpenTofu file.
+ * - A product whose range allows every version gets a file without `required_version`, so that OpenTofu doesn't
+ *   fall back to the Terraform constraint.
+ * - A range with alternatives (`||`) can't be written as a constraint. It adds a warning, and the Terraform file is
+ *   skipped, or the OpenTofu file is written without `required_version`.
+ * - If targeted OpenTofu releases before 1.8 would be rejected by the Terraform constraint, it adds a warning and
+ *   skips the Terraform file.
+ * @param scope - construct whose `targetVersions` context is read and that receives warnings, usually a stack
  * @param workingDirectory - absolute path of the stack's working directory
  * @param hclOutput - whether to write `settings.tf` / `settings.tofu` instead of `settings.tf.json` /
  * `settings.tofu.json`
@@ -152,15 +125,51 @@ export function writeRequiredVersionFiles(
   }
 
   const files = SETTINGS_FILES[hclOutput ? "hcl" : "json"];
-  for (const [product, file] of Object.entries(files)) {
-    const range = targets[product as keyof TerraformTargetVersions];
-    if (range === undefined) {
-      continue;
-    }
+  const { terraform, opentofu } = targets;
+  const warnAboutAlternatives = (
+    product: Product,
+    range: string,
+    outcome: string,
+  ) =>
+    Annotations.of(scope).addWarning(
+      `targetVersions.${product} "${range}" uses "||", which can't be written as a required_version constraint, so ${files[product]} ${outcome}.`,
+    );
 
-    const requiredVersion = toTerraformConstraint(range);
+  // the constraint to write for each file; a file with an undefined constraint is written without required_version
+  const constraints = new Map<Product, string | undefined>();
+
+  if (opentofu !== undefined) {
+    const comparatorSets = new semver.Range(opentofu).set;
+    if (comparatorSets.length > 1) {
+      warnAboutAlternatives("opentofu", opentofu, "is written without one");
+      constraints.set("opentofu", undefined);
+    } else {
+      constraints.set("opentofu", toTerraformConstraint(comparatorSets[0]));
+    }
+  }
+
+  if (terraform !== undefined) {
+    const comparatorSets = new semver.Range(terraform).set;
+    if (comparatorSets.length > 1) {
+      warnAboutAlternatives("terraform", terraform, "isn't written");
+    } else if (
+      opentofu !== undefined &&
+      !semver.subset(opentofuReadingTerraformFile(opentofu), terraform)
+    ) {
+      Annotations.of(scope).addWarning(
+        `targetVersions.opentofu "${opentofu}" allows OpenTofu releases before ${OPENTOFU_TOFU_FILES_SINCE}, which read ${files.terraform} instead of ${files.opentofu}, and targetVersions.terraform "${terraform}" would reject some of them, so ${files.terraform} isn't written. Set targetVersions.opentofu to ">=${OPENTOFU_TOFU_FILES_SINCE}" or narrower to constrain Terraform as well.`,
+      );
+    } else {
+      constraints.set("terraform", toTerraformConstraint(comparatorSets[0]));
+    }
+  } else if (constraints.get("opentofu") !== undefined) {
+    // Terraform isn't targeted, so the Terraform file can carry the OpenTofu constraint for OpenTofu 1.6 and 1.7
+    constraints.set("terraform", constraints.get("opentofu"));
+  }
+
+  for (const [product, requiredVersion] of constraints) {
     fs.writeFileSync(
-      path.join(workingDirectory, file),
+      path.join(workingDirectory, files[product]),
       hclOutput
         ? renderHclSettings(requiredVersion)
         : renderJsonSettings(requiredVersion),
