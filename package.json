@@ -22,7 +22,7 @@
         "lint:fix": "nx run-many -t lint --fix",
         "lint:prettier": "prettier --check .",
         "lint:examples": "node tools/lint-examples.mjs",
-        "link-packages": "nx exec -p \"cdktn*\" \"@cdktn/*\" -- pnpm link --global",
+        "link-packages": "cd packages/cdktn-cli && npm link",
         "integration": "cd test && pnpm run edge:install && node run-against-dist.mjs pnpm exec jest --runInBand",
         "integration:update": "cd test && pnpm install && pnpm run edge:install && NODE_OPTIONS='--max-old-space-size=7168' node run-against-dist.mjs pnpm exec jest -u --runInBand",
         "integration:single": "cd test && node run-against-dist.mjs pnpm exec jest --runInBand",
