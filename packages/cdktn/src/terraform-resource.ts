@@ -130,7 +130,10 @@ export interface TerraformResourceImport {
   readonly provider?: TerraformProvider;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform managed resource (`resource` block): an infrastructure object whose lifecycle Terraform manages
+ * through a provider and tracks in state.
+ */
 export class TerraformResource
   extends TerraformElement
   implements ITerraformResource, ITerraformDependable, IInterpolatingParent

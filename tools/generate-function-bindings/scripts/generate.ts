@@ -131,8 +131,8 @@ async function generateFunctionBindings() {
   t.addComment(
     fnClass,
     "leading",
-    " eslint-disable-next-line jsdoc/require-jsdoc",
-    true,
+    "*\n * Bindings for the Terraform and OpenTofu built-in functions, generated from the function availability matrix.\n ",
+    false,
   );
 
   const program = t.program([IMPORTS, fnClass]);

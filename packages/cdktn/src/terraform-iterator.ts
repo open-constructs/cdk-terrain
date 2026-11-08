@@ -63,7 +63,10 @@ type MapType =
   | AnyMap
   | ComplexMap;
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for iterators over a list, map or resource collection. Used as a `for_each` meta-argument, as the source
+ * of a dynamic block, or in for-expressions; `key` and `value` refer to the current element.
+ */
 export abstract class TerraformIterator implements ITerraformIterator {
   /**
    * @internal used by TerraformResource to set the for_each expression
@@ -398,7 +401,10 @@ export abstract class TerraformIterator implements ITerraformIterator {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Iterator over a list or set. The list is converted to a set for `for_each`, so `key` and `value` are both the
+ * current element.
+ */
 export class ListTerraformIterator extends TerraformIterator {
   constructor(private readonly list: ListType) {
     super();
@@ -430,7 +436,9 @@ export class ListTerraformIterator extends TerraformIterator {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Iterator over a map; `key` is the current entry's key and `value` its value.
+ */
 export class MapTerraformIterator extends TerraformIterator {
   constructor(private readonly map: MapType) {
     super();
@@ -459,7 +467,10 @@ export class MapTerraformIterator extends TerraformIterator {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Iterator over the instances of a resource or data source that itself uses `for_each`. The element must not use
+ * `count`.
+ */
 export class ResourceTerraformIterator extends TerraformIterator {
   constructor(private readonly element: ITerraformResource) {
     super();
@@ -498,7 +509,10 @@ export class ResourceTerraformIterator extends TerraformIterator {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Iterator over a list of complex objects. For `for_each` the list is converted to a map keyed by the value of the
+ * given attribute of each element, so every entry is uniquely keyed.
+ */
 export class DynamicListTerraformIterator extends MapTerraformIterator {
   constructor(
     private readonly list: ListType,

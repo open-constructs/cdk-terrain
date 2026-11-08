@@ -13,7 +13,9 @@ export interface DataTerraformRemoteStateConfig {
   readonly defaults?: { [key: string]: any };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for `terraform_remote_state` data sources, which read the outputs of another Terraform state.
+ */
 export abstract class TerraformRemoteState
   extends TerraformElement
   implements ITerraformAddressable

@@ -19,7 +19,10 @@ export interface TerraformProviderConfig {
   readonly terraformProviderSource?: string;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for a Terraform provider configuration (`provider` block), which configures the plugin that manages a
+ * set of resource and data source types. Also declares the provider in `required_providers`.
+ */
 export abstract class TerraformProvider extends TerraformElement {
   public readonly terraformResourceType: string;
   public readonly terraformGeneratorMetadata?: TerraformProviderGeneratorMetadata;

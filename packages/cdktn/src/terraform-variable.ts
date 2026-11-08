@@ -9,7 +9,9 @@ import { IResolvable } from "./tokens/resolvable";
 import { ITerraformAddressable } from "./terraform-addressable";
 import { TerraformVariableValidationConfig } from "./terraform-conditions";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Type constraint keywords and constructors for the `type` argument of a TerraformVariable.
+ */
 export abstract class VariableType {
   public static readonly STRING = "string";
   public static readonly NUMBER = "number";
@@ -97,7 +99,10 @@ export interface TerraformVariableConfig {
   readonly validation?: TerraformVariableValidationConfig[];
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform input variable (`variable` block): a parameter whose value is supplied when the stack is planned or
+ * applied, letting the configuration be customised without changing its code.
+ */
 export class TerraformVariable
   extends TerraformElement
   implements ITerraformAddressable
