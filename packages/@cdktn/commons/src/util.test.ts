@@ -154,13 +154,19 @@ describe("exec() timeout", () => {
     expect(isAlive(grandchild)).toBe(false);
   }, 10000);
 
-  it("treats an infinite timeout as none", async () => {
-    await expect(
-      exec(
-        process.execPath,
-        ["-e", `setTimeout(() => process.stdout.write("done"), 50)`],
-        { timeout: Infinity },
-      ),
-    ).resolves.toBe("done");
-  });
+  // A timed child leads its own process group and misses the terminal's
+  // interrupt; with no timeout it must stay in the caller's group.
+  (process.platform === "linux" ? it : it.skip)(
+    "treats an infinite timeout as none",
+    async () => {
+      const leadsItsGroup = [
+        `const [, , pgrp] = require("fs").readFileSync("/proc/self/stat", "utf8").split(") ")[1].split(" ")`,
+        `setTimeout(() => process.stdout.write(String(pgrp === String(process.pid))), 50)`,
+      ].join("; ");
+
+      await expect(
+        exec(process.execPath, ["-e", leadsItsGroup], { timeout: Infinity }),
+      ).resolves.toBe("false");
+    },
+  );
 });

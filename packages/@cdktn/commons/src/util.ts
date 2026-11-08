@@ -165,8 +165,11 @@ export const exec = async (
 
   const logStderr = logStderrAsDebug ? processLoggerDebug : processLoggerError;
 
-  // setTimeout fires at once for anything above its maximum, Infinity included.
-  const timeoutMs = timeout ? Math.min(timeout, MAX_TIMEOUT_MS) : undefined;
+  // A non-finite timeout is none. setTimeout fires at once above its maximum.
+  const timeoutMs =
+    timeout && Number.isFinite(timeout)
+      ? Math.min(timeout, MAX_TIMEOUT_MS)
+      : undefined;
 
   return new Promise((ok, ko) => {
     // A timed child leads its own process group on POSIX so a timeout can kill
