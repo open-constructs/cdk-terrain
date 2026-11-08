@@ -15,6 +15,7 @@
         "package:go": "nx run-many -t package:go && node tools/collect-dist.mjs",
         "package-windows": "set \"GOWORK=off\" && nx run-many -t package && node tools/collect-dist.mjs",
         "test": "nx run-many -t test -p \"cdktn*\" \"@cdktn/*\" --parallel=2",
+        "typecheck": "nx run-many -t typecheck -p \"cdktn*\" \"@cdktn/*\" --parallel=2",
         "test:update": "nx run-many -t test:update -p \"cdktn*\" \"@cdktn/*\" --parallel=2 --nxBail=false",
         "watch": "nx run-many -t watch-preserve-output -p \"@cdktn/*\" \"cdktn*\" --output-style=stream",
         "lint:workspace": "nx run-many -t lint",

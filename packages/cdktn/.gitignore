@@ -1,6 +1,7 @@
   
 dist/
 tsconfig.json
+!test/tsconfig.json
 tsconfig.tsbuildinfo
 .jsii
 .pack-staging/

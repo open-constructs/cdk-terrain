@@ -7,6 +7,7 @@
   "description": "CDK Terrain utilities to work with provider schemas",
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --project test --noEmit",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u",

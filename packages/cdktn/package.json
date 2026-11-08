@@ -4,6 +4,7 @@
     "description": "Cloud Development Kit for Terraform",
     "scripts": {
         "build": "jsii --silence-warnings reserved-word",
+        "typecheck": "tsc --project test --noEmit",
         "watch": "jsii -w --silence-warnings reserved-word",
         "watch-preserve-output": "tsc -w --preserveWatchOutput",
         "package": "node ./scripts/pack.mjs",

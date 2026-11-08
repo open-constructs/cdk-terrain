@@ -21,6 +21,7 @@
   },
   "scripts": {
     "build": "tsc && bash build-go.sh",
+    "typecheck": "tsc --project test --noEmit",
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u",

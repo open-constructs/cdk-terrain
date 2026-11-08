@@ -24,6 +24,10 @@
     "skipLibCheck": true,
     "stripInternal": true,
     "target": "ES2018",
+    "types": [
+      "node",
+      "jest"
+    ],
     "incremental": true,
     "esModuleInterop": true,
     "allowJs": true,
