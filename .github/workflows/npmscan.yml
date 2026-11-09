@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-      - uses: NPMscan/npmscan-action@6e43c93b29e9a844ba3019dce3952d179886d379 # v1.3.1
+      - uses: NPMscan/npmscan-action@e2ff8c953f1a0b536abd70b4479984137c76e1fe # v1.4.1
         with:
           file: pnpm-lock.yaml
           mode: warn
