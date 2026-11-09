@@ -370,8 +370,8 @@ class Parser {
     }
 
     if (isAttributeNestedType(attributeType)) {
-      let struct = undefined;
-      let typeModel = undefined;
+      let struct;
+      let typeModel;
       switch (attributeType.nesting_mode) {
         case "list":
           struct = this.addAnonymousStruct(

@@ -44,7 +44,7 @@
         "generate-function-bindings": "pnpm --filter generate-function-bindings run generate && pnpm --filter generate-function-bindings run generate-function-availability"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.5",
+        "@eslint/js": "^10.0.1",
         "@nx/eslint": "23.3.0",
         "@nx/eslint-plugin": "23.3.0",
         "@nx/jest": "23.3.0",
@@ -55,7 +55,7 @@
         "@types/prettier": "2.6.0",
         "@typescript-eslint/parser": "^8.70.0",
         "changelog-parser": "^2.8.1",
-        "eslint": "^9.39.4",
+        "eslint": "^10.14.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-formatter-gha": "^2.0.1",
         "eslint-plugin-jsdoc": "^65.4.5",

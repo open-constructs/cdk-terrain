@@ -122,7 +122,7 @@ export async function convert({
     experimentalProviderSchemaCachePath,
   );
 
-  let input: string | undefined = undefined;
+  let input: string | undefined;
   try {
     input = await readStreamAsString(process.stdin);
   } catch {
