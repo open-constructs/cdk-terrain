@@ -4,8 +4,8 @@
 function, the stable releases in which it is available (introduced / removed /
 gaps per product). It is consumed by:
 
-- `../scripts/generate.ts` — merges OpenTofu-only functions into the `Fn`
-  bindings.
+- `../scripts/generate.ts` — generates the `Fn` bindings and the `convert`
+  function map from the signatures.
 - `../scripts/generate-function-availability.ts` — emits
   `packages/cdktn/src/functions/function-availability.generated.ts`, the
   version-constraint map used by the synth-time function version validation
