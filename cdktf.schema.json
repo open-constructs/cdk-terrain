@@ -1,15 +1,21 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/main/cdktf.schema.json",
   "title": "CDK Terrain project configuration (cdktf.json)",
   "type": "object",
+  "required": ["language", "app"],
+  "additionalProperties": false,
+  "patternProperties": {
+    "^//": {
+      "description": "Comment. Keys starting with // are ignored."
+    }
+  },
   "properties": {
     "$schema": {
       "type": "string",
       "description": "URI of the JSON schema used to validate this file."
     },
     "language": {
-      "description": "Language the project is written in. Defaults to \"typescript\".",
+      "description": "Language the project is written in.",
       "enum": ["typescript", "python", "csharp", "java", "go"]
     },
     "app": {
@@ -23,7 +29,7 @@
     },
     "codeMakerOutput": {
       "type": "string",
-      "description": "Directory generated provider and module bindings are written to.",
+      "description": "Directory generated provider and module bindings are written to. For Java, the package prefix instead, e.g. \"imports\" or \"com.my-company\", not a path.",
       "default": ".gen"
     },
     "projectId": {
@@ -31,18 +37,18 @@
       "description": "Anonymous project identifier attached to telemetry and crash reports."
     },
     "sendCrashReports": {
-      "$ref": "#/definitions/booleanish",
+      "allOf": [{ "$ref": "#/definitions/booleanish" }],
       "description": "Whether the CLI sends crash reports."
     },
     "sendUsageTelemetry": {
-      "$ref": "#/definitions/booleanish",
+      "allOf": [{ "$ref": "#/definitions/booleanish" }],
       "description": "Whether the CLI sends anonymous usage telemetry."
     },
     "terraformProviders": {
       "type": "array",
       "description": "Providers to generate bindings for with `cdktn get`.",
       "items": {
-        "$ref": "#/definitions/dependency",
+        "allOf": [{ "$ref": "#/definitions/dependency" }],
         "examples": ["hashicorp/aws@~> 5.0"]
       }
     },
@@ -50,7 +56,7 @@
       "type": "array",
       "description": "Modules to generate bindings for with `cdktn get`.",
       "items": {
-        "$ref": "#/definitions/dependency",
+        "allOf": [{ "$ref": "#/definitions/dependency" }],
         "examples": ["terraform-aws-modules/vpc/aws@~> 5.0"]
       }
     },
@@ -75,9 +81,11 @@
       "minProperties": 1
     },
     "watchPattern": {
-      "type": "array",
-      "description": "Glob patterns `cdktn watch` watches. Written with the language's default on the first run if unset.",
-      "items": { "type": "string" }
+      "description": "Glob pattern or patterns `cdktn watch` watches. Written with the language's default on the first run if unset.",
+      "anyOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
     },
     "validateInstalledBinary": {
       "type": "boolean",

@@ -4,6 +4,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import Ajv from "ajv";
+import type { Config } from "@cdktn/commons";
 import { sscaff } from "sscaff";
 import { substitute } from "sscaff/lib/substitute";
 import { init, templatesDir } from "../../lib/init";
@@ -96,9 +97,8 @@ describe(".mcp.json on init", () => {
 
 describe("cdktf.json schema", () => {
   const workspaceRoot = path.resolve(__dirname, "../../../../../..");
-  const validate = new Ajv({ allErrors: true }).compile(
-    fs.readJsonSync(path.join(workspaceRoot, "cdktf.schema.json")),
-  );
+  const schema = fs.readJsonSync(path.join(workspaceRoot, "cdktf.schema.json"));
+  const validate = new Ajv({ allErrors: true }).compile(schema);
   // Variants such as typescript-pnpm carry no cdktf.json; they ship their base's files.
   const baseTemplates = fs
     .readdirSync(templatesDir)
@@ -147,14 +147,55 @@ describe("cdktf.json schema", () => {
     },
   );
 
-  // Each mirrors a value the CLI rejects or ignores at runtime.
-  it.each([
-    { language: "rust" },
-    { targetVersions: { terrafrom: ">=1.5.7" } },
-    { targetVersions: {} },
-    { sendCrashReports: "yes" },
-    { terraformProviders: [{ source: "hashicorp/aws" }] },
-  ])("rejects %j", (config) => {
+  const minimal = { language: "typescript", app: "npx tsx main.ts" };
+
+  it("accepts a minimal config", () => {
+    expect(validate(minimal) ? [] : validate.errors).toEqual([]);
+  });
+
+  // Each mirrors a value the CLI rejects or ignores at runtime, on top of an otherwise valid config.
+  it.each<[string, Record<string, unknown>]>([
+    ["a missing app", { language: "typescript" }],
+    ["an unknown language", { ...minimal, language: "rust" }],
+    ["a misspelt key", { ...minimal, terraformProvider: [] }],
+    [
+      "an unknown targetVersions product",
+      { ...minimal, targetVersions: { terrafrom: ">=1.5.7" } },
+    ],
+    ["an empty targetVersions", { ...minimal, targetVersions: {} }],
+    ["a non-boolean consent flag", { ...minimal, sendCrashReports: "yes" }],
+    [
+      "a provider object without a name",
+      { ...minimal, terraformProviders: [{ source: "hashicorp/aws" }] },
+    ],
+  ])("rejects %s", (_, config) => {
     expect(validate(config)).toBe(false);
+  });
+
+  // tsc fails here when Config gains or loses a key, so the schema can't silently drift from it.
+  const configKeys: Record<keyof Config, true> = {
+    app: true,
+    language: true,
+    languageOptions: true,
+    output: true,
+    codeMakerOutput: true,
+    terraformProviders: true,
+    terraformModules: true,
+    context: true,
+    targetVersions: true,
+    validateInstalledBinary: true,
+    sendCrashReports: true,
+    sendUsageTelemetry: true,
+  };
+
+  it("covers every Config key", () => {
+    expect(Object.keys(schema.properties).sort()).toEqual(
+      [
+        ...Object.keys(configKeys),
+        "$schema",
+        "projectId",
+        "watchPattern",
+      ].sort(),
+    );
   });
 });
