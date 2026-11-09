@@ -146,18 +146,12 @@ export async function init({
     );
   }
 
+  const cdktfConfig = CdktfConfig.read(destination);
+
   // Before providers are added: the targets pick the registry they are looked up in
   if (target) {
-    const configPath = path.join(destination, "cdktf.json");
-    const config = fs.readJsonSync(configPath);
-    fs.writeJsonSync(
-      configPath,
-      { ...config, targetVersions: initTargetVersions(target) },
-      { spaces: 2 },
-    );
+    cdktfConfig.writeTargetVersions(initTargetVersions(target));
   }
-
-  const cdktfConfig = CdktfConfig.read(destination);
 
   let needsGet = false;
   if (providers && providers.length) {

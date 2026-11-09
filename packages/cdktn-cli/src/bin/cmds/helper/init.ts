@@ -103,11 +103,14 @@ export type RunInitOptions = {
   target?: InitTarget;
 };
 
+function canPrompt(argv: Pick<RunInitOptions, "nonInteractive">): boolean {
+  return !ciDetect() && !argv.nonInteractive && isInteractiveTerminal();
+}
+
 export async function runInit(argv: RunInitOptions) {
   const telemetryData: Record<string, unknown> = {};
   const destination = argv.destination || ".";
-  const ci: string | false = ciDetect();
-  const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
+  const interactive = canPrompt(argv);
 
   const terraformRemoteHostname = argv.tfeHostname || tfcHostname;
   let token = "";
@@ -334,10 +337,8 @@ This means that your Terraform state file will be stored locally on disk in a fi
 export async function chooseInitTarget(
   argv: Pick<RunInitOptions, "target" | "nonInteractive">,
 ): Promise<InitTarget | undefined> {
-  const interactive =
-    !ciDetect() && !argv.nonInteractive && isInteractiveTerminal();
   const target =
-    argv.target ?? (interactive ? await askForTarget() : undefined);
+    argv.target ?? (canPrompt(argv) ? await askForTarget() : undefined);
   if (target) {
     selectTerraformBinary(initTargetVersions(target));
   }
