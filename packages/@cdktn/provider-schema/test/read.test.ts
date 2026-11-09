@@ -17,7 +17,7 @@ import * as path from "path";
 describe("read", () => {
   describe("disabled cache", () => {
     it("can generate a provider schema", async () => {
-      // Downloads the provider for real under Jest's default 5s timeout, so use a small one
+      // Real init, so keep the provider small
       const schema = await readSchema([
         new ConstructsMakerProviderTarget(
           new TerraformProviderConstraint("hashicorp/null@=3.2.1"),
@@ -31,7 +31,7 @@ describe("read", () => {
           fqpn.split("/").slice(1).join("/"),
         ),
       ).toContain("hashicorp/null");
-    });
+    }, 120_000);
   });
 
   describe("enabled cache", () => {
