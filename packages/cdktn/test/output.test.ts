@@ -7,6 +7,7 @@ import {
   TerraformElement,
   App,
   Fn,
+  Op,
 } from "../src";
 import { TestResource, TestProvider } from "./helper";
 import { TerraformVariable } from "../src/terraform-variable";
@@ -207,4 +208,49 @@ test("resource map output", () => {
   });
 
   expect(Testing.synth(stack)).toMatchSnapshot();
+});
+
+describe("precondition", () => {
+  function stackWithPrecondition() {
+    const stack = new TerraformStack(Testing.app(), "test");
+    const env = new TerraformVariable(stack, "env", { type: "string" });
+    new TerraformOutput(stack, "out", {
+      value: env.stringValue,
+      precondition: {
+        condition: Op.neq(env.stringValue, ""),
+        errorMessage: "env must not be empty.",
+      },
+    });
+    return stack;
+  }
+
+  test("is synthesized as JSON", () => {
+    expect(
+      JSON.parse(Testing.synth(stackWithPrecondition())).output.out,
+    ).toEqual({
+      value: "${var.env}",
+      precondition: [
+        {
+          condition: '${(var.env != "")}',
+          error_message: "env must not be empty.",
+        },
+      ],
+    });
+  });
+
+  test("is synthesized as an HCL block", () => {
+    const hcl = Testing.synthHcl(stackWithPrecondition());
+
+    expect(hcl).toContain("precondition {");
+    expect(hcl).toContain('error_message = "env must not be empty."');
+    expect(hcl).not.toContain("precondition = ");
+  });
+
+  test("is left out when not set", () => {
+    const stack = new TerraformStack(Testing.app(), "test");
+    new TerraformOutput(stack, "out", { value: 1 });
+
+    expect(Testing.synth(stack)).not.toContain("precondition");
+    expect(Testing.synthHcl(stack)).not.toContain("precondition");
+  });
 });
