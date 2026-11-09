@@ -9,7 +9,6 @@ packages/@cdktn/cli-core/src/test/lib/cdktf-project.test.ts
 packages/@cdktn/cli-core/src/test/lib/terraform-logs.test.ts
 packages/@cdktn/cli-core/src/test/lib/execution-logs.test.ts
 
-packages/cdktf-cli/templates/*/cdktf.json
 **/.gen
 **/cdktf.out
 *.js
