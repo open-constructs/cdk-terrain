@@ -636,7 +636,7 @@ async function findCdkTfJsonDirectory(rootDir: string): Promise<string | null> {
   for (const file of files) {
     const fullPath = path.join(rootDir, file);
     if ((await fs.stat(fullPath)).isDirectory()) {
-      const dir = findCdkTfJsonDirectory(fullPath);
+      const dir = await findCdkTfJsonDirectory(fullPath);
       if (dir) return dir;
       // else continue with next sub directory
     }
