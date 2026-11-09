@@ -1,5 +1,5 @@
 {
-  "{{ schemaKey }}": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
+  "$schema": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
   "language": "python",
   "app": "pipenv run python main.py",
   "projectId": "{{projectId}}",
