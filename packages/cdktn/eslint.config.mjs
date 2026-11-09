@@ -21,7 +21,13 @@ export default [
     },
 
     rules: {
-      "@typescript-eslint/no-empty-interface": 0,
+      // JSII has no type aliases, so empty and single-extends interfaces are the only way to express them
+      "@typescript-eslint/no-empty-object-type": [
+        "warn",
+        { allowInterfaces: "always" },
+      ],
+      // `declare global { namespace jest }` is how the jest adapter augments jest's matcher types
+      "@typescript-eslint/no-namespace": ["error", { allowDeclarations: true }],
       "@typescript-eslint/no-unused-vars": "off",
 
       "jsdoc/require-jsdoc": [

@@ -22,8 +22,7 @@ import { IInterpolatingParent } from "./terraform-addressable";
 import { ITerraformIterator } from "./terraform-iterator";
 import { TerraformCount } from "./terraform-count";
 import { ProviderFeature } from "./provider-feature-constraints";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import assert = require("assert");
+import { ok as assert } from "assert";
 
 const TERRAFORM_EPHEMERAL_RESOURCE_SYMBOL = Symbol.for(
   "cdktf/TerraformEphemeralResource",

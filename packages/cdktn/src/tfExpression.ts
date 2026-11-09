@@ -266,7 +266,7 @@ class RawString extends TFExpression {
 
   public resolve(context: IResolveContext) {
     const qts = context.suppressBraces ? `"` : ``;
-    return `${qts}${this.escapeString(this.str).replace(/\"/g, '\\"')}${qts}`; // eslint-disable-line no-useless-escape
+    return `${qts}${this.escapeString(this.str).replace(/"/g, '\\"')}${qts}`;
   }
 
   public toString() {

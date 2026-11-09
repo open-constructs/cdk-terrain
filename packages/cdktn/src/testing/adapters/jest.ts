@@ -15,7 +15,6 @@ import {
   returnMatcherToJest,
 } from "../matchers";
 
-/* eslint-disable */
 declare global {
   namespace jest {
     interface Matchers<R> {
@@ -52,6 +51,12 @@ type JestExpect = {
 // Jest supports asymetric matchers (https://github.com/facebook/jest/blob/main/packages/expect/src/asymmetricMatchers.ts)
 // These matchers are great in expressing partial equality in a deeply nested way
 // As we want to support more than one testing framework we can not use them everywhere
+/**
+ * Checks whether any of the items partially matches the asserted properties, using jest's asymmetric matchers.
+ * @param items the synthesized items to search
+ * @param assertedProperties the properties at least one item must contain; when empty, any item matches
+ * @returns true if a matching item was found
+ */
 function jestPassEvaluation(
   items: any[],
   assertedProperties: Record<string, any>,
@@ -70,6 +75,9 @@ function jestPassEvaluation(
   }
 }
 
+/**
+ * Registers the CDKTN matchers (toHaveResource, toBeValidTerraform, etc.) with jest's global `expect`.
+ */
 export function setupJest() {
   if (!("expect" in global)) {
     throw expectNotGloballyAccessible();

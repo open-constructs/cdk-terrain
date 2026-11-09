@@ -193,13 +193,7 @@ export const parseOutput = (str: string): DeployingResource[] => {
     };
   });
 
-  return resources.reduce((acc, resource) => {
-    if (resource) {
-      acc.push(resource);
-    }
-    return acc;
-    // eslint-disable-next-line @typescript-eslint/no-array-constructor
-  }, new Array());
+  return resources.filter((resource) => resource !== undefined);
 };
 
 const isObjectEmpty = (obj: Record<string, any>): boolean => {

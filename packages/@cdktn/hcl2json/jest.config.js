@@ -2,7 +2,6 @@
  * Copyright (c) HashiCorp, Inc.
  * SPDX-License-Identifier: MPL-2.0
  */
-/* eslint-disable */
 const { readFileSync } = require('fs');
 
 const swcJestConfig = JSON.parse(

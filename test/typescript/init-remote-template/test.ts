@@ -3,8 +3,7 @@
 import { TestDriver } from "../../test-helper";
 import { TemplateServer } from "../../template-server";
 import * as path from "path";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const fs = require("fs").promises;
+import { promises as fs } from "fs";
 
 describe("remote templates", () => {
   test("can init", async () => {
