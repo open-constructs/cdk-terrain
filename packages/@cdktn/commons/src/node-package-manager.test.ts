@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { mkdtempSync, writeFileSync } from "fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { detectNodePackageManager } from "./node-package-manager";
@@ -50,5 +50,22 @@ describe("detectNodePackageManager", () => {
     ["nothing", {}, "npm"],
   ])("%s => %s", (_, files, expected) => {
     expect(detectNodePackageManager(projectWith(files))).toBe(expected);
+  });
+
+  it.each<[string, Record<string, string>, string]>([
+    ["workspace member", { "package.json": "{}" }, "pnpm"],
+    [
+      "nested npm project",
+      { "package.json": "{}", "package-lock.json": "" },
+      "npm",
+    ],
+  ])("%s under a pnpm root => %s", (_, files, expected) => {
+    const root = projectWith({ "pnpm-lock.yaml": "" });
+    const member = join(root, "member");
+    mkdirSync(member);
+    for (const [name, contents] of Object.entries(files)) {
+      writeFileSync(join(member, name), contents);
+    }
+    expect(detectNodePackageManager(member)).toBe(expected);
   });
 });

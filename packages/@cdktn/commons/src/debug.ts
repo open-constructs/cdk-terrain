@@ -8,7 +8,10 @@ import { terraformVersion } from "./terraform";
 import { DISPLAY_VERSION } from "./version";
 import { readFileSync } from "fs-extra";
 import { getGradlePackageVersion, isGradleProject } from "./gradle";
-import { detectNodePackageManager } from "./node-package-manager";
+import {
+  detectNodePackageManager,
+  isSameDirectory,
+} from "./node-package-manager";
 
 export function getLanguage(projectPath = process.cwd()): string | undefined {
   try {
@@ -111,19 +114,24 @@ async function getPnpmNodeModuleVersion(
     return undefined;
   }
 
-  if (
-    !json ||
-    !Array.isArray(json) ||
-    json.length === 0 ||
-    !json[0]?.dependencies?.[packageName]?.version
-  ) {
+  // Inside a workspace pnpm reports every project, not only the one in cwd.
+  const project = Array.isArray(json)
+    ? (json.find(
+        (entry: any) =>
+          typeof entry?.path === "string" &&
+          isSameDirectory(entry.path, process.cwd()),
+      ) ?? (json.length === 1 ? json[0] : undefined))
+    : undefined;
+  const version = project?.dependencies?.[packageName]?.version;
+
+  if (!version) {
     logger.debug(
       `Unable to find '${packageName}' in 'pnpm list ${packageName} --json': ${output}`,
     );
     return undefined;
   }
 
-  return json[0].dependencies[packageName].version;
+  return version;
 }
 
 async function getNpmNodeModuleVersion(
