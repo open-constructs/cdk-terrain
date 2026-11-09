@@ -366,11 +366,11 @@ $ cdktn init --template typescript --local
 
 Please note, that this will reference the built packages in `$CDKTF_DIST`. This means, it will reflect code changes only after repeating `pnpm build && pnpm package` and running an explicit `pnpm install` again.
 
-Reference the previously [linked](#create-link) `cdktn` package in our newly created project:
+Link the `cdktn` library from the repo into the newly created project:
 
 ```shell
 $ cd ~/my-local-cdktn-example
-$ pnpm link --global cdktn
+$ pnpm link <path-to-repo>/packages/cdktn
 ```
 
 From here on both, the `cli` and the `cdktn` packages are linked and changes will be reflected immediatlely.
