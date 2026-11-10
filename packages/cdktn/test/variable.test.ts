@@ -111,6 +111,12 @@ test("tuple type", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
+test("tuple type keeps a pre-bracketed element list", () => {
+  expect(VariableType.tuple("[string, number]")).toBe(
+    "tuple([string, number])",
+  );
+});
+
 test("object type", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");
