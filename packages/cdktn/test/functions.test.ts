@@ -620,3 +620,23 @@ test("Property access using lookup and lookupNested functions", () => {
     }"
   `);
 });
+
+test.each([
+  ["false", false, "false"],
+  ["0", 0, "0"],
+  ["an empty string", "", '\\"\\"'],
+  ["null", null, "null"],
+])("lookup keeps a falsy default of %s", (_name, defaultValue, rendered) => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+  const variable = new TerraformVariable(stack, "test-var", {
+    type: "map(any)",
+  });
+  new TerraformOutput(stack, "lookup", {
+    value: Fn.lookup(variable.value, "z", defaultValue),
+  });
+
+  expect(Testing.synth(stack)).toContain(
+    `"\${lookup(var.test-var, \\"z\\", ${rendered})}"`,
+  );
+});
