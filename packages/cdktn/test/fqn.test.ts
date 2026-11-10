@@ -90,11 +90,7 @@ test("works when escape is mid-way", () => {
   const secondResource = new TestResource(stack, "second-resource", {
     name: "bar",
     tags: {
-      firstResourceName: `simple-test-${Fn.lookup(
-        otherResource.fqn,
-        "name",
-        "",
-      )}-$\{${firstResource.fqn}.name}`,
+      firstResourceName: `simple-test-${Fn.lookupNested(otherResource.fqn, ["name"])}-$\{${firstResource.fqn}.name}`,
     },
   });
 
@@ -131,11 +127,7 @@ test("after escape, reverts to normal", () => {
   const secondResource = new TestResource(stack, "second-resource", {
     name: "bar",
     tags: {
-      firstResourceName: `simple-test-$\{${firstResource.fqn}.name}-${Fn.lookup(
-        otherResource.fqn,
-        "name",
-        "",
-      )}`,
+      firstResourceName: `simple-test-$\{${firstResource.fqn}.name}-${Fn.lookupNested(otherResource.fqn, ["name"])}`,
     },
   });
 
@@ -174,7 +166,7 @@ test("can have multiple escapes", () => {
     tags: {
       firstResourceName: `simple-test-$\{${
         firstResource.fqn
-      }.name}-$\{${Fn.lookup(otherResource.fqn, "name", "")}}`,
+      }.name}-$\{${Fn.lookupNested(otherResource.fqn, ["name"])}}`,
     },
   });
 
@@ -279,7 +271,7 @@ test("works with functions", () => {
     tags: {
       firstResourceName: `simple-test-$\{${
         firstResource.fqn
-      }.name}-$\{${Fn.lookup(otherResource.fqn, "name", "")}}`,
+      }.name}-$\{${Fn.lookupNested(otherResource.fqn, ["name"])}}`,
     },
   });
 
@@ -405,7 +397,7 @@ test("allows functions within functions", () => {
       firstResourceName: Fn.lookup(
         otherResource.fqn,
         "name",
-        Fn.upper(Fn.lookup(otherResource.fqn, "name", "")),
+        Fn.upper(Fn.lookupNested(otherResource.fqn, ["name"])),
       ),
     },
   });
