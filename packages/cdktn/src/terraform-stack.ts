@@ -122,11 +122,11 @@ export class TerraformStack extends Construct {
     throwIfIdIsGlobCharacter(id);
     throwIfIdContainsWhitespace(id);
     this.cdktfVersion = this.node.tryGetContext("cdktfVersion");
+    // The output format comes from the manifest at synth time, see
+    // StackSynthesizer.synthesize.
     this.synthesizer = new StackSynthesizer(
       this,
       process.env.CDKTF_CONTINUE_SYNTH_ON_ERROR_ANNOTATIONS !== undefined,
-      process.env.SYNTH_HCL_OUTPUT === "true" ||
-        process.env.SYNTH_HCL_OUTPUT === "1",
     );
     Object.defineProperty(this, STACK_SYMBOL, { value: true });
     this.node.addValidation(new ValidateProviderPresence(this));
