@@ -615,6 +615,24 @@ export function renderSimpleAttributes(attributes: any): string {
     )
     .join("\n");
 }
+
+/**
+ *
+ */
+function renderLifecycle(lifecycle: any): string {
+  return Object.entries(lifecycle)
+    .map(([name, value]) => {
+      // replace_triggered_by only accepts references, which can't be quoted
+      if (name === "replace_triggered_by" && Array.isArray(value)) {
+        return `  ${name} = [
+${value.map((reference) => `${reference},`).join("\n")}
+]`;
+      }
+      return `  ${name} = ${renderFuzzyJsonExpression(value)}`;
+    })
+    .join("\n");
+}
+
 /**
  * Detects a resolved-but-emptied attribute descriptor: an object shaped like
  * what `AttributesEmitter#emitToHclTerraform` always emits for HCL synthesis
@@ -694,6 +712,11 @@ export function renderAttributes(attributes: any): string {
         // renderFuzzyJsonExpression(). See isOrphanedAttributeDescriptor().
         if (isOrphanedAttributeDescriptor(v)) {
           return undefined;
+        }
+        if (name === "lifecycle") {
+          return `${name} {
+${renderLifecycle(v)}
+}`;
         }
         if (metaBlocks.includes(name)) {
           return `${name} {
