@@ -156,6 +156,7 @@ describe("cdktf.json schema", () => {
   // Each mirrors a value the CLI rejects or ignores at runtime, on top of an otherwise valid config.
   it.each<[string, Record<string, unknown>]>([
     ["a missing app", { language: "typescript" }],
+    ["an empty app", { ...minimal, app: "" }],
     ["an unknown language", { ...minimal, language: "rust" }],
     ["a misspelt key", { ...minimal, terraformProvider: [] }],
     [
@@ -163,6 +164,14 @@ describe("cdktf.json schema", () => {
       { ...minimal, targetVersions: { terrafrom: ">=1.5.7" } },
     ],
     ["an empty targetVersions", { ...minimal, targetVersions: {} }],
+    [
+      "a blank targetVersions range",
+      { ...minimal, targetVersions: { terraform: " " } },
+    ],
+    [
+      "a Terraform-style targetVersions range",
+      { ...minimal, targetVersions: { terraform: "~> 1.5" } },
+    ],
     ["a non-boolean consent flag", { ...minimal, sendCrashReports: "yes" }],
     [
       "a provider object without a name",
