@@ -445,7 +445,12 @@ export function renderLocals(locals: any) {
 
   return `locals {
     ${localNames
-      .filter((name) => !!locals[name].value)
+      // Keep false, 0 and "". A null value is still left out: it has no HCL
+      // rendering here yet.
+      .filter(
+        (name) =>
+          locals[name].value !== undefined && locals[name].value !== null,
+      )
       .map((name: string) => {
         const value = renderFuzzyJsonExpression(locals[name].value);
         return `${name} = ${value}`;
