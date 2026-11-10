@@ -65,6 +65,24 @@ describe("remote templates", () => {
     }
   });
 
+  test("reports an archive without a cdktf.json", async () => {
+    const server = new TemplateServer(
+      path.join(__dirname, "nested-template", "docs"),
+    );
+    try {
+      const url = await server.start();
+      const driver = new TestDriver(__dirname);
+      driver.switchToTempDir();
+      await expect(driver.init(url)).rejects.toMatchObject({
+        stderr: expect.stringContaining(
+          "Could not find a cdktf.json in the extracted directory",
+        ),
+      });
+    } finally {
+      await server.stop();
+    }
+  });
+
   test("handles invalid url", async () => {
     const driver = new TestDriver(__dirname);
 
