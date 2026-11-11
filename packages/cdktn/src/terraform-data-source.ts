@@ -26,7 +26,10 @@ import { ok as assert } from "assert";
 
 const TERRAFORM_DATA_SOURCE_SYMBOL = Symbol.for("cdktf/TerraformDataSource");
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform data source (`data` block): reads information from a provider about infrastructure defined outside
+ * this configuration, for use elsewhere in the stack.
+ */
 export class TerraformDataSource
   extends TerraformElement
   implements ITerraformResource, ITerraformDependable, IInterpolatingParent

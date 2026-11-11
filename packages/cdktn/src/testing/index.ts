@@ -121,7 +121,11 @@ export class Testing {
 
     const tfConfig = stack.toTerraform();
 
-    // eslint-disable-next-line jsdoc/require-jsdoc
+    /**
+     * Recursively sorts object keys alphabetically and removes the `//` metadata entries
+     * @param item Value to clean
+     * @returns A copy of the value with sorted keys and no metadata entries
+     */
     function removeMetadata(item: any): any {
       if (item !== null && typeof item === "object") {
         if (Array.isArray(item)) {
@@ -189,7 +193,13 @@ export class Testing {
   public static renderConstructTree(construct: IConstruct): string {
     return render(construct, 0, false);
 
-    // eslint-disable-next-line jsdoc/require-jsdoc
+    /**
+     * Renders a construct and its descendants as an indented tree, one construct per line
+     * @param construct Construct to render
+     * @param level Depth of the construct in the tree
+     * @param isLast Whether the construct is the last child of its parent
+     * @returns The rendered tree
+     */
     function render(
       construct: IConstruct,
       level: number,

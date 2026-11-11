@@ -7,7 +7,10 @@ import { ref } from "./tfExpression";
 import { IResolvable } from "./tokens/resolvable";
 import { ITerraformAddressable } from "./terraform-addressable";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform local value (entry in a `locals` block): a named expression that can be referenced from elsewhere in
+ * the stack.
+ */
 export class TerraformLocal
   extends TerraformElement
   implements ITerraformAddressable

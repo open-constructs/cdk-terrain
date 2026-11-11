@@ -9,7 +9,9 @@ import {
 } from "../terraform-remote-state";
 import { getHostNameType } from "./cloud-backend";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Configures the stack to store its Terraform state in the `remote` backend.
+ */
 export class RemoteBackend extends TerraformBackend {
   constructor(
     scope: Construct,
@@ -42,7 +44,9 @@ export class RemoteBackend extends TerraformBackend {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A `terraform_remote_state` data source that reads the outputs of a state stored in the `remote` backend.
+ */
 export class DataTerraformRemoteState extends TerraformRemoteState {
   constructor(
     scope: Construct,
@@ -62,12 +66,16 @@ export interface RemoteBackendConfig {
 
 export interface IRemoteWorkspace {}
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Selects a single `remote` backend workspace by its full name.
+ */
 export class NamedRemoteWorkspace implements IRemoteWorkspace {
   public constructor(public name: string) {}
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Selects every `remote` backend workspace whose name starts with the given prefix.
+ */
 export class PrefixedRemoteWorkspaces implements IRemoteWorkspace {
   public constructor(public prefix: string) {}
 }

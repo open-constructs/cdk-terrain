@@ -28,17 +28,30 @@ function hasUnescapedDoubleQuotes(str: string) {
 }
 
 // Validators
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Validator that accepts any value
+ * @param value Value to validate
+ * @returns The wrapped value
+ */
 export function anyValue<T>(value: T): TFValue<T> {
   return { value };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Validator for map values; accepts any value without checking it
+ * @param value Value to validate
+ * @returns The wrapped value
+ */
 export function mapValue<T>(value: T): TFValue<T> {
   return { value };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Validator that accepts a string or a token
+ * @param value Value to validate
+ * @returns The wrapped value
+ * @throws If the value is neither a string nor a token, or is a string containing unescaped double quotes
+ */
 export function stringValue<T extends string>(value: T): TFValue<T> {
   if (typeof value !== "string" && !Tokenization.isResolvable(value)) {
     throw valueIsInvalidStringOrToken(value);
@@ -51,7 +64,12 @@ export function stringValue<T extends string>(value: T): TFValue<T> {
   return { value };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Validator that accepts a number or a token
+ * @param value Value to validate
+ * @returns The wrapped value
+ * @throws If the value is neither a number nor a token
+ */
 export function numericValue<T>(value: T): TFValue<T> {
   if (typeof value !== "number" && !Tokenization.isResolvable(value)) {
     throw valueIsInvalidNumberOrToken(value as string);
@@ -59,7 +77,13 @@ export function numericValue<T>(value: T): TFValue<T> {
   return { value };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a validator for lists whose elements are checked with the given element validator. Tokens and non-array
+ * values pass through unchanged; `null`/`undefined` elements are dropped, token elements are kept as-is and plain
+ * string elements are wrapped in double quotes.
+ * @param type Validator applied to each non-token element
+ * @returns A list validator that throws if an element fails the element validator
+ */
 export function listOf<T>(type: TFValueValidator<T>): TFValueValidator<T[]> {
   return (value: any) => {
     if (Tokenization.isResolvable(value)) {
@@ -111,7 +135,12 @@ export function listOf<T>(type: TFValueValidator<T>): TFValueValidator<T[]> {
   };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a validator for a variadic argument: validates the value as a list and marks it to be expanded into
+ * separate arguments of the Terraform function call
+ * @param type Validator applied to each element
+ * @returns A validator for the variadic argument
+ */
 export function variadic<T>(type: TFValueValidator<T>): TFValueValidator<T[]> {
   return (value: any) => {
     // we use the list validator and set variadic to true in order to have it expanded in the args passed to the TF function
@@ -120,32 +149,56 @@ export function variadic<T>(type: TFValueValidator<T>): TFValueValidator<T[]> {
 }
 
 // Tokenization
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Converts a resolvable into a string token
+ * @param value Resolvable to convert
+ * @returns String token
+ */
 export function asString(value: IResolvable) {
   return Token.asString(value);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Converts a resolvable into a number token
+ * @param value Resolvable to convert
+ * @returns Number token
+ */
 export function asNumber(value: IResolvable) {
   return Token.asNumber(value);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Converts a resolvable into a string list token
+ * @param value Resolvable to convert
+ * @returns String list token
+ */
 export function asList(value: IResolvable) {
   return Token.asList(value);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Converts a resolvable into a string map token
+ * @param value Resolvable to convert
+ * @returns String map token
+ */
 export function asStringMap(value: IResolvable) {
   return Token.asStringMap(value);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Returns the resolvable unchanged, as booleans can not be represented as a token
+ * @param value Resolvable to return
+ * @returns The same resolvable
+ */
 export function asBoolean(value: IResolvable) {
   return value; // Booleans can not be represented as a token
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Converts a resolvable into a string token typed as `any`
+ * @param value Resolvable to convert
+ * @returns String token typed as `any`
+ */
 export function asAny(value: IResolvable) {
   // Ordinarily casting to any can cause issues, but
   // in this case it makes using functions a bit easier in TS
@@ -155,7 +208,13 @@ export function asAny(value: IResolvable) {
   return asString(value) as any;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a function that validates its arguments and returns a Terraform function call expression
+ * @param name Name of the Terraform function
+ * @param argValidators Validators for each positional argument
+ * @returns A function returning the call expression; it throws if the number of arguments does not match the
+ * validators or an argument fails validation
+ */
 export function terraformFunction(
   name: string,
   argValidators: TFValueValidator<any>[],

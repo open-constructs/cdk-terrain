@@ -58,7 +58,10 @@ export interface TerraformStackMetadata {
   readonly cloud?: string;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Throws if the stack id contains a glob character (`*`, `?`, `[`, `]`, `{`, `}` or `!`)
+ * @param str Stack id to check
+ */
 function throwIfIdIsGlobCharacter(str: string): void {
   ["*", "?", "[", "]", "{", "}", "!"].forEach((char) => {
     if (str.includes(char)) {
@@ -67,14 +70,20 @@ function throwIfIdIsGlobCharacter(str: string): void {
   });
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Throws if the stack id contains whitespace
+ * @param str Stack id to check
+ */
 function throwIfIdContainsWhitespace(str: string): void {
   if (/\s/.test(str)) {
     throw stackIdContainsWhitespace(str);
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A unit of deployment that synthesizes to its own Terraform configuration and working directory, with its own
+ * backend and state. Resources, providers and other Terraform elements are defined within a stack.
+ */
 export class TerraformStack extends Construct {
   private readonly rawOverrides: any = {};
   private readonly cdktfVersion: string;
@@ -187,7 +196,11 @@ export class TerraformStack extends Construct {
   public static of(construct: IConstruct): TerraformStack {
     return _lookup(construct);
 
-    // eslint-disable-next-line jsdoc/require-jsdoc
+    /**
+     * Walks up the construct tree from the given construct until it finds a TerraformStack
+     * @param c Construct to start the search from
+     * @returns The nearest enclosing TerraformStack
+     */
     function _lookup(c: IConstruct): TerraformStack {
       if (TerraformStack.isStack(c)) {
         return c;
@@ -608,7 +621,12 @@ export class TerraformStack extends Construct {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Collects the TerraformElements in a construct subtree, not descending into nested stacks
+ * @param node Root of the subtree to search
+ * @param into Array the found elements are appended to
+ * @returns The array of collected elements
+ */
 function terraformElements(
   node: IConstruct,
   into: TerraformElement[] = [],
