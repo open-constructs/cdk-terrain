@@ -17,5 +17,4 @@ coverage
 # Build state: jsii regenerates tsconfig.json, .tsbuildinfo embeds build-machine
 # paths.
 tsconfig.json
-tsconfig.test.json
 *.tsbuildinfo

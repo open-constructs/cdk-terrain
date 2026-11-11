@@ -3,11 +3,16 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import Ajv from "ajv";
+import type { Config, InitTarget } from "@cdktn/commons";
 import { sscaff } from "sscaff";
+import { substitute } from "sscaff/lib/substitute";
 import { init, templatesDir } from "../../lib/init";
+import { providerAdd } from "../../lib/provider-add";
 
 // The real template hooks install dependencies, so sscaff only lays down the cdktf.json that init reads back.
 jest.mock("sscaff", () => ({ sscaff: jest.fn() }));
+jest.mock("../../lib/provider-add", () => ({ providerAdd: jest.fn() }));
 
 const docsNote = expect.stringMatching(/https:\/\/cdktn\.io\/docs\//);
 
@@ -89,5 +94,180 @@ describe(".mcp.json on init", () => {
       existing,
     );
     expect(log).not.toHaveBeenCalledWith(docsNote);
+  });
+});
+
+describe("targetVersions on init", () => {
+  let destination: string;
+  const template = { terraform: ">=1.9.0", opentofu: ">=1.9.0" };
+  const readTargets = () =>
+    fs.readJsonSync(path.join(destination, "cdktf.json")).targetVersions;
+
+  const run = (target?: InitTarget) =>
+    init({
+      cdktnVersion: "1.0.0",
+      destination,
+      projectId: "test",
+      projectInfo: { Name: "test", Description: "test" },
+      templatePath: path.join(templatesDir, "typescript"),
+      sendCrashReports: false,
+      sendUsageTelemetry: false,
+      silent: true,
+      providers: ["random"],
+      target,
+    });
+
+  beforeEach(() => {
+    destination = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-init-"));
+    (sscaff as jest.Mock).mockImplementation(async (_src, target) => {
+      fs.writeJsonSync(path.join(target, "cdktf.json"), {
+        language: "typescript",
+        app: "npx tsx main.ts",
+        targetVersions: template,
+      });
+    });
+  });
+
+  afterEach(() => fs.removeSync(destination));
+
+  // provider add picks its registry from targetVersions
+  it.each([
+    ["terraform", { terraform: ">=1.5.7" }],
+    ["opentofu", { opentofu: ">=1.6.0" }],
+    ["both", { terraform: ">=1.5.7", opentofu: ">=1.6.0" }],
+  ] as const)(
+    "writes the %s targets before adding providers",
+    async (target, expected) => {
+      (providerAdd as jest.Mock).mockImplementation(async () => {
+        expect(readTargets()).toEqual(expected);
+        return false;
+      });
+
+      await run(target);
+
+      expect(providerAdd).toHaveBeenCalled();
+    },
+  );
+
+  it("keeps the template's targets without a target", async () => {
+    (providerAdd as jest.Mock).mockResolvedValue(false);
+
+    await run();
+
+    expect(readTargets()).toEqual(template);
+  });
+});
+
+describe("cdktf.json schema", () => {
+  const workspaceRoot = path.resolve(__dirname, "../../../../../..");
+  const schema = fs.readJsonSync(path.join(workspaceRoot, "cdktf.schema.json"));
+  const validate = new Ajv({ allErrors: true }).compile(schema);
+  // Variants such as typescript-pnpm carry no cdktf.json; they ship their base's files.
+  const baseTemplates = fs
+    .readdirSync(templatesDir)
+    .filter((name) =>
+      fs.existsSync(path.join(templatesDir, name, "cdktf.json{{}}")),
+    );
+  let destination: string;
+
+  beforeEach(() => {
+    destination = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-init-"));
+    // Renders only cdktf.json with init's real variables; the template hooks would install dependencies.
+    (sscaff as jest.Mock).mockImplementation(async (src, target, variables) => {
+      fs.writeFileSync(
+        path.join(target, "cdktf.json"),
+        substitute(
+          fs.readFileSync(path.join(src, "cdktf.json{{}}"), "utf8"),
+          variables,
+        ),
+      );
+    });
+  });
+
+  afterEach(() => {
+    fs.removeSync(destination);
+  });
+
+  it.each(baseTemplates)(
+    "accepts the cdktf.json init writes for %s",
+    async (template) => {
+      await init({
+        cdktnVersion: "1.2.3",
+        destination,
+        projectId: "test",
+        projectInfo: { Name: "test", Description: "test" },
+        templatePath: path.join(templatesDir, template),
+        sendCrashReports: false,
+        sendUsageTelemetry: true,
+        silent: true,
+      });
+      const config = fs.readJsonSync(path.join(destination, "cdktf.json"));
+
+      expect(config.$schema).toBe(
+        "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v1.2.3/cdktf.schema.json",
+      );
+      expect(validate(config) ? [] : validate.errors).toEqual([]);
+    },
+  );
+
+  const minimal = { language: "typescript", app: "npx tsx main.ts" };
+
+  it("accepts a minimal config", () => {
+    expect(validate(minimal) ? [] : validate.errors).toEqual([]);
+  });
+
+  // Each mirrors a value the CLI rejects or ignores at runtime, on top of an otherwise valid config.
+  it.each<[string, Record<string, unknown>]>([
+    ["a missing app", { language: "typescript" }],
+    ["an empty app", { ...minimal, app: "" }],
+    ["an unknown language", { ...minimal, language: "rust" }],
+    ["a misspelt key", { ...minimal, terraformProvider: [] }],
+    [
+      "an unknown targetVersions product",
+      { ...minimal, targetVersions: { terrafrom: ">=1.5.7" } },
+    ],
+    ["an empty targetVersions", { ...minimal, targetVersions: {} }],
+    [
+      "a blank targetVersions range",
+      { ...minimal, targetVersions: { terraform: " " } },
+    ],
+    [
+      "a Terraform-style targetVersions range",
+      { ...minimal, targetVersions: { terraform: "~> 1.5" } },
+    ],
+    ["a non-boolean consent flag", { ...minimal, sendCrashReports: "yes" }],
+    [
+      "a provider object without a name",
+      { ...minimal, terraformProviders: [{ source: "hashicorp/aws" }] },
+    ],
+  ])("rejects %s", (_, config) => {
+    expect(validate(config)).toBe(false);
+  });
+
+  // tsc fails here when Config gains or loses a key, so the schema can't silently drift from it.
+  const configKeys: Record<keyof Config, true> = {
+    app: true,
+    language: true,
+    languageOptions: true,
+    output: true,
+    codeMakerOutput: true,
+    terraformProviders: true,
+    terraformModules: true,
+    context: true,
+    targetVersions: true,
+    validateInstalledBinary: true,
+    sendCrashReports: true,
+    sendUsageTelemetry: true,
+  };
+
+  it("covers every Config key", () => {
+    expect(Object.keys(schema.properties).sort()).toEqual(
+      [
+        ...Object.keys(configKeys),
+        "$schema",
+        "projectId",
+        "watchPattern",
+      ].sort(),
+    );
   });
 });

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
+  "language": "python",
+  "app": "pipenv run python main.py",
+  "projectId": "{{projectId}}",
+  "sendCrashReports": "{{sendCrashReports}}",
+  "targetVersions": {
+    "terraform": ">=1.5.7",
+    "opentofu": ">=1.6.0"
+  },
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
+  "terraformProviders": [],
+  "terraformModules": [],
+  "codeMakerOutput": "imports",
+  "context": {
+{{futureFlags}}
+  }
+}

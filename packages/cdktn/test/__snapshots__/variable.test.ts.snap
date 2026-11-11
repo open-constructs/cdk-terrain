@@ -159,7 +159,7 @@ exports[`tuple type 1`] = `
 "{
   "variable": {
     "test-variable": {
-      "type": "tuple(bool, list(number))"
+      "type": "tuple([bool, list(number)])"
     }
   }
 }"

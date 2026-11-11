@@ -5,7 +5,13 @@ import { Construct } from "constructs";
 
 const TOKEN_RESOLVER = new DefaultTokenResolver(new StringConcat());
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Resolves all tokens in an object using the default token resolver
+ * @param scope The construct the tokens are resolved in
+ * @param obj The object to resolve
+ * @param preparing Whether this is the preparation pass rather than the final resolution
+ * @returns The object with all tokens resolved
+ */
 export function resolve<T>(scope: Construct, obj: T, preparing = false): T {
   return Tokenization.resolve(obj, {
     scope,

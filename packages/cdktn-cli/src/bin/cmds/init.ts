@@ -3,7 +3,7 @@
 import yargs from "yargs";
 
 import { readPackageJson, requireHandlers } from "./helper/utilities";
-import { Errors, logger } from "@cdktn/commons";
+import { Errors, INIT_TARGETS, logger } from "@cdktn/commons";
 import { BaseCommand } from "./helper/base-command";
 
 const pkg = readPackageJson();
@@ -43,6 +43,11 @@ class Command extends BaseCommand {
       .option("dist", {
         type: "string",
         desc: 'Install dependencies from a "dist" directory (for development)',
+      })
+      .option("target", {
+        type: "string",
+        choices: INIT_TARGETS,
+        desc: "The CLI that will run the project, written to targetVersions in cdktf.json. Asked for when run interactively; otherwise the template's targetVersions are kept.",
       })
       .option("local", {
         type: "boolean",

@@ -12,7 +12,7 @@ jest.mock("@cdktn/cli-core", () => ({
   })),
 }));
 
-import { terraformCheck } from "../terraform-check";
+import { getTerraformVersion, terraformCheck } from "../terraform-check";
 
 describe("terraformCheck", () => {
   let workdir: string;
@@ -41,6 +41,11 @@ describe("terraformCheck", () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("unsupported Terraform version [1.1.0]"),
     );
+  });
+
+  it("reads the version OpenTofu prints", async () => {
+    mockVersion.mockResolvedValue("OpenTofu v1.6.0\non windows_amd64\n");
+    await expect(getTerraformVersion()).resolves.toBe("1.6.0");
   });
 
   it("throws a Usage error for a legacy terraform.tfstate instead of exiting", async () => {

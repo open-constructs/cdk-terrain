@@ -14,7 +14,9 @@ import {
 
 const TERRAFORM_IDENTIFIER_REGEX = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for Terraform expression tokens, with helpers that render resolved arguments as Terraform syntax.
+ */
 class TFExpression extends Intrinsic implements IResolvable {
   protected resolveExpressionPart(context: IResolveContext, arg: any): string {
     const resolvedArg = context.resolve(arg);
@@ -257,8 +259,9 @@ class TFExpression extends Intrinsic implements IResolvable {
   }
 }
 
-// A string that represents an input value to be escaped
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Expression that renders a literal string with newlines, `${` sequences and double quotes escaped.
+ */
 class RawString extends TFExpression {
   constructor(private readonly str: string) {
     super(str);
@@ -266,7 +269,7 @@ class RawString extends TFExpression {
 
   public resolve(context: IResolveContext) {
     const qts = context.suppressBraces ? `"` : ``;
-    return `${qts}${this.escapeString(this.str).replace(/\"/g, '\\"')}${qts}`; // eslint-disable-line no-useless-escape
+    return `${qts}${this.escapeString(this.str).replace(/"/g, '\\"')}${qts}`;
   }
 
   public toString() {
@@ -274,12 +277,19 @@ class RawString extends TFExpression {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Wraps a string so it is rendered as an escaped Terraform string literal
+ * @param str The string to escape
+ * @returns A resolvable that renders the escaped string
+ */
 export function rawString(str: string): IResolvable {
   return new RawString(str);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Expression referencing a Terraform identifier. When resolved in a stack other than its origin stack, it is
+ * rendered as a cross-stack reference instead.
+ */
 class Reference extends TFExpression {
   /**
    * A single reference could be used in multiple stacks,
@@ -327,7 +337,12 @@ class Reference extends TFExpression {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a reference to a Terraform identifier, e.g. `aws_instance.web.id`
+ * @param identifier The Terraform identifier to reference
+ * @param stack The stack the referenced identifier belongs to, used to detect cross-stack references
+ * @returns A resolvable that renders the reference
+ */
 export function ref(identifier: string, stack?: TerraformStack): IResolvable {
   return new Reference(identifier, stack);
 }
@@ -340,7 +355,9 @@ export function insideTfExpression(arg: any) {
   return arg;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Expression accessing properties, indices or splats (`[*]`) on a target, e.g. `target.prop[0]`.
+ */
 class PropertyAccess extends TFExpression {
   constructor(
     private target: Expression,
@@ -384,12 +401,19 @@ class PropertyAccess extends TFExpression {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a property access expression, e.g. `target.prop[0]`
+ * @param target The expression to access properties on
+ * @param args The property names, indices or `*` (splat) to access, in order
+ * @returns A resolvable that renders the property access
+ */
 export function propertyAccess(target: Expression, args: Expression[]) {
   return new PropertyAccess(target, args) as IResolvable;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Expression rendering a Terraform conditional, e.g. `condition ? trueValue : falseValue`.
+ */
 class ConditionalExpression extends TFExpression {
   constructor(
     private condition: Expression,
@@ -489,7 +513,10 @@ export class OperatorExpression extends TFExpression {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Expression rendering a Terraform function call, e.g. `name(arg1, arg2)`. Records the function's usage on the
+ * stack it is resolved in.
+ */
 class FunctionCall extends TFExpression {
   constructor(
     private name: string,
@@ -555,7 +582,12 @@ class FunctionCall extends TFExpression {
     return suppressBraces ? expr : `\${${expr}}`;
   }
 }
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a Terraform function call expression
+ * @param name The function name, e.g. `join` or `provider::<provider>::<function>`
+ * @param args The arguments passed to the function
+ * @returns A resolvable that renders the function call
+ */
 export function call(name: string, args: Expression[]) {
   return new FunctionCall(name, args) as IResolvable;
 }
@@ -626,7 +658,9 @@ export function forExpression(
   ) as IResolvable;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Expression rendering the fully qualified name of a dependable, for use in `depends_on`.
+ */
 class Dependable extends TFExpression {
   constructor(private dependable: ITerraformDependable) {
     super(dependable);
@@ -638,7 +672,11 @@ class Dependable extends TFExpression {
     return this.dependable.fqn;
   }
 }
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a token referencing a dependable by its fully qualified name
+ * @param dependable The dependable to reference
+ * @returns A string token that resolves to the dependable's fully qualified name
+ */
 export function dependable(dependable: ITerraformDependable): string {
   return Token.asString(new Dependable(dependable));
 }

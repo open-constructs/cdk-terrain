@@ -24,6 +24,7 @@ on:
 
 env:
   HUSKY: "0"
+  NX_DEFAULT_OUTPUT_STYLE: static
 
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-integration-${{ github.head_ref }}

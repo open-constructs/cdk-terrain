@@ -11,6 +11,7 @@ on:
 
 env:
   HUSKY: "0"
+  NX_DEFAULT_OUTPUT_STYLE: static
 
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-quality-${{ github.head_ref }}
@@ -67,6 +68,14 @@ jobs:
         if: github.event_name != 'pull_request'
         timeout-minutes: 5
         run: pnpm exec nx run-many -t lint --parallel=3 --format=gha
+      - name: Type-check (affected)
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 15
+        run: pnpm exec nx affected -t typecheck --parallel=3 --base="$NX_BASE" --head="$NX_HEAD"
+      - name: Type-check (all)
+        if: github.event_name != 'pull_request'
+        timeout-minutes: 15
+        run: pnpm exec nx run-many -t typecheck --parallel=3
 
   knip:
     runs-on: ubuntu-latest
