@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { convertTerraformExpressionToTs } from "../expressions";
-import { ResourceScope } from "../types";
+import { convertTerraformExpressionToTs } from "../src/expressions";
+import { ResourceScope } from "../src/types";
 import { AttributeType } from "@cdktn/commons";
-import { astToCode as code } from "./testHelpers";
+import { astToCode as code } from "./helpers/testHelpers";
 
 const awsProviderSchema = {
   format_version: "1.0",

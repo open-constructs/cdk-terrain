@@ -106,17 +106,32 @@ const defaultPassEvaluation = (
   );
 };
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Determines if given value is an asymmetric matcher (has an `asymmetricMatch` property)
+ * @param obj Value to test
+ * @returns Boolean
+ */
 function isAsymmetric(obj: any) {
   return !!obj && typeof obj === "object" && "asymmetricMatch" in obj;
 }
-// Renders jest asymmetric matchers (expect.anything(), etc.) as "expect.Anything()" in messages,
-// instead of their internal object representation.
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * JSON.stringify replacer that renders jest asymmetric matchers (expect.anything(), etc.) as "expect.Anything()" in
+ * messages, instead of their internal object representation
+ * @param _key Key of the value being stringified
+ * @param value Value being stringified
+ * @returns The matcher's string form, or the value unchanged
+ */
 function jestAsymetricMatcherStringifyReplacer(_key: string, value: any) {
   return isAsymmetric(value) ? `expect.${value.toString()}` : value;
 }
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates an assertion that checks whether a synthesized stack contains an element of a given type with the given
+ * properties
+ * @param functionName Name of the calling matcher, used in error messages
+ * @param customPassEvaluation Decides whether any of the found elements matches the asserted properties; defaults to
+ * a partial deep equality that matches keys in either camelCase or snake_case
+ * @returns The assertion function
+ */
 function getAssertElementWithProperties(
   functionName: string,
   // Configurable so each adapter (Jest, Vitest, ...) can use its own matcher semantics.
@@ -348,7 +363,12 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const binaryVersionCache = new Map<string, string>();
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Returns the first line of `<binary> version` output, memoised per binary
+ * @param binaryName Terraform-compatible binary to query
+ * @param env Environment to run the binary with
+ * @returns The version line, or "unknown" if the command fails
+ */
 function getBinaryVersion(binaryName: string, env: NodeJS.ProcessEnv): string {
   const cached = binaryVersionCache.get(binaryName);
   if (cached) {
@@ -368,7 +388,14 @@ function getBinaryVersion(binaryName: string, env: NodeJS.ProcessEnv): string {
   return version;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Returns the lock-file cache directory for a stack, keyed by binary name, binary version and the stack's
+ * `required_providers`
+ * @param workingDir Stack working directory containing cdk.tf.json
+ * @param binaryName Terraform-compatible binary in use
+ * @param env Environment to run the binary with
+ * @returns The cache directory, or undefined if cdk.tf.json can't be read
+ */
 function getProviderLockCacheDir(
   workingDir: string,
   binaryName: string,
@@ -390,7 +417,11 @@ function getProviderLockCacheDir(
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Determines if a cached lock file exists and was written within the cache TTL
+ * @param cachedLockFile Path to the cached lock file
+ * @returns Boolean
+ */
 function isCachedLockFileFresh(cachedLockFile: string): boolean {
   try {
     return Date.now() - fs.statSync(cachedLockFile).mtimeMs < CACHE_TTL_MS;
@@ -504,7 +535,11 @@ function resolveAndCacheProviderLockFile(
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reads the stacks from manifest.json in a synth output directory
+ * @param received Synth output directory
+ * @returns Stack name and manifest entry pairs
+ */
 function getManifestStacks(
   received: string,
 ): [string, { workingDirectory: string }][] {
@@ -626,7 +661,10 @@ function overrideWithLocalBackend(workingDir: string) {
   );
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Removes the local backend override written by overrideWithLocalBackend, if present
+ * @param workingDir Stack working directory
+ */
 function removeLocalBackendOverride(workingDir: string) {
   fs.rmSync(path.join(workingDir, noRealBackendOverrideFileName), {
     force: true,

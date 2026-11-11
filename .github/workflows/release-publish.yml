@@ -28,7 +28,7 @@ on:
         required: true
       MAVEN_GPG_PRIVATE_KEY_PASSPHRASE:
         required: true
-      NUGET_API_KEY:
+      NUGET_USERNAME:
         required: true
       # Credentials of the CDKTN Maintainers GitHub App (the same app
       # release-please.yml and pnpm-upgrade.yml authenticate with);
@@ -175,11 +175,17 @@ jobs:
         with:
           name: ${{ inputs.dist_artifact_name }}
           path: dist
+      # publib's NUGET_TRUSTED_PUBLISHER mode pip-installs `id`, which the
+      # image's system Python rejects (PEP 668); exchange the OIDC token here.
+      - name: NuGet login
+        id: nuget_login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USERNAME }}
       - name: Release
         run: npx --no publib-nuget
         env:
-          NUGET_TRUSTED_PUBLISHER: 1
-          NUGET_USERNAME: cdktn
+          NUGET_API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
   release_golang:
     name: Release Go to Github Repo (${{ inputs.channel }})

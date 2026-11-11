@@ -22,8 +22,6 @@ export interface ProductAvailability {
   removed: string | null;
   /** versions between introduced/removed in which the function was absent */
   gaps: string[];
-  /** number of scanned versions in which the function is present */
-  count: number;
 }
 
 export interface FunctionMatrixEntry {

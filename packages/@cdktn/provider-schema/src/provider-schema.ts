@@ -147,10 +147,8 @@ const transformVariables = (variables: any) => {
     let variableType: string;
 
     if (
-      // eslint-disable-next-line no-prototype-builtins
-      variable.hasOwnProperty("type") == false &&
-      // eslint-disable-next-line no-prototype-builtins
-      variable.hasOwnProperty("default") == true
+      Object.prototype.hasOwnProperty.call(variable, "type") == false &&
+      Object.prototype.hasOwnProperty.call(variable, "default") == true
     ) {
       switch (typeof variable["default"]) {
         case "boolean":
@@ -180,8 +178,8 @@ const transformVariables = (variables: any) => {
       name,
       type: variableType,
       description: variable["description"],
-      // eslint-disable-next-line no-prototype-builtins
-      required: variable.hasOwnProperty("default") == false,
+      required:
+        Object.prototype.hasOwnProperty.call(variable, "default") == false,
     };
 
     if (!item.required) {

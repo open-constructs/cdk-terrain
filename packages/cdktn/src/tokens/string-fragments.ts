@@ -165,8 +165,7 @@ export class TokenizedStringFragments {
             context.suppressBraces = originalSupressBraces;
           }
           break;
-        case "token":
-          // eslint-disable-next-line no-case-declarations
+        case "token": {
           const mapped = context.resolve(f.token);
           if (Tokenization.isResolvable(mapped)) {
             ret.addToken(mapped);
@@ -174,6 +173,7 @@ export class TokenizedStringFragments {
             ret.addIntrinsic(mapped);
           }
           break;
+        }
         case "intrinsic":
           ret.addIntrinsic(f.value);
           break;

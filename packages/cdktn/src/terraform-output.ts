@@ -26,7 +26,10 @@ export interface TerraformOutputConfig {
   readonly precondition?: Precondition;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform output value (`output` block): exposes a value from the stack after apply, for display or for use by
+ * other stacks and tools.
+ */
 export class TerraformOutput extends TerraformElement {
   public value: Expression | ITerraformAddressable;
   public description?: string;
@@ -96,12 +99,24 @@ export class TerraformOutput extends TerraformElement {
     return arg;
   }
 
+  private synthesizePrecondition() {
+    return this.precondition
+      ? [
+          {
+            condition: this.precondition.condition,
+            error_message: this.precondition.errorMessage,
+          },
+        ]
+      : undefined;
+  }
+
   protected synthesizeAttributes(): { [key: string]: any } {
     return {
       value: this.synthesizeValue(this.value),
       description: this.description,
       sensitive: this.sensitive,
       depends_on: this.dependsOn?.map((resource) => resource.fqn),
+      precondition: this.synthesizePrecondition(),
     };
   }
 
@@ -131,6 +146,12 @@ export class TerraformOutput extends TerraformElement {
           type: "list",
           isBlock: false,
           storageClassType: "stringList",
+        },
+        precondition: {
+          value: this.synthesizePrecondition(),
+          type: "list",
+          isBlock: true,
+          storageClassType: "objectList",
         },
       }).filter(([, value]) => value.value !== undefined),
     );

@@ -2,6 +2,7 @@
  * Copyright (c) HashiCorp, Inc.
  * SPDX-License-Identifier: MPL-2.0
  */
+import { quotedStringKey } from "./quoted-string-key";
 import { Tokenization } from "../tokens/token";
 
 /**
@@ -19,7 +20,16 @@ function escapeQuotes(str: string): string {
  *
  */
 function wrapIdentifierInQuotesIfNeeded(key: string): string {
-  return /(^\d)|[^A-Za-z0-9_-]/.test(key) ? `"${key}"` : key;
+  if (!/(^\d)|[^A-Za-z0-9_-]/.test(key)) {
+    return key;
+  }
+  // A key containing `${` may be a resolved token reference rather than a
+  // literal string, so its `${...}` body is expression syntax, not text to
+  // escape. Leave it on the old (unescaped) path to avoid corrupting it.
+  if (key.includes("${")) {
+    return `"${key}"`;
+  }
+  return quotedStringKey(key, true);
 }
 
 /**
@@ -445,7 +455,12 @@ export function renderLocals(locals: any) {
 
   return `locals {
     ${localNames
-      .filter((name) => !!locals[name].value)
+      // Keep false, 0 and "". A null value is still left out: it has no HCL
+      // rendering here yet.
+      .filter(
+        (name) =>
+          locals[name].value !== undefined && locals[name].value !== null,
+      )
       .map((name: string) => {
         const value = renderFuzzyJsonExpression(locals[name].value);
         return `${name} = ${value}`;
@@ -555,6 +570,10 @@ function renderFuzzyJsonExpression(jsonExpression: any): string {
       ...jsonExpression.map((value) => `${renderFuzzyJsonExpression(value)},`),
       "]",
     ].join("\n");
+  }
+
+  if (jsonExpression === null) {
+    return "null";
   }
 
   if (typeof jsonExpression === "object") {
@@ -682,10 +701,8 @@ export function renderAttributes(attributes: any): string {
         return `${name} = null`;
       } else if (
         typeof v === "object" &&
-        // eslint-disable-next-line no-prototype-builtins
-        !v.hasOwnProperty("value") &&
-        // eslint-disable-next-line no-prototype-builtins
-        !v.hasOwnProperty("dynamic")
+        !Object.prototype.hasOwnProperty.call(v, "value") &&
+        !Object.prototype.hasOwnProperty.call(v, "dynamic")
       ) {
         // An orphaned attribute descriptor (its 'value' resolved to
         // `undefined`) carries only internal metadata at this point - omit

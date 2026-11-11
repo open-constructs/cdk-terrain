@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing } from "../index";
-import { TestResource, DockerImage } from "../../../test/helper/resource";
+import { Testing } from "../../src/testing";
+import { TestResource, DockerImage } from "../helper/resource";
 import {
   toBeValidTerraform,
   toPlanSuccessfully,
@@ -10,11 +10,11 @@ import {
   getToHaveProviderWithProperties,
   getToHaveDataSourceWithProperties,
   asymetricDeepEqualIgnoringObjectCasing,
-} from "../matchers";
-import { TestDataSource } from "../../../test/helper/data-source";
-import { TerraformStack } from "../../terraform-stack";
-import { DockerProvider } from "../../../test/helper/provider";
-import { S3Backend } from "../../backends/s3-backend";
+} from "../../src/testing/matchers";
+import { TestDataSource } from "../helper/data-source";
+import { TerraformStack } from "../../src/terraform-stack";
+import { DockerProvider } from "../helper/provider";
+import { S3Backend } from "../../src/backends/s3-backend";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";

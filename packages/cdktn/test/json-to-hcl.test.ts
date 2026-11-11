@@ -54,6 +54,26 @@ test("multiple locals", async () => {
   `);
 });
 
+test("falsy locals", async () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformLocal(stack, "zero", 0);
+  new TerraformLocal(stack, "flag", false);
+  new TerraformLocal(stack, "empty", "");
+
+  const hcl = Testing.synthHcl(stack);
+  expect(hcl).toMatchInlineSnapshot(`
+    "
+
+    locals {
+        zero = 0
+    flag = false
+    empty = ""
+    }"
+  `);
+});
+
 test("string local with quoted name", async () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");

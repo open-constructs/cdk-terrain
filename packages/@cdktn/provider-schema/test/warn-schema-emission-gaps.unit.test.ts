@@ -12,7 +12,7 @@ import {
   logger,
   ProviderSchema,
 } from "@cdktn/commons";
-import { warnIfSchemaEmissionGaps } from "../provider-schema";
+import { warnIfSchemaEmissionGaps } from "../src/provider-schema";
 
 const execMock = exec as unknown as jest.Mock;
 

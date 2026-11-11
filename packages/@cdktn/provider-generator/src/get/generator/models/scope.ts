@@ -37,18 +37,7 @@ export class Scope {
     return `${this.baseName}.${attributeName}`;
   }
 
-  public get baseName() {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let scope: Scope | undefined = this;
-    let name = "";
-    while (scope) {
-      if (name === "") {
-        name = scope.name;
-      } else {
-        name = `${scope.name}.${name}`;
-      }
-      scope = scope.parent;
-    }
-    return name;
+  public get baseName(): string {
+    return this.parent ? `${this.parent.baseName}.${this.name}` : this.name;
   }
 }

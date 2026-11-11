@@ -1,6 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing, TerraformStack, TerraformOutput, Fn } from "../src";
+import { Testing, TerraformStack, TerraformOutput, Fn, Lazy } from "../src";
 import { TerraformVariable } from "../src/terraform-variable";
 import { TerraformLocal } from "../src/terraform-local";
 import { ref } from "../src/tfExpression";
@@ -465,6 +465,30 @@ test("undefined and null", () => {
   `);
 });
 
+test("a Lazy value that resolves to undefined omits its key, like a literal undefined", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformOutput(stack, "test-output", {
+    value: Fn.merge([
+      {
+        key: Lazy.anyValue({ produce: () => undefined }),
+        b: "x",
+      },
+    ]),
+  });
+
+  expect(Testing.synth(stack)).toMatchInlineSnapshot(`
+    "{
+      "output": {
+        "test-output": {
+          "value": "\${merge({\\"b\\" = \\"x\\"})}"
+        }
+      }
+    }"
+  `);
+});
+
 describe("throws error on unescaped double quote string inputs", () => {
   const testsNotOk = ['"', '\\\\"', '\\\\\\\\"', '\\ \\\\"'];
 
@@ -619,4 +643,24 @@ test("Property access using lookup and lookupNested functions", () => {
       }
     }"
   `);
+});
+
+test.each([
+  ["false", false, "false"],
+  ["0", 0, "0"],
+  ["an empty string", "", '\\"\\"'],
+  ["null", null, "null"],
+])("lookup keeps a falsy default of %s", (_name, defaultValue, rendered) => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+  const variable = new TerraformVariable(stack, "test-var", {
+    type: "map(any)",
+  });
+  new TerraformOutput(stack, "lookup", {
+    value: Fn.lookup(variable.value, "z", defaultValue),
+  });
+
+  expect(Testing.synth(stack)).toContain(
+    `"\${lookup(var.test-var, \\"z\\", ${rendered})}"`,
+  );
 });

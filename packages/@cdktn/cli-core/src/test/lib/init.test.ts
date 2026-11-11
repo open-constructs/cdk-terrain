@@ -3,8 +3,10 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import Ajv from "ajv";
+import type { Config, InitTarget } from "@cdktn/commons";
 import { sscaff } from "sscaff";
-import { InitTarget } from "@cdktn/commons";
+import { substitute } from "sscaff/lib/substitute";
 import { init, templatesDir } from "../../lib/init";
 import { providerAdd } from "../../lib/provider-add";
 
@@ -153,5 +155,119 @@ describe("targetVersions on init", () => {
     await run();
 
     expect(readTargets()).toEqual(template);
+  });
+});
+
+describe("cdktf.json schema", () => {
+  const workspaceRoot = path.resolve(__dirname, "../../../../../..");
+  const schema = fs.readJsonSync(path.join(workspaceRoot, "cdktf.schema.json"));
+  const validate = new Ajv({ allErrors: true }).compile(schema);
+  // Variants such as typescript-pnpm carry no cdktf.json; they ship their base's files.
+  const baseTemplates = fs
+    .readdirSync(templatesDir)
+    .filter((name) =>
+      fs.existsSync(path.join(templatesDir, name, "cdktf.json")),
+    );
+  let destination: string;
+
+  beforeEach(() => {
+    destination = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-init-"));
+    // Renders only cdktf.json with init's real variables; the template hooks would install dependencies.
+    (sscaff as jest.Mock).mockImplementation(async (src, target, variables) => {
+      fs.writeFileSync(
+        path.join(target, "cdktf.json"),
+        substitute(
+          fs.readFileSync(path.join(src, "cdktf.json"), "utf8"),
+          variables,
+        ),
+      );
+    });
+  });
+
+  afterEach(() => {
+    fs.removeSync(destination);
+  });
+
+  it.each(baseTemplates)(
+    "accepts the cdktf.json init writes for %s",
+    async (template) => {
+      await init({
+        cdktnVersion: "1.2.3",
+        destination,
+        projectId: "test",
+        projectInfo: { Name: "test", Description: "test" },
+        templatePath: path.join(templatesDir, template),
+        sendCrashReports: false,
+        sendUsageTelemetry: true,
+        silent: true,
+      });
+      const config = fs.readJsonSync(path.join(destination, "cdktf.json"));
+
+      expect(config.$schema).toBe(
+        "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v1.2.3/cdktf.schema.json",
+      );
+      expect(validate(config) ? [] : validate.errors).toEqual([]);
+    },
+  );
+
+  const minimal = { language: "typescript", app: "npx tsx main.ts" };
+
+  it("accepts a minimal config", () => {
+    expect(validate(minimal) ? [] : validate.errors).toEqual([]);
+  });
+
+  // Each mirrors a value the CLI rejects or ignores at runtime, on top of an otherwise valid config.
+  it.each<[string, Record<string, unknown>]>([
+    ["a missing app", { language: "typescript" }],
+    ["an empty app", { ...minimal, app: "" }],
+    ["an unknown language", { ...minimal, language: "rust" }],
+    ["a misspelt key", { ...minimal, terraformProvider: [] }],
+    [
+      "an unknown targetVersions product",
+      { ...minimal, targetVersions: { terrafrom: ">=1.5.7" } },
+    ],
+    ["an empty targetVersions", { ...minimal, targetVersions: {} }],
+    [
+      "a blank targetVersions range",
+      { ...minimal, targetVersions: { terraform: " " } },
+    ],
+    [
+      "a Terraform-style targetVersions range",
+      { ...minimal, targetVersions: { terraform: "~> 1.5" } },
+    ],
+    ["a non-boolean consent flag", { ...minimal, sendCrashReports: "yes" }],
+    [
+      "a provider object without a name",
+      { ...minimal, terraformProviders: [{ source: "hashicorp/aws" }] },
+    ],
+  ])("rejects %s", (_, config) => {
+    expect(validate(config)).toBe(false);
+  });
+
+  // tsc fails here when Config gains or loses a key, so the schema can't silently drift from it.
+  const configKeys: Record<keyof Config, true> = {
+    app: true,
+    language: true,
+    languageOptions: true,
+    output: true,
+    codeMakerOutput: true,
+    terraformProviders: true,
+    terraformModules: true,
+    context: true,
+    targetVersions: true,
+    validateInstalledBinary: true,
+    sendCrashReports: true,
+    sendUsageTelemetry: true,
+  };
+
+  it("covers every Config key", () => {
+    expect(Object.keys(schema.properties).sort()).toEqual(
+      [
+        ...Object.keys(configKeys),
+        "$schema",
+        "projectId",
+        "watchPattern",
+      ].sort(),
+    );
   });
 });

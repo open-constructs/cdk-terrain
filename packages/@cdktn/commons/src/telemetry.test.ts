@@ -1293,7 +1293,6 @@ describe("telemetry", () => {
         jest.doMock("./node-package-manager", () => ({
           detectNodePackageManager: detect,
         }));
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         copy = require("./telemetry");
       });
       return copy;
@@ -1563,7 +1562,6 @@ describe("telemetry", () => {
 
     beforeEach(() => {
       jest.isolateModules(() => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         second = require("./telemetry");
       });
       fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
