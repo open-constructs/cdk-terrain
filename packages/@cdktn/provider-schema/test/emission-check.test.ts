@@ -5,7 +5,7 @@ import { DEFAULT_TARGET_VERSIONS, TerraformCliVersion } from "@cdktn/commons";
 import {
   checkSchemaEmissionGaps,
   suggestedEmittingCliVersions,
-} from "../emission-check";
+} from "../src/emission-check";
 
 const cli = (name: TerraformCliVersion["name"], version: string) => ({
   name,

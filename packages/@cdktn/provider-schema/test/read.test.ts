@@ -27,7 +27,7 @@ describe("read", () => {
       // Keyed by fully qualified name, and the host is whichever registry the
       // fetching CLI used, so match on the provider part.
       expect(
-        Object.keys(schema.providerSchema.provider_schemas ?? {}).map((fqpn) =>
+        Object.keys(schema.providerSchema?.provider_schemas ?? {}).map((fqpn) =>
           fqpn.split("/").slice(1).join("/"),
         ),
       ).toContain("hashicorp/null");

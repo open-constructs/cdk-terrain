@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { fillWithConfigAccessors } from "../partialCode";
-import { ProgramScope } from "../types";
+import { fillWithConfigAccessors } from "../src/partialCode";
+import { ProgramScope } from "../src/types";
 
 const getScope = () =>
   ({

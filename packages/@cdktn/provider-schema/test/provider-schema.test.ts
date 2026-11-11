@@ -15,7 +15,7 @@ import {
   readModuleSchema,
   readProviderSchema,
   sanitizeProviderSchema,
-} from "../provider-schema";
+} from "../src/provider-schema";
 
 /**
  * Rewrites the registry host in the keys of a fully-qualified-name map.

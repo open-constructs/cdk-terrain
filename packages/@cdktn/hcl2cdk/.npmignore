@@ -1,0 +1,17 @@
+*.ts
+
+!*.d.ts
+!*.js
+
+test
+jest.config.js
+.spec.swcrc
+dist
+coverage
+package.sh
+tsconfig.json
+tsconfig.tsbuildinfo
+**/*.js.map
+**/*.d.ts.map
+cdktf-convert-*
+cdktf-provider*
