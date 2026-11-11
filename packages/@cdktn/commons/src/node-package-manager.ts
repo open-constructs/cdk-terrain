@@ -22,10 +22,37 @@ export function nodePackageManagerCommand(
 }
 
 /**
- * Detects the package manager of the Node.js project in `dir`. An explicit `packageManager` field (corepack) wins
- * over lockfile probing, since it is a deliberate declaration.
+ * Whether `a` and `b` name the same directory, following symlinks when both exist.
+ */
+export function isSameDirectory(a: string, b: string): boolean {
+  try {
+    return fs.realpathSync(a) === fs.realpathSync(b);
+  } catch {
+    return path.resolve(a) === path.resolve(b);
+  }
+}
+
+/**
+ * Detects the package manager of the Node.js project in `dir`. Each directory from `dir` up to the filesystem root is
+ * probed in turn, so a workspace member picks up the manager declared at the workspace root. An explicit
+ * `packageManager` field (corepack) wins over lockfile probing, since it is a deliberate declaration.
  */
 export function detectNodePackageManager(dir: string): NodePackageManagerName {
+  let current = path.resolve(dir);
+  for (;;) {
+    const detected = detectInDirectory(current);
+    if (detected) {
+      return detected;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return "npm";
+    }
+    current = parent;
+  }
+}
+
+function detectInDirectory(dir: string): NodePackageManagerName | undefined {
   let declared: string | undefined;
   try {
     declared = fs.readJsonSync(path.join(dir, "package.json"))?.packageManager;
@@ -56,5 +83,8 @@ export function detectNodePackageManager(dir: string): NodePackageManagerName {
   if (fs.existsSync(path.join(dir, "yarn.lock"))) {
     return "yarn";
   }
-  return "npm";
+  if (fs.existsSync(path.join(dir, "package-lock.json"))) {
+    return "npm";
+  }
+  return undefined;
 }

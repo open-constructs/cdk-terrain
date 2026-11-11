@@ -9,6 +9,7 @@ import {
   getGradleDependencies,
   getDependencyInformationFromLine,
   detectNodePackageManager,
+  isSameDirectory,
   nodePackageManagerCommand,
   NodePackageManagerName,
   YARN_TRACKING_ISSUE_URL,
@@ -222,14 +223,6 @@ const pnpmListSchema = z.array(
     .partial()
     .loose(),
 );
-
-function isSameDirectory(a: string, b: string): boolean {
-  try {
-    return fs.realpathSync(a) === fs.realpathSync(b);
-  } catch {
-    return path.resolve(a) === path.resolve(b);
-  }
-}
 
 let yarnDeprecationWarned = false;
 
