@@ -14,7 +14,20 @@
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",
   "nx": {
-    "tags": ["unit-test:terraform"]
+    "tags": ["unit-test:terraform"],
+    "targets": {
+      "test": {
+        "inputs": [
+          "default",
+          "^production",
+          "{workspaceRoot}/jest.preset.js",
+          "{workspaceRoot}/cdktf.schema.json",
+          {
+            "externalDependencies": ["jest", "@nx/jest", "@swc/jest"]
+          }
+        ]
+      }
+    }
   },
   "publishConfig": {
     "access": "public"
@@ -69,6 +82,7 @@
     "@types/fs-extra": "11.0.4",
     "@types/node": "22.20.1",
     "@types/semver": "7.7.1",
+    "ajv": "8.18.0",
     "prettier": "2.8.8",
     "tsc-files": "1.1.4",
     "typescript": "~6.0.0"
