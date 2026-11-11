@@ -48,6 +48,40 @@ describe("remote templates", () => {
     }
   });
 
+  // readdir returns entries sorted, so the archive's docs/ is searched before template/.
+  test("finds the template in a later subdirectory", async () => {
+    const server = new TemplateServer(path.join(__dirname, "nested-template"));
+    try {
+      const url = await server.start();
+      const driver = new TestDriver(__dirname);
+      driver.switchToTempDir();
+      await driver.init(url);
+
+      const files = await fs.readdir(driver.workingDirectory);
+      expect(files).toContain("REMOTE_TEMPLATE");
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test("reports an archive without a cdktf.json", async () => {
+    const server = new TemplateServer(
+      path.join(__dirname, "nested-template", "docs"),
+    );
+    try {
+      const url = await server.start();
+      const driver = new TestDriver(__dirname);
+      driver.switchToTempDir();
+      await expect(driver.init(url)).rejects.toMatchObject({
+        stderr: expect.stringContaining(
+          "Could not find a cdktf.json in the extracted directory",
+        ),
+      });
+    } finally {
+      await server.stop();
+    }
+  });
+
   test("handles invalid url", async () => {
     const driver = new TestDriver(__dirname);
 
