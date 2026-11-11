@@ -701,10 +701,8 @@ export function renderAttributes(attributes: any): string {
         return `${name} = null`;
       } else if (
         typeof v === "object" &&
-        // eslint-disable-next-line no-prototype-builtins
-        !v.hasOwnProperty("value") &&
-        // eslint-disable-next-line no-prototype-builtins
-        !v.hasOwnProperty("dynamic")
+        !Object.prototype.hasOwnProperty.call(v, "value") &&
+        !Object.prototype.hasOwnProperty.call(v, "dynamic")
       ) {
         // An orphaned attribute descriptor (its 'value' resolved to
         // `undefined`) carries only internal metadata at this point - omit

@@ -23,8 +23,7 @@ import {
   SSHProvisionerConnection,
   WinrmProvisionerConnection,
 } from "./terraform-provisioner";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import assert = require("assert");
+import { ok as assert } from "assert";
 import {
   FileProvisioner,
   LocalExecProvisioner,

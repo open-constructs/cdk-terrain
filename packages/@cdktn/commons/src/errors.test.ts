@@ -12,7 +12,6 @@ describe("Errors scope", () => {
   it("is shared with a second copy of the module", () => {
     let second: typeof Errors | undefined;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       second = require("./errors").Errors;
     });
 

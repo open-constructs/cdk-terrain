@@ -465,8 +465,7 @@ export class TestDriver {
     this.copyFile("main.go", "main.go");
 
     await this.get();
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    options?.cb && options.cb(this.workingDirectory);
+    options?.cb?.(this.workingDirectory);
 
     // automatically retrieves required jsii-runtime module (used in generated providers)
     await this.exec("go mod tidy");
