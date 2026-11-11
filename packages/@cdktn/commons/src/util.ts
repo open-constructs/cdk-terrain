@@ -177,7 +177,9 @@ export const exec = async (
     // short `version` probe sets a timeout for.
     const child = spawn(command, args, {
       ...spawnOptions,
-      detached: timeoutMs !== undefined && process.platform !== "win32",
+      detached:
+        spawnOptions.detached ||
+        (timeoutMs !== undefined && process.platform !== "win32"),
     });
     const out = new Array<string>();
     const err = new Array<string>();

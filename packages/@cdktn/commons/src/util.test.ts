@@ -155,18 +155,22 @@ describe("exec() timeout", () => {
   }, 10000);
 
   // A timed child leads its own process group and misses the terminal's
-  // interrupt; with no timeout it must stay in the caller's group.
-  (process.platform === "linux" ? it : it.skip)(
-    "treats an infinite timeout as none",
-    async () => {
-      const leadsItsGroup = [
-        `const [, , pgrp] = require("fs").readFileSync("/proc/self/stat", "utf8").split(") ")[1].split(" ")`,
-        `setTimeout(() => process.stdout.write(String(pgrp === String(process.pid))), 50)`,
-      ].join("; ");
+  // interrupt; with no timeout it must stay in the caller's group unless the
+  // caller detaches it.
+  (process.platform === "linux" ? it.each : it.skip.each)([
+    ["treats an infinite timeout as none", {}, "false"],
+    ["keeps a caller's detached without a timeout", { detached: true }, "true"],
+  ])("%s", async (_name, options, leads) => {
+    const leadsItsGroup = [
+      `const [, , pgrp] = require("fs").readFileSync("/proc/self/stat", "utf8").split(") ")[1].split(" ")`,
+      `setTimeout(() => process.stdout.write(String(pgrp === String(process.pid))), 50)`,
+    ].join("; ");
 
-      await expect(
-        exec(process.execPath, ["-e", leadsItsGroup], { timeout: Infinity }),
-      ).resolves.toBe("false");
-    },
-  );
+    await expect(
+      exec(process.execPath, ["-e", leadsItsGroup], {
+        timeout: Infinity,
+        ...options,
+      }),
+    ).resolves.toBe(leads);
+  });
 });
