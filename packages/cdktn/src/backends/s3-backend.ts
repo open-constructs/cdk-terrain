@@ -9,7 +9,9 @@ import {
 import { keysToSnakeCase } from "../util";
 import { ValidateFeatureTargetSupport } from "../validations";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Configures the stack to store its Terraform state in the `s3` backend.
+ */
 export class S3Backend extends TerraformBackend {
   constructor(
     scope: Construct,
@@ -47,7 +49,9 @@ export class S3Backend extends TerraformBackend {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A `terraform_remote_state` data source that reads the outputs of a state stored in the `s3` backend.
+ */
 export class DataTerraformRemoteStateS3 extends TerraformRemoteState {
   constructor(
     scope: Construct,

@@ -20,7 +20,11 @@ import { TerraformDynamicExpression } from "./terraform-dynamic-expression";
 // vs. complex types).
 export type Mapper = (x: any) => any;
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Mapper that returns its input unchanged
+ * @param x The value to map
+ * @returns The same value
+ */
 function identity(x: any) {
   return x;
 }
@@ -105,7 +109,12 @@ export function listMapperHcl(
   };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Creates a mapper that applies the element mapper to each value of a map. Tokens, strings and values containing
+ * tokens are returned unchanged.
+ * @param elementMapper Mapper applied to each map value
+ * @returns A mapper for maps
+ */
 export function hashMapper(elementMapper: Mapper): Mapper {
   return (x: any) => {
     if (!canInspect(x)) {

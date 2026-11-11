@@ -12,7 +12,10 @@ import { StackAnnotation } from "../manifest";
 import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Default stack synthesizer: invokes aspects, runs validations, collects annotations into the manifest and writes
+ * the stack's Terraform configuration (JSON or HCL) to its working directory.
+ */
 export class StackSynthesizer implements IStackSynthesizer {
   /**
    * @param stack the stack to synthesize
@@ -131,7 +134,12 @@ export function invokeAspects(root: IConstruct) {
   let nestedAspectWarning = false;
   recurse(root, []);
 
-  // eslint-disable-next-line jsdoc/require-jsdoc
+  /**
+   * Invokes inherited and own aspects on the construct, skipping any already invoked on it, then recurses into its
+   * children
+   * @param construct Construct to visit
+   * @param inheritedAspects Aspects applied to the construct's ancestors
+   */
   function recurse(construct: IConstruct, inheritedAspects: IAspect[]) {
     const node = construct.node;
     const aspects = Aspects.of(construct);
@@ -174,12 +182,20 @@ const annotationMetadataEntryTypes = [
   AnnotationMetadataEntryType.ERROR,
 ] as string[];
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Determines if the metadata entry is an info, warning or error annotation
+ * @param metadata Metadata entry to test
+ * @returns Boolean
+ */
 function isAnnotationMetadata(metadata: MetadataEntry): boolean {
   return annotationMetadataEntryTypes.includes(metadata.type);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Determines if the annotation has error level
+ * @param annotation Annotation to test
+ * @returns Boolean
+ */
 function isErrorAnnotation(annotation: StackAnnotation): boolean {
   return annotation.level === AnnotationMetadataEntryType.ERROR;
 }
@@ -200,7 +216,12 @@ export interface ICustomSynthesis {
   onSynthesize(session: ISynthesisSession): void;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Attaches custom synthesis logic to a construct; its `onSynthesize` is called when the containing stack is
+ * synthesized
+ * @param construct Construct to attach the custom synthesis to
+ * @param synthesis Custom synthesis to run for the construct
+ */
 export function addCustomSynthesis(
   construct: IConstruct,
   synthesis: ICustomSynthesis,
@@ -211,7 +232,11 @@ export function addCustomSynthesis(
   });
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Returns the custom synthesis attached to a construct via addCustomSynthesis
+ * @param construct Construct to read the custom synthesis from
+ * @returns The attached custom synthesis, or undefined if none is attached
+ */
 function getCustomSynthesis(
   construct: IConstruct,
 ): ICustomSynthesis | undefined {

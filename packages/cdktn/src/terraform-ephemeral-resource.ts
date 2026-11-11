@@ -72,7 +72,10 @@ export interface TerraformEphemeralResourceConfig extends TerraformEphemeralMeta
   readonly terraformGeneratorMetadata?: TerraformProviderGeneratorMetadata;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform ephemeral resource (`ephemeral` block): a value the provider produces during a run, such as a
+ * temporary credential, that is never persisted to plan or state.
+ */
 export class TerraformEphemeralResource
   extends TerraformElement
   implements
