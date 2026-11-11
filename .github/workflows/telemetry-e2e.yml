@@ -9,6 +9,7 @@ on:
 
 env:
   HUSKY: "0"
+  NX_DEFAULT_OUTPUT_STYLE: static
 
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-telemetry-e2e-${{ github.head_ref || github.ref }}

@@ -76,5 +76,6 @@
       "manifestRootsToUpdate": ["{projectRoot}"]
     }
   },
-  "analytics": false
+  "analytics": false,
+  "neverConnectToCloud": true
 }
