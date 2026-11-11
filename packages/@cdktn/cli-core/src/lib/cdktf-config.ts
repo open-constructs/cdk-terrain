@@ -126,6 +126,12 @@ export class CdktfConfig {
     this.writeCdktfConfig(cdktfConfig);
   }
 
+  public writeTargetVersions(targetVersions: TerraformTargetVersions) {
+    const cdktfConfig = this.readCdktfConfig();
+    cdktfConfig.targetVersions = targetVersions;
+    this.writeCdktfConfig(cdktfConfig);
+  }
+
   public get projectDirectory(): string {
     return path.dirname(this.cdktfConfigPath);
   }

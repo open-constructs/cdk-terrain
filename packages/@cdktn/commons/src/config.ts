@@ -287,6 +287,19 @@ import {
 export { DEFAULT_TARGET_VERSIONS };
 export type { TerraformTargetVersions };
 
+// The CLIs `cdktn init --target` offers.
+export const INIT_TARGETS = ["terraform", "opentofu", "both"] as const;
+export type InitTarget = (typeof INIT_TARGETS)[number];
+
+/** The `targetVersions` a new project declares for the CLI it targets. */
+export function initTargetVersions(
+  target: InitTarget,
+): TerraformTargetVersions {
+  return target === "both"
+    ? DEFAULT_TARGET_VERSIONS
+    : { [target]: DEFAULT_TARGET_VERSIONS[target] };
+}
+
 interface ConfigBase {
   readonly app?: string;
   readonly output: string;

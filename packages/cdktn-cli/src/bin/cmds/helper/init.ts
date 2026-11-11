@@ -38,6 +38,9 @@ import {
   ConstructsMakerProviderTarget,
   detectNodePackageManager,
   nodePackageManagerCommand,
+  InitTarget,
+  initTargetVersions,
+  selectTerraformBinary,
 } from "@cdktn/commons";
 import { templates, templatesDir } from "@cdktn/cli-core";
 import ciDetect from "@npmcli/ci-detect";
@@ -97,11 +100,18 @@ export type RunInitOptions = {
   tfeHostname?: string;
   silent?: boolean;
   nonInteractive?: boolean;
+  target?: InitTarget;
 };
+
+function canPrompt(argv: Pick<RunInitOptions, "nonInteractive">): boolean {
+  return !ciDetect() && !argv.nonInteractive && isInteractiveTerminal();
+}
 
 export async function runInit(argv: RunInitOptions) {
   const telemetryData: Record<string, unknown> = {};
   const destination = argv.destination || ".";
+  const interactive = canPrompt(argv);
+
   const terraformRemoteHostname = argv.tfeHostname || tfcHostname;
   let token = "";
   if (!argv.local) {
@@ -187,8 +197,6 @@ This means that your Terraform state file will be stored locally on disk in a fi
     }
   }
 
-  const ci: string | false = ciDetect();
-  const interactive = !ci && !argv.nonInteractive && isInteractiveTerminal();
   const sendCrashReports =
     argv.enableCrashReporting ??
     (interactive ? await askForCrashReportingConsent() : false);
@@ -249,6 +257,7 @@ This means that your Terraform state file will be stored locally on disk in a fi
     providers,
     providersForceLocal: argv.providersForceLocal,
     silent: argv.silent,
+    target: argv.target,
   });
 
   if (convertResult && importPath) {
@@ -319,6 +328,33 @@ This means that your Terraform state file will be stored locally on disk in a fi
     language: cdktfConfig.language,
     telemetry: { ...telemetryData, language: cdktfConfig.language },
   };
+}
+
+/**
+ * The CLI the new project targets, asked for when interactive, and selects
+ * its binary for the rest of init.
+ */
+export async function chooseInitTarget(
+  argv: Pick<RunInitOptions, "target" | "nonInteractive">,
+): Promise<InitTarget | undefined> {
+  const target =
+    argv.target ?? (canPrompt(argv) ? await askForTarget() : undefined);
+  if (target) {
+    selectTerraformBinary(initTargetVersions(target));
+  }
+  return target;
+}
+
+async function askForTarget(): Promise<InitTarget> {
+  return select<InitTarget>({
+    message: "Which CLI will run this project?",
+    choices: [
+      { name: "Terraform", value: "terraform" },
+      { name: "OpenTofu", value: "opentofu" },
+      { name: "Both", value: "both" },
+    ],
+    default: "both",
+  });
 }
 
 async function askForProviders(): Promise<string[] | undefined> {

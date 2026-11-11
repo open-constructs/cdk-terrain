@@ -140,7 +140,7 @@ export class TerraformCli implements Terraform {
     const stdout = this.onStdout("init");
     const { actions, exitCode } = spawnInteractive(
       {
-        file: terraformBinaryName,
+        file: terraformBinaryName(),
         args,
         options: {
           cwd: this.workdir,
@@ -181,7 +181,7 @@ export class TerraformCli implements Terraform {
     // while we'd only need it for remote plans
     if (opts.needsLockfileUpdate) {
       await exec(
-        terraformBinaryName,
+        terraformBinaryName(),
         [
           "providers",
           "lock",
@@ -268,13 +268,13 @@ export class TerraformCli implements Terraform {
     varFiles.forEach((v) => options.push(`-var-file=${v}`));
 
     logger.debug(
-      `Executing ${terraformBinaryName} ${options.join(" ")} in ${this.workdir}`,
+      `Executing ${terraformBinaryName()} ${options.join(" ")} in ${this.workdir}`,
     );
 
     await this.setUserAgent();
 
     await exec(
-      terraformBinaryName,
+      terraformBinaryName(),
       options,
       {
         cwd: this.workdir,
@@ -303,7 +303,7 @@ export class TerraformCli implements Terraform {
     return this.handleService("deploy", callback, (inspect) =>
       createAndStartDeployService(
         {
-          terraformBinaryName,
+          terraformBinaryName: terraformBinaryName(),
           workdir: this.workdir,
           refreshOnly,
           noColor,
@@ -333,7 +333,7 @@ export class TerraformCli implements Terraform {
     return this.handleService("destroy", callback, (inspect) =>
       createAndStartDestroyService(
         {
-          terraformBinaryName,
+          terraformBinaryName: terraformBinaryName(),
           workdir: this.workdir,
           autoApprove,
           parallelism,
@@ -469,7 +469,7 @@ export class TerraformCli implements Terraform {
   public async version(): Promise<string> {
     try {
       return await exec(
-        terraformBinaryName,
+        terraformBinaryName(),
         ["version"],
         {
           cwd: this.workdir,
@@ -489,7 +489,7 @@ export class TerraformCli implements Terraform {
 
   public async output(): Promise<{ [key: string]: TerraformOutput }> {
     const output = await exec(
-      terraformBinaryName,
+      terraformBinaryName(),
       ["output", "-json"],
       {
         cwd: this.workdir,
