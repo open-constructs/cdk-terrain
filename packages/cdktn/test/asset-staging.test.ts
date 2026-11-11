@@ -1079,7 +1079,9 @@ describe("AssetStaging", () => {
         const targetPath = path.join(createTempDir(), "out");
         fs.mkdirSync(targetPath, { recursive: true });
 
-        expect(() => staging.stage(targetPath)).toThrow();
+        expect(() => staging.stage(targetPath)).toThrow(
+          /bundler declined to run/,
+        );
       });
 
       test("ChainBundler identity is stable regardless of which leg runs", () => {
