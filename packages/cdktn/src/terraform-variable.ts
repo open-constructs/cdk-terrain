@@ -198,7 +198,7 @@ export class TerraformVariable
     };
 
     return Object.fromEntries(
-      Object.entries(attrs).filter(([_, value]) => !!value?.value),
+      Object.entries(attrs).filter(([_, value]) => value?.value !== undefined),
     );
   }
 

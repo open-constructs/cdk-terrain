@@ -567,6 +567,10 @@ function renderFuzzyJsonExpression(jsonExpression: any): string {
     ].join("\n");
   }
 
+  if (jsonExpression === null) {
+    return "null";
+  }
+
   if (typeof jsonExpression === "object") {
     return renderFuzzyJsonObject(jsonExpression);
   }
