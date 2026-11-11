@@ -11,6 +11,11 @@ import { Aspects, IAspect } from "../aspect";
 import { StackAnnotation } from "../manifest";
 import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
+import {
+  removeRequiredVersionFiles,
+  writeRequiredVersionFiles,
+  writesRequiredVersion,
+} from "./required-version";
 
 // eslint-disable-next-line jsdoc/require-jsdoc
 export class StackSynthesizer implements IStackSynthesizer {
@@ -60,6 +65,11 @@ export class StackSynthesizer implements IStackSynthesizer {
       stackManifest.workingDirectory,
     );
     if (!fs.existsSync(workingDirectory)) fs.mkdirSync(workingDirectory);
+
+    removeRequiredVersionFiles(workingDirectory);
+    if (writesRequiredVersion(this.stack)) {
+      writeRequiredVersionFiles(this.stack, workingDirectory, this.hclOutput);
+    }
 
     // call custom synthesis on child nodes (leafs first)
     this.stack.node
