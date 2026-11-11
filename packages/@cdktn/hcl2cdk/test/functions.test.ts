@@ -5,10 +5,10 @@
 
 import * as t from "@babel/types";
 import { AttributeType } from "@cdktn/commons";
-import { coerceType } from "../coerceType";
-import { functionsMap } from "../function-bindings/functions";
-import { ProgramScope } from "../types";
-import { astToCode } from "./testHelpers";
+import { coerceType } from "../src/coerceType";
+import { functionsMap } from "../src/function-bindings/functions";
+import { ProgramScope } from "../src/types";
+import { astToCode } from "./helpers/testHelpers";
 
 type BaseThing = {
   type: string;

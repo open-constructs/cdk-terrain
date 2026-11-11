@@ -9,7 +9,9 @@ import { IResolvable } from "./tokens/resolvable";
 import { ITerraformAddressable } from "./terraform-addressable";
 import { TerraformVariableValidationConfig } from "./terraform-conditions";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Type constraint keywords and constructors for the `type` argument of a TerraformVariable.
+ */
 export abstract class VariableType {
   public static readonly STRING = "string";
   public static readonly NUMBER = "number";
@@ -45,7 +47,11 @@ export abstract class VariableType {
   }
 
   public static tuple(...elements: string[]) {
-    return `tuple(${elements.join(", ")})`;
+    // Keep the pre-bracketed workaround for the old rendering working.
+    if (elements.length === 1 && /^\[[\s\S]*\]$/.test(elements[0].trim())) {
+      return `tuple(${elements[0].trim()})`;
+    }
+    return `tuple([${elements.join(", ")}])`;
   }
 
   public static object(attributes: { [key: string]: string }) {
@@ -97,7 +103,10 @@ export interface TerraformVariableConfig {
   readonly validation?: TerraformVariableValidationConfig[];
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform input variable (`variable` block): a parameter whose value is supplied when the stack is planned or
+ * applied, letting the configuration be customised without changing its code.
+ */
 export class TerraformVariable
   extends TerraformElement
   implements ITerraformAddressable
@@ -194,7 +203,7 @@ export class TerraformVariable
     };
 
     return Object.fromEntries(
-      Object.entries(attrs).filter(([_, value]) => !!value?.value),
+      Object.entries(attrs).filter(([_, value]) => value?.value !== undefined),
     );
   }
 

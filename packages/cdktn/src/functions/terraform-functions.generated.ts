@@ -18,7 +18,9 @@ import {
   terraformFunction,
   variadic,
 } from "./helpers";
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Bindings for the Terraform and OpenTofu built-in functions, generated from the function availability matrix.
+ */
 export class FnGenerated {
   /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/abs abs} returns the absolute value of the given number. In other words, if the number is zero or positive then it is returned as-is, but if it is negative then it is multiplied by -1 to make it positive before returning it.

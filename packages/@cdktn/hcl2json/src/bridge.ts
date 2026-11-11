@@ -21,8 +21,7 @@ interface GoBridge {
   getExpressionAst: (filename: string, hcl: string) => Promise<string>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-const jsRoot: Record<string, Function> = {};
+const jsRoot: Record<string, unknown> = {};
 
 function sleep() {
   return new Promise((resolve) => {
@@ -65,18 +64,17 @@ function goBridge(getBytes: Promise<Buffer>) {
           );
         }
 
-        if (typeof jsRoot[key] !== "function") {
-          return jsRoot[key];
+        const value = jsRoot[key];
+        if (typeof value !== "function") {
+          return value;
         }
 
         return new Promise((resolve, reject) => {
-          const cb = (err: string, ...msg: string[]) =>
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            err ? reject(new Error(err)) : resolve(...msg);
+          const cb = (err: string, result: string) =>
+            err ? reject(new Error(err)) : resolve(result);
 
           const run = () => {
-            jsRoot[key].apply(undefined, [...args, cb]);
+            value.apply(undefined, [...args, cb]);
           };
 
           run();

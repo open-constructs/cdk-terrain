@@ -61,6 +61,83 @@ test("default value", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
+test("null default value", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "string",
+    default: null,
+  });
+
+  expect(Testing.synth(stack)).toContain('"default": null');
+});
+
+test("null default value is preserved in HCL output", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "string",
+    default: null,
+  });
+
+  expect(Testing.synthHcl(stack)).toContain("default = null");
+});
+
+test("null nested in an object default is preserved in JSON output", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "any",
+    default: { someKey: null, list: [null, { innerKey: null }] },
+  });
+
+  const output = JSON.parse(Testing.synth(stack));
+  expect(output.variable["test-variable"].default).toEqual({
+    some_key: null,
+    list: [null, { inner_key: null }],
+  });
+});
+
+test("null nested in an object default is preserved in HCL output", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "any",
+    default: { someKey: null, list: [null, { innerKey: null }] },
+  });
+
+  expect(Testing.synthHcl(stack)).toContain(
+    "default = {\nsome_key = null\nlist = [\nnull,\n{\ninner_key = null\n},\n]\n}",
+  );
+});
+
+test("falsy default values are preserved in HCL output", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "bool-variable", {
+    type: "bool",
+    default: false,
+  });
+  new TerraformVariable(stack, "number-variable", {
+    type: "number",
+    default: 0,
+  });
+  new TerraformVariable(stack, "string-variable", {
+    type: "string",
+    default: "",
+  });
+
+  const hcl = Testing.synthHcl(stack);
+  expect(hcl).toContain("default = false");
+  expect(hcl).toContain("default = 0");
+  expect(hcl).toContain('default = ""');
+});
+
 test("description", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");
@@ -109,6 +186,12 @@ test("tuple type", () => {
     type: VariableType.tuple("bool", "list(number)"),
   });
   expect(Testing.synth(stack)).toMatchSnapshot();
+});
+
+test("tuple type keeps a pre-bracketed element list", () => {
+  expect(VariableType.tuple("[string, number]")).toBe(
+    "tuple([string, number])",
+  );
 });
 
 test("object type", () => {

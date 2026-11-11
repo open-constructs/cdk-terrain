@@ -26,7 +26,10 @@ export interface TerraformOutputConfig {
   readonly precondition?: Precondition;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform output value (`output` block): exposes a value from the stack after apply, for display or for use by
+ * other stacks and tools.
+ */
 export class TerraformOutput extends TerraformElement {
   public value: Expression | ITerraformAddressable;
   public description?: string;

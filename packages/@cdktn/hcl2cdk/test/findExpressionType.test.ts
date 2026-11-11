@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { convertTerraformExpressionToTs } from "../expressions";
-import { findExpressionType } from "../coerceType";
+import { convertTerraformExpressionToTs } from "../src/expressions";
+import { findExpressionType } from "../src/coerceType";
 
 const s3BucketSchema = {
   format_version: "1.0",

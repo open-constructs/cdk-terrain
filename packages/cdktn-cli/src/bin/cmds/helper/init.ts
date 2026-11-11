@@ -590,11 +590,10 @@ async function fetchRemoteTemplate(templateUrl: string): Promise<Template> {
     const templatePath = await findCdkTfJsonDirectory(zipExtractDir);
 
     if (!templatePath) {
-      throw Errors.Usage(
+      console.error(
         chalkColour`Could not find a {whiteBright cdktf.json} in the extracted directory`,
-        new Error(),
-        {},
       );
+      process.exit(1);
     }
 
     return {
@@ -628,16 +627,20 @@ async function fetchRemoteTemplate(templateUrl: string): Promise<Template> {
 }
 
 async function findCdkTfJsonDirectory(rootDir: string): Promise<string | null> {
-  const files = await fs.readdir(rootDir);
+  const entries = await fs.readdir(rootDir, { withFileTypes: true });
 
   // Built-in templates ship cdktf.json{{}}, which sscaff renders to cdktf.json; remote templates copied from them may too
-  if (files.includes("cdktf.json") || files.includes("cdktf.json{{}}")) {
+  if (
+    entries.some(
+      (entry) => entry.name === "cdktf.json" || entry.name === "cdktf.json{{}}",
+    )
+  ) {
     return rootDir;
   }
-  for (const file of files) {
-    const fullPath = path.join(rootDir, file);
-    if ((await fs.stat(fullPath)).isDirectory()) {
-      const dir = findCdkTfJsonDirectory(fullPath);
+  for (const entry of entries) {
+    // Dirents don't follow symlinks, so the search stays inside the extracted archive
+    if (entry.isDirectory()) {
+      const dir = await findCdkTfJsonDirectory(path.join(rootDir, entry.name));
       if (dir) return dir;
       // else continue with next sub directory
     }

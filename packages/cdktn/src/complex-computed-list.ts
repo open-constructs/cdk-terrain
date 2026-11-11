@@ -14,7 +14,9 @@ import {
 import { captureCreationStack } from "./tokens/private/stack-trace";
 import { providerVersionMismatch } from "./errors";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for a token that references a complex Terraform attribute and resolves to its interpolated address.
+ */
 abstract class ComplexResolvable implements IResolvable, ITerraformAddressable {
   public readonly creationStack: string[];
 
@@ -49,7 +51,9 @@ abstract class ComplexResolvable implements IResolvable, ITerraformAddressable {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for a reference to a complex Terraform attribute whose nested attributes are read as typed tokens.
+ */
 abstract class ComplexComputedAttribute
   extends ComplexResolvable
   implements IInterpolatingParent
@@ -108,7 +112,9 @@ abstract class ComplexComputedAttribute
   public abstract interpolationForAttribute(terraformAttribute: string): any;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(string)` attribute, with each value read by key as a string token.
+ */
 export class StringMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -135,7 +141,9 @@ export class StringMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(number)` attribute, with each value read by key as a number token.
+ */
 export class NumberMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -162,7 +170,9 @@ export class NumberMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(bool)` attribute, with each value read by key as a resolvable token.
+ */
 export class BooleanMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -187,7 +197,9 @@ export class BooleanMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(any)` attribute, with each value read by key as an any-typed token.
+ */
 export class AnyMap extends ComplexResolvable implements ITerraformAddressable {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -211,7 +223,9 @@ export class AnyMap extends ComplexResolvable implements ITerraformAddressable {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(map(string))` attribute, with each inner map read by key as a StringMap.
+ */
 export class StringMapMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -237,7 +251,9 @@ export class StringMapMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(map(number))` attribute, with each inner map read by key as a NumberMap.
+ */
 export class NumberMapMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -263,7 +279,9 @@ export class NumberMapMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(map(bool))` attribute, with each inner map read by key as a BooleanMap.
+ */
 export class BooleanMapMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -289,7 +307,9 @@ export class BooleanMapMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(map(any))` attribute, with each inner map read by key as an AnyMap.
+ */
 export class AnyMapMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -369,7 +389,10 @@ export class ComplexComputedList extends ComplexComputedAttribute {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for a reference to a Terraform list or set attribute, converting sets with `tolist()` for index access.
+ * Generated provider bindings extend it for lists and sets of nested blocks.
+ */
 export abstract class ComplexList
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -416,7 +439,9 @@ export abstract class ComplexList
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(bool)` attribute, with each element read by index as a resolvable token.
+ */
 export class BooleanList extends ComplexList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -431,7 +456,9 @@ export class BooleanList extends ComplexList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(list(string))` attribute, with each inner list read by index as a string list.
+ */
 export class StringListList extends ComplexList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -450,7 +477,9 @@ export class StringListList extends ComplexList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(list(number))` attribute, with each inner list read by index as a number list.
+ */
 export class NumberListList extends ComplexList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -469,7 +498,9 @@ export class NumberListList extends ComplexList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(list(bool))` attribute, with each inner list read by index as a resolvable token.
+ */
 export class BooleanListList extends ComplexList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -487,7 +518,9 @@ export class BooleanListList extends ComplexList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(list(any))` attribute, with each inner list read by index as a resolvable token.
+ */
 export class AnyListList extends ComplexList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -505,7 +538,10 @@ export class AnyListList extends ComplexList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for a reference to a Terraform map attribute.
+ * Generated provider bindings extend it for maps of nested objects and maps of lists of nested objects.
+ */
 export abstract class ComplexMap
   extends ComplexResolvable
   implements ITerraformAddressable
@@ -531,7 +567,10 @@ export abstract class ComplexMap
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a single Terraform object attribute, optionally addressed by index within a list or set.
+ * Generated provider bindings extend it for the output reference of each nested block.
+ */
 export class ComplexObject extends ComplexComputedAttribute {
   /**
    * @param terraformResource
@@ -598,7 +637,10 @@ export class ComplexObject extends ComplexComputedAttribute {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for a reference to a Terraform list or set of maps, converting sets with `tolist()` for index access.
+ * Generated provider bindings extend it for lists of maps and lists of lists of nested objects.
+ */
 export abstract class MapList
   extends ComplexResolvable
   implements ITerraformAddressable, IInterpolatingParent
@@ -650,7 +692,9 @@ export abstract class MapList
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(map(string))` attribute, with each map read by index as a StringMap.
+ */
 export class StringMapList extends MapList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -665,7 +709,9 @@ export class StringMapList extends MapList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(map(number))` attribute, with each map read by index as a NumberMap.
+ */
 export class NumberMapList extends MapList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -680,7 +726,9 @@ export class NumberMapList extends MapList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(map(bool))` attribute, with each map read by index as a BooleanMap.
+ */
 export class BooleanMapList extends MapList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -695,7 +743,9 @@ export class BooleanMapList extends MapList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `list(map(any))` attribute, with each map read by index as an AnyMap.
+ */
 export class AnyMapList extends MapList {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -710,7 +760,9 @@ export class AnyMapList extends MapList {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(list(string))` attribute, with each list read by key as a string list.
+ */
 export class StringListMap extends ComplexMap {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -728,7 +780,9 @@ export class StringListMap extends ComplexMap {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(list(number))` attribute, with each list read by key as a number list.
+ */
 export class NumberListMap extends ComplexMap {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -746,7 +800,9 @@ export class NumberListMap extends ComplexMap {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(list(bool))` attribute, with each list read by key as a resolvable token.
+ */
 export class BooleanListMap extends ComplexMap {
   constructor(
     protected terraformResource: IInterpolatingParent,
@@ -763,7 +819,9 @@ export class BooleanListMap extends ComplexMap {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Reference to a Terraform `map(list(any))` attribute, with each list read by key as a resolvable token.
+ */
 export class AnyListMap extends ComplexMap {
   constructor(
     protected terraformResource: IInterpolatingParent,

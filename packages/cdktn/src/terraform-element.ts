@@ -63,7 +63,10 @@ export interface TerraformElementMetadata {
   readonly stackTrace: string[];
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for constructs that synthesize to a Terraform configuration block, such as resources, data sources,
+ * providers, variables and outputs. Provides logical IDs, references and raw overrides.
+ */
 export class TerraformElement extends Construct {
   protected readonly rawOverrides: any = {};
 

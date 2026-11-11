@@ -19,7 +19,7 @@ import {
   getFetchingCliVersion,
   packageSubdir,
   terraformInitWithRetry,
-} from "../provider-schema";
+} from "../src/provider-schema";
 
 const execMock = exec as unknown as jest.Mock;
 

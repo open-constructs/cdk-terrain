@@ -10,6 +10,7 @@
     "watch": "tsc -w",
     "watch-preserve-output": "tsc -w --preserveWatchOutput",
     "test:update": "jest -u",
+    "typecheck": "tsc --noEmit --incremental false && tsc --project test",
     "package": "bash package.sh",
     "dist-clean": "rm -rf dist",
     "package:js": "bash package.sh"

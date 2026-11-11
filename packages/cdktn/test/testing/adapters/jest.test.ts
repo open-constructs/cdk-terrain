@@ -1,9 +1,9 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { setupJest } from "../jest";
-import { Testing } from "../../index";
-import { TestDataSource } from "../../../../test/helper/data-source";
-import { TestResource } from "../../../../test/helper/resource";
+import { setupJest } from "../../../src/testing/adapters/jest";
+import { Testing } from "../../../src/testing";
+import { TestDataSource } from "../../helper/data-source";
+import { TestResource } from "../../helper/resource";
 
 describe("jest-adapter", () => {
   beforeAll(() => {
