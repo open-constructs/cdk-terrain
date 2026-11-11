@@ -19,6 +19,9 @@ export class StackSynthesizer implements IStackSynthesizer {
    * @param continueOnErrorAnnotations if set to true, `synthesize()` will not throw an error
    * if it encounters an error Annotation. However, it will still add all errors to the manifest
    * file. The cdktn-cli uses this flag to print the errors itself.
+   * @param hclOutput if set to true, the stack is always written as HCL.
+   * Otherwise it is written as HCL when the manifest names the stack file
+   * `cdk.tf`, which follows `App`'s `hclOutput` and `SYNTH_HCL_OUTPUT`.
    */
   constructor(
     protected stack: TerraformStack,
@@ -96,7 +99,8 @@ export class StackSynthesizer implements IStackSynthesizer {
       );
     }
 
-    if (this.hclOutput) {
+    // The manifest names the stack file, so it also decides its format.
+    if (this.hclOutput || manifest.hclOutput) {
       const hcl = this.stack.toHclTerraform();
       fs.writeFileSync(
         path.join(session.outdir, stackManifest.synthesizedStackPath),
