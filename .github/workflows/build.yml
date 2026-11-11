@@ -9,6 +9,9 @@ on:
         required: false
         type: string
 
+env:
+  NX_DEFAULT_OUTPUT_STYLE: static
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-build-${{ github.head_ref }}
   cancel-in-progress: true

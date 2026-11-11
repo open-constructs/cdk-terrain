@@ -8,7 +8,9 @@ import {
   DataTerraformRemoteStateConfig,
 } from "../terraform-remote-state";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Configures the stack to store its Terraform state in the `oss` backend.
+ */
 export class OssBackend extends TerraformBackend {
   constructor(
     scope: Construct,
@@ -34,7 +36,9 @@ export class OssBackend extends TerraformBackend {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A `terraform_remote_state` data source that reads the outputs of a state stored in the `oss` backend.
+ */
 export class DataTerraformRemoteStateOss extends TerraformRemoteState {
   constructor(
     scope: Construct,

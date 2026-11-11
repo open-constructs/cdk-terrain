@@ -29,6 +29,7 @@ import {
   mapKeyMustResolveToString,
   unableToResolveCircularReference,
 } from "../../errors";
+import { types } from "util";
 
 // This file should not be exported to consumers, resolving should happen through Construct.resolve()
 
@@ -186,8 +187,7 @@ export function resolve(obj: any, options: IResolveOptions): any {
   // primitives - as-is
   //
 
-  // eslint-disable-next-line no-instanceof/no-instanceof
-  if (typeof obj !== "object" || obj instanceof Date) {
+  if (typeof obj !== "object" || types.isDate(obj)) {
     return obj;
   }
 

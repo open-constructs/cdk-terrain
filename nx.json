@@ -9,7 +9,7 @@
       "default",
       "!{projectRoot}/**/*.test.ts",
       "!{projectRoot}/**/__tests__/**",
-      "!{projectRoot}/tsconfig.test.json"
+      "!{projectRoot}/test/**"
     ]
   },
   "plugins": [
@@ -52,6 +52,10 @@
     "package:java": { "dependsOn": ["build"] },
     "package:dotnet": { "dependsOn": ["build"] },
     "package:go": { "dependsOn": ["build"] },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "cache": true
+    },
     "test": {
       "dependsOn": [
         "build",
@@ -72,5 +76,6 @@
       "manifestRootsToUpdate": ["{projectRoot}"]
     }
   },
-  "analytics": false
+  "analytics": false,
+  "neverConnectToCloud": true
 }

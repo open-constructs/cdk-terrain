@@ -147,7 +147,10 @@ export class Lazy {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for lazy tokens whose value is produced at resolution time and then passed through any registered
+ * post-processors.
+ */
 export abstract class LazyBase implements IResolvable {
   public readonly creationStack: string[];
   private postProcessors: IPostProcessor[] = [];
@@ -184,7 +187,9 @@ export abstract class LazyBase implements IResolvable {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Lazy token whose string value is produced by an IStringProducer at resolution time.
+ */
 class LazyString extends LazyBase {
   constructor(private readonly producer: IStringProducer) {
     super();
@@ -195,7 +200,9 @@ class LazyString extends LazyBase {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Lazy token whose numeric value is produced by an INumberProducer at resolution time.
+ */
 class LazyNumber extends LazyBase {
   constructor(private readonly producer: INumberProducer) {
     super();
@@ -206,7 +213,10 @@ class LazyNumber extends LazyBase {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Lazy token whose list value is produced by an IListProducer at resolution time. Resolves an empty list to
+ * `undefined` when `omitEmpty` is set.
+ */
 class LazyList extends LazyBase {
   constructor(
     private readonly producer: IListProducer,
@@ -224,7 +234,10 @@ class LazyList extends LazyBase {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Lazy token whose untyped value is produced by an IAnyProducer at resolution time. Resolves an empty array to
+ * `undefined` when `omitEmptyArray` is set.
+ */
 class LazyAny extends LazyBase {
   constructor(
     private readonly producer: IAnyProducer,

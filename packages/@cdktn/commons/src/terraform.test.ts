@@ -3,27 +3,100 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
-import { seedTerraformCliProbeForTests } from "./terraform";
+import {
+  seedTerraformCliProbeForTests,
+  selectTerraformBinaryForProject,
+  terraformBinaryName,
+} from "./terraform";
 
-// The binary name is read at import, so every case loads a fresh module with
-// TERRAFORM_BINARY_NAME pointing at a fixture script; the probe itself is
-// cached on globalThis and reset per test.
+const originalBinaryName = process.env.TERRAFORM_BINARY_NAME;
+afterEach(() => {
+  if (originalBinaryName === undefined)
+    delete process.env.TERRAFORM_BINARY_NAME;
+  else process.env.TERRAFORM_BINARY_NAME = originalBinaryName;
+});
+
+// Points TERRAFORM_BINARY_NAME at a fixture script for the test and loads a
+// fresh module copy, as the CLI bundle does; the probe itself is cached on
+// globalThis and reset per test.
 function loadProbe(binary: string) {
-  const original = process.env.TERRAFORM_BINARY_NAME;
   process.env.TERRAFORM_BINARY_NAME = binary;
-  try {
-    let terraform: typeof import("./terraform");
-    let sentry: typeof import("@sentry/node");
-    jest.isolateModules(() => {
-      terraform = jest.requireActual("./terraform");
-      sentry = jest.requireActual("@sentry/node");
-    });
-    return { ...terraform!, sentry: sentry! };
-  } finally {
-    if (original === undefined) delete process.env.TERRAFORM_BINARY_NAME;
-    else process.env.TERRAFORM_BINARY_NAME = original;
-  }
+  let terraform: typeof import("./terraform");
+  let sentry: typeof import("@sentry/node");
+  jest.isolateModules(() => {
+    terraform = jest.requireActual("./terraform");
+    sentry = jest.requireActual("@sentry/node");
+  });
+  return { ...terraform!, sentry: sentry! };
 }
+
+// Which product counts as "only OpenTofu" is covered with registryForTargetVersions.
+describe("selectTerraformBinaryForProject", () => {
+  const originalCwd = process.cwd();
+  let projectDir: string;
+  const opentofuOnly = JSON.stringify({
+    targetVersions: { opentofu: ">=1.6.0" },
+  });
+
+  beforeEach(() => {
+    delete process.env.TERRAFORM_BINARY_NAME;
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-tf-select-"));
+    process.chdir(projectDir);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    fs.removeSync(projectDir);
+  });
+
+  const writeConfig = (content: string) =>
+    fs.writeFileSync(path.join(projectDir, "cdktf.json"), content);
+
+  it("runs tofu for a project that targets only OpenTofu", () => {
+    writeConfig(opentofuOnly);
+
+    selectTerraformBinaryForProject();
+
+    expect(terraformBinaryName()).toBe("tofu");
+  });
+
+  it("runs tofu from a subdirectory of the project", () => {
+    writeConfig(opentofuOnly);
+    const subdirectory = path.join(projectDir, "src", "stacks");
+    fs.mkdirpSync(subdirectory);
+    process.chdir(subdirectory);
+
+    selectTerraformBinaryForProject();
+
+    expect(terraformBinaryName()).toBe("tofu");
+  });
+
+  it.each([
+    [
+      "a project that targets both",
+      JSON.stringify({
+        targetVersions: { terraform: ">=1.5.7", opentofu: ">=1.6.0" },
+      }),
+    ],
+    ["an unreadable cdktf.json", "{ not json"],
+    ["no cdktf.json", undefined],
+  ])("keeps terraform for %s", (_name, content) => {
+    if (content !== undefined) writeConfig(content);
+
+    selectTerraformBinaryForProject();
+
+    expect(terraformBinaryName()).toBe("terraform");
+  });
+
+  it("leaves an explicit TERRAFORM_BINARY_NAME alone", () => {
+    writeConfig(opentofuOnly);
+    process.env.TERRAFORM_BINARY_NAME = "tofu1.12.6";
+
+    selectTerraformBinaryForProject();
+
+    expect(terraformBinaryName()).toBe("tofu1.12.6");
+  });
+});
 
 describe("terraform binary probe", () => {
   let fixtureDir: string;
