@@ -45,7 +45,11 @@ export abstract class VariableType {
   }
 
   public static tuple(...elements: string[]) {
-    return `tuple(${elements.join(", ")})`;
+    // Keep the pre-bracketed workaround for the old rendering working.
+    if (elements.length === 1 && /^\[[\s\S]*\]$/.test(elements[0].trim())) {
+      return `tuple(${elements[0].trim()})`;
+    }
+    return `tuple([${elements.join(", ")}])`;
   }
 
   public static object(attributes: { [key: string]: string }) {
