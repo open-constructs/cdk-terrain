@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
-import { Token } from "./tokens";
+import { Lazy, Token } from "./tokens";
 import { TerraformElement } from "./terraform-element";
 import { TerraformProvider } from "./terraform-provider";
 import {
@@ -66,7 +66,7 @@ export interface TerraformResourceLifecycle {
 /**
  * prepares a lifecycle object for being rendered as JSON
  * currently this function:
- *  - converts all replaceTriggeredBy items that are ITerraformDependables to strings
+ *  - converts all replaceTriggeredBy items to plain references (without the ${} wrapper, like dependsOn)
  */
 export function lifecycleToTerraform(
   lifecycle?: TerraformResourceLifecycle,
@@ -81,9 +81,14 @@ export function lifecycleToTerraform(
       ? {
           replaceTriggeredBy: lifecycle?.replaceTriggeredBy?.map((x) => {
             if (typeof x === "string") {
-              return x;
+              return Lazy.stringValue({
+                produce: (context) => {
+                  context.suppressBraces = true;
+                  return x;
+                },
+              });
             } else {
-              return x.fqn;
+              return dependable(x);
             }
           }),
         }
