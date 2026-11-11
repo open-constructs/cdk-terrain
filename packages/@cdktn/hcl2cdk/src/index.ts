@@ -35,6 +35,7 @@ import {
   imports,
 } from "./generation";
 import { TerraformResourceBlock, ProgramScope } from "./types";
+import { mergeImports } from "./mergeImports";
 import {
   forEachProvider,
   forEachGlobal,
@@ -567,7 +568,10 @@ export async function convertProject(
 
   return {
     code: (inputMainFile: string) => {
-      const importMainFile = [imports, inputMainFile].join("\n");
+      const importMainFile = [
+        mergeImports(imports, inputMainFile),
+        inputMainFile,
+      ].join("\n");
       const outputMainFile = importMainFile.replace(CODE_MARKER, code);
       return prettier.format(outputMainFile, { parser: "babel" });
     },
