@@ -15,8 +15,8 @@ import {
 import { FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS } from "../src/features";
 
 import { version } from "../package.json";
-import fs = require("fs");
-import path = require("path");
+import * as fs from "fs";
+import * as path from "path";
 import { Aspects } from "../src/aspect";
 import { IConstruct } from "constructs";
 import { setupJest } from "../src/testing/adapters/jest";
@@ -183,6 +183,32 @@ test("app synth executes Aspects", () => {
 });
 
 class MyResource extends TerraformResource {}
+
+test("app synth writes HCL into cdk.tf when hclOutput is set", () => {
+  const previous = process.env.SYNTH_HCL_OUTPUT;
+  delete process.env.SYNTH_HCL_OUTPUT;
+  try {
+    const outdir = tmp("cdktf.outdir.");
+    const app = Testing.stubVersion(
+      new App({ stackTraces: false, outdir, hclOutput: true }),
+    );
+    const stack = new TerraformStack(app, "MyStack");
+    new TestProvider(stack, "TestProvider", {});
+    new TestResource(stack, "StackResource", { name: "in-stack" });
+
+    app.synth();
+
+    const stackDir = path.resolve(outdir, "stacks", "MyStack");
+    expect(fs.existsSync(path.join(stackDir, "cdk.tf.json"))).toBe(false);
+    const hcl = fs.readFileSync(path.join(stackDir, "cdk.tf"), "utf8");
+    expect(hcl).toContain('resource "test_resource" "StackResource"');
+    expect(hcl.trimStart().startsWith("{")).toBe(false);
+  } finally {
+    if (previous !== undefined) {
+      process.env.SYNTH_HCL_OUTPUT = previous;
+    }
+  }
+});
 
 test("app synth silently ignores constructs scoped to app instead of a stack by default", () => {
   const outdir = tmp("cdktf.outdir.");

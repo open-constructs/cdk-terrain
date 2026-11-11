@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import { variableTypeToAst } from "../generation";
-import { ProgramScope } from "../types";
-import { astToCode } from "./testHelpers";
+import { variableTypeToAst } from "../src/generation";
+import { ProgramScope } from "../src/types";
+import { astToCode } from "./helpers/testHelpers";
 
 describe("variableTypeToAst", () => {
   async function run(type: string) {

@@ -28,7 +28,10 @@ export interface IManifest {
   readonly version: string;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Describes the synthesized output of an app: the stacks, their output paths, annotations and dependencies.
+ * Written to manifest.json in the output directory.
+ */
 export class Manifest implements IManifest {
   public static readonly fileName = "manifest.json";
   public static readonly stacksFolder = "stacks";

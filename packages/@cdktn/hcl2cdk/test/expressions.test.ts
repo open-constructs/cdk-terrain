@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 import generate from "@babel/generator";
 import * as t from "@babel/types";
-import { dynamicVariableToAst } from "../expressions";
-import { ProgramScope, Reference } from "../types";
+import { dynamicVariableToAst } from "../src/expressions";
+import { ProgramScope, Reference } from "../src/types";
 import {
   extractReferencesFromExpression,
   referenceToVariableName,
-} from "../references";
+} from "../src/references";
 import { getExpressionAst } from "@cdktn/hcl2json";
 import { TFExpressionSyntaxTree as tex } from "@cdktn/hcl2json";
-import { camelCase } from "../utils";
+import { camelCase } from "../src/utils";
 
 const nodeIds = [
   "var.input",

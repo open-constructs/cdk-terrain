@@ -102,7 +102,7 @@ export class App extends Construct {
     const envHclOutput = process.env.SYNTH_HCL_OUTPUT;
     let hclOutput = config.hclOutput || false;
     if (envHclOutput !== undefined) {
-      hclOutput = envHclOutput === "true";
+      hclOutput = envHclOutput === "true" || envHclOutput === "1";
     }
 
     this.hclOutput = hclOutput;
@@ -132,7 +132,11 @@ export class App extends Construct {
   public static of(construct: IConstruct): App {
     return _lookup(construct);
 
-    // eslint-disable-next-line jsdoc/require-jsdoc
+    /**
+     * Walks up the construct tree from the given construct until it finds the App
+     * @param c Construct to start the search from
+     * @returns The App the construct belongs to
+     */
     function _lookup(c: IConstruct): App {
       if (App.isApp(c)) {
         return c;

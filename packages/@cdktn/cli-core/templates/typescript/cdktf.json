@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
   "language": "typescript",
   "app": "{{ pmExec }} tsx main.ts",
   "projectId": "{{projectId}}",

@@ -8,7 +8,9 @@ import {
   DataTerraformRemoteStateConfig,
 } from "../terraform-remote-state";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Configures the stack to store its Terraform state in the `gcs` backend.
+ */
 export class GcsBackend extends TerraformBackend {
   constructor(
     scope: Construct,
@@ -37,7 +39,9 @@ export class GcsBackend extends TerraformBackend {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A `terraform_remote_state` data source that reads the outputs of a state stored in the `gcs` backend.
+ */
 export class DataTerraformRemoteStateGcs extends TerraformRemoteState {
   constructor(
     scope: Construct,

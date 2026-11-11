@@ -8,7 +8,10 @@ import { captureCreationStack } from "./tokens/private/stack-trace";
 
 const DYNAMIC_BLOCK_SYMBOL = Symbol.for("cdktf/TerraformDynamicBlock");
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform `dynamic` block: generates one nested block per element of an iterator, each built from the given
+ * content.
+ */
 export class TerraformDynamicBlock implements IResolvable {
   public readonly creationStack: string[];
   public readonly forEach: ITerraformIterator;

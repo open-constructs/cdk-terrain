@@ -25,8 +25,7 @@
     "stripInternal": true,
     "target": "ES2018",
     "types": [
-      "node",
-      "jest"
+      "node"
     ],
     "incremental": false,
     "esModuleInterop": true,

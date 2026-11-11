@@ -1,8 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { Testing } from "../../..";
-import { TestResource } from "../../../../test/helper";
-import { TestDataSource } from "../../../../test/helper/data-source";
+import { Testing } from "../../../src";
+import { TestResource } from "../../helper";
+import { TestDataSource } from "../../helper/data-source";
 import { Construct } from "constructs";
 
 describe("#synthScope", () => {

@@ -4,7 +4,7 @@
  */
 
 import { ProviderSchema } from "@cdktn/commons";
-import { getTypeAtPath } from "../terraformSchema";
+import { getTypeAtPath } from "../src/terraformSchema";
 
 describe("getTypeAtPath", () => {
   const schema: ProviderSchema = {

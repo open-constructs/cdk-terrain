@@ -1,0 +1,8 @@
+{
+  "language": "typescript",
+  "app": "echo remote",
+  "projectId": "{{projectId}}",
+  "sendCrashReports": "{{sendCrashReports}}",
+  "terraformProviders": [],
+  "terraformModules": []
+}
