@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // copied from https://github.com/aws/constructs/blob/e01e47f78ef1e9b600efcd23ff7705aa8d384017/lib/private/dependency.ts
 
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-
 import { IConstruct } from "constructs";
 import { doesNotImplementDependableTrait } from "../../errors";
 
@@ -34,12 +32,8 @@ export class ConcreteDependable implements IDependable {
   private readonly _dependencyRoots = new Array<IConstruct>();
 
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
     DependableTrait.implement(this, {
-      get dependencyRoots() {
-        return self._dependencyRoots;
-      },
+      dependencyRoots: this._dependencyRoots,
     });
   }
 

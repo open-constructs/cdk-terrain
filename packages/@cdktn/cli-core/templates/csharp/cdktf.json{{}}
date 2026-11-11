@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
+  "language": "csharp",
+  "app": "dotnet run -p MyTerraformStack.csproj",
+  "projectId": "{{projectId}}",
+  "sendCrashReports": "{{sendCrashReports}}",
+  "targetVersions": {
+    "terraform": ">=1.5.7",
+    "opentofu": ">=1.6.0"
+  },
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
+  "terraformProviders": [],
+  "terraformModules": [],
+  "context": {
+{{futureFlags}}
+  }
+}

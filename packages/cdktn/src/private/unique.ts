@@ -81,12 +81,20 @@ function pathHash(path: string[]): string {
   return md5.slice(0, HASH_LEN).toUpperCase();
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Removes characters that are not allowed in a logical ID
+ * @param s String to clean
+ * @returns The string containing only alphanumerics, `_` and `-`
+ */
 function removeDisallowedCharacters(s: string) {
   return removeNonAlphanumericSep(s);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Removes all characters except alphanumerics, `_` and `-`
+ * @param s String to clean
+ * @returns The string containing only alphanumerics, `_` and `-`
+ */
 function removeNonAlphanumericSep(s: string) {
   return s.replace(/[^A-Za-z0-9_-]/g, "");
 }

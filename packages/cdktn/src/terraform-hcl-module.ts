@@ -8,7 +8,10 @@ export interface TerraformHclModuleConfig extends TerraformModuleConfig {
   readonly variables?: { [key: string]: any };
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform module (`module` block) used without generated bindings: input variables are set by name and outputs
+ * are read by name.
+ */
 export class TerraformHclModule extends TerraformModule {
   private _variables?: { [key: string]: any };
 

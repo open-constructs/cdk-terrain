@@ -1,13 +1,12 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { TerraformCli, SynthesizedStack } from "@cdktn/cli-core";
-import { Errors, logger } from "@cdktn/commons";
+import { Errors, logger, parseTerraformCliVersion } from "@cdktn/commons";
 import * as semver from "semver";
 import { existsSync } from "fs-extra";
 import * as path from "path";
 
 const MIN_SUPPORTED_VERSION = "1.2.0";
-const VERSION_REGEXP = /Terraform v\d+.\d+.\d+/;
 
 export const getTerraformVersion = async (): Promise<string | null> => {
   try {
@@ -27,18 +26,8 @@ export const getTerraformVersion = async (): Promise<string | null> => {
 
     const terraform = new TerraformCli(new AbortController().signal, fakeStack);
 
-    const terraformVersion = await terraform.version();
-    const terraformVersionMatches = terraformVersion.match(VERSION_REGEXP);
-
-    if (terraformVersionMatches === null) {
-      return null;
-    }
-    // Should always be the first match found in the string
-    return semver.clean(
-      terraformVersionMatches[0].substring(
-        terraformVersionMatches[0].indexOf("v"),
-      ),
-    );
+    const cli = parseTerraformCliVersion(await terraform.version());
+    return cli.name === "unknown" ? null : (cli.version ?? null);
   } catch (e) {
     logger.info(`Unable to determine Terraform version: ${e}`);
     return null;

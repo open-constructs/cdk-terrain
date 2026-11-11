@@ -11,14 +11,25 @@ import { Aspects, IAspect } from "../aspect";
 import { StackAnnotation } from "../manifest";
 import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
+import {
+  removeRequiredVersionFiles,
+  writeRequiredVersionFiles,
+  writesRequiredVersion,
+} from "./required-version";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Default stack synthesizer: invokes aspects, runs validations, collects annotations into the manifest and writes
+ * the stack's Terraform configuration (JSON or HCL) to its working directory.
+ */
 export class StackSynthesizer implements IStackSynthesizer {
   /**
    * @param stack the stack to synthesize
    * @param continueOnErrorAnnotations if set to true, `synthesize()` will not throw an error
    * if it encounters an error Annotation. However, it will still add all errors to the manifest
    * file. The cdktn-cli uses this flag to print the errors itself.
+   * @param hclOutput if set to true, the stack is always written as HCL.
+   * Otherwise it is written as HCL when the manifest names the stack file
+   * `cdk.tf`, which follows `App`'s `hclOutput` and `SYNTH_HCL_OUTPUT`.
    */
   constructor(
     protected stack: TerraformStack,
@@ -58,6 +69,11 @@ export class StackSynthesizer implements IStackSynthesizer {
     );
     if (!fs.existsSync(workingDirectory)) fs.mkdirSync(workingDirectory);
 
+    removeRequiredVersionFiles(workingDirectory);
+    if (writesRequiredVersion(this.stack)) {
+      writeRequiredVersionFiles(this.stack, workingDirectory, this.hclOutput);
+    }
+
     // call custom synthesis on child nodes (leafs first)
     this.stack.node
       .findAll(ConstructOrder.POSTORDER)
@@ -96,7 +112,8 @@ export class StackSynthesizer implements IStackSynthesizer {
       );
     }
 
-    if (this.hclOutput) {
+    // The manifest names the stack file, so it also decides its format.
+    if (this.hclOutput || manifest.hclOutput) {
       const hcl = this.stack.toHclTerraform();
       fs.writeFileSync(
         path.join(session.outdir, stackManifest.synthesizedStackPath),
@@ -131,7 +148,12 @@ export function invokeAspects(root: IConstruct) {
   let nestedAspectWarning = false;
   recurse(root, []);
 
-  // eslint-disable-next-line jsdoc/require-jsdoc
+  /**
+   * Invokes inherited and own aspects on the construct, skipping any already invoked on it, then recurses into its
+   * children
+   * @param construct Construct to visit
+   * @param inheritedAspects Aspects applied to the construct's ancestors
+   */
   function recurse(construct: IConstruct, inheritedAspects: IAspect[]) {
     const node = construct.node;
     const aspects = Aspects.of(construct);
@@ -174,12 +196,20 @@ const annotationMetadataEntryTypes = [
   AnnotationMetadataEntryType.ERROR,
 ] as string[];
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Determines if the metadata entry is an info, warning or error annotation
+ * @param metadata Metadata entry to test
+ * @returns Boolean
+ */
 function isAnnotationMetadata(metadata: MetadataEntry): boolean {
   return annotationMetadataEntryTypes.includes(metadata.type);
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Determines if the annotation has error level
+ * @param annotation Annotation to test
+ * @returns Boolean
+ */
 function isErrorAnnotation(annotation: StackAnnotation): boolean {
   return annotation.level === AnnotationMetadataEntryType.ERROR;
 }
@@ -200,7 +230,12 @@ export interface ICustomSynthesis {
   onSynthesize(session: ISynthesisSession): void;
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Attaches custom synthesis logic to a construct; its `onSynthesize` is called when the containing stack is
+ * synthesized
+ * @param construct Construct to attach the custom synthesis to
+ * @param synthesis Custom synthesis to run for the construct
+ */
 export function addCustomSynthesis(
   construct: IConstruct,
   synthesis: ICustomSynthesis,
@@ -211,7 +246,11 @@ export function addCustomSynthesis(
   });
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Returns the custom synthesis attached to a construct via addCustomSynthesis
+ * @param construct Construct to read the custom synthesis from
+ * @returns The attached custom synthesis, or undefined if none is attached
+ */
 function getCustomSynthesis(
   construct: IConstruct,
 ): ICustomSynthesis | undefined {

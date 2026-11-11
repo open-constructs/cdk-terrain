@@ -22,12 +22,14 @@ import { ref, dependable } from "./tfExpression";
 import { IInterpolatingParent } from "./terraform-addressable";
 import { ITerraformIterator } from "./terraform-iterator";
 import { TerraformCount } from "./terraform-count";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import assert = require("assert");
+import { ok as assert } from "assert";
 
 const TERRAFORM_DATA_SOURCE_SYMBOL = Symbol.for("cdktf/TerraformDataSource");
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A Terraform data source (`data` block): reads information from a provider about infrastructure defined outside
+ * this configuration, for use elsewhere in the stack.
+ */
 export class TerraformDataSource
   extends TerraformElement
   implements ITerraformResource, ITerraformDependable, IInterpolatingParent

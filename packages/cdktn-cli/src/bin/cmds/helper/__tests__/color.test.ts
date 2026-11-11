@@ -23,7 +23,6 @@ function noColorDefault(
     process.argv = [...savedArgv, ...argv];
     let result: boolean | undefined;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       result = require("../color").noColorDefault();
     });
     return result as boolean;

@@ -8,7 +8,9 @@ import {
   DataTerraformRemoteStateConfig,
 } from "../terraform-remote-state";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Configures the stack to store its Terraform state in the `http` backend.
+ */
 export class HttpBackend extends TerraformBackend {
   constructor(
     scope: Construct,
@@ -34,7 +36,9 @@ export class HttpBackend extends TerraformBackend {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A `terraform_remote_state` data source that reads the outputs of a state stored in the `http` backend.
+ */
 export class DataTerraformRemoteStateHttp extends TerraformRemoteState {
   constructor(
     scope: Construct,

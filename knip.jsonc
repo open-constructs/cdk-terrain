@@ -61,7 +61,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/@cdktn/provider-schema": {
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts", "test/**/*.ts"]
     },
     "tools/generate-function-bindings": {
       "project": ["scripts/**/*.ts"]
