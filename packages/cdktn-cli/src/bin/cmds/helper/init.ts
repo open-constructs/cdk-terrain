@@ -629,7 +629,12 @@ async function fetchRemoteTemplate(templateUrl: string): Promise<Template> {
 async function findCdkTfJsonDirectory(rootDir: string): Promise<string | null> {
   const entries = await fs.readdir(rootDir, { withFileTypes: true });
 
-  if (entries.some((entry) => entry.name === "cdktf.json")) {
+  // Built-in templates ship cdktf.json{{}}, which sscaff renders to cdktf.json; remote templates copied from them may too
+  if (
+    entries.some(
+      (entry) => entry.name === "cdktf.json" || entry.name === "cdktf.json{{}}",
+    )
+  ) {
     return rootDir;
   }
   for (const entry of entries) {

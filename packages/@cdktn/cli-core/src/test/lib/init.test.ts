@@ -103,7 +103,7 @@ describe("cdktf.json schema", () => {
   const baseTemplates = fs
     .readdirSync(templatesDir)
     .filter((name) =>
-      fs.existsSync(path.join(templatesDir, name, "cdktf.json")),
+      fs.existsSync(path.join(templatesDir, name, "cdktf.json{{}}")),
     );
   let destination: string;
 
@@ -114,7 +114,7 @@ describe("cdktf.json schema", () => {
       fs.writeFileSync(
         path.join(target, "cdktf.json"),
         substitute(
-          fs.readFileSync(path.join(src, "cdktf.json"), "utf8"),
+          fs.readFileSync(path.join(src, "cdktf.json{{}}"), "utf8"),
           variables,
         ),
       );
