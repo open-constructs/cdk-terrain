@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 
-// uses the functions.json file to generate the bindings for CDKTN
+// uses the functions-matrix.json file to generate the bindings for CDKTN
 
 import fs from "fs/promises";
 import * as path from "path";
@@ -11,7 +11,6 @@ import template from "@babel/template";
 import { parseExpression } from "@babel/parser";
 import * as t from "@babel/types";
 import prettier from "prettier";
-import { FUNCTIONS_METADATA_FILE } from "./constants";
 import { FUNCTIONS_MATRIX_FILE, FunctionsMatrix } from "./matrix";
 
 const ts = template({ plugins: [["typescript", {}]] });
@@ -88,34 +87,21 @@ const INTERNAL_METHODS = ["join", "bcrypt", "range", "lookup"];
 const openTofuOnlyFunctions = new Set<string>();
 
 /**
- * Loads the function signatures from functions.json (Terraform metadata) and
- * merges in OpenTofu-only functions from the availability matrix so the
- * bindings cover both products. `core::` namespaced aliases (terraform >= 1.8)
- * mirror every builtin 1:1 and are dropped — they are not valid identifiers.
- * Functions that are not universally available are validated at synth time
- * against the declared `targetVersions` (see ValidateFunctionVersionSupport in
- * cdktn); the check is static and never executes a CLI.
+ * Loads the function signatures from the availability matrix, which covers
+ * both Terraform and OpenTofu so the bindings cover both products. Functions
+ * that are not universally available are validated at synth time against the
+ * declared `targetVersions` (see ValidateFunctionVersionSupport in cdktn); the
+ * check is static and never executes a CLI.
  */
 async function loadFunctionSignatures(): Promise<{
   [name: string]: FunctionSignature;
 }> {
-  const file = path.join(__dirname, FUNCTIONS_METADATA_FILE);
-  const json = JSON.parse((await fs.readFile(file)).toString())
-    .function_signatures as {
-    [name: string]: FunctionSignature;
-  };
-
   const matrix: FunctionsMatrix = JSON.parse(
     (await fs.readFile(FUNCTIONS_MATRIX_FILE)).toString(),
   );
 
   const signatures: { [name: string]: FunctionSignature } = {};
-  for (const [name, signature] of Object.entries(json)) {
-    if (name.includes("::")) continue;
-    signatures[name] = signature;
-  }
   for (const [name, entry] of Object.entries(matrix.functions)) {
-    if (signatures[name] || name.includes("::")) continue;
     if (!entry.products.terraform) {
       openTofuOnlyFunctions.add(name);
     }
@@ -145,8 +131,8 @@ async function generateFunctionBindings() {
   t.addComment(
     fnClass,
     "leading",
-    " eslint-disable-next-line jsdoc/require-jsdoc",
-    true,
+    "*\n * Bindings for the Terraform and OpenTofu built-in functions, generated from the function availability matrix.\n ",
+    false,
   );
 
   const program = t.program([IMPORTS, fnClass]);

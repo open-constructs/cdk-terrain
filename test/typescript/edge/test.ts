@@ -111,20 +111,20 @@ describe("edge provider test", () => {
       const item = stack.byId("from_list");
 
       expect(item.bool).toEqual(
-        "${element(list_block_resource.list.req, 0).reqbool}",
+        '${lookup(element(list_block_resource.list.req, 0), "reqbool", false)}',
       );
       expect(item.str).toEqual("${list_block_resource.list.req[0].reqstr}");
       expect(item.num).toEqual(
-        "${element(list_block_resource.list.req, 0).reqnum}",
+        '${lookup(element(list_block_resource.list.req, 0), "reqnum", 0)}',
       );
       expect(item.boolList).toEqual([
-        "${element(list_block_resource.list.req, 0).reqbool}",
+        '${lookup(element(list_block_resource.list.req, 0), "reqbool", false)}',
       ]);
       expect(item.strList).toEqual([
         "${list_block_resource.list.req[0].reqstr}",
       ]);
       expect(item.numList).toEqual([
-        "${element(list_block_resource.list.req, 0).reqnum}",
+        '${lookup(element(list_block_resource.list.req, 0), "reqnum", 0)}',
       ]);
     });
 
@@ -165,16 +165,24 @@ describe("edge provider test", () => {
       const item = stack.byId("from_map");
 
       // Expands map references
-      expect(item.bool).toEqual("${map_resource.map.reqMap.key1}");
+      expect(item.bool).toEqual(
+        '${lookup(map_resource.map.reqMap, "key1", false)}',
+      );
       expect(item.str).toEqual(
         '${lookup(map_resource.map.optMap, "key1", "missing")}',
       );
-      expect(item.num).toEqual("${map_resource.map.computedMap.key1}");
-      expect(item.boolList).toEqual(["${map_resource.map.reqMap.key1}"]);
+      expect(item.num).toEqual(
+        '${lookup(map_resource.map.computedMap, "key1", 0)}',
+      );
+      expect(item.boolList).toEqual([
+        '${lookup(map_resource.map.reqMap, "key1", false)}',
+      ]);
       expect(item.strList).toEqual([
         '${lookup(map_resource.map.optMap, "key1", "missing")}',
       ]);
-      expect(item.numList).toEqual(["${map_resource.map.computedMap.key1}"]);
+      expect(item.numList).toEqual([
+        '${lookup(map_resource.map.computedMap, "key1", 0)}',
+      ]);
     });
 
     onlyJson("item references a full map", () => {

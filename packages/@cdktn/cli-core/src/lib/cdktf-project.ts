@@ -652,7 +652,7 @@ export class CdktfProject {
     const errors = checkInstalledBinaryAgainstTargets(
       await identifyTerraformCli(),
       config.targetVersions,
-      terraformBinaryName,
+      terraformBinaryName(),
     );
     if (errors.length > 0) {
       throw Errors.Usage(errors.join("\n"));

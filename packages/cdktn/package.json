@@ -13,6 +13,7 @@
         "package:js": "node ./scripts/pack.mjs js",
         "package:go": "node ./scripts/pack.mjs go",
         "test:update": "jest -u",
+        "typecheck": "tsc --project test",
         "dist-clean": "rm -rf dist"
     },
     "main": "lib/index.js",
@@ -27,6 +28,11 @@
                     "{projectRoot}/lib",
                     "{projectRoot}/.jsii",
                     "{projectRoot}/tsconfig.json"
+                ]
+            },
+            "typecheck": {
+                "dependsOn": [
+                    "build"
                 ]
             }
         }
@@ -48,9 +54,6 @@
             "outDir": "lib",
             "rootDir": "src"
         },
-        "excludeTypescript": [
-            "src/**/__tests__/**"
-        ],
         "versionFormat": "short",
         "license": "MPL-2.0",
         "author": {

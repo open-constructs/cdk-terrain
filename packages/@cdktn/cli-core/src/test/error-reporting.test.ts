@@ -33,6 +33,7 @@ jest.mock("@cdktn/commons", () => {
 import * as Sentry from "@sentry/node";
 import ciInfo from "ci-info";
 import {
+  collectDebugInformation,
   Errors,
   isUsageTelemetryEnabled,
   resetCommandTelemetry,
@@ -205,6 +206,27 @@ describe("Sentry init hardening", () => {
         ),
       ).toBeNull();
     });
+  });
+  it("logs a failed background environment collection instead of rejecting", async () => {
+    fs.writeJsonSync(path.join(workdir, "cdktf.json"), {
+      sendCrashReports: true,
+    });
+    setInteractive(false);
+    (collectDebugInformation as jest.Mock).mockRejectedValueOnce(
+      new Error("spawn npm ENOENT"),
+    );
+
+    await initializErrorReporting();
+    // the collection is not awaited; let its chain settle
+    await new Promise(setImmediate);
+
+    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message:
+          "Could not collect environment information: Error: spawn npm ENOENT",
+      }),
+    );
+    expect(Sentry.setContext).not.toHaveBeenCalled();
   });
 });
 

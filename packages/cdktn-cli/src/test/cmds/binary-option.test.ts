@@ -1,0 +1,124 @@
+// Copyright (c) HashiCorp, Inc
+// SPDX-License-Identifier: MPL-2.0
+import execa from "execa";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import cdktnCliPkg from "../../../package.json";
+
+const cdktnCliRoot = path.resolve(__dirname, "../../..");
+const cdktnBin = path.resolve(cdktnCliRoot, cdktnCliPkg.bin.cdktn);
+const bundleExists = fs.existsSync(path.join(cdktnCliRoot, "bundle/bin"));
+
+// Needs the bundled CLI, which `build` produces
+const describeIfBundleExists = bundleExists ? describe : describe.skip;
+
+// Each test starts the CLI, and synth starts the app too
+jest.setTimeout(30_000);
+
+// The synth app is a child process, so it sees the binary every later step runs
+describeIfBundleExists("binary selection", () => {
+  let cwd: string;
+
+  const project = (targetVersions?: Record<string, string>) => {
+    fs.writeFileSync(
+      path.join(cwd, "cdktf.json"),
+      JSON.stringify({
+        language: "typescript",
+        app: "node -e \"console.log('BINARY=' + process.env.TERRAFORM_BINARY_NAME)\"",
+        targetVersions,
+      }),
+    );
+  };
+
+  const binarySeenBy = async (
+    args: string[],
+    env: Record<string, string> = {},
+  ) => {
+    const { TERRAFORM_BINARY_NAME: _, ...parentEnv } = process.env;
+    const result = await execa(cdktnBin, ["synth", ...args], {
+      cwd,
+      reject: false,
+      env: { ...parentEnv, ...env },
+      extendEnv: false,
+    });
+    return (result.stdout + result.stderr).match(/BINARY=(\S+)/)?.[1];
+  };
+
+  beforeEach(() => {
+    cwd = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-binary-"));
+  });
+
+  afterEach(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+  it("prefers --binary to TERRAFORM_BINARY_NAME and to the targets", async () => {
+    project({ opentofu: ">=1.6.0" });
+    expect(
+      await binarySeenBy(["--binary", "my-tofu"], {
+        TERRAFORM_BINARY_NAME: "other",
+      }),
+    ).toBe("my-tofu");
+  });
+
+  // The cases of the selection itself are covered in commons; this is the startup wiring
+  it("runs tofu for a project that targets only OpenTofu", async () => {
+    project({ opentofu: ">=1.6.0" });
+    expect(await binarySeenBy([])).toBe("tofu");
+  });
+
+  it("lets init --target terraform run terraform inside an OpenTofu-only project", async () => {
+    project({ opentofu: ">=1.6.0" });
+    // terraform and tofu on PATH that record each call
+    const bin = path.join(cwd, "bin");
+    const calls = path.join(cwd, "calls");
+    fs.mkdirSync(bin);
+    for (const name of ["terraform", "tofu"]) {
+      const script = path.join(bin, `${name}.js`);
+      fs.writeFileSync(
+        script,
+        `require("fs").appendFileSync(${JSON.stringify(calls)}, ${JSON.stringify(name)} + " " + process.argv.slice(2).join(" ") + "\\n");`,
+      );
+      fs.writeFileSync(
+        path.join(bin, name),
+        `#!/bin/sh\nexec node "${script}" "$@"\n`,
+        { mode: 0o755 },
+      );
+      fs.writeFileSync(
+        path.join(bin, `${name}.cmd`),
+        `@node "${script}" %*\r\n`,
+      );
+    }
+    const newProject = path.join(cwd, "new");
+    fs.mkdirSync(newProject);
+
+    const { TERRAFORM_BINARY_NAME: _, ...parentEnv } = process.env;
+    const pathKey =
+      Object.keys(parentEnv).find((key) => key.toUpperCase() === "PATH") ??
+      "PATH";
+    // An unknown template stops init after its version probe
+    await execa(
+      cdktnBin,
+      [
+        "init",
+        "--target",
+        "terraform",
+        "--local",
+        "--template",
+        "not-a-template",
+      ],
+      {
+        cwd: newProject,
+        reject: false,
+        env: {
+          ...parentEnv,
+          [pathKey]: `${bin}${path.delimiter}${parentEnv[pathKey]}`,
+        },
+        extendEnv: false,
+      },
+    );
+
+    const ran = fs.readFileSync(calls, "utf8");
+    expect(ran).toContain("terraform version");
+    expect(ran).not.toContain("tofu");
+  });
+});

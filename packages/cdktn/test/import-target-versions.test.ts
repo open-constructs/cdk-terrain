@@ -49,4 +49,13 @@ describe("import blocks validate against targetVersions", () => {
 
     expect(() => Testing.synth(stack, true)).not.toThrow();
   });
+
+  test("fails when declared targetVersions has a blank range instead of silently bypassing validation", () => {
+    const stack = stackWith({ targetVersions: { terraform: "" } });
+    new TestResource(stack, "test", { name: "foo" }).importFrom("testId");
+
+    expect(() => Testing.synth(stack, true)).toThrow(
+      'targetVersions.terraform "" is not a valid semver range',
+    );
+  });
 });

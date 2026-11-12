@@ -8,6 +8,7 @@ import * as os from "os";
 import * as fs from "fs-extra";
 import {
   readCDKTFManifest,
+  selectTerraformBinaryForProject,
   CDKTF_DISABLE_PLUGIN_CACHE_ENV,
 } from "@cdktn/commons";
 import { runCli } from "./error-handling";
@@ -24,6 +25,7 @@ import watchCmd from "./cmds/watch";
 import outputCmd from "./cmds/output";
 import debugCmd from "./cmds/debug";
 import providerCmd from "./cmds/provider";
+import { rejectUnknownOptions } from "./unknown-options";
 
 const ensurePluginCache = (): string => {
   const pluginCachePath =
@@ -117,6 +119,19 @@ const cli = yargs
     required: false,
     desc: "Dont set TF_PLUGIN_CACHE_DIR automatically. This is useful when the plugin cache is configured differently. Supported using the env CDKTF_DISABLE_PLUGIN_CACHE_ENV.",
   })
+  .option("binary", {
+    type: "string",
+    required: false,
+    desc: "The Terraform-compatible CLI to run, e.g. tofu. Defaults to the TERRAFORM_BINARY_NAME env, then to tofu when targetVersions declares only opentofu, then to terraform.",
+  })
+  .middleware((argv) => {
+    if (argv.binary) {
+      process.env.TERRAFORM_BINARY_NAME = String(argv.binary);
+    } else if (argv._[0] !== "init") {
+      // init takes its binary from the project it creates, not one around it
+      selectTerraformBinaryForProject();
+    }
+  })
   .option("log-level", {
     type: "string",
     required: false,
@@ -135,6 +150,9 @@ const cli = yargs
   .parserConfiguration({
     "boolean-negation": false,
   })
+  // Fail on unknown options instead of silently ignoring them (a typo like
+  // `--skip-synth-typo` would otherwise still run a full synth)
+  .middleware(rejectUnknownOptions as unknown as yargs.MiddlewareFunction)
   .command({
     command: "*", // catches everything not previously matched
     handler: (argv) => {

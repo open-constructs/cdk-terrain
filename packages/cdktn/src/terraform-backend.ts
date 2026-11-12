@@ -7,7 +7,9 @@ import { deepMerge } from "./util";
 
 const BACKEND_SYMBOL = Symbol.for("cdktf/TerraformBackend");
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Base class for backends, which synthesize the `terraform.backend` block that sets where a stack stores its state.
+ */
 export abstract class TerraformBackend extends TerraformElement {
   constructor(
     scope: Construct,

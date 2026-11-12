@@ -9,6 +9,9 @@ on:
         required: false
         type: string
 
+env:
+  NX_DEFAULT_OUTPUT_STYLE: static
+
 concurrency:
   group: ${{ inputs.concurrency_group_prefix }}-build-${{ github.head_ref }}
   cancel-in-progress: true
@@ -20,16 +23,16 @@ jobs:
       image: ghcr.io/open-constructs/jsii-terraform@sha256:62c00a313a1c9457c0d8d3b6ee86c77d241c2d18c4cc1f9b9015836d6d6a98c8
     env:
       CHECKPOINT_DISABLE: "1"
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: "Add Git safe.directory" # Go 1.18+ started embedding repo info in the build and e.g. building @cdktn/hcl2json fails without this
         run: git config --global --add safe.directory /__w/cdk-terrain/cdk-terrain
       - name: ensure correct user
         run: chown -R root /__w/cdk-terrain
       - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
       - name: Setup corepack-managed pnpm
@@ -40,7 +43,7 @@ jobs:
         run: |
           mkdir -p /usr/local/share/.cache/go
           echo "go=/usr/local/share/.cache/go" >> $GITHUB_OUTPUT
-      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.global-cache-dir-path.outputs.go }}
           key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}-build
@@ -53,8 +56,10 @@ jobs:
             mkdir -p "$TF_PLUGIN_CACHE_DIR"
           fi
       - name: install dependencies
+        timeout-minutes: 20
         run: pnpm ci
       - name: build and package
+        timeout-minutes: 30
         run: |
           pnpm run build
           pnpm run package

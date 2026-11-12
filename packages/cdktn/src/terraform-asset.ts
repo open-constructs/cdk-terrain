@@ -121,7 +121,10 @@ const PACKAGING_BY_TYPE: Record<AssetType, IAssetPackaging> = {
   [AssetType.ARCHIVE]: AssetPackaging.ZIP,
 };
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A local file or directory that is hashed and copied into the stack's output directory at synthesis, optionally
+ * built by a bundler and packaged as an archive, so other resources can reference it by path.
+ */
 export class TerraformAsset extends Construct implements IAsset {
   private stack: TerraformStack;
   private sourcePath: string;

@@ -78,6 +78,13 @@ export const baseConfig = [
       ],
     },
   },
+  {
+    files: ["**/*.test.ts"],
+    rules: {
+      // jest.isolateModules is synchronous, so a fresh module copy can only be loaded with require()
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ];
 
 export default [...baseConfig, prettierConfig];

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/open-constructs/cdk-terrain/v{{cdktf_version}}/cdktf.schema.json",
+  "language": "java",
+  "app": "./gradlew run",
+  "projectId": "{{projectId}}",
+  "sendCrashReports": "{{sendCrashReports}}",
+  "sendUsageTelemetry": "{{sendUsageTelemetry}}",
+  "codeMakerOutput": "imports",
+  "targetVersions": {
+    "terraform": ">=1.5.7",
+    "opentofu": ">=1.6.0"
+  },
+  "terraformProviders": [],
+  "terraformModules": [],
+  "context": {
+{{futureFlags}}
+  }
+}

@@ -20,6 +20,7 @@ jest.mock("@sentry/node", () => ({
     setPropagationContext: jest.fn(),
     setTransactionName: jest.fn(),
   })),
+  setContext: jest.fn(),
   addBreadcrumb: jest.fn(),
   metrics: { count: jest.fn(), distribution: jest.fn() },
 }));
@@ -76,6 +77,9 @@ jest.mock("@cdktn/cli-core", () => ({
 jest.mock("@cdktn/commons", () => ({
   ...jest.requireActual("@cdktn/commons"),
   getPackageVersion: jest.fn().mockResolvedValue("0.23.0"),
+  // crash reporting runs it in the background; the real one spawns npm and
+  // terraform in a workdir afterEach removes
+  collectDebugInformation: jest.fn().mockResolvedValue({}),
 }));
 
 import {

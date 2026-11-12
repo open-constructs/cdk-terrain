@@ -1,5 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import { targetsOnlyOpenTofu } from "cdktn/lib/validations";
 import * as semver from "semver";
 import { TerraformTargetVersions } from "./config";
 
@@ -107,11 +108,12 @@ export const OPENTOFU_REGISTRY: Registry = {
 export function registryForTargetVersions(
   targetVersions?: TerraformTargetVersions,
 ): Registry {
-  const opentofuOnly =
-    targetVersions?.opentofu !== undefined &&
-    targetVersions?.terraform === undefined;
-  return opentofuOnly ? OPENTOFU_REGISTRY : TERRAFORM_REGISTRY;
+  return targetsOnlyOpenTofu(targetVersions)
+    ? OPENTOFU_REGISTRY
+    : TERRAFORM_REGISTRY;
 }
+
+export { targetsOnlyOpenTofu };
 
 /** The registries cdktn knows how to query for available versions. */
 export const PUBLIC_REGISTRIES: readonly Registry[] = [

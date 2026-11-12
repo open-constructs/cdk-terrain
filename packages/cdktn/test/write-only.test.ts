@@ -236,6 +236,16 @@ describe("registerProviderFeatureUsage (write-only attributes)", () => {
     expect(() => app.synth()).not.toThrow();
   });
 
+  test("Lazy producer resolving to null: attribute renders as explicit null, synth passes", () => {
+    const { app, stack } = appWithStack();
+    const resource = new TestWriteOnlyResource(stack, "testResource", {});
+    resource.secretKeyWo = Lazy.stringValue({
+      produce: () => null as unknown as string,
+    });
+    expect(synthesizedSecretKeyWo(stack)).toBeNull();
+    expect(() => app.synth()).not.toThrow();
+  });
+
   test("Lazy producer resolving to a string: attribute renders, synth fails", () => {
     const { app, stack } = appWithStack();
     const resource = new TestWriteOnlyResource(stack, "testResource", {});

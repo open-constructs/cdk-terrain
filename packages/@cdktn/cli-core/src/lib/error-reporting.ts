@@ -201,9 +201,14 @@ export async function initializErrorReporting(
 
   if (crashReportingEnabled) {
     logger.debug("Collecting environment information for error reporting");
-    collectDebugInformation().then((debugOutput) => {
-      Sentry.setContext("environment", debugOutput);
-    });
+    // not awaited: an unhandled rejection here would crash the CLI
+    collectDebugInformation()
+      .then((debugOutput) => {
+        Sentry.setContext("environment", debugOutput);
+      })
+      .catch((e) => {
+        logger.debug(`Could not collect environment information: ${e}`);
+      });
   }
 
   // every command calls Errors.setScope before this, so the scope is the command

@@ -1,5 +1,7 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import * as fs from "fs";
+import * as path from "path";
 import { IConstruct, IValidation } from "constructs";
 import * as semver from "semver";
 import { TerraformFeatureVersionConstraints } from "./validate-terraform-feature-version";
@@ -41,6 +43,47 @@ export const DEFAULT_TARGET_VERSIONS: TerraformTargetVersions = {
  * `@cdktn/commons` (imported via subpath), not part of cdktn's public API.
  */
 export const TARGET_PRODUCTS = ["terraform", "opentofu"] as const;
+
+/** OpenTofu is the sole declared product. */
+export function targetsOnlyOpenTofu(
+  targetVersions?: TerraformTargetVersions,
+): boolean {
+  return (
+    targetVersions?.opentofu !== undefined &&
+    targetVersions?.terraform === undefined
+  );
+}
+
+/**
+ * The `targetVersions` of the nearest cdktf.json at or above `dir`. Only the
+ * key is read: an invalid config is reported by the command that reads it.
+ */
+export function projectTargetVersions(
+  dir = process.cwd(),
+): TerraformTargetVersions | undefined {
+  for (let current = path.resolve(dir); ; current = path.dirname(current)) {
+    const file = path.join(current, "cdktf.json");
+    if (fs.existsSync(file)) {
+      try {
+        return JSON.parse(fs.readFileSync(file, "utf8")).targetVersions;
+      } catch {
+        return undefined;
+      }
+    }
+    if (path.dirname(current) === current) return undefined;
+  }
+}
+
+/**
+ * `TERRAFORM_BINARY_NAME`, else `tofu` when the project at or above the
+ * working directory targets only OpenTofu, else `terraform`.
+ */
+export function inferTerraformBinaryName(): string {
+  return (
+    process.env.TERRAFORM_BINARY_NAME ||
+    (targetsOnlyOpenTofu(projectTargetVersions()) ? "tofu" : "terraform")
+  );
+}
 
 /**
  * Resolves the declared target versions from construct context, falling back
@@ -91,7 +134,11 @@ export function resolveTargetVersions(scope: IConstruct): {
       errors.push(
         `targetVersions.${product} "${range}" uses Terraform provider constraint syntax; use npm semver ranges instead (e.g. ">=1.5.7" or "~1.5.7")`,
       );
-    } else if (typeof range !== "string" || semver.validRange(range) === null) {
+    } else if (
+      typeof range !== "string" ||
+      range.trim().length === 0 ||
+      semver.validRange(range) === null
+    ) {
       errors.push(
         `targetVersions.${product} ${JSON.stringify(
           range,

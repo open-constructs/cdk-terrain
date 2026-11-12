@@ -7,7 +7,7 @@ import { CODE_MARKER } from "@cdktn/hcl2cdk";
 const templatesDir = path.resolve(__dirname, "..", "..", "templates");
 // Variants such as typescript-pnpm carry no cdktf.json; they ship their base's files.
 const baseTemplates = readdirSync(templatesDir).filter((name) =>
-  existsSync(path.join(templatesDir, name, "cdktf.json")),
+  existsSync(path.join(templatesDir, name, "cdktf.json{{}}")),
 );
 
 describe("Templates", () => {
@@ -50,7 +50,7 @@ describe("Templates", () => {
       expect(shadowed).toEqual([]);
     });
 
-    it.each(["AGENTS.md", "cdktf.json", "help", "package.json"])(
+    it.each(["AGENTS.md", "cdktf.json{{}}", "help", "package.json"])(
       "the base template's %s takes its package manager commands from variables",
       (file) => {
         const contents = readFileSync(

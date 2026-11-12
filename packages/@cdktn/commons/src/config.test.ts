@@ -831,5 +831,17 @@ describe("parseConfig", () => {
         parseConfig(JSON.stringify({ targetVersions: { terraform: 1.5 } })),
       ).toThrow(`targetVersions.terraform must be a semver range string`);
     });
+
+    it("rejects empty string ranges", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: { terraform: "" } })),
+      ).toThrow(`targetVersions.terraform "" is not a valid semver range`);
+    });
+
+    it("rejects whitespace-only ranges", () => {
+      expect(() =>
+        parseConfig(JSON.stringify({ targetVersions: { terraform: "   " } })),
+      ).toThrow(`targetVersions.terraform "   " is not a valid semver range`);
+    });
   });
 });

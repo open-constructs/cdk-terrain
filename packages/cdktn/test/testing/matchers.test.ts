@@ -1,0 +1,646 @@
+// Copyright (c) HashiCorp, Inc
+// SPDX-License-Identifier: MPL-2.0
+import { Testing } from "../../src/testing";
+import { TestResource, DockerImage } from "../helper/resource";
+import {
+  toBeValidTerraform,
+  toPlanSuccessfully,
+  warmUpProviderLockFileCache,
+  getToHaveResourceWithProperties,
+  getToHaveProviderWithProperties,
+  getToHaveDataSourceWithProperties,
+  asymetricDeepEqualIgnoringObjectCasing,
+} from "../../src/testing/matchers";
+import { TestDataSource } from "../helper/data-source";
+import { TerraformStack } from "../../src/terraform-stack";
+import { DockerProvider } from "../helper/provider";
+import { S3Backend } from "../../src/backends/s3-backend";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+
+function findCachedLockFile(cacheRoot: string): string {
+  const [hashDir] = fs.readdirSync(cacheRoot);
+  return path.join(cacheRoot, hashDir, ".terraform.lock.hcl");
+}
+
+function corruptSynthesizedStack(stackPath: string) {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.resolve(stackPath, "manifest.json"), "utf8"),
+  );
+
+  const { synthesizedStackPath } = Object.values(manifest.stacks)[0] as any;
+  const absoluteStackPath = path.resolve(stackPath, synthesizedStackPath);
+
+  fs.writeFileSync(
+    absoluteStackPath,
+    fs.readFileSync(absoluteStackPath, "utf8") +
+      "Weird text that makes the JSON file invalid",
+    "utf8",
+  );
+}
+
+describe("deepEqualIgnoringObjectCasing", () => {
+  it("should compare simple items", () => {
+    expect(asymetricDeepEqualIgnoringObjectCasing(1, 1)).toBe(true);
+    expect(asymetricDeepEqualIgnoringObjectCasing("1", "1")).toBe(true);
+    expect(asymetricDeepEqualIgnoringObjectCasing(true, true)).toBe(true);
+    expect(asymetricDeepEqualIgnoringObjectCasing(false, false)).toBe(true);
+    expect(asymetricDeepEqualIgnoringObjectCasing(null, null)).toBe(true);
+    expect(asymetricDeepEqualIgnoringObjectCasing(undefined, undefined)).toBe(
+      true,
+    );
+    expect(asymetricDeepEqualIgnoringObjectCasing([1, 2, 3], [1, 2, 3])).toBe(
+      true,
+    );
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing({ a: 1, b: 2 }, { a: 1, b: 2 }),
+    ).toBe(true);
+
+    expect(asymetricDeepEqualIgnoringObjectCasing(1, 2)).toBe(false);
+  });
+
+  it("should compare arrays", () => {
+    expect(asymetricDeepEqualIgnoringObjectCasing([1, 2, 3], [1, 2, 3])).toBe(
+      true,
+    );
+
+    expect(asymetricDeepEqualIgnoringObjectCasing([1, 2, 3], [1, 2, 4])).toBe(
+      false,
+    );
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing([1, 2, 3], [1, 2, 3, 4]),
+    ).toBe(false);
+  });
+
+  it("should compare objects", () => {
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing({ a: 1, b: 2 }, { a: 1, b: 2 }),
+    ).toBe(true);
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing(
+        { a: { c: 3 }, b: 2 },
+        { a: { c: 3 }, b: 2 },
+      ),
+    ).toBe(true);
+
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing(
+        { a: 3, b: 2 },
+        { a: { c: 3 }, b: 2 },
+      ),
+    ).toBe(false);
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing(
+        { a: { c: 3 }, b: 2 },
+        { a: 3, b: 2 },
+      ),
+    ).toBe(false);
+  });
+
+  it("should ignore case when comparing object keys", () => {
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing(
+        { a: 1, fooBar: 2 },
+        { a: 1, foo_bar: 2 },
+      ),
+    ).toBe(true);
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing(
+        { a: { fooBar: 2 } },
+        { a: { foo_bar: 2 } },
+      ),
+    ).toBe(true);
+  });
+
+  it("should ignore keys not present in expectation", () => {
+    expect(
+      asymetricDeepEqualIgnoringObjectCasing(
+        { a: { fooBar: 2 } },
+        { a: { foo_bar: 2 }, b: 3 },
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("matchers", () => {
+  const toHaveResourceWithProperties = getToHaveResourceWithProperties();
+  describe("toHaveResourceWithProperties", () => {
+    let synthesizedStack: string;
+    beforeEach(() => {
+      synthesizedStack = Testing.synthScope((scope) => {
+        new TestResource(scope, "test", { name: "test", tags: { foo: "bar" } });
+      });
+    });
+
+    it("should pass with no properties", () => {
+      const res = toHaveResourceWithProperties(synthesizedStack, TestResource);
+
+      expect(res.pass).toBeTruthy();
+      expect(res.message).toMatchInlineSnapshot(`
+        "Expected no test_resource with properties {} to be present in synthesized stack.
+        Found 1 test_resource resources instead:
+        [
+          {
+            "name": "test",
+            "tags": {
+              "foo": "bar"
+            }
+          }
+        ]"
+      `);
+    });
+
+    it("should fail with wrong resouce", () => {
+      const res = toHaveResourceWithProperties(
+        synthesizedStack,
+        TestDataSource,
+      );
+
+      expect(res.pass).toBeFalsy();
+      expect(res.message).toMatchInlineSnapshot(`
+        "Expected test_data_source with properties {} to be present in synthesized stack.
+        Found no test_data_source resources instead"
+      `);
+    });
+
+    it("should work on nested elements", () => {
+      const res = toHaveResourceWithProperties(synthesizedStack, TestResource, {
+        tags: { foo: "bar" },
+      });
+
+      expect(res.pass).toBeTruthy();
+    });
+
+    it("should fail if no item is found as asserted", () => {
+      const res = toHaveResourceWithProperties(synthesizedStack, DockerImage);
+
+      expect(res.pass).toBeFalsy();
+    });
+  });
+
+  describe("toHaveDataSourceWithProperties", () => {
+    const toHaveDataSourceWithProperties = getToHaveDataSourceWithProperties();
+    let synthesizedStack: any;
+    beforeEach(() => {
+      synthesizedStack = Testing.synthScope((scope) => {
+        new TestResource(scope, "test", { name: "test" });
+        new TestDataSource(scope, "test-data-source", { name: "data" });
+      });
+    });
+
+    it("should not find resources", () => {
+      const res = toHaveDataSourceWithProperties(
+        synthesizedStack,
+        TestResource,
+      );
+
+      expect(res.pass).toBeFalsy();
+    });
+
+    it("should find data sources", () => {
+      const res = toHaveDataSourceWithProperties(
+        synthesizedStack,
+        TestDataSource,
+        { name: "data" },
+      );
+
+      expect(res.pass).toBeTruthy();
+    });
+  });
+
+  describe("toHaveProviderWithProperties", () => {
+    const toHaveProviderWithProperties = getToHaveProviderWithProperties();
+    let synthesizedStack: any;
+    let synthesizedStackNoProvider: any;
+    beforeEach(() => {
+      synthesizedStack = Testing.synthScope((scope) => {
+        new DockerProvider(scope, "test-provider", {
+          alias: "test-alias",
+          ssh_opts: ["-o", "StrictHostKeyChecking=no"],
+        });
+        new DockerImage(scope, "test-image", { name: "test" });
+      });
+
+      synthesizedStackNoProvider = Testing.synthScope((scope) => {
+        new DockerImage(scope, "test", { name: "test" });
+      });
+    });
+
+    it("should find provider", () => {
+      const res = toHaveProviderWithProperties(
+        synthesizedStack,
+        DockerProvider,
+        { alias: "test-alias", ssh_opts: ["-o", "StrictHostKeyChecking=no"] },
+      );
+
+      expect(res.pass).toBeTruthy();
+    });
+
+    it("should not find provider", () => {
+      const res = toHaveProviderWithProperties(
+        synthesizedStackNoProvider,
+        DockerProvider,
+        {},
+      );
+
+      expect(res.pass).toBeFalsy();
+    });
+
+    it("should not find resources", () => {
+      const res = toHaveProviderWithProperties(synthesizedStack, TestResource);
+
+      expect(res.pass).toBeFalsy();
+    });
+
+    it("should not find data sources", () => {
+      const res = toHaveProviderWithProperties(
+        synthesizedStack,
+        TestDataSource,
+      );
+
+      expect(res.pass).toBeFalsy();
+    });
+  });
+
+  describe("toBeValidTerraform", () => {
+    it("fails if anything but a path is passed", () => {
+      const res = toBeValidTerraform("not a path");
+      expect(res.pass).toBeFalsy();
+      // Node reports the path as given on POSIX but resolves it against cwd on
+      // Windows, so match the message rather than snapshotting the full path.
+      expect(res.message).toMatch(
+        /^Expected subject to be a terraform directory: Error: ENOENT: no such file or directory, stat '.*not a path'$/,
+      );
+    });
+
+    it("succeeds if the terraform config passed is valid", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const res = toBeValidTerraform(Testing.fullSynth(stack));
+      expect(res.pass).toBeTruthy();
+      expect(res.message).toMatchInlineSnapshot(
+        `"Expected subject not to be a valid terraform stack"`,
+      );
+    });
+
+    it("fails if the terraform config passed is invalid", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+      const result = Testing.fullSynth(stack);
+      corruptSynthesizedStack(result);
+
+      const res = toBeValidTerraform(result);
+      expect(res.pass).toBeFalsy();
+      expect(res.message).toEqual(
+        expect.stringContaining(
+          "Expected subject to be a valid terraform stack",
+        ),
+      );
+      const tf1_3 =
+        "There are some problems with the configuration, described below";
+      const tf1_4 =
+        "Terraform encountered problems during initialisation, including problems\n with the configuration, described below";
+      const tf1_5 = "Extra characters appear after the JSON value";
+
+      expect(res.message).toEqual(
+        expect.stringMatching(new RegExp(`${tf1_3}|${tf1_4}|${tf1_5}`)),
+      );
+    });
+
+    // The CLI's choice; its cases are covered in commons
+    it("runs tofu for a project that targets only OpenTofu", () => {
+      const synth = Testing.fullSynth(
+        new TerraformStack(Testing.app(), "test"),
+      );
+      const project = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-tofu-"));
+      fs.writeFileSync(
+        path.join(project, "cdktf.json"),
+        JSON.stringify({ targetVersions: { opentofu: ">=1.6.0" } }),
+      );
+      // A tofu on PATH that records its arguments and reports the stack valid
+      const calls = path.join(project, "calls");
+      const script = path.join(project, "fake-tofu.js");
+      fs.writeFileSync(
+        script,
+        `require("fs").appendFileSync(${JSON.stringify(calls)}, process.argv.slice(2).join(" ") + "\\n");` +
+          `console.log('{"valid":true}');`,
+      );
+      fs.writeFileSync(
+        path.join(project, "tofu"),
+        `#!/bin/sh\nexec node "${script}" "$@"\n`,
+        { mode: 0o755 },
+      );
+      fs.writeFileSync(
+        path.join(project, "tofu.cmd"),
+        `@node "${script}" %*\r\n`,
+      );
+
+      const { TERRAFORM_BINARY_NAME, PATH } = process.env;
+      const cwd = process.cwd();
+      delete process.env.TERRAFORM_BINARY_NAME;
+      process.env.PATH = `${project}${path.delimiter}${PATH}`;
+      process.chdir(project);
+      let res: ReturnType<typeof toBeValidTerraform>;
+      let ran: string;
+      try {
+        res = toBeValidTerraform(synth);
+        ran = fs.readFileSync(calls, "utf8");
+      } finally {
+        process.chdir(cwd);
+        process.env.PATH = PATH;
+        if (TERRAFORM_BINARY_NAME !== undefined)
+          process.env.TERRAFORM_BINARY_NAME = TERRAFORM_BINARY_NAME;
+        fs.rmSync(project, { recursive: true, force: true });
+      }
+
+      expect(res.pass).toBe(true);
+      expect(ran).toContain(
+        "init -backend=false -input=false\nvalidate -json\n",
+      );
+    });
+  });
+
+  describe("toPlanSuccessfully", () => {
+    it("fails if anything but a path is passed", () => {
+      const res = toPlanSuccessfully("not a path");
+      expect(res.pass).toBeFalsy();
+      // Node reports the path as given on POSIX but resolves it against cwd on
+      // Windows, so match the message rather than snapshotting the full path.
+      expect(res.message).toMatch(
+        /^Expected subject to be a terraform directory: Error: ENOENT: no such file or directory, stat '.*not a path'$/,
+      );
+    });
+
+    it("succeeds if the terraform config passed is valid", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack));
+
+      expect(res.pass).toBeTruthy();
+      expect(res.message).toMatchInlineSnapshot(
+        `"Expected subject not to plan successfully"`,
+      );
+    });
+
+    it("fails if the terraform config passed is invalid", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const result = Testing.fullSynth(stack);
+      corruptSynthesizedStack(result);
+
+      const res = toPlanSuccessfully(result);
+      expect(res.pass).toBeFalsy();
+      expect(res.message).toEqual(
+        expect.stringContaining("Expected subject to plan successfully"),
+      );
+    });
+
+    it("succeeds with { backend: false } by substituting a local backend", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new S3Backend(stack, {
+        bucket: "nope",
+        key: "k",
+        region: "us-east-1",
+      });
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack), {
+        backend: false,
+      });
+
+      expect(res.pass).toBeTruthy();
+    });
+
+    it("renders terraform diagnostics in the failure message", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      // The provider schema requires a string; this type mismatch is caught by `plan`'s
+      // implicit validate step and reported as a `-json` diagnostic, not a parse error.
+      new DockerImage(stack, "test", { name: { not: "a string" } as any });
+
+      const res = toPlanSuccessfully(Testing.fullSynth(stack), {
+        backend: false,
+      });
+      expect(res.pass).toBeFalsy();
+      expect(res.message).toEqual(expect.stringContaining("Diagnostics:"));
+    });
+
+    it("removes the local backend override after the plan, so a later real-backend call still fails", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new S3Backend(stack, {
+        bucket: "nope",
+        key: "k",
+        region: "us-east-1",
+      });
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      expect(
+        toPlanSuccessfully(synthesized, { backend: false }).pass,
+      ).toBeTruthy();
+      // If the override file had leaked, this would also pass against the local backend
+      // instead of failing against the unreachable S3 one.
+      expect(toPlanSuccessfully(synthesized).pass).toBeFalsy();
+    });
+
+    it("warmUpProviderLockFileCache seeds the cache ahead of a matcher call", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      // Resolving up front should not itself be observable as a failure, and the matcher
+      // should still succeed against the lock file the warm-up seeded.
+      expect(() => warmUpProviderLockFileCache([synthesized])).not.toThrow();
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+    });
+
+    it("reuses the lock file seeded by a prior warm-up across multiple matcher calls", () => {
+      const app = Testing.app();
+      const stack = new TerraformStack(app, "test");
+
+      new DockerProvider(stack, "provider", {});
+      new DockerImage(stack, "test", { name: "test" });
+
+      const synthesized = Testing.fullSynth(stack);
+
+      warmUpProviderLockFileCache([synthesized]);
+
+      // Both calls should seed from the lock file the warm-up cached, rather than one of them
+      // racing a fresh provider resolution against the shared plugin cache.
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+      expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+        true,
+      );
+    });
+
+    describe("provider lock-file cache", () => {
+      let cacheRoot: string;
+      let pluginCacheDir: string;
+      let originalCacheRoot: string | undefined;
+      let originalPluginCacheDir: string | undefined;
+
+      beforeEach(() => {
+        cacheRoot = fs.mkdtempSync(
+          path.join(os.tmpdir(), "cdktn-test-lockfile-cache-"),
+        );
+        originalCacheRoot = process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR;
+        process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR = cacheRoot;
+
+        pluginCacheDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), "cdktn-test-plugin-cache-"),
+        );
+        originalPluginCacheDir = process.env.TF_PLUGIN_CACHE_DIR;
+        process.env.TF_PLUGIN_CACHE_DIR = pluginCacheDir;
+      });
+
+      afterEach(() => {
+        fs.rmSync(cacheRoot, { recursive: true, force: true });
+        fs.rmSync(pluginCacheDir, { recursive: true, force: true });
+        if (originalCacheRoot === undefined) {
+          delete process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR;
+        } else {
+          process.env.CDKTN_TESTING_LOCKFILE_CACHE_DIR = originalCacheRoot;
+        }
+        if (originalPluginCacheDir === undefined) {
+          delete process.env.TF_PLUGIN_CACHE_DIR;
+        } else {
+          process.env.TF_PLUGIN_CACHE_DIR = originalPluginCacheDir;
+        }
+      });
+
+      it("writes a resolved lock file to the configured cache root", () => {
+        const app = Testing.app();
+        const stack = new TerraformStack(app, "test");
+        new DockerProvider(stack, "provider", {});
+        new DockerImage(stack, "test", { name: "test" });
+
+        warmUpProviderLockFileCache([Testing.fullSynth(stack)]);
+
+        expect(fs.existsSync(findCachedLockFile(cacheRoot))).toBe(true);
+      });
+
+      it("seeds a matcher's working directory from the warmed-up lock file", () => {
+        const app = Testing.app();
+        const warmupStack = new TerraformStack(app, "warmup");
+        new DockerProvider(warmupStack, "provider", {});
+        new DockerImage(warmupStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(warmupStack)]);
+
+        // A marker appended to the cached lock file survives into the matcher's working
+        // directory only if it was copied verbatim rather than independently re-resolved.
+        const cachedLockFile = findCachedLockFile(cacheRoot);
+        fs.appendFileSync(cachedLockFile, "\n# cdktn-test-marker\n");
+
+        const subjectStack = new TerraformStack(app, "subject");
+        new DockerProvider(subjectStack, "provider", {});
+        new DockerImage(subjectStack, "test", { name: "test" });
+        const synthesized = Testing.fullSynth(subjectStack);
+
+        expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+          true,
+        );
+
+        const manifest = JSON.parse(
+          fs.readFileSync(path.resolve(synthesized, "manifest.json"), "utf8"),
+        );
+        const [, stack] = Object.entries(manifest.stacks)[0] as [
+          string,
+          { workingDirectory: string },
+        ];
+        const seededLockFile = fs.readFileSync(
+          path.resolve(
+            synthesized,
+            stack.workingDirectory,
+            ".terraform.lock.hcl",
+          ),
+          "utf8",
+        );
+        expect(seededLockFile).toContain("# cdktn-test-marker");
+      });
+
+      it("re-resolves and repopulates a cleared plugin cache on every warm-up, even with a fresh cached lock file", () => {
+        const app = Testing.app();
+        const firstStack = new TerraformStack(app, "first");
+        new DockerProvider(firstStack, "provider", {});
+        new DockerImage(firstStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(firstStack)]);
+
+        expect(fs.readdirSync(pluginCacheDir).length).toBeGreaterThan(0);
+
+        // Simulate the plugin cache being cleared (or TF_PLUGIN_CACHE_DIR moving) while the
+        // lock-file cache is still within its TTL.
+        fs.rmSync(pluginCacheDir, { recursive: true, force: true });
+        fs.mkdirSync(pluginCacheDir, { recursive: true });
+
+        const secondStack = new TerraformStack(app, "second");
+        new DockerProvider(secondStack, "provider", {});
+        new DockerImage(secondStack, "test", { name: "test" });
+        const synthesized = Testing.fullSynth(secondStack);
+        warmUpProviderLockFileCache([synthesized]);
+
+        expect(fs.readdirSync(pluginCacheDir).length).toBeGreaterThan(0);
+        expect(toPlanSuccessfully(synthesized, { backend: false }).pass).toBe(
+          true,
+        );
+      });
+
+      it("lets an expired cached lock file be re-resolved on warm-up instead of carrying it forward", () => {
+        const app = Testing.app();
+        const firstStack = new TerraformStack(app, "first");
+        new DockerProvider(firstStack, "provider", {});
+        new DockerImage(firstStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(firstStack)]);
+
+        // A marker on the stale entry would only survive a second warm-up if it were
+        // (wrongly) seeded into the working directory before `init` instead of being left
+        // for `init` to re-resolve from scratch.
+        const cachedLockFile = findCachedLockFile(cacheRoot);
+        fs.appendFileSync(cachedLockFile, "\n# cdktn-test-marker\n");
+        const expiredMtime = new Date(Date.now() - 25 * 60 * 60 * 1000);
+        fs.utimesSync(cachedLockFile, expiredMtime, expiredMtime);
+
+        const secondStack = new TerraformStack(app, "second");
+        new DockerProvider(secondStack, "provider", {});
+        new DockerImage(secondStack, "test", { name: "test" });
+        warmUpProviderLockFileCache([Testing.fullSynth(secondStack)]);
+
+        expect(fs.readFileSync(cachedLockFile, "utf8")).not.toContain(
+          "# cdktn-test-marker",
+        );
+      });
+    });
+  });
+});
