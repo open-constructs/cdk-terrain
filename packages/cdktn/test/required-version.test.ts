@@ -138,7 +138,8 @@ test("writes HCL settings files with HCL output, replacing JSON ones from a prev
     outdir,
     manifest: new Manifest("stubbed", outdir, false),
   });
-  new StackSynthesizer(stackTargeting(targets), false, true).synthesize({
+  // the format comes from the manifest, as when App has hclOutput or SYNTH_HCL_OUTPUT is set
+  new StackSynthesizer(stackTargeting(targets)).synthesize({
     outdir,
     manifest: new Manifest("stubbed", outdir, true),
   });
