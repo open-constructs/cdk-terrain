@@ -150,7 +150,9 @@ export type AttributeType =
   | ["set", AttributeType]
   | ["map", AttributeType]
   | ["list", AttributeType]
-  | ["object", { [attribute: string]: AttributeType }];
+  | ["object", { [attribute: string]: AttributeType }]
+  // cty encodes optional object attributes as a third tuple element
+  | ["object", { [attribute: string]: AttributeType }, string[]];
 
 export type BlockType =
   | {
