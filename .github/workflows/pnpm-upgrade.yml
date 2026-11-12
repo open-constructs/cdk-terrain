@@ -112,6 +112,7 @@ jobs:
         run: echo "id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Make Pull Request
+        id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           # Git commit details
@@ -128,6 +129,14 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           author: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
           committer: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
+
+      - name: Enable auto-merge
+        # Queues the merge behind the required checks; the review requirement still gates it.
+        if: steps.pr.outputs.pull-request-number != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh pr merge --auto --squash --repo "$GITHUB_REPOSITORY" "${{ steps.pr.outputs.pull-request-number }}"
 
   upgradePackage:
     name: Pnpm Upgrade Package
@@ -243,6 +252,7 @@ jobs:
         run: echo "id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Make Pull Request
+        id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           # Git commit details
@@ -263,6 +273,14 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           author: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
           committer: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
+
+      - name: Enable auto-merge
+        # Queues the merge behind the required checks; the review requirement still gates it.
+        if: steps.pr.outputs.pull-request-number != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh pr merge --auto --squash --repo "$GITHUB_REPOSITORY" "${{ steps.pr.outputs.pull-request-number }}"
 
   upgradeJSII:
     name: Pnpm Upgrade JSII
@@ -325,6 +343,7 @@ jobs:
         run: echo "id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
       - name: Make Pull Request
+        id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           # Git commit details
@@ -343,3 +362,11 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           author: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
           committer: ${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get_user_id.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>
+
+      - name: Enable auto-merge
+        # Queues the merge behind the required checks; the review requirement still gates it.
+        if: steps.pr.outputs.pull-request-number != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh pr merge --auto --squash --repo "$GITHUB_REPOSITORY" "${{ steps.pr.outputs.pull-request-number }}"
