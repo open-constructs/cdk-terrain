@@ -116,6 +116,12 @@ export const assetStagingBundlerOutputNotDirectory = (
 Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
   );
 
+export const assetStagingBundlerDeclined = (id: string) =>
+  new Error(
+    `TerraformAsset ${id}'s bundler declined to run, and a bundler used on its own has nothing to fall back to. Make sure the bundler can run in this environment, or combine it with a fallback using 'ChainBundler.of(...)'.
+Learn more about TerraformAsset: https://cdktn.io/docs/concepts/assets`,
+  );
+
 export const assetStagingBundlerOutputNotFile = (
   id: string,
   produced: string,
