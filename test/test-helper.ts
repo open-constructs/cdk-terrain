@@ -40,6 +40,30 @@ function killProcessTree(child: ReturnType<typeof spawn>) {
   }
 }
 
+// Temp dirs created by switchToTempDir() and shadowBinary(). Drivers are constructed
+// inside hooks or test bodies, where Jest no longer accepts hooks, so jest.setup.js
+// registers the afterAll that calls removeTempDirs() instead.
+const tempDirs: string[] = [];
+let initialDir: string | undefined;
+
+export function removeTempDirs() {
+  // The last temp dir is still the cwd; step out so later code in this worker has a
+  // valid working directory and Windows can delete it.
+  if (initialDir) process.chdir(initialDir);
+  for (const dir of tempDirs.splice(0)) {
+    try {
+      fs.rmSync(dir, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 100,
+      });
+    } catch (e) {
+      console.warn(`Could not remove temp dir ${dir}: ${(e as Error).message}`);
+    }
+  }
+}
+
 export function packageJsonWithDependency(name: string, version?: string) {
   return expect.objectContaining({
     dependencies: expect.objectContaining({
@@ -142,6 +166,7 @@ export class TestDriver {
    */
   shadowBinary = (name: string, script?: string) => {
     const shims = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-shim-"));
+    tempDirs.push(shims);
     fs.symlinkSync(process.execPath, path.join(shims, "node"));
     if (script) {
       fs.writeFileSync(path.join(shims, name), script, { mode: 0o755 });
@@ -224,6 +249,8 @@ export class TestDriver {
   switchToTempDir = () => {
     const pathName = path.join(os.tmpdir(), "test");
     this.workingDirectory = fs.mkdtempSync(pathName);
+    tempDirs.push(this.workingDirectory);
+    if (!initialDir) initialDir = process.cwd();
     process.chdir(this.workingDirectory);
   };
 

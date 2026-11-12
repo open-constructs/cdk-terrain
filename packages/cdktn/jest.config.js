@@ -18,6 +18,7 @@ module.exports = {
   transform: {
     '^.+\\.[tj]sx?$': ['@swc/jest', swcJestConfig],
   },
+  setupFilesAfterEnv: ['<rootDir>/test/helper/testing-cleanup.ts'],
   collectCoverage: true,
   coverageDirectory: 'test-output/jest/coverage',
 };
