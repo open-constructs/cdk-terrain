@@ -136,6 +136,8 @@ export class TerraformAsset extends Construct implements IAsset {
   private readonly staging: AssetStaging;
   // set when a bundler builds the artifact; names a single-file result
   private readonly bundler?: IAssetBundler;
+  // true when the hash is known before the build, so a staged artifact can be reused
+  private readonly reusesStagedArtifact: boolean;
 
   /**
    * A Terraform Asset takes a file or directory outside of the CDK Terrain context and moves it into it.
@@ -177,6 +179,8 @@ export class TerraformAsset extends Construct implements IAsset {
     }
 
     this.bundler = config.bundler;
+    this.reusesStagedArtifact =
+      !!config.bundler && config.assetHashType !== AssetHashType.OUTPUT;
 
     const outputFileName = config.bundler?.outputFileName;
     if (outputFileName !== undefined) {
@@ -270,21 +274,42 @@ export class TerraformAsset extends Construct implements IAsset {
       "..",
     );
 
-    // Cleanup existing assets
-    const previousVersionsFolder = path.join(basePath, this.namedFolder);
-    if (fs.existsSync(previousVersionsFolder)) {
-      fs.rmSync(previousVersionsFolder, { recursive: true });
+    // Cleanup assets staged for previous hashes
+    const namedFolder = path.join(basePath, this.namedFolder);
+    if (fs.existsSync(namedFolder)) {
+      for (const entry of fs.readdirSync(namedFolder)) {
+        if (entry !== this.assetHash) {
+          fs.rmSync(path.join(namedFolder, entry), {
+            recursive: true,
+            force: true,
+          });
+        }
+      }
     }
 
+    // SOURCE and CUSTOM hashes are known before the build, so an artifact
+    // already staged for this hash is what the bundler would build again.
     const targetPath = path.join(basePath, this.path);
-    const packaging = this.packaging;
-
-    if (packaging.producesDirectory) {
-      fs.mkdirSync(targetPath, { recursive: true });
-    } else {
-      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    if (this.reusesStagedArtifact && fs.existsSync(targetPath)) {
+      return;
     }
 
-    this.staging.stage(targetPath);
+    // Stage next to the hash folder and move it into place only once staging
+    // succeeded, so a failed or interrupted build never leaves a folder that
+    // a later synth would reuse.
+    const hashFolder = path.join(namedFolder, this.assetHash);
+    const stagingFolder = `${hashFolder}.staging`;
+    fs.mkdirSync(stagingFolder, { recursive: true });
+    try {
+      this.staging.stage(
+        this.packaging.producesDirectory
+          ? stagingFolder
+          : path.join(stagingFolder, this.fileName),
+      );
+      fs.rmSync(hashFolder, { recursive: true, force: true });
+      fs.renameSync(stagingFolder, hashFolder);
+    } finally {
+      fs.rmSync(stagingFolder, { recursive: true, force: true });
+    }
   }
 }
