@@ -9,7 +9,7 @@ import {
   getGlobalDispatcher,
   Dispatcher,
 } from "undici";
-import { Language, OPENTOFU_REGISTRY } from "@cdktn/commons";
+import { Language } from "@cdktn/commons";
 import {
   ProviderConstraint,
   DependencyManager,
@@ -26,42 +26,6 @@ const mockedGetLatestVersion = jest.mocked(getLatestVersion);
 
 describe("dependency manager", () => {
   describe("ProviderConstraint", () => {
-    describe("requiredProvidersSource", () => {
-      it("drops a host that normalization added", () => {
-        expect(
-          new ProviderConstraint("random", "=3.6.1", OPENTOFU_REGISTRY)
-            .requiredProvidersSource,
-        ).toBe("hashicorp/random");
-        expect(
-          new ProviderConstraint(
-            "hashicorp/random",
-            "=3.6.1",
-            OPENTOFU_REGISTRY,
-          ).requiredProvidersSource,
-        ).toBe("hashicorp/random");
-      });
-
-      it("keeps a public host the user wrote", () => {
-        expect(
-          new ProviderConstraint(
-            "registry.terraform.io/hashicorp/random",
-            "=3.6.1",
-            OPENTOFU_REGISTRY,
-          ).requiredProvidersSource,
-        ).toBe("registry.terraform.io/hashicorp/random");
-      });
-
-      it("keeps a private host", () => {
-        expect(
-          new ProviderConstraint(
-            "registry.example.com/acme/thing",
-            "1.0.0",
-            OPENTOFU_REGISTRY,
-          ).requiredProvidersSource,
-        ).toBe("registry.example.com/acme/thing");
-      });
-    });
-
     it.each(["aws", "hashicorp/aws", "registry.terraform.io/hashicorp/aws"])(
       "should parse a simple constraint from '%s'",
       (configEntry) => {

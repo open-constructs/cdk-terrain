@@ -9,6 +9,7 @@ import {
   getGradleDependencies,
   getDependencyInformationFromLine,
   detectNodePackageManager,
+  isSameDirectory,
   nodePackageManagerCommand,
   NodePackageManagerName,
   YARN_TRACKING_ISSUE_URL,
@@ -223,14 +224,6 @@ const pnpmListSchema = z.array(
     .loose(),
 );
 
-function isSameDirectory(a: string, b: string): boolean {
-  try {
-    return fs.realpathSync(a) === fs.realpathSync(b);
-  } catch {
-    return path.resolve(a) === path.resolve(b);
-  }
-}
-
 let yarnDeprecationWarned = false;
 
 function warnAboutYarn() {
@@ -378,6 +371,7 @@ class NodePackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages using 'yarn list --json': ${e}`,
+        { cause: e },
       );
     }
   }
@@ -403,6 +397,7 @@ class NodePackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages using 'npm list --json': ${e}`,
+        { cause: e },
       );
     }
   }
@@ -444,6 +439,7 @@ class NodePackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages using 'pnpm list --json': ${e}`,
+        { cause: e },
       );
     }
   }
@@ -610,6 +606,7 @@ class PythonPackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages using 'pipenv run pip list --format=json': ${e}`,
+        { cause: e },
       );
     }
   }
@@ -632,6 +629,7 @@ class PythonPackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages using 'pip list --format=json': ${e}`,
+        { cause: e },
       );
     }
   }
@@ -737,6 +735,7 @@ class NugetPackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages using 'dotnet list package': ${e}`,
+        { cause: e },
       );
     }
   }
@@ -892,6 +891,7 @@ class MavenPackageManager extends JavaPackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages reading the pom.xml: ${e.message}`,
+        { cause: e },
       );
     }
   }
@@ -1097,6 +1097,7 @@ class GoPackageManager extends PackageManager {
     } catch (e: any) {
       throw new Error(
         `Could not determine installed packages reading the go.sum: ${e.message}`,
+        { cause: e },
       );
     }
   }

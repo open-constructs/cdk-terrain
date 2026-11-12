@@ -26,6 +26,7 @@ import {
 
 import {
   checkForEmptyDirectory,
+  chooseInitTarget,
   runInit,
   type RunInitOptions,
 } from "./helper/init";
@@ -121,7 +122,7 @@ export async function convert({
     experimentalProviderSchemaCachePath,
   );
 
-  let input: string | undefined = undefined;
+  let input: string | undefined;
   try {
     input = await readStreamAsString(process.stdin);
   } catch {
@@ -384,7 +385,6 @@ export async function get(argv: {
 }
 
 export async function init(argv: RunInitOptions) {
-  await terraformCheck();
   await displayVersionMessage();
   await checkEnvironment();
 
@@ -399,8 +399,14 @@ export async function init(argv: RunInitOptions) {
 
   checkForEmptyDirectory(".");
 
-  const { needsGet, codeMakerOutput, language, telemetry } =
-    await runInit(argv);
+  // Before the version check, so it checks the binary the project targets
+  const target = await chooseInitTarget(argv);
+  await terraformCheck();
+
+  const { needsGet, codeMakerOutput, language, telemetry } = await runInit({
+    ...argv,
+    target,
+  });
 
   if (needsGet) {
     if (!argv.silent) {
@@ -733,7 +739,9 @@ export async function providerUpgrade(argv: any) {
     config.projectDirectory,
   );
 
-  const constraintsToUpdate: ProviderConstraint[] = [];
+  // Generated from the updated cdktf.json entries, as `cdktn get` would, so a
+  // host the user wrote reaches the bindings.
+  const constraintsToUpdate: TerraformProviderConstraint[] = [];
 
   // Resolve an unqualified argument the way this project's cdktf.json entries
   // resolve. Defaulting to Terraform made `upgrade` normalize to a different
@@ -742,9 +750,11 @@ export async function providerUpgrade(argv: any) {
 
   for (const provider of argv.provider) {
     const constraint = ProviderConstraint.fromConfigEntry(provider, registry);
-    const { addedLocalProvider } = await manager.upgradeProvider(constraint);
-    if (addedLocalProvider) {
-      constraintsToUpdate.push(constraint);
+    const upgraded = await manager.upgradeProvider(constraint);
+    if (upgraded.addedLocalProvider) {
+      constraintsToUpdate.push(
+        new TerraformProviderConstraint(upgraded.updatedEntry),
+      );
     }
   }
 
@@ -776,14 +786,7 @@ export async function providerUpgrade(argv: any) {
       constructsOptions,
       constraints,
       cleanDirectory: false,
-      constraintsToGenerate: constraintsToUpdate.map(
-        (c) =>
-          new TerraformProviderConstraint(
-            c.version
-              ? `${c.requiredProvidersSource}@${c.version}`
-              : c.requiredProvidersSource,
-          ),
-      ),
+      constraintsToGenerate: constraintsToUpdate,
     });
   }
 

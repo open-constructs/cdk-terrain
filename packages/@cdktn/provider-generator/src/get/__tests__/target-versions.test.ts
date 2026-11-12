@@ -242,7 +242,9 @@ describe("targetVersions reaching generated module bindings", () => {
 
     await maker.generate([moduleConstraint]);
 
-    expect(emittedSources(workdir).join("\n")).toContain(
+    const emitted = emittedSources(workdir).join("\n");
+    expect(emitted).toContain("Docs at OpenTofu Registry");
+    expect(emitted).toContain(
       "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/v3.19.0",
     );
   });

@@ -8,30 +8,41 @@ import jsdoc from "eslint-plugin-jsdoc";
 import noInstanceof from "eslint-plugin-no-instanceof";
 
 export default [
-  {
-    ignores: ["**/test", "**/*.test*.ts"],
-  },
   ...rootConfig,
   {
     files: ["**/*.ts"],
 
     plugins: {
-      jsdoc,
       "no-instanceof": noInstanceof,
     },
 
     rules: {
-      "@typescript-eslint/no-empty-interface": 0,
+      // JSII has no type aliases, so empty and single-extends interfaces are the only way to express them
+      "@typescript-eslint/no-empty-object-type": [
+        "warn",
+        { allowInterfaces: "always" },
+      ],
+      // `declare global { namespace jest }` is how the jest adapter augments jest's matcher types
+      "@typescript-eslint/no-namespace": ["error", { allowDeclarations: true }],
       "@typescript-eslint/no-unused-vars": "off",
 
+      "no-instanceof/no-instanceof": "error",
+    },
+  },
+  {
+    files: ["src/**/*.ts"],
+
+    plugins: {
+      jsdoc,
+    },
+
+    rules: {
       "jsdoc/require-jsdoc": [
         "error",
         {
           contexts: ["ClassDeclaration"],
         },
       ],
-
-      "no-instanceof/no-instanceof": "error",
     },
   },
 ];

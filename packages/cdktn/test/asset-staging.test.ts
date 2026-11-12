@@ -1,5 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -480,7 +481,7 @@ describe("AssetStaging", () => {
           });
           // Intentionally never call stage().
         `;
-        require("child_process").execFileSync(process.execPath, ["-e", script]);
+        execFileSync(process.execPath, ["-e", script]);
 
         const scratch = fs.readFileSync(marker, "utf-8");
         expect(scratch).toContain("cdktn-bundle-");
@@ -1078,7 +1079,9 @@ describe("AssetStaging", () => {
         const targetPath = path.join(createTempDir(), "out");
         fs.mkdirSync(targetPath, { recursive: true });
 
-        expect(() => staging.stage(targetPath)).toThrow();
+        expect(() => staging.stage(targetPath)).toThrow(
+          /bundler declined to run/,
+        );
       });
 
       test("ChainBundler identity is stable regardless of which leg runs", () => {

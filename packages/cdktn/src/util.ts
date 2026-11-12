@@ -7,9 +7,6 @@ import {
 import { TerraformDynamicBlock } from "./terraform-dynamic-block";
 import { Tokenization } from "./tokens/token";
 
-export const terraformBinaryName =
-  process.env.TERRAFORM_BINARY_NAME || "terraform";
-
 /**
  * Merges `source` into `target`, overriding any existing values.
  * `undefined` will cause a value to be deleted.
@@ -83,7 +80,11 @@ export function snakeCase(str: string): string {
  * Transforms all keys in a object to snake case
  */
 export function keysToSnakeCase(object: any): any {
-  if (Tokenization.isResolvable(object)) {
+  if (
+    object === null ||
+    object === undefined ||
+    Tokenization.isResolvable(object)
+  ) {
     return object;
   }
   if (Array.isArray(object)) {

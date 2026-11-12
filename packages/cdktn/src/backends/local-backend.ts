@@ -10,7 +10,9 @@ import {
 } from "../terraform-remote-state";
 import { TerraformStack } from "..";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Configures the stack to store its Terraform state in the `local` backend.
+ */
 export class LocalBackend extends TerraformBackend {
   private readonly props: LocalBackendConfig;
   constructor(scope: Construct, props: LocalBackendConfig = {}) {
@@ -47,7 +49,9 @@ export class LocalBackend extends TerraformBackend {
   }
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * A `terraform_remote_state` data source that reads the outputs of a state stored in the `local` backend.
+ */
 export class DataTerraformRemoteStateLocal extends TerraformRemoteState {
   constructor(
     scope: Construct,

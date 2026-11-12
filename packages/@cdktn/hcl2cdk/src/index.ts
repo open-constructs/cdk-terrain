@@ -66,6 +66,7 @@ export async function getParsedHcl(hcl: string) {
     logger.error(`Failed to parse HCL: ${err}`);
     throw new Error(
       `Error: Could not parse HCL, this means either that the HCL passed is invalid or that you found a bug. If the HCL seems valid, please file a bug under https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2C+new%2C+feature%2Fconvert&template=bug-report.yml&title=`,
+      { cause: err },
     );
   }
 
@@ -74,9 +75,12 @@ export async function getParsedHcl(hcl: string) {
   try {
     plan = schema.parse(json);
   } catch (err) {
-    throw new Error(`Error: HCL-JSON does not conform to schema. This is not expected, please file a bug under https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2C+new%2C+feature%2Fconvert&template=bug-report.yml&title=
+    throw new Error(
+      `Error: HCL-JSON does not conform to schema. This is not expected, please file a bug under https://github.com/open-constructs/cdk-terrain/issues/new?assignees=&labels=bug%2C+new%2C+feature%2Fconvert&template=bug-report.yml&title=
 Please include this information:
-${JSON.stringify((err as z.ZodError).issues)}`);
+${JSON.stringify((err as z.ZodError).issues)}`,
+      { cause: err },
+    );
   }
 
   return plan;

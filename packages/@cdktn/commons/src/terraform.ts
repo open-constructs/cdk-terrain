@@ -2,13 +2,40 @@
 // SPDX-License-Identifier: MPL-2.0
 import { exec } from "./util";
 import { processState } from "./process-state";
+import { targetsOnlyOpenTofu } from "./registry";
+import type { TerraformTargetVersions } from "./config";
 import {
   parseTerraformCliVersion,
+  projectTargetVersions,
   TerraformCliName,
 } from "cdktn/lib/validations";
 
-export const terraformBinaryName =
-  process.env.TERRAFORM_BINARY_NAME || "terraform";
+// Read on each use: the CLI bundle carries several copies of this module, all
+// loaded before the CLI picks the binary.
+export function terraformBinaryName(): string {
+  return process.env.TERRAFORM_BINARY_NAME || "terraform";
+}
+
+/**
+ * Sets `TERRAFORM_BINARY_NAME` to `tofu` when it is unset and `targetVersions`
+ * declares only OpenTofu, so child processes run the same binary.
+ */
+export function selectTerraformBinary(
+  targetVersions?: TerraformTargetVersions,
+): void {
+  if (process.env.TERRAFORM_BINARY_NAME) return;
+  if (targetsOnlyOpenTofu(targetVersions)) {
+    process.env.TERRAFORM_BINARY_NAME = "tofu";
+  }
+}
+
+/**
+ * {@link selectTerraformBinary} for the project at or above the working
+ * directory. Called once at CLI startup, before anything changes directory.
+ */
+export function selectTerraformBinaryForProject(): void {
+  selectTerraformBinary(projectTargetVersions());
+}
 
 // The Terraform CLI version parser lives in the cdktn package (its canonical
 // home). It is consumed via subpath because its string-literal union return
@@ -44,7 +71,7 @@ export function seedTerraformCliProbeForTests(output?: Promise<string>): void {
 
 function versionOutput(): Promise<string> {
   if (!probe.output) {
-    const output = exec(terraformBinaryName, ["version"], {
+    const output = exec(terraformBinaryName(), ["version"], {
       timeout: PROBE_TIMEOUT_MS,
     });
     output.catch(() => undefined); // the consumers below handle rejection
@@ -53,14 +80,26 @@ function versionOutput(): Promise<string> {
   return probe.output;
 }
 
-/** Binary and version for usage telemetry; never rejects. */
-export function terraformCli(): Promise<TerraformCliProbe> {
-  return versionOutput()
-    .then((output) => parseTerraformCliVersion(output))
+function toProbe(output: Promise<string>): Promise<TerraformCliProbe> {
+  return output
+    .then((out) => parseTerraformCliVersion(out))
     .catch((err) => ({
       name:
         err?.code === "ENOENT" ? ("missing" as const) : ("unknown" as const),
     }));
+}
+
+/** Binary and version for usage telemetry; never rejects. */
+export function terraformCli(): Promise<TerraformCliProbe> {
+  return toProbe(versionOutput());
+}
+
+/**
+ * Like `terraformCli`, but waits for `version` however long it takes, so a
+ * check that must not pass unverified never sees a timeout. Not cached.
+ */
+export function identifyTerraformCli(): Promise<TerraformCliProbe> {
+  return toProbe(exec(terraformBinaryName(), ["version"], {}));
 }
 
 // `undefined` when the probe fails: building an Errors.Usage here would

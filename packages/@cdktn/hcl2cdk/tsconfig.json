@@ -7,7 +7,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "lib": [
-      "ES2020"
+      "ES2022"
     ],
     "module": "CommonJS",
     "noEmitOnError": false,
@@ -25,8 +25,7 @@
     "skipLibCheck": true,
     "target": "ES2018",
     "types": [
-      "node",
-      "jest"
+      "node"
     ],
     "incremental": true,
     "esModuleInterop": true,

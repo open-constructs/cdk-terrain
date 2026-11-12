@@ -4,7 +4,10 @@ import { conditional, Expression, propertyAccess, rawString, Token } from ".";
 import { asAny } from "./functions/helpers";
 import { FnGenerated } from "./functions/terraform-functions.generated";
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+/**
+ * Terraform and OpenTofu built-in functions, callable from CDK code; each call produces a token that renders as the
+ * corresponding function call in the synthesized configuration.
+ */
 export class Fn extends FnGenerated {
   /**
    * {@link https://developer.hashicorp.com/terraform/language/functions/bcrypt bcrypt} computes a hash of the given string using the Blowfish cipher, returning a string in [the _Modular Crypt Format_](https://passlib.readthedocs.io/en/stable/modular_crypt_format.html) usually expected in the shadow password file on many Unix systems.
@@ -40,7 +43,10 @@ export class Fn extends FnGenerated {
    */
   static lookup(inputMap: any, key: string, defaultValue?: any) {
     // overwritten because lookup() uses a variadic argument for its optional defaultValue
-    if (defaultValue) return Fn._lookup(inputMap, key, [defaultValue]);
+    if (defaultValue !== undefined)
+      return Fn._lookup(inputMap, key, [
+        defaultValue === null ? Token.nullValue() : defaultValue,
+      ]);
     return asAny(propertyAccess(inputMap, [key])); // -> renders inputMap[key] (which is recommended if no default value is given)
   }
 

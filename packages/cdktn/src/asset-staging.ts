@@ -19,6 +19,7 @@ import {
   assetHashTypeCustomRequiresHash,
   assetHashTypeUnknown,
   assetStagingAlreadyStaged,
+  assetStagingBundlerDeclined,
   assetStagingBundlerDirectoryOutputNeedsDirectoryPackaging,
   assetStagingBundlerFileOutputNeedsFilePackaging,
   assetStagingBundlerOutputNotDirectory,
@@ -402,11 +403,10 @@ export class AssetStaging extends Construct implements IAsset {
     // A bare bundler that declines has nothing to fall back to — declining is
     // only meaningful inside a ChainBundler, which consumes it before it
     // reaches here. A non-declined result always carries a path and shape.
-    if (
-      result.isDeclined ||
-      result.path === undefined ||
-      result.outputType === undefined
-    ) {
+    if (result.isDeclined) {
+      throw assetStagingBundlerDeclined(this.displayName);
+    }
+    if (result.path === undefined || result.outputType === undefined) {
       throw assetStagingBundlerOutputNotDirectory(
         this.displayName,
         String(result.path),

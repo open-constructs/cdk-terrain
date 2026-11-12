@@ -333,11 +333,11 @@ Sometimes, after re-packaging the cdktn package for C#, an already initialized e
 
 ### Outside of this Monorepo
 
-If you want to use the libraries and cli from the repo for local development, you can make use of `pnpm link --global`. See the [pnpm link documentation](https://pnpm.io/cli/link) for full details.
+If you want to use the cli from the repo for local development, you can link it globally with `npm link`. To use a library from the repo in another project, run `pnpm link <path-to-package>` in that project. See the [pnpm link documentation](https://pnpm.io/cli/link) for full details.
 
 ### Create link
 
-Let's link `cdktn` and `cdktn-cli`, run the following the repository root folder:
+To link `cdktn-cli`, run the following from the repository root folder:
 
 ```shell
 $ pnpm run link-packages
@@ -345,7 +345,9 @@ $ cdktn --version
 0.0.0
 ```
 
-When the version equals `0.0.0` everything worked as expected. If you see another version, try uninstalling `cdktn-cli` with `npm` or `pnpm`.
+When the version equals `0.0.0` everything worked as expected. If you see another version, an existing global install is earlier on your `PATH`: check `which cdktn` and uninstall `cdktn-cli` with `npm` or `pnpm`.
+
+To remove the link, run `npm unlink --global cdktn-cli`.
 
 ### Build & Package
 
@@ -364,11 +366,11 @@ $ cdktn init --template typescript --local
 
 Please note, that this will reference the built packages in `$CDKTF_DIST`. This means, it will reflect code changes only after repeating `pnpm build && pnpm package` and running an explicit `pnpm install` again.
 
-Reference the previously [linked](#create-link) `cdktn` package in our newly created project:
+Link the `cdktn` library from the repo into the newly created project:
 
 ```shell
 $ cd ~/my-local-cdktn-example
-$ pnpm link --global cdktn
+$ pnpm link <path-to-repo>/packages/cdktn
 ```
 
 From here on both, the `cli` and the `cdktn` packages are linked and changes will be reflected immediatlely.
