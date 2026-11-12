@@ -77,7 +77,8 @@ export interface TerraformAssetConfig {
    * A bundled asset reuses the artifact an earlier synth staged for the same
    * hash, so set this for build inputs the hash cannot see: files outside
    * `path`, a mutable Docker tag such as `node:20`, or the options of a
-   * bundler without a `bundlerKey`.
+   * bundler without a `bundlerKey`. It is ignored when `assetHash` is set;
+   * change `assetHash` instead.
    *
    * @default - no extra hash
    */
@@ -92,9 +93,9 @@ export interface TerraformAssetConfig {
    * The bundler's output shape must match `type`. See
    * `AssetStagingOptions.bundler`.
    *
-   * Under `SOURCE` or `CUSTOM` hashing, a synth keeps the artifact already
-   * staged for the same hash and `type`. See `extraHash` for inputs the hash
-   * cannot see; deleting the output directory also forces a rebuild.
+   * Under `SOURCE` hashing or a fixed `assetHash`, a synth keeps the artifact
+   * already staged for the same hash and `type`. See `extraHash` for inputs
+   * the hash cannot see; deleting the output directory also forces a rebuild.
    *
    * @default - the source is staged verbatim, with no build step
    */
