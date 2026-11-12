@@ -195,7 +195,7 @@ Command output on stdout:
     } catch (e: any) {
       const errorMessage = `ERROR: synthesis failed, because app was expected to call 'synth()', but didn't. Thus "${outdir}/${Manifest.fileName}"  was not created: ${e}`;
       if (graceful) {
-        throw new Error(errorMessage);
+        throw new Error(errorMessage, { cause: e });
       }
       logger.error(errorMessage);
       await this.synthErrorTelemetry(e, synthOrigin);
@@ -261,7 +261,7 @@ Command output on stdout:
     for (const stackName in manifest.stacks) {
       const stack = manifest.stacks[stackName];
       const filePath = path.join(outdir, stack.synthesizedStackPath);
-      let jsonContent: SynthesizedStackMetadata = {};
+      let jsonContent: SynthesizedStackMetadata;
       if (filePath.endsWith(".tf.json")) {
         jsonContent = JSON.parse(fs.readFileSync(filePath).toString());
       } else {

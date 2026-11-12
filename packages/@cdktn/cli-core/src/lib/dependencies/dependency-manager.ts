@@ -224,7 +224,7 @@ export class DependencyManager {
       if (IsErrorType(e, "Usage")) {
         throw e;
       }
-      throw new Error(`Failed to list packages: ${e}`);
+      throw new Error(`Failed to list packages: ${e}`, { cause: e });
     }
 
     logger.debug(
