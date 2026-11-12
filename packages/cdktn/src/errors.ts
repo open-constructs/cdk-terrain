@@ -667,6 +667,21 @@ export const unknownProviderFeature = (feature: string) =>
     `Unknown provider-protocol feature "${feature}" passed to registerProviderFeatureUsage. This is an internal cdktn API intended to be called by generated provider bindings, not user code; if you did not call it directly, please file a bug report.`,
   );
 
+export const multipleOpenTofuEncryptions = (stackPath: string) =>
+  new Error(
+    `The stack at '${stackPath}' already has an OpenTofuEncryption. OpenTofu allows one encryption block per configuration, so add every key provider and method to the existing one.`,
+  );
+
+export const openTofuEncryptionDuplicate = (address: string) =>
+  new Error(
+    `OpenTofuEncryption already declares ${address}. Give each key provider and method of the same type its own name.`,
+  );
+
+export const invalidOpenTofuEncryptionIdentifier = (value: string) =>
+  new Error(
+    `"${value}" isn't a valid OpenTofu encryption type or name. Use letters, digits, underscores and dashes, starting with a letter or underscore.`,
+  );
+
 export const terraformModuleHasChildren = (pathName: string) => {
   return new Error(
     `Trying to add children to a TerraformModule at '${pathName}'. TerraformModules cannot have children, if you want to group resources or constructs in general together please use the Constructs class instead. See https://cdktn.io/docs/concepts/constructs for more details.`,
