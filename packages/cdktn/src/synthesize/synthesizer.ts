@@ -62,6 +62,8 @@ export class StackSynthesizer implements IStackSynthesizer {
 
     const manifest = session.manifest;
     const stackManifest = manifest.forStack(this.stack);
+    // The manifest names the stack file, so it also decides its format.
+    const hclOutput = this.hclOutput || manifest.hclOutput;
 
     const workingDirectory = path.join(
       session.outdir,
@@ -71,7 +73,7 @@ export class StackSynthesizer implements IStackSynthesizer {
 
     removeRequiredVersionFiles(workingDirectory);
     if (writesRequiredVersion(this.stack)) {
-      writeRequiredVersionFiles(this.stack, workingDirectory, this.hclOutput);
+      writeRequiredVersionFiles(this.stack, workingDirectory, hclOutput);
     }
 
     // call custom synthesis on child nodes (leafs first)
@@ -112,8 +114,7 @@ export class StackSynthesizer implements IStackSynthesizer {
       );
     }
 
-    // The manifest names the stack file, so it also decides its format.
-    if (this.hclOutput || manifest.hclOutput) {
+    if (hclOutput) {
       const hcl = this.stack.toHclTerraform();
       fs.writeFileSync(
         path.join(session.outdir, stackManifest.synthesizedStackPath),
