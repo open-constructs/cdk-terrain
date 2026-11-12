@@ -6,14 +6,63 @@ import { quotedStringKey } from "./quoted-string-key";
 import { Tokenization } from "../tokens/token";
 
 /**
- *
+ * Index of the quote that closes the quoted string starting at `start`, or -1.
+ */
+function quotedStringEnd(str: string, start: number): number {
+  for (let i = start + 1; i < str.length; i++) {
+    if (str[i] === "\\") {
+      i++;
+    } else if (str[i] === '"') {
+      return i;
+    } else if (str.startsWith("${", i)) {
+      const end = interpolationEnd(str, i + 2);
+      if (end === -1) return -1;
+      i = end;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Index of the `}` that closes an interpolation whose body starts at `start`, or -1.
+ */
+function interpolationEnd(str: string, start: number): number {
+  let depth = 1;
+  for (let i = start; i < str.length; i++) {
+    if (str[i] === '"') {
+      i = quotedStringEnd(str, i);
+      if (i === -1) return -1;
+    } else if (str[i] === "{") {
+      depth++;
+    } else if (str[i] === "}" && --depth === 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Escapes a string for the inside of an HCL quoted string, so that Terraform
+ * reads back the value as written: a backslash or a quote is escaped. An
+ * interpolation (`${...}`) is HCL source and is kept as it is; only the text
+ * around it is escaped.
  */
 function escapeQuotes(str: string): string {
-  // Don't attempt to escape if we have an expression
-  if (str.match(/\$\{/)) {
-    return str;
+  let escaped = "";
+  for (let i = 0; i < str.length; i++) {
+    if (str.startsWith("$${", i)) {
+      escaped += "$${";
+      i += 2;
+    } else if (str.startsWith("${", i)) {
+      const end = interpolationEnd(str, i + 2);
+      if (end === -1) return escaped + str.slice(i);
+      escaped += str.slice(i, end + 1);
+      i = end;
+    } else {
+      escaped += str[i] === "\\" || str[i] === '"' ? `\\${str[i]}` : str[i];
+    }
   }
-  return str.replace(/(?<!\\)"/g, '\\"');
+  return escaped;
 }
 
 /**
@@ -586,7 +635,7 @@ function renderFuzzyJsonExpression(jsonExpression: any): string {
     }
 
     if (jsonExpression.includes("${")) {
-      return `"${jsonExpression}"`;
+      return `"${escapeQuotes(jsonExpression)}"`;
     }
 
     if (parseInt(jsonExpression, 10).toString() === jsonExpression) {
