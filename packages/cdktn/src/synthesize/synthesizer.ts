@@ -11,11 +11,8 @@ import { Aspects, IAspect } from "../aspect";
 import { StackAnnotation } from "../manifest";
 import { ValidateFeatureTargetSupport } from "../validations/target-versions";
 import { encounteredAnnotationWithLevelError } from "../errors";
-import {
-  removeRequiredVersionFiles,
-  writeRequiredVersionFiles,
-  writesRequiredVersion,
-} from "./required-version";
+import { OpenTofuEncryption } from "../opentofu-encryption";
+import { removeSettingsFiles, writeSettingsFiles } from "./settings-files";
 
 /**
  * Default stack synthesizer: invokes aspects, runs validations, collects annotations into the manifest and writes
@@ -71,10 +68,13 @@ export class StackSynthesizer implements IStackSynthesizer {
     );
     if (!fs.existsSync(workingDirectory)) fs.mkdirSync(workingDirectory);
 
-    removeRequiredVersionFiles(workingDirectory);
-    if (writesRequiredVersion(this.stack)) {
-      writeRequiredVersionFiles(this.stack, workingDirectory, hclOutput);
-    }
+    removeSettingsFiles(workingDirectory);
+    writeSettingsFiles(
+      this.stack,
+      workingDirectory,
+      hclOutput,
+      this.stack.node.findAll().find(OpenTofuEncryption.isOpenTofuEncryption),
+    );
 
     // call custom synthesis on child nodes (leafs first)
     this.stack.node
