@@ -1,7 +1,21 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { targetsOnlyOpenTofu } from "cdktn/lib/validations";
+import * as semver from "semver";
 import { TerraformTargetVersions } from "./config";
+
+/**
+ * The version a module docs link can name: an exact version, with a leading `=`
+ * allowed. Terraform pads a partial one with zeros, so `19.0` is 19.0.0. A
+ * range such as `~> 19.0` names no single page, so it gets none.
+ */
+function exactModuleVersion(version?: string): string | undefined {
+  const pinned = version?.trim().replace(/^=\s*/, "");
+  const padded = pinned?.match(/^\d+(\.\d+)?$/)
+    ? pinned + ".0".repeat(3 - pinned.split(".").length)
+    : pinned;
+  return padded && semver.valid(padded) === padded ? padded : undefined;
+}
 
 /** A provider registry and the URL shapes that go with it. */
 export interface Registry {
@@ -26,7 +40,7 @@ export interface Registry {
   /**
    * Documentation link for one generated module. `source` is
    * `namespace/name/target`; `submodule` is the path a `//` in the source
-   * pointed at. Omitting `version` links to the latest.
+   * pointed at. A missing version, or one that is not exact, links to the latest.
    */
   moduleDocsUrl(source: string, version?: string, submodule?: string): string;
 }
@@ -49,7 +63,7 @@ export const TERRAFORM_REGISTRY: Registry = {
     }
   },
   moduleDocsUrl(source, version, submodule) {
-    const base = `https://registry.terraform.io/modules/${source}/${version || "latest"}`;
+    const base = `https://registry.terraform.io/modules/${source}/${exactModuleVersion(version) ?? "latest"}`;
     return submodule ? `${base}/submodules/${submodule}` : base;
   },
 };
@@ -57,13 +71,13 @@ export const TERRAFORM_REGISTRY: Registry = {
 // Paths follow getDocumentationUrl.ts in opentofu/registry-ui: /provider/
 // singular, a v-prefixed version, and "datasources" unhyphenated. That UI has
 // no ephemeral-resource route yet (opentofu/registry-ui#348), so those fall
-// back to the provider page.
+// back to the provider page. Its paths are lowercase only.
 export const OPENTOFU_REGISTRY: Registry = {
   hostname: "registry.opentofu.org",
   displayName: "OpenTofu Registry",
   browseUrl: "https://search.opentofu.org/providers",
   docsUrl(namespace, provider, version, kind, name) {
-    const base = `https://search.opentofu.org/provider/${namespace}/${provider}/v${version}/docs`;
+    const base = `https://search.opentofu.org/provider/${namespace.toLowerCase()}/${provider.toLowerCase()}/v${version}/docs`;
     switch (kind) {
       case "provider":
       case "ephemeral-resource":
@@ -78,7 +92,8 @@ export const OPENTOFU_REGISTRY: Registry = {
   // v-prefixed version, and "submodule" unhyphenated and singular. Without the
   // v the page silently renders a version list instead of the module.
   moduleDocsUrl(source, version, submodule) {
-    const base = `https://search.opentofu.org/module/${source}/${version ? `v${version}` : "latest"}`;
+    const exact = exactModuleVersion(version);
+    const base = `https://search.opentofu.org/module/${source.toLowerCase()}/${exact ? `v${exact}` : "latest"}`;
     return submodule ? `${base}/submodule/${submodule}` : base;
   },
 };
