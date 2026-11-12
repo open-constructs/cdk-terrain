@@ -950,6 +950,15 @@ describe("TerraformAsset reuses a bundled artifact across synths (#582)", () => 
     return bundler;
   };
 
+  const fileBundler: IAssetBundler = {
+    outputFileName: "out.txt",
+    bundle: (opts) => {
+      const file = path.join(opts.outputDir, "out.txt");
+      fs.writeFileSync(file, "built");
+      return BundleResult.file(file);
+    },
+  };
+
   test("a second synth with the same hash does not rerun the bundler", () => {
     const bundler = countingBundler();
 
@@ -975,8 +984,29 @@ describe("TerraformAsset reuses a bundled artifact across synths (#582)", () => 
     const namedFolder = path.dirname(
       path.dirname(path.join(second.stackDir, second.asset.path)),
     );
-    expect(fs.readdirSync(namedFolder)).toEqual([second.asset.assetHash]);
+    expect(fs.readdirSync(namedFolder)).toEqual([
+      second.asset.assetHash,
+      `${second.asset.assetHash}.json`,
+    ]);
   });
+
+  test.each([
+    ["ARCHIVE", AssetType.ARCHIVE, countingBundler()],
+    ["FILE", AssetType.FILE, fileBundler],
+  ])(
+    "changing the type from %s to DIRECTORY rebuilds the artifact",
+    (_, type, previous) => {
+      const first = synth(type, previous);
+      const bundler = countingBundler();
+      const second = synth(AssetType.DIRECTORY, bundler);
+
+      expect(second.asset.assetHash).toBe(first.asset.assetHash);
+      expect(bundler.runs).toBe(1);
+      expect(
+        fs.readdirSync(path.join(second.stackDir, second.asset.path)),
+      ).toEqual(["index.txt"]);
+    },
+  );
 
   test("a failed build leaves no artifact for the next synth to reuse", () => {
     const failing = {
@@ -998,6 +1028,22 @@ describe("TerraformAsset reuses a bundled artifact across synths (#582)", () => 
     expect(fs.readdirSync(path.join(stackDir, asset.path))).toEqual([
       "index.txt",
     ]);
+  });
+
+  test("a rename refused with EPERM is retried", () => {
+    const spy = jest.spyOn(fs, "renameSync").mockImplementationOnce(() => {
+      throw Object.assign(new Error("operation not permitted"), {
+        code: "EPERM",
+      });
+    });
+    try {
+      const { asset, stackDir } = synth(AssetType.DIRECTORY, countingBundler());
+      expect(fs.readdirSync(path.join(stackDir, asset.path))).toEqual([
+        "index.txt",
+      ]);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

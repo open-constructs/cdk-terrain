@@ -443,3 +443,35 @@ export function findFileAboveCwd(
 
   return null;
 }
+
+const RENAME_ATTEMPTS = 5;
+const RENAME_BACKOFF_MS = 50;
+const RENAME_RETRY_CODES = ["EPERM", "EACCES", "EBUSY"];
+
+/**
+ * Rename `src` to `dest`, retrying with a short backoff while Windows refuses
+ * because a file inside is briefly open (antivirus, search indexer).
+ * @param src - path to rename
+ * @param dest - new path
+ */
+export function renameSyncWithRetry(src: string, dest: string): void {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      fs.renameSync(src, dest);
+      return;
+    } catch (err: any) {
+      if (
+        attempt >= RENAME_ATTEMPTS ||
+        !RENAME_RETRY_CODES.includes(err.code)
+      ) {
+        throw err;
+      }
+      Atomics.wait(
+        new Int32Array(new SharedArrayBuffer(4)),
+        0,
+        0,
+        RENAME_BACKOFF_MS * 2 ** (attempt - 1),
+      );
+    }
+  }
+}

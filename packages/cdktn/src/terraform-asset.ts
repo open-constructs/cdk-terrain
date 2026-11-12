@@ -12,7 +12,7 @@ import {
 } from "./assets";
 import { AssetStaging } from "./asset-staging";
 import { IIgnoreStrategy } from "./ignore-strategy";
-import { findFileAboveCwd } from "./private/fs";
+import { findFileAboveCwd, renameSyncWithRetry } from "./private/fs";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
 import { TerraformStack } from "./terraform-stack";
@@ -74,6 +74,11 @@ export interface TerraformAssetConfig {
    * Extra information to fold into the hash (e.g. build instructions and
    * other inputs).
    *
+   * A bundled asset reuses the artifact an earlier synth staged for the same
+   * hash, so set this for build inputs the hash cannot see: files outside
+   * `path`, a mutable Docker tag such as `node:20`, or the options of a
+   * bundler without a `bundlerKey`.
+   *
    * @default - no extra hash
    */
   readonly extraHash?: string;
@@ -86,6 +91,10 @@ export interface TerraformAssetConfig {
    * and stays skippable; `OUTPUT` hashing builds eagerly to hash the artifact.
    * The bundler's output shape must match `type`. See
    * `AssetStagingOptions.bundler`.
+   *
+   * Under `SOURCE` or `CUSTOM` hashing, a synth keeps the artifact already
+   * staged for the same hash and `type`. See `extraHash` for inputs the hash
+   * cannot see; deleting the output directory also forces a rebuild.
    *
    * @default - the source is staged verbatim, with no build step
    */
@@ -276,9 +285,13 @@ export class TerraformAsset extends Construct implements IAsset {
 
     // Cleanup assets staged for previous hashes
     const namedFolder = path.join(basePath, this.namedFolder);
+    const hashFolder = path.join(namedFolder, this.assetHash);
+    // Records how the artifact in the hash folder was packaged, which the
+    // hash does not cover: ARCHIVE and DIRECTORY share a hash.
+    const packagingFile = `${hashFolder}.json`;
     if (fs.existsSync(namedFolder)) {
       for (const entry of fs.readdirSync(namedFolder)) {
-        if (entry !== this.assetHash) {
+        if (entry !== this.assetHash && entry !== `${this.assetHash}.json`) {
           fs.rmSync(path.join(namedFolder, entry), {
             recursive: true,
             force: true,
@@ -288,16 +301,37 @@ export class TerraformAsset extends Construct implements IAsset {
     }
 
     // SOURCE and CUSTOM hashes are known before the build, so an artifact
-    // already staged for this hash is what the bundler would build again.
+    // already staged for this hash and packaging is what the bundler would
+    // build again.
     const targetPath = path.join(basePath, this.path);
-    if (this.reusesStagedArtifact && fs.existsSync(targetPath)) {
+    const stagedPackaging = JSON.stringify({
+      type: AssetType[this.type],
+      fileName: this.fileName,
+    });
+    if (
+      this.reusesStagedArtifact &&
+      fs.existsSync(targetPath) &&
+      fs.existsSync(packagingFile) &&
+      fs.readFileSync(packagingFile, "utf8") === stagedPackaging
+    ) {
+      return;
+    }
+    fs.rmSync(packagingFile, { force: true });
+
+    if (!this.reusesStagedArtifact) {
+      fs.rmSync(hashFolder, { recursive: true, force: true });
+      if (this.packaging.producesDirectory) {
+        fs.mkdirSync(targetPath, { recursive: true });
+      } else {
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      }
+      this.staging.stage(targetPath);
       return;
     }
 
     // Stage next to the hash folder and move it into place only once staging
     // succeeded, so a failed or interrupted build never leaves a folder that
     // a later synth would reuse.
-    const hashFolder = path.join(namedFolder, this.assetHash);
     const stagingFolder = `${hashFolder}.staging`;
     fs.mkdirSync(stagingFolder, { recursive: true });
     try {
@@ -307,9 +341,10 @@ export class TerraformAsset extends Construct implements IAsset {
           : path.join(stagingFolder, this.fileName),
       );
       fs.rmSync(hashFolder, { recursive: true, force: true });
-      fs.renameSync(stagingFolder, hashFolder);
+      renameSyncWithRetry(stagingFolder, hashFolder);
     } finally {
       fs.rmSync(stagingFolder, { recursive: true, force: true });
     }
+    fs.writeFileSync(packagingFile, stagedPackaging);
   }
 }
