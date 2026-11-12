@@ -1,5 +1,74 @@
 # Changelog
 
+## [0.25.1](https://github.com/open-constructs/cdk-terrain/compare/v0.25.0...v0.25.1) (2026-11-12)
+
+
+### Features
+
+* **cli:** pick the OpenTofu binary from the project, --binary or init --target ([#564](https://github.com/open-constructs/cdk-terrain/issues/564)) ([629e6e2](https://github.com/open-constructs/cdk-terrain/commit/629e6e2de1274cb2daa17ae243ab524262c57af4))
+* **cli:** publish a JSON schema for cdktf.json ([#571](https://github.com/open-constructs/cdk-terrain/issues/571)) ([4b72424](https://github.com/open-constructs/cdk-terrain/commit/4b72424fb890a02a65673a9afc0009e7c98ad9a4))
+* **lib:** write required_version for Terraform and OpenTofu from targetVersions ([#555](https://github.com/open-constructs/cdk-terrain/issues/555)) ([94af0e2](https://github.com/open-constructs/cdk-terrain/commit/94af0e285df957d3b3a77b29ba452931d2f3b4e3))
+
+
+### Bug Fixes
+
+* **cli:** close the follow-ups from the OpenTofu registry work ([#534](https://github.com/open-constructs/cdk-terrain/issues/534)) ([e4daeec](https://github.com/open-constructs/cdk-terrain/commit/e4daeecd9cbcf3b5fb1c7a13fe9b46b414dcf016))
+* **cli:** detect the package manager of a workspace member from its parent directories ([#599](https://github.com/open-constructs/cdk-terrain/issues/599)) ([cfda1c1](https://github.com/open-constructs/cdk-terrain/commit/cfda1c12dc482662b8fc0d855f05a1917763b104))
+* **cli:** disable terraform color by default when stdout is not a TTY ([#511](https://github.com/open-constructs/cdk-terrain/issues/511)) ([b57e1ad](https://github.com/open-constructs/cdk-terrain/commit/b57e1ad39164c9e3cf6585d64887d8d61c7fc21a))
+* **cli:** reject unknown options instead of ignoring them ([#513](https://github.com/open-constructs/cdk-terrain/issues/513)) ([22999ad](https://github.com/open-constructs/cdk-terrain/commit/22999ad1dce2e5ac0d9243e182d01b1ab3748551))
+* **cli:** resolve prebuilt providers published under one npm scope or with dashed names ([#540](https://github.com/open-constructs/cdk-terrain/issues/540)) ([c5f9068](https://github.com/open-constructs/cdk-terrain/commit/c5f906855d8efc7eaf865a7dae077238da72c250))
+* **cli:** search every subdirectory of a remote template archive ([#597](https://github.com/open-constructs/cdk-terrain/issues/597)) ([4fe3807](https://github.com/open-constructs/cdk-terrain/commit/4fe3807a8786811f2d8fc47d36e5a2b28d386ac4))
+* **deps:** bump @sentry/node to 10.78.0 to cap @opentelemetry/api below 1.10.0 ([#557](https://github.com/open-constructs/cdk-terrain/issues/557)) ([36a2479](https://github.com/open-constructs/cdk-terrain/commit/36a247928c67b1d4cd0aa0f9e1ae1feac8e8dcf8))
+* **gha:** mark the release PR tagged from a job outside the container ([#554](https://github.com/open-constructs/cdk-terrain/issues/554)) ([138a787](https://github.com/open-constructs/cdk-terrain/commit/138a78778385b3757a8cce9fce91d6ef562b9397))
+* **lib:** escape object keys in expressions and hcl maps ([#569](https://github.com/open-constructs/cdk-terrain/issues/569)) ([45ccff0](https://github.com/open-constructs/cdk-terrain/commit/45ccff036fd84a75346a7232eb141fb77d65acbf))
+* **lib:** Handle null variable defaults ([#541](https://github.com/open-constructs/cdk-terrain/issues/541)) ([f35cdf9](https://github.com/open-constructs/cdk-terrain/commit/f35cdf9bf9eac0f2dc0101576890a2d47612b049)), closes [#522](https://github.com/open-constructs/cdk-terrain/issues/522)
+* **lib:** keep false, 0 and "" locals in HCL synth ([#602](https://github.com/open-constructs/cdk-terrain/issues/602)) ([1fbea43](https://github.com/open-constructs/cdk-terrain/commit/1fbea43d315c522b98eb21fb4d0fdf204d7c31cd))
+* **lib:** keep falsy default values in Fn.lookup ([#584](https://github.com/open-constructs/cdk-terrain/issues/584)) ([856442e](https://github.com/open-constructs/cdk-terrain/commit/856442ebc03b3b3695f98a98c75103561e4a11d1))
+* **lib:** match the exact dotnet package name in debug output ([#537](https://github.com/open-constructs/cdk-terrain/issues/537)) ([86293e7](https://github.com/open-constructs/cdk-terrain/commit/86293e7f7ae5b682b3c8901e54c93366eead61b2))
+* **lib:** reject blank targetVersions ranges ([#508](https://github.com/open-constructs/cdk-terrain/issues/508)) ([0c6dcec](https://github.com/open-constructs/cdk-terrain/commit/0c6dcec9ef77cd83664097c0cee47b3ce46a7103))
+* **lib:** render replaceTriggeredBy references without interpolation ([#592](https://github.com/open-constructs/cdk-terrain/issues/592)) ([f991752](https://github.com/open-constructs/cdk-terrain/commit/f9917521502edbce2227fd0f9fb45e379240b757))
+* **lib:** say so when a bare bundler declines ([#608](https://github.com/open-constructs/cdk-terrain/issues/608)) ([dc2521b](https://github.com/open-constructs/cdk-terrain/commit/dc2521bab253ae5c26931061462347c3bde5655a))
+* **lib:** synthesize the TerraformOutput precondition ([#586](https://github.com/open-constructs/cdk-terrain/issues/586)) ([8a47eaa](https://github.com/open-constructs/cdk-terrain/commit/8a47eaa39e895e1a8e63ad8191ecced5308f7a21))
+* **lib:** write HCL when App is created with hclOutput ([#603](https://github.com/open-constructs/cdk-terrain/issues/603)) ([ca9b635](https://github.com/open-constructs/cdk-terrain/commit/ca9b63542a8836f3086a258a0758c69279340f65))
+* **provider-generator:** add aws route_table.route.odb_network_arn to the null defaults ([#527](https://github.com/open-constructs/cdk-terrain/issues/527)) ([e654cb2](https://github.com/open-constructs/cdk-terrain/commit/e654cb2765c516b797a887d70d49593421e54418))
+* **release:** get the NuGet API key via NuGet/login ([#553](https://github.com/open-constructs/cdk-terrain/issues/553)) ([6784562](https://github.com/open-constructs/cdk-terrain/commit/67845628429396461ee00f2ec993480359951d08))
+* **release:** Move NuGet to trusted publishing ([#551](https://github.com/open-constructs/cdk-terrain/issues/551)) ([cebb6b2](https://github.com/open-constructs/cdk-terrain/commit/cebb6b2330d235a3a11e811c0289bb4c2054fc48))
+* **release:** pass the NuGet policy creator's username from a secret ([#581](https://github.com/open-constructs/cdk-terrain/issues/581)) ([2a3746c](https://github.com/open-constructs/cdk-terrain/commit/2a3746c0a7db55bdf38118c233c7650f355f1a63))
+* **tools:** link the CLI with npm link in link-packages ([#578](https://github.com/open-constructs/cdk-terrain/issues/578)) ([83b30de](https://github.com/open-constructs/cdk-terrain/commit/83b30def0da6cd73772ace71654fbd0b5676cbda))
+
+
+### Code Refactoring
+
+* **cli:** stop shipping invalid JSON in the templates' cdktf.json ([#594](https://github.com/open-constructs/cdk-terrain/issues/594)) ([753544d](https://github.com/open-constructs/cdk-terrain/commit/753544d2cc3399cdf3cfe5f667ed008007628c72))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump the github-actions-backward-compatible group with 7 updates ([#543](https://github.com/open-constructs/cdk-terrain/issues/543)) ([c622882](https://github.com/open-constructs/cdk-terrain/commit/c622882e0f3f617fdf82793eca09b08e63ebae53))
+* **deps:** bump the github-actions-breaking group across 1 directory with 3 updates ([#542](https://github.com/open-constructs/cdk-terrain/issues/542)) ([145c058](https://github.com/open-constructs/cdk-terrain/commit/145c058fba512d10606bbbd884a68eec1035baff))
+* **deps:** bump the github-actions-breaking group across 1 directory with 8 updates ([#365](https://github.com/open-constructs/cdk-terrain/issues/365)) ([e91218d](https://github.com/open-constructs/cdk-terrain/commit/e91218d73fc3ceba3029a964397107df74933ef5))
+* **deps:** upgrade ESLint to v10 ([#600](https://github.com/open-constructs/cdk-terrain/issues/600)) ([7fe2b29](https://github.com/open-constructs/cdk-terrain/commit/7fe2b2980b03abca0c68576b9f8198651a166f1c))
+* **deps:** upgrade pnpm to v12 ([#604](https://github.com/open-constructs/cdk-terrain/issues/604)) ([28a5684](https://github.com/open-constructs/cdk-terrain/commit/28a5684b7955f03b3997a75821be733711201e01))
+* **gha:** add step timeouts and lower job timeouts to fail fast on silent hangs ([#460](https://github.com/open-constructs/cdk-terrain/issues/460)) ([a1e55ec](https://github.com/open-constructs/cdk-terrain/commit/a1e55ec830460ad8deb095112d587819fd4c7b15))
+* **lib:** generate function bindings from the function matrix only ([#565](https://github.com/open-constructs/cdk-terrain/issues/565)) ([8d9ecc4](https://github.com/open-constructs/cdk-terrain/commit/8d9ecc45f9ba43e1e7fbb6373bba2d7c327725eb))
+* **lib:** Remove Terraform function links workaround ([#502](https://github.com/open-constructs/cdk-terrain/issues/502)) ([4dffe03](https://github.com/open-constructs/cdk-terrain/commit/4dffe034032c07384d8c9edad7bf01734f6f89da))
+* **lib:** upgrade eslint-plugin-jsdoc and remove require-jsdoc exemptions ([#580](https://github.com/open-constructs/cdk-terrain/issues/580)) ([ca22e7b](https://github.com/open-constructs/cdk-terrain/commit/ca22e7bf66b90d48bd2fc58d0ffc0eeb22fee633))
+* remove remaining eslint-disable comments ([#588](https://github.com/open-constructs/cdk-terrain/issues/588)) ([76a44f3](https://github.com/open-constructs/cdk-terrain/commit/76a44f36734fa295e6427588a4c6bed379992795))
+* **tests:** replace provider test shell and batch scripts with one Node script  ([#539](https://github.com/open-constructs/cdk-terrain/issues/539)) ([10d6e3e](https://github.com/open-constructs/cdk-terrain/commit/10d6e3ea0c4be29a117ab6bfb3674861600548ff))
+* **tests:** type-check and lint test directories ([#575](https://github.com/open-constructs/cdk-terrain/issues/575)) ([4142b43](https://github.com/open-constructs/cdk-terrain/commit/4142b43c38abaabecf14b21c19daa2d897cee980))
+* Update Nx to v23 ([#595](https://github.com/open-constructs/cdk-terrain/issues/595)) ([f1fe37a](https://github.com/open-constructs/cdk-terrain/commit/f1fe37ab9947942c02e9609094fc20d44e745662))
+
+
+### Tests
+
+* **cli:** mock the registry lookup in the provider-not-found test ([#566](https://github.com/open-constructs/cdk-terrain/issues/566)) ([206bdc7](https://github.com/open-constructs/cdk-terrain/commit/206bdc7c919d816f82ad58fb0f3074b51770b983))
+* **cli:** re-enable prebuilt provider version tests ([#536](https://github.com/open-constructs/cdk-terrain/issues/536)) ([4c08092](https://github.com/open-constructs/cdk-terrain/commit/4c08092ce4124356a8365dedd793add08b1770b4))
+* cover provider function target versions floor in provider-features ([#567](https://github.com/open-constructs/cdk-terrain/issues/567)) ([8b7e571](https://github.com/open-constructs/cdk-terrain/commit/8b7e5715871eeb5075a3871edc000e6f2b3cf5d0))
+* **hcl2cdk:** re-enable convertProject with a module that installs ([#587](https://github.com/open-constructs/cdk-terrain/issues/587)) ([a2f3604](https://github.com/open-constructs/cdk-terrain/commit/a2f36040e2bcfa3d5cbf29278e20ab52750ae269))
+* **lib:** cover Lazy producer resolving to null for write-only attributes ([#535](https://github.com/open-constructs/cdk-terrain/issues/535)) ([9cd4052](https://github.com/open-constructs/cdk-terrain/commit/9cd4052c4987ae03bf1b30b4eb2143a3ae0e088e))
+* **provider-generator:** check generated bindings use only erasable syntax ([#568](https://github.com/open-constructs/cdk-terrain/issues/568)) ([4aeb49f](https://github.com/open-constructs/cdk-terrain/commit/4aeb49f654fdf64baecc6194e93faaa5c86d4695))
+* **tests:** use a smaller provider in provider-schema's read test ([#573](https://github.com/open-constructs/cdk-terrain/issues/573)) ([981ec7f](https://github.com/open-constructs/cdk-terrain/commit/981ec7ffe3c23a0b571accaacaf4dbbe884a4fe5))
+
 ## [0.25.0](https://github.com/open-constructs/cdk-terrain/compare/v0.24.0...v0.25.0) (2026-10-27)
 
 
