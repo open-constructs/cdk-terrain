@@ -12,7 +12,11 @@ import {
 } from "./assets";
 import { AssetStaging } from "./asset-staging";
 import { IIgnoreStrategy } from "./ignore-strategy";
-import { findFileAboveCwd, renameSyncWithRetry } from "./private/fs";
+import {
+  findFileAboveCwd,
+  renameSyncWithRetry,
+  rmSyncWithRetry,
+} from "./private/fs";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
 import { TerraformStack } from "./terraform-stack";
@@ -76,9 +80,9 @@ export interface TerraformAssetConfig {
    *
    * A bundled asset reuses the artifact an earlier synth staged for the same
    * hash, so set this for build inputs the hash cannot see: files outside
-   * `path`, a mutable Docker tag such as `node:20`, or the options of a
-   * bundler without a `bundlerKey`. It is ignored when `assetHash` is set;
-   * change `assetHash` instead.
+   * `path`, a mutable Docker tag such as `node:20`, or which bundler is used
+   * and its options when it has no `bundlerKey`. It is ignored when
+   * `assetHash` is set; change `assetHash` instead.
    *
    * @default - no extra hash
    */
@@ -293,10 +297,7 @@ export class TerraformAsset extends Construct implements IAsset {
     if (fs.existsSync(namedFolder)) {
       for (const entry of fs.readdirSync(namedFolder)) {
         if (entry !== this.assetHash && entry !== `${this.assetHash}.json`) {
-          fs.rmSync(path.join(namedFolder, entry), {
-            recursive: true,
-            force: true,
-          });
+          rmSyncWithRetry(path.join(namedFolder, entry));
         }
       }
     }
@@ -305,9 +306,11 @@ export class TerraformAsset extends Construct implements IAsset {
     // already staged for this hash and packaging is what the bundler would
     // build again.
     const targetPath = path.join(basePath, this.path);
+    // A directory artifact has no file name, so moving its source does not
+    // rebuild it.
     const stagedPackaging = JSON.stringify({
       type: AssetType[this.type],
-      fileName: this.fileName,
+      fileName: this.packaging.producesDirectory ? undefined : this.fileName,
     });
     if (
       this.reusesStagedArtifact &&
@@ -341,10 +344,15 @@ export class TerraformAsset extends Construct implements IAsset {
           ? stagingFolder
           : path.join(stagingFolder, this.fileName),
       );
-      fs.rmSync(hashFolder, { recursive: true, force: true });
+      rmSyncWithRetry(hashFolder);
       renameSyncWithRetry(stagingFolder, hashFolder);
-    } finally {
-      fs.rmSync(stagingFolder, { recursive: true, force: true });
+    } catch (err) {
+      try {
+        rmSyncWithRetry(stagingFolder);
+      } catch {
+        // The next synth sweeps it; the build error is the one to report.
+      }
+      throw err;
     }
     fs.writeFileSync(packagingFile, stagedPackaging);
   }

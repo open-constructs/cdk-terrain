@@ -444,8 +444,8 @@ export function findFileAboveCwd(
   return null;
 }
 
-const RENAME_ATTEMPTS = 5;
-const RENAME_BACKOFF_MS = 50;
+const RETRY_ATTEMPTS = 5;
+const RETRY_BACKOFF_MS = 50;
 const RENAME_RETRY_CODES = ["EPERM", "EACCES", "EBUSY"];
 
 /**
@@ -460,18 +460,29 @@ export function renameSyncWithRetry(src: string, dest: string): void {
       fs.renameSync(src, dest);
       return;
     } catch (err: any) {
-      if (
-        attempt >= RENAME_ATTEMPTS ||
-        !RENAME_RETRY_CODES.includes(err.code)
-      ) {
+      if (attempt >= RETRY_ATTEMPTS || !RENAME_RETRY_CODES.includes(err.code)) {
         throw err;
       }
       Atomics.wait(
         new Int32Array(new SharedArrayBuffer(4)),
         0,
         0,
-        RENAME_BACKOFF_MS * 2 ** (attempt - 1),
+        RETRY_BACKOFF_MS * 2 ** (attempt - 1),
       );
     }
   }
+}
+
+/**
+ * Remove `target` recursively, letting Node retry while Windows briefly holds
+ * a file inside open.
+ * @param target - path to remove
+ */
+export function rmSyncWithRetry(target: string): void {
+  fs.rmSync(target, {
+    recursive: true,
+    force: true,
+    maxRetries: RETRY_ATTEMPTS - 1,
+    retryDelay: RETRY_BACKOFF_MS,
+  });
 }

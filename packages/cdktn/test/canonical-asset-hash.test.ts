@@ -1030,6 +1030,50 @@ describe("TerraformAsset reuses a bundled artifact across synths (#582)", () => 
     ]);
   });
 
+  test("a failed cleanup does not hide the build error", () => {
+    const failing = {
+      bundle: () => {
+        throw new Error("build failed");
+      },
+    };
+    const rmSync = fs.rmSync;
+    const spy = jest.spyOn(fs, "rmSync").mockImplementation((p, opts) => {
+      if (String(p).endsWith(".staging")) {
+        throw Object.assign(new Error("resource busy or locked"), {
+          code: "EBUSY",
+        });
+      }
+      rmSync(p, opts);
+    });
+    try {
+      const failed = build(AssetType.DIRECTORY, failing);
+      expect(() => failed.app.synth()).toThrow(/build failed/);
+      const hashFolder = path.join(failed.stackDir, failed.asset.path);
+      expect(fs.existsSync(`${hashFolder}.staging`)).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+
+    const bundler = countingBundler();
+    const { asset, stackDir } = synth(AssetType.DIRECTORY, bundler);
+    expect(bundler.runs).toBe(1);
+    expect(
+      fs.readdirSync(path.dirname(path.join(stackDir, asset.path))),
+    ).toEqual([asset.assetHash, `${asset.assetHash}.json`]);
+  });
+
+  test("moving a directory asset's source does not rebuild it", () => {
+    const bundler = countingBundler();
+    const first = synth(AssetType.DIRECTORY, bundler);
+    const moved = `${srcDir}-moved`;
+    fs.renameSync(srcDir, moved);
+    srcDir = moved;
+    const second = synth(AssetType.DIRECTORY, bundler);
+
+    expect(second.asset.assetHash).toBe(first.asset.assetHash);
+    expect(bundler.runs).toBe(1);
+  });
+
   test("a rename refused with EPERM is retried", () => {
     const spy = jest.spyOn(fs, "renameSync").mockImplementationOnce(() => {
       throw Object.assign(new Error("operation not permitted"), {
