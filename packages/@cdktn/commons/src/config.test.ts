@@ -1,8 +1,6 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
 import { parseConfig } from "./config";
-import * as fs from "fs-extra";
-import * as os from "os";
 import * as path from "path";
 
 /**
@@ -12,15 +10,6 @@ import * as path from "path";
  */
 function toPosixPath(p: string): string {
   return p.split(path.sep).join(path.posix.sep);
-}
-
-export async function mkdtemp(closure: (dir: string) => Promise<void>) {
-  const workdir = await fs.mkdtemp(path.join(os.tmpdir(), "cdktf."));
-  try {
-    await closure(workdir);
-  } finally {
-    await fs.remove(workdir);
-  }
 }
 
 describe("parseConfig", () => {

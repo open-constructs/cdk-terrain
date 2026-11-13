@@ -10,11 +10,7 @@ import { createTmpHelper } from "../util";
 
 const tmp = createTmpHelper();
 
-const onTf1_6AndNewer = (
-  name: string,
-  fn: () => Promise<void>,
-  timeout?: number,
-) => {
+function isTf1_6OrNewer(): boolean {
   const terraformBinaryName = process.env.TERRAFORM_BINARY_NAME || "terraform";
   const output = execSync(`${terraformBinaryName} version -json`);
 
@@ -25,16 +21,11 @@ const onTf1_6AndNewer = (
   const tfVersion = JSON.parse(output.toString()).terraform_version;
 
   const [major, minor] = tfVersion.toString().split(".");
-  if (Number(major) < 1 || (Number(major) === 1 && Number(minor) < 6)) {
-    test.skip(
-      `${name} (requires Terraform >= 1.6.0; but is ${tfVersion})`,
-      fn,
-      timeout,
-    );
-  } else {
-    test(name, fn, timeout);
-  }
-};
+  return !(Number(major) < 1 || (Number(major) === 1 && Number(minor) < 6));
+}
+
+/** `test` that is skipped unless Terraform is 1.6.0 or newer. */
+const onTf1_6AndNewer = isTf1_6OrNewer() ? test : test.skip;
 
 test("generate some modules", async () => {
   const workdir = tmp("module-generator.test");
@@ -138,7 +129,7 @@ expectModuleToMatchSnapshot(
 );
 
 onTf1_6AndNewer(
-  "generate module that can't be initialized",
+  "generate module that can't be initialized (requires Terraform >= 1.6.0)",
   async () => {
     jest.setTimeout(120000);
 

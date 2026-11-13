@@ -23,4 +23,8 @@ test("provider with no resources", async () => {
   );
   new TerraformProviderGenerator(code, spec).generateAll();
   await code.save(workdir);
+  expect(fs.readdirSync(path.join(workdir, "providers/aws")).sort()).toEqual([
+    "index.ts",
+    "lazy-index.ts",
+  ]);
 });

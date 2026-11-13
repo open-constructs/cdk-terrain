@@ -7,6 +7,7 @@ import nx from "@nx/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
+import jest from "eslint-plugin-jest";
 import prettierConfig from "eslint-plugin-prettier/recommended";
 
 export const baseConfig = [
@@ -79,8 +80,10 @@ export const baseConfig = [
     },
   },
   {
+    ...jest.configs["flat/recommended"],
     files: ["**/*.test.ts"],
     rules: {
+      ...jest.configs["flat/recommended"].rules,
       // jest.isolateModules is synchronous, so a fresh module copy can only be loaded with require()
       "@typescript-eslint/no-require-imports": "off",
     },

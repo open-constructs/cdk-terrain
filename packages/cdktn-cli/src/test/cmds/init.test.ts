@@ -31,15 +31,13 @@ describeIfDistExists(__dirname)("init command", () => {
           input,
         },
       );
-      // we expect either empty error output or every line beginning with "npm WARN"
-      if (result.stderr.length > 0) {
-        const lines = result.stderr.split("\n");
-        for (const line of lines) {
-          expect(line.toLowerCase()).toContain("npm warn");
-        }
-      } else {
-        expect(result.stderr).toEqual("");
-      }
+      // stderr may only contain npm warnings
+      const unexpectedStderr = result.stderr
+        .split("\n")
+        .filter(
+          (line) => line.length > 0 && !line.toLowerCase().includes("npm warn"),
+        );
+      expect(unexpectedStderr).toEqual([]);
 
       expect(result.stdout).not.toContain(
         `opening webpage using your browser.`,
