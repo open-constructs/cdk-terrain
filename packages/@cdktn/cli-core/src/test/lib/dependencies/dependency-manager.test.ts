@@ -159,7 +159,7 @@ describe("dependency manager", () => {
     });
 
     afterEach(() => {
-      expect(mockAgent.pendingInterceptors()).toHaveLength(0);
+      mockAgent.assertNoPendingInterceptors();
       process.chdir(previousCwd);
       fs.removeSync(projectDir);
       resetFetchCache();

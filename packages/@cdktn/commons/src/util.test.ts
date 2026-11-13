@@ -157,7 +157,8 @@ describe("exec() timeout", () => {
   // A timed child leads its own process group and misses the terminal's
   // interrupt; with no timeout it must stay in the caller's group unless the
   // caller detaches it.
-  (process.platform === "linux" ? it.each : it.skip.each)([
+  const itOnLinux = process.platform === "linux" ? it : it.skip;
+  itOnLinux.each([
     ["treats an infinite timeout as none", {}, "false"],
     ["keeps a caller's detached without a timeout", { detached: true }, "true"],
   ])("%s", async (_name, options, leads) => {
