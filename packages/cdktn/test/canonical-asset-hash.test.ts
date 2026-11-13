@@ -14,6 +14,7 @@ import {
   AssetHashType,
   BundleResult,
   IAsset,
+  IAssetBundler,
 } from "../src";
 import { CANONICAL_ASSET_HASHES } from "../src/features";
 import { TerraformModuleAsset } from "../src/terraform-module-asset";
@@ -896,6 +897,197 @@ describe("TerraformAsset stages inside the stack's own directory (#380)", () => 
     expect(fs.existsSync(path.join(stackDir, asset.path))).toBe(true);
     // ...never as a sibling of stacks/ (the historical #380 concern).
     expect(fs.existsSync(path.join(outdir, asset.path))).toBe(false);
+  });
+});
+
+describe("TerraformAsset reuses a bundled artifact across synths (#582)", () => {
+  let srcDir: string;
+  let outdir: string;
+
+  beforeEach(() => {
+    srcDir = createTempDir();
+    fs.writeFileSync(path.join(srcDir, "a.txt"), "content");
+    outdir = createTempDir();
+  });
+
+  afterEach(() => {
+    fs.rmSync(srcDir, { recursive: true, force: true });
+    fs.rmSync(outdir, { recursive: true, force: true });
+  });
+
+  // Each synth gets a fresh App writing to the same outdir, as consecutive
+  // `cdktn synth` runs do.
+  const build = (type: AssetType, bundler: IAssetBundler) => {
+    const app = Testing.app({
+      outdir,
+      context: { [CANONICAL_ASSET_HASHES]: "true" },
+    });
+    const s = new TerraformStack(app, "s");
+    const asset = new TerraformAsset(s, "asset", {
+      path: srcDir,
+      type,
+      bundler,
+    });
+    return { app, asset, stackDir: path.join(outdir, "stacks", s.node.id) };
+  };
+
+  const synth = (type: AssetType, bundler: IAssetBundler) => {
+    const built = build(type, bundler);
+    built.app.synth();
+    return built;
+  };
+
+  const countingBundler = (bundlerKey?: string) => {
+    const bundler = {
+      runs: 0,
+      bundlerKey,
+      bundle: (opts: { outputDir: string }) => {
+        bundler.runs++;
+        fs.writeFileSync(path.join(opts.outputDir, "index.txt"), "built");
+        return BundleResult.directory(opts.outputDir);
+      },
+    };
+    return bundler;
+  };
+
+  const fileBundler: IAssetBundler = {
+    outputFileName: "out.txt",
+    bundle: (opts) => {
+      const file = path.join(opts.outputDir, "out.txt");
+      fs.writeFileSync(file, "built");
+      return BundleResult.file(file);
+    },
+  };
+
+  test("a second synth with the same hash does not rerun the bundler", () => {
+    const bundler = countingBundler();
+
+    const first = synth(AssetType.ARCHIVE, bundler);
+    const second = synth(AssetType.ARCHIVE, bundler);
+
+    expect(second.asset.assetHash).toBe(first.asset.assetHash);
+    expect(bundler.runs).toBe(1);
+    expect(fs.existsSync(path.join(second.stackDir, second.asset.path))).toBe(
+      true,
+    );
+  });
+
+  test("a changed hash reruns the bundler and removes the old artifact", () => {
+    const v1 = countingBundler("v1");
+    const v2 = countingBundler("v2");
+
+    const first = synth(AssetType.ARCHIVE, v1);
+    const second = synth(AssetType.ARCHIVE, v2);
+
+    expect(second.asset.assetHash).not.toBe(first.asset.assetHash);
+    expect(v2.runs).toBe(1);
+    const namedFolder = path.dirname(
+      path.dirname(path.join(second.stackDir, second.asset.path)),
+    );
+    expect(fs.readdirSync(namedFolder)).toEqual([
+      second.asset.assetHash,
+      `${second.asset.assetHash}.json`,
+    ]);
+  });
+
+  test.each([
+    ["ARCHIVE", AssetType.ARCHIVE, countingBundler()],
+    ["FILE", AssetType.FILE, fileBundler],
+  ])(
+    "changing the type from %s to DIRECTORY rebuilds the artifact",
+    (_, type, previous) => {
+      const first = synth(type, previous);
+      const bundler = countingBundler();
+      const second = synth(AssetType.DIRECTORY, bundler);
+
+      expect(second.asset.assetHash).toBe(first.asset.assetHash);
+      expect(bundler.runs).toBe(1);
+      expect(
+        fs.readdirSync(path.join(second.stackDir, second.asset.path)),
+      ).toEqual(["index.txt"]);
+    },
+  );
+
+  test("a failed build leaves no artifact for the next synth to reuse", () => {
+    const failing = {
+      bundle: (opts: { outputDir: string }) => {
+        fs.writeFileSync(path.join(opts.outputDir, "partial.txt"), "partial");
+        throw new Error("build failed");
+      },
+    };
+
+    const failed = build(AssetType.DIRECTORY, failing);
+    expect(() => failed.app.synth()).toThrow(/build failed/);
+    expect(fs.existsSync(path.join(failed.stackDir, failed.asset.path))).toBe(
+      false,
+    );
+
+    const bundler = countingBundler();
+    const { asset, stackDir } = synth(AssetType.DIRECTORY, bundler);
+    expect(bundler.runs).toBe(1);
+    expect(fs.readdirSync(path.join(stackDir, asset.path))).toEqual([
+      "index.txt",
+    ]);
+  });
+
+  test("a failed cleanup does not hide the build error", () => {
+    const failing = {
+      bundle: () => {
+        throw new Error("build failed");
+      },
+    };
+    const rmSync = fs.rmSync;
+    const spy = jest.spyOn(fs, "rmSync").mockImplementation((p, opts) => {
+      if (String(p).endsWith(".staging")) {
+        throw Object.assign(new Error("resource busy or locked"), {
+          code: "EBUSY",
+        });
+      }
+      rmSync(p, opts);
+    });
+    try {
+      const failed = build(AssetType.DIRECTORY, failing);
+      expect(() => failed.app.synth()).toThrow(/build failed/);
+      const hashFolder = path.join(failed.stackDir, failed.asset.path);
+      expect(fs.existsSync(`${hashFolder}.staging`)).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+
+    const bundler = countingBundler();
+    const { asset, stackDir } = synth(AssetType.DIRECTORY, bundler);
+    expect(bundler.runs).toBe(1);
+    expect(
+      fs.readdirSync(path.dirname(path.join(stackDir, asset.path))),
+    ).toEqual([asset.assetHash, `${asset.assetHash}.json`]);
+  });
+
+  test("moving a directory asset's source does not rebuild it", () => {
+    const bundler = countingBundler();
+    const first = synth(AssetType.DIRECTORY, bundler);
+    const moved = `${srcDir}-moved`;
+    fs.renameSync(srcDir, moved);
+    srcDir = moved;
+    const second = synth(AssetType.DIRECTORY, bundler);
+
+    expect(second.asset.assetHash).toBe(first.asset.assetHash);
+    expect(bundler.runs).toBe(1);
+  });
+
+  test("a rename refused with EPERM is retried", () => {
+    const spy = jest.spyOn(fs, "renameSync").mockImplementationOnce(() => {
+      throw Object.assign(new Error("operation not permitted"), {
+        code: "EPERM",
+      });
+    });
+    try {
+      const { asset, stackDir } = synth(AssetType.DIRECTORY, countingBundler());
+      expect(fs.readdirSync(path.join(stackDir, asset.path))).toEqual([
+        "index.txt",
+      ]);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

@@ -12,7 +12,11 @@ import {
 } from "./assets";
 import { AssetStaging } from "./asset-staging";
 import { IIgnoreStrategy } from "./ignore-strategy";
-import { findFileAboveCwd } from "./private/fs";
+import {
+  findFileAboveCwd,
+  renameSyncWithRetry,
+  rmSyncWithRetry,
+} from "./private/fs";
 import { ISynthesisSession } from "./synthesize";
 import { addCustomSynthesis } from "./synthesize/synthesizer";
 import { TerraformStack } from "./terraform-stack";
@@ -74,6 +78,12 @@ export interface TerraformAssetConfig {
    * Extra information to fold into the hash (e.g. build instructions and
    * other inputs).
    *
+   * A bundled asset reuses the artifact an earlier synth staged for the same
+   * hash, so set this for build inputs the hash cannot see: files outside
+   * `path`, a mutable Docker tag such as `node:20`, or which bundler is used
+   * and its options when it has no `bundlerKey`. It is ignored when
+   * `assetHash` is set; change `assetHash` instead.
+   *
    * @default - no extra hash
    */
   readonly extraHash?: string;
@@ -86,6 +96,10 @@ export interface TerraformAssetConfig {
    * and stays skippable; `OUTPUT` hashing builds eagerly to hash the artifact.
    * The bundler's output shape must match `type`. See
    * `AssetStagingOptions.bundler`.
+   *
+   * Under `SOURCE` hashing or a fixed `assetHash`, a synth keeps the artifact
+   * already staged for the same hash and `type`. See `extraHash` for inputs
+   * the hash cannot see; deleting the output directory also forces a rebuild.
    *
    * @default - the source is staged verbatim, with no build step
    */
@@ -136,6 +150,8 @@ export class TerraformAsset extends Construct implements IAsset {
   private readonly staging: AssetStaging;
   // set when a bundler builds the artifact; names a single-file result
   private readonly bundler?: IAssetBundler;
+  // true when the hash is known before the build, so a staged artifact can be reused
+  private readonly reusesStagedArtifact: boolean;
 
   /**
    * A Terraform Asset takes a file or directory outside of the CDK Terrain context and moves it into it.
@@ -177,6 +193,8 @@ export class TerraformAsset extends Construct implements IAsset {
     }
 
     this.bundler = config.bundler;
+    this.reusesStagedArtifact =
+      !!config.bundler && config.assetHashType !== AssetHashType.OUTPUT;
 
     const outputFileName = config.bundler?.outputFileName;
     if (outputFileName !== undefined) {
@@ -270,21 +288,72 @@ export class TerraformAsset extends Construct implements IAsset {
       "..",
     );
 
-    // Cleanup existing assets
-    const previousVersionsFolder = path.join(basePath, this.namedFolder);
-    if (fs.existsSync(previousVersionsFolder)) {
-      fs.rmSync(previousVersionsFolder, { recursive: true });
+    // Cleanup assets staged for previous hashes
+    const namedFolder = path.join(basePath, this.namedFolder);
+    const hashFolder = path.join(namedFolder, this.assetHash);
+    // Records how the artifact in the hash folder was packaged, which the
+    // hash does not cover: ARCHIVE and DIRECTORY share a hash.
+    const packagingFile = `${hashFolder}.json`;
+    if (fs.existsSync(namedFolder)) {
+      for (const entry of fs.readdirSync(namedFolder)) {
+        if (entry !== this.assetHash && entry !== `${this.assetHash}.json`) {
+          rmSyncWithRetry(path.join(namedFolder, entry));
+        }
+      }
     }
 
+    // SOURCE and CUSTOM hashes are known before the build, so an artifact
+    // already staged for this hash and packaging is what the bundler would
+    // build again.
     const targetPath = path.join(basePath, this.path);
-    const packaging = this.packaging;
+    // A directory artifact has no file name, so moving its source does not
+    // rebuild it.
+    const stagedPackaging = JSON.stringify({
+      type: AssetType[this.type],
+      fileName: this.packaging.producesDirectory ? undefined : this.fileName,
+    });
+    if (
+      this.reusesStagedArtifact &&
+      fs.existsSync(targetPath) &&
+      fs.existsSync(packagingFile) &&
+      fs.readFileSync(packagingFile, "utf8") === stagedPackaging
+    ) {
+      return;
+    }
+    fs.rmSync(packagingFile, { force: true });
 
-    if (packaging.producesDirectory) {
-      fs.mkdirSync(targetPath, { recursive: true });
-    } else {
-      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    if (!this.reusesStagedArtifact) {
+      fs.rmSync(hashFolder, { recursive: true, force: true });
+      if (this.packaging.producesDirectory) {
+        fs.mkdirSync(targetPath, { recursive: true });
+      } else {
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      }
+      this.staging.stage(targetPath);
+      return;
     }
 
-    this.staging.stage(targetPath);
+    // Stage next to the hash folder and move it into place only once staging
+    // succeeded, so a failed or interrupted build never leaves a folder that
+    // a later synth would reuse.
+    const stagingFolder = `${hashFolder}.staging`;
+    fs.mkdirSync(stagingFolder, { recursive: true });
+    try {
+      this.staging.stage(
+        this.packaging.producesDirectory
+          ? stagingFolder
+          : path.join(stagingFolder, this.fileName),
+      );
+      rmSyncWithRetry(hashFolder);
+      renameSyncWithRetry(stagingFolder, hashFolder);
+    } catch (err) {
+      try {
+        rmSyncWithRetry(stagingFolder);
+      } catch {
+        // The next synth sweeps it; the build error is the one to report.
+      }
+      throw err;
+    }
+    fs.writeFileSync(packagingFile, stagedPackaging);
   }
 }
