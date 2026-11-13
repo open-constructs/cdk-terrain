@@ -284,15 +284,22 @@ class Parser {
     );
 
     // Gated while the naming strategy is settled; unset means unchanged output.
+    // "full" merges duplicates outright and renames types; "compat" shares only
+    // their machinery, keeping every interface name.
     const dedupMode = process.env.CDKTN_STRUCT_DEDUP_MODE;
     if (dedupMode) {
-      if (dedupMode !== "full") {
+      if (dedupMode !== "full" && dedupMode !== "compat") {
         throw new Error(
-          `Unknown CDKTN_STRUCT_DEDUP_MODE "${dedupMode}" (expected "full")`,
+          `Unknown CDKTN_STRUCT_DEDUP_MODE "${dedupMode}" (expected "full" or "compat")`,
         );
       }
-      const removedStructs = deduplicateStructs(attributes);
-      this.structs = this.structs.filter((s) => !removedStructs.has(s));
+      const compatible = dedupMode === "compat";
+      const removedStructs = deduplicateStructs(attributes, compatible);
+      if (compatible) {
+        removedStructs.forEach((st) => (st.interfaceOnly = true));
+      } else {
+        this.structs = this.structs.filter((st) => !removedStructs.has(st));
+      }
     }
 
     attributes = deduplicateAttributesWithSameName(attributes);

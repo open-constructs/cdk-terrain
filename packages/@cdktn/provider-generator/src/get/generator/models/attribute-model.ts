@@ -4,6 +4,7 @@ import { logger } from "@cdktn/commons";
 import {
   AttributeTypeModel,
   CollectionAttributeTypeModel,
+  structTypeModelOf,
 } from "./attribute-type-model";
 
 export type GetterType =
@@ -235,7 +236,10 @@ export class AttributeModel {
     const types: string[] = [];
 
     if (this.isAssignable) {
-      types.push(attTypeStruct.name);
+      // the input type is the declared name; the canonical interface itself isn't referenced
+      types.push(
+        (structTypeModelOf(this.type)?.declaredStruct ?? attTypeStruct).name,
+      );
       types.push(attTypeStruct.mapperName);
       types.push(attTypeStruct.hclMapperName);
     }

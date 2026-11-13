@@ -21,7 +21,8 @@ const nested = (type: AttributeType) =>
 
 const block = (name: string, b: Block) =>
   new S().listBlock({ name, block: b, minItems: 0, maxItems: 9 }).asBlock();
-// same_a/same_b and twin_a/twin_b each share a shape (twins all the way down);
+// same_a/same_b, one_a/one_b and twin_a/twin_b each share a shape (lists and
+// single items take different input paths; twins match all the way down);
 // deep_a/deep_b match only at the first level.
 const fixture = schema({
   name: "dedup",
@@ -52,6 +53,18 @@ const fixture = schema({
         block: nested("bool"),
         minItems: 0,
         maxItems: 9,
+      })
+      .listBlock({
+        name: "one_a",
+        block: leaf("u", "string"),
+        minItems: 0,
+        maxItems: 1,
+      })
+      .listBlock({
+        name: "one_b",
+        block: leaf("u", "string"),
+        minItems: 0,
+        maxItems: 1,
       })
       .listBlock({
         name: "deep_a",
@@ -176,6 +189,24 @@ const wide = schema({
   },
 });
 
+// One shape copied enough times that, once compat makes the copies
+// interface-only, the last shard holds nothing but plain interfaces.
+const copies = new S();
+for (let i = 0; i <= 500; i++) {
+  copies.listBlock({
+    name: `dup_${String(i).padStart(3, "0")}`,
+    block: leaf("v", "string"),
+    minItems: 0,
+    maxItems: 9,
+  });
+}
+const copied = schema({
+  name: "dedup",
+  provider: new S().build(),
+  dataSources: {},
+  resources: { copied: copies.build() },
+});
+
 interface Exports {
   files: Map<string, string>;
   interfaces: Map<string, string>;
@@ -283,10 +314,12 @@ function typeErrors(
 describe("CDKTN_STRUCT_DEDUP_MODE", () => {
   let off: Exports;
   let full: Exports;
+  let compat: Exports;
 
   beforeAll(async () => {
     off = await generate();
     full = await generate("full");
+    compat = await generate("compat");
   });
 
   it("full merges structs of the same shape", () => {
@@ -341,16 +374,44 @@ describe("CDKTN_STRUCT_DEDUP_MODE", () => {
     });
   });
 
-  it("full imports a struct shared by top-level attributes once", async () => {
-    const { files } = await generate("full", wide);
-    expect(files.has("wide/index-structs/index.ts")).toBe(true);
-    const names = files
-      .get("wide/index.ts")!
-      .match(/import \{([^}]*)\} from '\.\/index-structs/)![1]
-      .split(",")
-      .map((n) => n.trim());
-    expect(names).toContain("WideSameA");
-    expect(names.filter((n, i) => names.indexOf(n) !== i)).toEqual([]);
+  it("compat leaves every interface declaration unchanged", () => {
+    expect(compat.interfaces).toEqual(off.interfaces);
+  });
+
+  it("compat emits only the classes and mappers full keeps", () => {
+    expect(compat.classes).toEqual(full.classes);
+    expect(compat.functions).toEqual(full.functions);
+    expect(compat.classes.size).toBeLessThan(off.classes.size);
+  });
+
+  it.each(["full", "compat"])(
+    "%s imports a struct shared by top-level attributes once",
+    async (mode) => {
+      const { files } = await generate(mode, wide);
+      expect(files.has("wide/index-structs/index.ts")).toBe(true);
+      const names = files
+        .get("wide/index.ts")!
+        .match(/import \{([^}]*)\} from '\.\/index-structs/)![1]
+        .split(",")
+        .map((n) => n.trim());
+      expect(names).toContain("WideSameA");
+      expect(names.filter((n, i) => names.indexOf(n) !== i)).toEqual([]);
+    },
+  );
+
+  it("compat imports cdktn only into shards that use it", async () => {
+    const { files } = await generate("compat", copied);
+    const shards = [...files].filter(([f]) =>
+      /^copied\/index-structs\/structs\d+\.ts$/.test(f),
+    );
+    expect(shards.length).toBeGreaterThan(1);
+    const unused = shards
+      .filter(([, src]) => src.includes("import * as cdktn"))
+      .filter(
+        ([, src]) => !src.replace("import * as cdktn", "").includes("cdktn."),
+      )
+      .map(([f]) => f);
+    expect(unused).toEqual([]);
   });
 
   it("full keeps structs that differ only in an inner collection wrapper", async () => {
@@ -365,16 +426,23 @@ describe("CDKTN_STRUCT_DEDUP_MODE", () => {
   });
 
   it.each([
-    ["fixture", fixture, "dedup"],
-    ["lookalikes", lookalikes, "aws"],
-    ["wide", wide, "dedup"],
-  ] as const)("full output for %s type-checks", async (_, provider, name) => {
-    expect(await typeErrors("full", provider, name)).toEqual([]);
-  });
+    ["full", "fixture", fixture, "dedup"],
+    ["full", "lookalikes", lookalikes, "aws"],
+    ["full", "wide", wide, "dedup"],
+    ["compat", "fixture", fixture, "dedup"],
+    ["compat", "lookalikes", lookalikes, "aws"],
+    ["compat", "wide", wide, "dedup"],
+    ["compat", "copied", copied, "dedup"],
+  ] as const)(
+    "%s output for %s type-checks",
+    async (mode, _, provider, name) => {
+      expect(await typeErrors(mode, provider, name)).toEqual([]);
+    },
+  );
 
   it("rejects an unknown mode", async () => {
     await expect(generate("bogus")).rejects.toThrow(
-      'Unknown CDKTN_STRUCT_DEDUP_MODE "bogus" (expected "full")',
+      'Unknown CDKTN_STRUCT_DEDUP_MODE "bogus" (expected "full" or "compat")',
     );
   });
 });

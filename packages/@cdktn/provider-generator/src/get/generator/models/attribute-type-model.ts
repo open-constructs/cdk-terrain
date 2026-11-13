@@ -169,7 +169,17 @@ export function structTypeModelOf(
   return element ? structTypeModelOf(element) : undefined;
 }
 
+// The input-side name for a collection's element; differs from storedClassType only under compatible dedup.
+function declaredName(element: AttributeTypeModel): string {
+  return element instanceof StructAttributeTypeModel && element.declaredStruct
+    ? element.declaredStruct.name
+    : element.storedClassType;
+}
+
 export class StructAttributeTypeModel implements AttributeTypeModel {
+  // Set by compatible dedup: `struct` is the shared machinery, this is the name callers keep using.
+  public declaredStruct?: Struct;
+
   // Mutable so struct dedup can repoint it at the canonical struct.
   constructor(public struct: Struct) {}
 
@@ -190,7 +200,7 @@ export class StructAttributeTypeModel implements AttributeTypeModel {
   }
 
   get inputTypeDefinition() {
-    return this.struct.name;
+    return (this.declaredStruct ?? this.struct).name;
   }
 
   getAttributeAccessFunction(name: string) {
@@ -281,7 +291,7 @@ export class ListAttributeTypeModel implements CollectionAttributeTypeModel {
     } else if (this.elementType.storedClassType === "boolean") {
       return "Array<boolean | cdktn.IResolvable> | cdktn.IResolvable";
     } else if (this.isComplex) {
-      return `${this.elementType.storedClassType}[] | cdktn.IResolvable`;
+      return `${declaredName(this.elementType)}[] | cdktn.IResolvable`;
     } else if (this.elementType.typeModelType !== "simple") {
       return `${this.elementType.inputTypeDefinition}[] | cdktn.IResolvable`;
     } else {
@@ -411,7 +421,7 @@ export class SetAttributeTypeModel implements CollectionAttributeTypeModel {
     } else if (this.elementType.storedClassType === "boolean") {
       return "Array<boolean | cdktn.IResolvable> | cdktn.IResolvable";
     } else if (this.isComplex) {
-      return `${this.elementType.storedClassType}[] | cdktn.IResolvable`;
+      return `${declaredName(this.elementType)}[] | cdktn.IResolvable`;
     } else if (this.elementType.typeModelType !== "simple") {
       return `${this.elementType.inputTypeDefinition}[] | cdktn.IResolvable`;
     } else {
@@ -514,7 +524,7 @@ export class MapAttributeTypeModel implements CollectionAttributeTypeModel {
     if (this.elementType.storedClassType === "boolean") {
       return `{ [key: string]: (${this.elementType.storedClassType} | cdktn.IResolvable) }`;
     } else if (this.isComplex) {
-      return `{ [key: string]: ${this.elementType.storedClassType} } | cdktn.IResolvable`;
+      return `{ [key: string]: ${declaredName(this.elementType)} } | cdktn.IResolvable`;
     } else if (this.elementType.typeModelType !== "simple") {
       return `{ [key: string]: ${this.elementType.inputTypeDefinition} } | cdktn.IResolvable`;
     } else {

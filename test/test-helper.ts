@@ -535,6 +535,26 @@ export const onPosix = isPosix ? it : it.skip;
 export const onlyHcl = isHcl ? it : it.skip;
 export const onlyJson = !isHcl ? it : it.skip;
 
+/** Asserts both drivers synthesized the same stacks, ignoring where each ran. */
+export function expectSameSynth(expected: TestDriver, actual: TestDriver) {
+  const stacksOf = (d: TestDriver) =>
+    Object.keys(JSON.parse(d.manifest()).stacks);
+  const contentsOf = (d: TestDriver, stack: string) =>
+    [fs.realpathSync(d.workingDirectory), d.workingDirectory]
+      .sort((a, b) => b.length - a.length)
+      .reduce(
+        (contents, dir) => contents.split(dir).join("<workingDirectory>"),
+        d.synthesizedStackContentsRaw(stack),
+      );
+
+  const stacks = stacksOf(expected);
+  expect(stacks.length).toBeGreaterThan(0);
+  expect(stacksOf(actual)).toEqual(stacks);
+  for (const stack of stacks) {
+    expect(contentsOf(actual, stack)).toEqual(contentsOf(expected, stack));
+  }
+}
+
 export const onWindowsWithHcl = isWindows && isHcl ? it : it.skip;
 export const onPosixWithHcl = isPosix && isHcl ? it : it.skip;
 

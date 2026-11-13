@@ -7,7 +7,12 @@ import rootConfig from "../../../eslint.config.mjs";
 
 export default [
   {
-    ignores: ["edge-provider-bindings/providers/**", "build/**", "dist/**"],
+    ignores: [
+      "edge-provider-bindings/providers/**",
+      "edge-provider-bindings/compat/providers/**",
+      "build/**",
+      "dist/**",
+    ],
   },
   ...rootConfig,
   {

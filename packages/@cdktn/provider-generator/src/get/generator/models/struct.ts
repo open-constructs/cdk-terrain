@@ -12,6 +12,9 @@ export class Struct {
     public readonly nestingMode: string = "",
   ) {}
 
+  // Compatible dedup keeps a duplicate's interface (its public name) but not its machinery.
+  public interfaceOnly = false;
+
   public get assignableAttributes(): AttributeModel[] {
     return this.attributes.filter((attribute) => attribute.isAssignable);
   }
@@ -91,6 +94,7 @@ export class Struct {
   }
 
   public get exportCount(): number {
+    if (this.interfaceOnly) return 1;
     let count = 1; // self
     count += 1; // toTerraform function
 
