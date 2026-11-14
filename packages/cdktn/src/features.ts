@@ -35,7 +35,13 @@ export const FAIL_ON_CONSTRUCTS_OUTSIDE_OF_STACKS =
  * every entry contributes its type, permission mask (for files and
  * symlinks — the bits archiveSync preserves in zip external attributes),
  * relative path, payload size, and payload, in sorted order, and
- * directories — including empty ones — contribute explicit records. Renames,
+ * directories — including empty ones — contribute explicit records. A
+ * symlink's target that resolves inside the asset root is resolved to a
+ * path relative to that root before hashing, so the hash does not depend on
+ * checkout location. Within one operating system this also normalizes a
+ * Windows junction's absolute target and `\`-separated link text to the
+ * same relative form — it does not promise identical hashes across
+ * operating systems, since link modes differ by OS. Renames,
  * entry-boundary shifts, mode changes, empty-directory changes, and
  * file-vs-symlink swaps all change the hash.
  *

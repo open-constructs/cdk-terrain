@@ -59,6 +59,7 @@ export default [
             "testIfSymlinksAndUnzip",
             "testIfPosixPermissions",
             "testIfPosixPermissionsAndUnzip",
+            "testIfJunctions",
           ],
         },
       ],

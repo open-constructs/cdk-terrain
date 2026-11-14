@@ -662,6 +662,24 @@ export const assetCanNotCreateZipArchive = (
     `A TerraformAsset trying to zip archive '${src}' into ${dest} failed: ${error}`,
   );
 
+export const assetSymlinkEscapesRoot = (
+  linkPath: string,
+  target: string,
+  root: string,
+) =>
+  new Error(
+    `A TerraformAsset symlink at '${linkPath}' targets '${target}', which resolves outside the asset root '${root}'. CDK Terrain only archives symlinks that resolve inside the asset root, because a link outside it (including a Windows drive-letter or UNC target) cannot be made portable across extraction locations. Exclude this entry, or use a bundler (IAssetBundler) that dereferences the link before packaging.`,
+  );
+
+export const assetSymlinkNeedsDeveloperMode = (
+  linkPath: string,
+  error: Error,
+) =>
+  new Error(
+    `A TerraformAsset could not create the symlink at '${linkPath}': ${error.message}
+A file-target symlink on Windows needs Developer Mode or an elevated shell. CDK Terrain can fall back to a junction only for a directory target, since junctions cannot represent a file. Enable Developer Mode, run elevated, or exclude this entry.`,
+  );
+
 export const unknownProviderFeature = (feature: string) =>
   new Error(
     `Unknown provider-protocol feature "${feature}" passed to registerProviderFeatureUsage. This is an internal cdktn API intended to be called by generated provider bindings, not user code; if you did not call it directly, please file a bug report.`,

@@ -1062,6 +1062,60 @@ describe("TerraformAsset reuses a bundled artifact across synths (#582)", () => 
     ).toEqual([asset.assetHash, `${asset.assetHash}.json`]);
   });
 
+  testIfSymlinks(
+    "a junction fallback inside a reused DIRECTORY artifact survives the stage-then-rename move",
+    () => {
+      // Bundled DIRECTORY output stages into a sibling `<hash>.staging`
+      // folder and is renamed into place only once staging succeeds (#609).
+      // copySync's win32 junction fallback bakes an absolute path into the
+      // junction; this must still resolve after that rename.
+      const originalSymlinkSync = fs.symlinkSync.bind(fs);
+      const bundler: IAssetBundler = {
+        bundle: (opts) => {
+          fs.mkdirSync(path.join(opts.outputDir, "real-pkg"));
+          fs.writeFileSync(
+            path.join(opts.outputDir, "real-pkg", "index.js"),
+            "module",
+          );
+          // Uses the unmocked symlinkSync: only copySync's own calls, made
+          // while staging the bundler's output, are meant to see the mock.
+          originalSymlinkSync("real-pkg", path.join(opts.outputDir, "link-a"));
+          return BundleResult.directory(opts.outputDir);
+        },
+      };
+
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, "platform", { value: "win32" });
+      const symlinkSpy = jest
+        .spyOn(fs, "symlinkSync")
+        .mockImplementation((...args: Parameters<typeof fs.symlinkSync>) => {
+          if (args[2] !== "junction") {
+            const err: any = new Error("EPERM: operation not permitted");
+            err.code = "EPERM";
+            throw err;
+          }
+          return (originalSymlinkSync as any)(...args);
+        });
+
+      try {
+        const { asset, stackDir } = synth(AssetType.DIRECTORY, bundler);
+        const link = path.join(stackDir, asset.path, "link-a");
+        expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
+        expect(fs.readlinkSync(link)).toBe(
+          path.join(stackDir, asset.path, "real-pkg"),
+        );
+        expect(fs.readFileSync(path.join(link, "index.js"), "utf-8")).toBe(
+          "module",
+        );
+      } finally {
+        Object.defineProperty(process, "platform", {
+          value: originalPlatform,
+        });
+        symlinkSpy.mockRestore();
+      }
+    },
+  );
+
   test("moving a directory asset's source does not rebuild it", () => {
     const bundler = countingBundler();
     const first = synth(AssetType.DIRECTORY, bundler);

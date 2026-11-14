@@ -14,6 +14,7 @@ import { AssetStaging, stackRequiresBundling } from "./asset-staging";
 import { IIgnoreStrategy } from "./ignore-strategy";
 import {
   findFileAboveCwd,
+  reanchorJunctions,
   renameSyncWithRetry,
   rmSyncWithRetry,
 } from "./private/fs";
@@ -360,6 +361,12 @@ export class TerraformAsset extends Construct implements IAsset {
       );
       rmSyncWithRetry(hashFolder);
       renameSyncWithRetry(stagingFolder, hashFolder);
+      // A directory artifact's win32 junction fallback (copySync's
+      // createLink) bakes stagingFolder's absolute path into the junction;
+      // the rename above moves the folder without rewriting that text.
+      if (this.packaging.producesDirectory) {
+        reanchorJunctions(hashFolder, stagingFolder);
+      }
     } catch (err) {
       try {
         rmSyncWithRetry(stagingFolder);
