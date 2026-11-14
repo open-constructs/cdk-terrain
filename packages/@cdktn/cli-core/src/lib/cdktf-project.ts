@@ -363,7 +363,7 @@ export class CdktfProject {
     );
   }
 
-  public async synth(noColor?: boolean) {
+  public async synth(noColor?: boolean, bundlingStacks?: string[]) {
     this.onUpdate({
       type: "synthesizing",
     });
@@ -377,6 +377,7 @@ export class CdktfProject {
       noColor,
       this.synthOrigin,
       this.hcl,
+      bundlingStacks,
     );
 
     printAnnotations(stacks);
@@ -405,7 +406,10 @@ export class CdktfProject {
     await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
-      : await this.synth(opts.noColor);
+      : await this.synth(
+          opts.noColor,
+          opts.stackName ? [opts.stackName] : undefined,
+        );
     const stack = this.getStackExecutor(
       getSingleStack(stacks, opts?.stackName, "diff"),
     );
@@ -560,7 +564,7 @@ export class CdktfProject {
     await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
-      : await this.synth(opts.noColor);
+      : await this.synth(opts.noColor, opts.stackNames);
     const stacksToRun = getMultipleStacks(stacks, opts.stackNames, "deploy");
     if (!opts.ignoreMissingStackDependencies) {
       checkIfAllDependenciesAreIncluded(stacksToRun);
@@ -590,7 +594,7 @@ export class CdktfProject {
     await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
-      : await this.synth(opts.noColor);
+      : await this.synth(opts.noColor, opts.stackNames);
     const stacksToRun = getMultipleStacks(stacks, opts.stackNames, "destroy");
 
     if (!opts.ignoreMissingStackDependencies) {
@@ -671,7 +675,7 @@ export class CdktfProject {
     await this.validateInstalledBinaryIfConfigured();
     const stacks = opts.skipSynth
       ? await this.readSynthesizedStacks()
-      : await this.synth();
+      : await this.synth(undefined, opts.stackNames);
 
     const stacksToRun = getMultipleStacks(
       stacks,

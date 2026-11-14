@@ -42,6 +42,68 @@ const SAFE_ASSET_HASH = /^[A-Za-z0-9_.-]+$/;
 export const ASSET_HASH_SALT_CONTEXT_KEY = "cdktn:assetHashSalt";
 
 /**
+ * Context key naming the stacks a `diff`/`deploy`/`destroy` call will
+ * actually run.
+ *
+ * The CLI sets this to the stack selector it was given, so a deferred
+ * (`SOURCE`-hashed) bundler build is not forced for a stack that is not
+ * going to be applied. Absent means every stack bundles, matching
+ * `app.synth()` without the CLI and `Testing`.
+ */
+export const BUNDLING_STACKS_CONTEXT_KEY = "cdktn:bundlingStacks";
+
+/**
+ * Minimatch-only syntax this matcher does not understand: brace expansion,
+ * character classes, extglob, negation, escaping. A pattern using any of
+ * these is treated as matching every stack (see {@link matchesStackPattern}).
+ */
+const MINIMATCH_ONLY_SYNTAX = /[[\]{}()!+@\\]/;
+
+/**
+ * Whether a stack selector pattern matches `stackName`.
+ *
+ * Understands only the `*` (any run of characters) and `?` (one character)
+ * wildcards; this is a subset of what the CLI's own `--stack` selectors
+ * accept via minimatch. A pattern using syntax outside that subset is
+ * treated as matching every stack rather than rejected: under-matching here
+ * would silently skip bundling for a stack the CLI selects, while
+ * over-matching only costs an unnecessary build.
+ */
+function matchesStackPattern(stackName: string, pattern: string): boolean {
+  if (pattern === stackName) {
+    return true;
+  }
+  if (MINIMATCH_ONLY_SYNTAX.test(pattern)) {
+    return true;
+  }
+  const regexSource = pattern
+    .split(/([*?])/)
+    .map((part) => {
+      if (part === "*") return ".*";
+      if (part === "?") return ".";
+      return part.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+    })
+    .join("");
+  return new RegExp(`^${regexSource}$`).test(stackName);
+}
+
+/**
+ * Whether `stackName`'s assets should bundle this synth.
+ *
+ * @internal
+ */
+export function stackRequiresBundling(
+  scope: IConstruct,
+  stackName: string,
+): boolean {
+  const patterns = scope.node.tryGetContext(BUNDLING_STACKS_CONTEXT_KEY);
+  if (!Array.isArray(patterns)) {
+    return true;
+  }
+  return patterns.some((pattern) => matchesStackPattern(stackName, pattern));
+}
+
+/**
  * Caches the base (pre `extraHash`/salt) hash of a `SOURCE`/`OUTPUT` walk,
  * so that multiple `AssetStaging` instances with identical inputs — the same
  * asset referenced from more than one resource or stack — hash the source
