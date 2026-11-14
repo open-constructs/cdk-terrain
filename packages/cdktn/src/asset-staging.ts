@@ -395,8 +395,10 @@ export class AssetStaging extends Construct implements IAsset {
   } {
     const outputDir = path.join(scratch, "output");
     fs.mkdirSync(outputDir);
+    const absoluteSource = path.resolve(this.sourcePath);
     const result = this.bundler!.bundle({
-      source: this.filteredSource(scratch),
+      source: this.filteredSource(scratch, absoluteSource),
+      originalSource: absoluteSource,
       outputDir,
     });
 
@@ -476,8 +478,7 @@ export class AssetStaging extends Construct implements IAsset {
    * materialised into the scratch directory, so the bundler sees the same
    * file set the hash was taken over.
    */
-  private filteredSource(scratch: string): string {
-    const absoluteSource = path.resolve(this.sourcePath);
+  private filteredSource(scratch: string, absoluteSource: string): string {
     if (!this.hasExclusions || fs.statSync(absoluteSource).isFile()) {
       return absoluteSource;
     }
