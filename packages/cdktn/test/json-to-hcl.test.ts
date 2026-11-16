@@ -1305,6 +1305,36 @@ describe("backslashes in string literals", () => {
     );
   });
 
+  test("a for directive with quoted strings is left as written", () => {
+    expect(synthLocal('%{ for s in ["a","b"] }${s}%{ endfor }')).toContain(
+      'value = "%{ for s in ["a","b"] }${s}%{ endfor }"',
+    );
+  });
+
+  test("an if directive with a quoted string is left as written", () => {
+    expect(synthLocal('%{ if var.env == "prod" }${var.x}%{ endif }')).toContain(
+      'value = "%{ if var.env == "prod" }${var.x}%{ endif }"',
+    );
+  });
+
+  test("a directive without an interpolation is left as written", () => {
+    expect(synthLocal('%{ if var.env == "prod" }yes%{ endif }')).toContain(
+      'value = "%{ if var.env == "prod" }yes%{ endif }"',
+    );
+  });
+
+  test("text around a directive is escaped and the directive is not", () => {
+    expect(
+      synthLocal('C:\\dir\\%{ if var.a == "x" }\\y%{ endif }\\z'),
+    ).toContain(
+      'value = "C:\\\\dir\\\\%{ if var.a == "x" }\\\\y%{ endif }\\\\z"',
+    );
+  });
+
+  test("an escaped directive (%%{) is text and its quotes are escaped", () => {
+    expect(synthLocal('%%{ if "x" }')).toContain('value = "%%{ if \\"x\\" }"');
+  });
+
   test("a backend path on Windows is a valid HCL string", () => {
     const app = Testing.app();
     const stack = new TerraformStack(app, "test");

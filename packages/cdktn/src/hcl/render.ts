@@ -13,7 +13,7 @@ function quotedStringEnd(str: string, start: number): number {
       i++;
     } else if (str[i] === '"') {
       return i;
-    } else if (str.startsWith("${", i)) {
+    } else if (str.startsWith("${", i) || str.startsWith("%{", i)) {
       const end = interpolationEnd(str, i + 2);
       if (end === -1) return -1;
       i = end;
@@ -43,16 +43,16 @@ function interpolationEnd(str: string, start: number): number {
 /**
  * Escapes a string for the inside of an HCL quoted string, so that Terraform
  * reads back the value as written: a backslash or a quote is escaped. An
- * interpolation (`${...}`) is HCL source and is kept as it is; only the text
- * around it is escaped.
+ * interpolation (`${...}`) or a template directive (`%{...}`) is HCL source and
+ * is kept as it is; only the text around it is escaped.
  */
 function escapeQuotes(str: string): string {
   let escaped = "";
   for (let i = 0; i < str.length; i++) {
-    if (str.startsWith("$${", i)) {
-      escaped += "$${";
+    if (str.startsWith("$${", i) || str.startsWith("%%{", i)) {
+      escaped += str.slice(i, i + 3);
       i += 2;
-    } else if (str.startsWith("${", i)) {
+    } else if (str.startsWith("${", i) || str.startsWith("%{", i)) {
       const end = interpolationEnd(str, i + 2);
       if (end === -1) return escaped + str.slice(i);
       escaped += str.slice(i, end + 1);
