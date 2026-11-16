@@ -263,7 +263,7 @@ test("complex example", () => {
   `);
 });
 
-test("interpolation within string ", () => {
+test("interpolation within string", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");
 

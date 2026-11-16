@@ -218,7 +218,7 @@ describe("prebuilt-providers", () => {
         .reply(status, body);
 
     afterEach(() => {
-      expect(mockAgent.pendingInterceptors()).toHaveLength(0);
+      mockAgent.assertNoPendingInterceptors();
     });
 
     it("returns the @cdktn versions when @cdktf has no package", async () => {

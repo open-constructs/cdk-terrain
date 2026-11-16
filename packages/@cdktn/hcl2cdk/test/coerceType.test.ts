@@ -29,7 +29,7 @@ describe("coerceType", () => {
   it.each([
     { code: `"hello-world"`, type: "string", targetType: undefined },
     { code: `"hello-world"`, type: "string", targetType: "string" },
-  ])("should change nothing for %p ", ({ code, type, targetType }) => {
+  ])("should change nothing for %p", ({ code, type, targetType }) => {
     expect(
       generateCode(
         coerceType(scope, expressionify(code), type as any, targetType as any),

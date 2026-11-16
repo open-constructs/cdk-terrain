@@ -1034,14 +1034,11 @@ describe("telemetry", () => {
 
     it.each([
       ["synth", { synthOrigin: "watch" }, "synth_origin", "watch"],
-      ["synth", { synthOrigin: "/Users/x" }, "synth_origin", undefined],
       ["init", { isRemote: true }, "is_remote", true],
       ["init", { template: "go" }, "template", "go"],
       ["convert", { numberOfProviders: 2 }, "provider_count", 2],
       ["convert", { numberOfModules: 1 }, "module_count", 1],
       ["convert", { convertedLines: 42 }, "converted_lines", 42],
-      ["convert", { convertedLines: "42" }, "converted_lines", undefined],
-      ["convert", { convertedLines: NaN }, "converted_lines", undefined],
     ])(
       "%s: %j forwards %s as %j",
       async (command, payload, attribute, expected) => {
@@ -1051,13 +1048,23 @@ describe("telemetry", () => {
         const completed = parseMetricItems(envelopeBodies).find(
           (i) => i.name === "cli.command.completed",
         )!;
-        if (expected === undefined) {
-          expect(completed.attributes).not.toHaveProperty(attribute);
-        } else {
-          expect(attributeValues(completed)[attribute]).toBe(expected);
-        }
+        expect(attributeValues(completed)[attribute]).toBe(expected);
       },
     );
+
+    it.each([
+      ["synth", { synthOrigin: "/Users/x" }, "synth_origin"],
+      ["convert", { convertedLines: "42" }, "converted_lines"],
+      ["convert", { convertedLines: NaN }, "converted_lines"],
+    ])("%s: %j omits %s", async (command, payload, attribute) => {
+      await sendTelemetry(command, payload);
+      expect(await Sentry.flush(2000)).toBe(true);
+
+      const completed = parseMetricItems(envelopeBodies).find(
+        (i) => i.name === "cli.command.completed",
+      )!;
+      expect(completed.attributes).not.toHaveProperty(attribute);
+    });
 
     it.each([
       [">= 1.9.0", ">=1.9.0"],
@@ -1629,13 +1636,9 @@ describe("telemetry", () => {
         await Sentry.flush(2000);
 
         const items = parseMetricItems(envelopeBodies);
-        expect(items.some((i) => i.name === "cli.command.invoked")).toBe(emits);
-        expect(items.some((i) => i.name === "cli.command.completed")).toBe(
-          emits,
+        expect(items.map((i) => i.name)).toEqual(
+          emits ? ["cli.command.invoked", "cli.command.completed"] : [],
         );
-        if (!emits) {
-          expect(items).toHaveLength(0);
-        }
       },
     );
   });

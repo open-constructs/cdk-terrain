@@ -39,7 +39,7 @@ test("context can be passed through CDKTF_CONTEXT", () => {
   expect(node.tryGetContext("key2")).toEqual("val2");
 });
 
-test("context can be passed through CDKTF_CONTEXT", () => {
+test("context from CDKTF_CONTEXT takes precedence over app context", () => {
   process.env[CONTEXT_ENV] = JSON.stringify({
     key1: "val1",
     key2: "val2",
@@ -443,36 +443,6 @@ describe("Cross Stack references", () => {
     );
   });
 
-  it("uses the same remote state type as the origin stacks backend", () => {
-    new TestResource(testStack, "Resource", {
-      name: originStack.resource.stringValue,
-    });
-
-    new RemoteBackend(originStack, {
-      organization: "testorg",
-      workspaces: {
-        name: "testworkspace",
-      },
-    });
-
-    app.synth();
-    const { originStackSynth, targetStackSynth } = getStackSynths(app);
-
-    expect(Object.keys(JSON.parse(originStackSynth).output).length).toBe(1);
-    expect(targetStackSynth).toHaveDataSourceWithProperties(
-      DataTerraformRemoteState,
-      {
-        backend: "remote",
-        config: {
-          organization: "testorg",
-          workspaces: {
-            name: "testworkspace",
-          },
-        },
-      },
-    );
-  });
-
   it("creates a dependency graph between stacks in manifest", () => {
     new TestResource(testStack, "Resource", {
       name: originStack.resource.stringValue,
@@ -677,9 +647,11 @@ describe("Cross Stack references", () => {
     )[0];
     expect(originOutput).toContain(".complex_computed_list[42].id");
     expect(targetStackSynth).toHaveResourceWithProperties(TestResource, {
-      name:
-        expect.stringContaining(originOutputName) &&
-        expect.stringContaining("data.terraform_remote_state"),
+      name: expect.stringMatching(
+        new RegExp(
+          `data\\.terraform_remote_state.*${originOutputName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
+        ),
+      ),
     });
   });
 

@@ -147,27 +147,35 @@ describe("watch", () => {
     await tick();
   });
 
-  it.each(["a failure", "an abort"])(
-    "starts nothing for a change that arrives after %s",
-    async (ending) => {
-      const { ac, session } = startWatch();
-      deploys[0].resolve();
-      await tick();
+  async function deploysStartedByLaterChange() {
+    const started = deploys.length;
 
-      if (ending === "an abort") {
-        ac.abort();
-        await session;
-      } else {
-        watcher.emit("all");
-        deploys[1].reject(new Error("terraform apply failed"));
-        await expect(session).rejects.toThrow("terraform apply failed");
-      }
-      const started = deploys.length;
+    watcher.emit("all");
+    await tick();
 
-      watcher.emit("all");
-      await tick();
+    return deploys.length - started;
+  }
 
-      expect(deploys).toHaveLength(started);
-    },
-  );
+  it("starts nothing for a change that arrives after a failure", async () => {
+    const { session } = startWatch();
+    deploys[0].resolve();
+    await tick();
+
+    watcher.emit("all");
+    deploys[1].reject(new Error("terraform apply failed"));
+    await expect(session).rejects.toThrow("terraform apply failed");
+
+    expect(await deploysStartedByLaterChange()).toBe(0);
+  });
+
+  it("starts nothing for a change that arrives after an abort", async () => {
+    const { ac, session } = startWatch();
+    deploys[0].resolve();
+    await tick();
+
+    ac.abort();
+    await session;
+
+    expect(await deploysStartedByLaterChange()).toBe(0);
+  });
 });

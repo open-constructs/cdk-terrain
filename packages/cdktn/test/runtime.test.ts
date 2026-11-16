@@ -126,7 +126,7 @@ describe("Runtime", () => {
       `);
     });
 
-    it("can be passed untokenized resolvables in a mixed list ", () => {
+    it("can be passed untokenized resolvables in a mixed list", () => {
       const identity = jest.fn().mockImplementation((x: any) => x);
       const reference = new Intrinsic(
         "${some_resource.my_resource.some_attribute_array}",
