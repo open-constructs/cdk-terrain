@@ -258,6 +258,19 @@ export interface BundleOptions {
   readonly source: string;
 
   /**
+   * Absolute path to the asset's source as given, before exclusions.
+   *
+   * Differs from `source` only for a directory source with `exclude` or
+   * `ignoreStrategy` set. Read inputs from `source`; use this to resolve what
+   * lies around the source (node_modules, lockfiles, symlink targets). Files
+   * read here that `source` lacks are not in a `SOURCE` hash: cover them with
+   * `bundlerKey`/`extraHash`, or use `AssetHashType.OUTPUT`.
+   *
+   * @default - same as `source`
+   */
+  readonly originalSource?: string;
+
+  /**
    * A scratch directory the bundler may write into, owned and created by the
    * caller. The bundler produces its output here (or in a subdirectory) and
    * returns a {@link BundleResult} pointing at the finished artifact — see
@@ -551,6 +564,7 @@ export class ChainBundler implements IAssetBundler {
       fs.mkdirSync(legOutputDir);
       const result = this.bundlers[i].bundle({
         source: options.source,
+        originalSource: options.originalSource,
         outputDir: legOutputDir,
       });
       if (!result.isDeclined) {

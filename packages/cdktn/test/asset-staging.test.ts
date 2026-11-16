@@ -735,6 +735,28 @@ describe("AssetStaging", () => {
       expect(handedSource).not.toEqual(path.resolve(srcDir));
     });
 
+    test("exclude still hands the bundler the real source as originalSource", () => {
+      let handedOriginalSource: string | undefined;
+      const staging = new AssetStaging(stack(), "staging", {
+        sourcePath: srcDir,
+        packaging: AssetPackaging.DIRECTORY,
+        exclude: ["*.md"],
+        bundler: {
+          bundle: (opts) => {
+            handedOriginalSource = opts.originalSource;
+            fs.writeFileSync(path.join(opts.outputDir, "built.txt"), "output");
+            return BundleResult.directory(opts.outputDir);
+          },
+        },
+      });
+      const targetPath = path.join(createTempDir(), "out");
+      fs.mkdirSync(targetPath, { recursive: true });
+
+      staging.stage(targetPath);
+
+      expect(handedOriginalSource).toEqual(path.resolve(srcDir));
+    });
+
     test("without exclusions the bundler reads the source directly", () => {
       let handedSource: string | undefined;
       const staging = new AssetStaging(stack(), "staging", {
@@ -754,6 +776,58 @@ describe("AssetStaging", () => {
       staging.stage(targetPath);
 
       expect(handedSource).toEqual(path.resolve(srcDir));
+    });
+
+    test("without exclusions, originalSource equals source", () => {
+      let handedSource: string | undefined;
+      let handedOriginalSource: string | undefined;
+      const staging = new AssetStaging(stack(), "staging", {
+        sourcePath: srcDir,
+        packaging: AssetPackaging.DIRECTORY,
+        bundler: {
+          bundle: (opts) => {
+            handedSource = opts.source;
+            handedOriginalSource = opts.originalSource;
+            fs.writeFileSync(path.join(opts.outputDir, "built.txt"), "output");
+            return BundleResult.directory(opts.outputDir);
+          },
+        },
+      });
+      const targetPath = path.join(createTempDir(), "out");
+      fs.mkdirSync(targetPath, { recursive: true });
+
+      staging.stage(targetPath);
+
+      expect(handedOriginalSource).toEqual(handedSource);
+    });
+
+    test("a file asset with exclude also gets originalSource equal to source", () => {
+      // `exclude` has no effect on a file source: `filteredSource` hands a
+      // file over unfiltered, so the two paths stay equal.
+      const srcFile = path.join(srcDir, "single-file.txt");
+      fs.writeFileSync(srcFile, "content");
+      let handedSource: string | undefined;
+      let handedOriginalSource: string | undefined;
+      const staging = new AssetStaging(stack(), "staging", {
+        sourcePath: srcFile,
+        packaging: AssetPackaging.FILE,
+        exclude: ["*.md"],
+        bundler: {
+          bundle: (opts) => {
+            handedSource = opts.source;
+            handedOriginalSource = opts.originalSource;
+            const file = path.join(opts.outputDir, "artifact.txt");
+            fs.writeFileSync(file, "built");
+            return BundleResult.file(file);
+          },
+        },
+      });
+      const targetPath = path.join(createTempDir(), "artifact.txt");
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+
+      staging.stage(targetPath);
+
+      expect(handedOriginalSource).toEqual(handedSource);
     });
 
     test("a directory result that is actually a file throws", () => {
@@ -1111,6 +1185,32 @@ describe("AssetStaging", () => {
 
       test("ChainBundler.of() with no bundlers throws", () => {
         expect(() => ChainBundler.of()).toThrow(/at least one/i);
+      });
+
+      test("ChainBundler forwards originalSource to the leg that runs", () => {
+        let handedOriginalSource: string | undefined;
+        const leg = {
+          bundle: (opts: {
+            outputDir: string;
+            source: string;
+            originalSource?: string;
+          }) => {
+            handedOriginalSource = opts.originalSource;
+            return BundleResult.directory(opts.outputDir);
+          },
+        };
+        const staging = new AssetStaging(stack(), "staging", {
+          sourcePath: srcDir,
+          packaging: AssetPackaging.DIRECTORY,
+          exclude: ["*.md"],
+          bundler: ChainBundler.of(leg),
+        });
+        const targetPath = path.join(createTempDir(), "out");
+        fs.mkdirSync(targetPath, { recursive: true });
+
+        staging.stage(targetPath);
+
+        expect(handedOriginalSource).toEqual(path.resolve(srcDir));
       });
     });
   });
