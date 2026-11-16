@@ -443,6 +443,10 @@ export class BundlerKey {
     return part.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
   }
 
+  private static escapeEnv(part: string): string {
+    return part.replace(/\\/g, "\\\\").replace(/=/g, "\\=");
+  }
+
   private constructor(private readonly parts: string[]) {}
 
   /**
@@ -453,13 +457,21 @@ export class BundlerKey {
   }
 
   /**
-   * Append `key=value` parts for a record, sorted by key so the result does
-   * not depend on property order.
+   * Append `env=key=value` parts for a record, sorted by key so the result
+   * does not depend on property order.
+   *
+   * The `env=` prefix keeps these parts in their own namespace, so they
+   * cannot collide with an unrelated `key=value` part passed to {@link add}.
+   * The key and value are escaped so an `=` inside either cannot be mistaken
+   * for the key/value separator.
    */
   public withEnv(entries: Record<string, string>): BundlerKey {
     const kept = Object.keys(entries)
       .sort()
-      .map((k) => `${k}=${entries[k]}`);
+      .map(
+        (k) =>
+          `env=${BundlerKey.escapeEnv(k)}=${BundlerKey.escapeEnv(entries[k])}`,
+      );
     return new BundlerKey([...this.parts, ...kept]);
   }
 
