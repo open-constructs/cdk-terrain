@@ -10,7 +10,7 @@ import {
   IAssetBundler,
   IAssetPackaging,
 } from "./assets";
-import { AssetStaging } from "./asset-staging";
+import { AssetStaging, stackRequiresBundling } from "./asset-staging";
 import { IIgnoreStrategy } from "./ignore-strategy";
 import {
   findFileAboveCwd,
@@ -281,6 +281,20 @@ export class TerraformAsset extends Construct implements IAsset {
   }
 
   private _onSynthesize(session: ISynthesisSession) {
+    // The stack manifest is still produced for every stack regardless (the
+    // CLI needs it for the full dependency graph); staging below is skipped
+    // in full for a stack the CLI selector excludes — not just its bundler
+    // build, but also a verbatim FILE/DIRECTORY copy or ARCHIVE zip, since
+    // none of it is needed for a stack that will not be applied.
+    //
+    // This leaves the excluded stack's `cdk.tf.json` naming an asset path
+    // that is not staged this synth. A later `--skip-synth` run against that
+    // stack reads the stale manifest and fails on the missing (or outdated)
+    // path; re-running the full synth before `--skip-synth` picks it up.
+    if (!stackRequiresBundling(this, this.stack.node.id)) {
+      return;
+    }
+
     const stackManifest = session.manifest.forStack(this.stack);
     const basePath = path.join(
       session.manifest.outdir,

@@ -84,7 +84,7 @@ class Command extends BaseCommand {
         type: "boolean",
         default: false,
         required: false,
-        desc: "Skip synthesis of the application, assume the synthesized Terraform code is already present and up to date",
+        desc: "Skip synthesis of the application, assume the synthesized Terraform code is already present and up to date. If the prior synth targeted a different, narrower set of stacks, an untargeted stack's assets may not be staged; re-run without this flag first.",
       })
       .option("skip-provider-lock", {
         type: "boolean",
