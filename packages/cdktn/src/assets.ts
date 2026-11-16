@@ -160,6 +160,17 @@ export interface PackOptions {
    * @default - nothing is excluded
    */
   readonly ignoreStrategy?: IIgnoreStrategy;
+
+  /**
+   * Reject a symlink whose target resolves outside `source` and is not
+   * itself absolute, rather than packaging a link that dangles once the
+   * artifact is extracted elsewhere. Only `ZipPackaging` acts on this — a
+   * verbatim directory copy stays on the same machine, so such a link can
+   * still be followed there even though it is not portable.
+   *
+   * @default false
+   */
+  readonly rejectEscapingSymlinks?: boolean;
 }
 
 /**
@@ -212,6 +223,7 @@ class ZipPackaging implements IAssetPackaging {
             options.ignoreStrategy!.ignores({ relativePath, isDirectory })
         : undefined,
       options.ignoreStrategy?.pruneExcludedDirectories === false,
+      options.rejectEscapingSymlinks,
     );
   }
 }

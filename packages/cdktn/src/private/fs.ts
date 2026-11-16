@@ -5,7 +5,11 @@ import * as path from "path";
 import * as crypto from "crypto";
 import { strToU8, zipSync } from "fflate";
 import type { ZipOptions } from "fflate";
-import { assetCanNotCreateZipArchive } from "../errors";
+import {
+  assetCanNotCreateZipArchive,
+  assetSymlinkEscapesRoot,
+  assetSymlinkNeedsDeveloperMode,
+} from "../errors";
 
 const HASH_LEN = 32;
 
@@ -28,6 +32,142 @@ const ZIP_ENTRY_MTIME = new Date(1980, 0, 1);
  */
 function zipAttrs(mode: number): number {
   return (mode << 16) >>> 0;
+}
+
+/**
+ * What {@link resolveLinkTarget} finds out about one symlink.
+ */
+interface LinkTarget {
+  /** True when the target resolves inside the asset root. */
+  readonly withinRoot: boolean;
+  /**
+   * The target as a `/`-separated path relative to the asset root. Only
+   * meaningful when {@link withinRoot} is true.
+   */
+  readonly relativeToRoot: string;
+  /** The target, resolved to an absolute path. */
+  readonly absolute: string;
+  /**
+   * True when the on-disk link text is an absolute path that means the same
+   * thing wherever it is read — a plain POSIX absolute link such as a Lambda
+   * layer's `/opt/...` target. A Windows drive-letter (`C:\...`) or UNC
+   * (`\\server\...`) target does not qualify: POSIX readers treat it as a
+   * relative path with no leading `/`, and it bakes the checkout's drive or
+   * host into the link.
+   */
+  readonly portableAbsolute: boolean;
+  /**
+   * The on-disk link text. Backslash separators are only converted to `/`
+   * on win32, where `\` is the path separator — on POSIX it is a legal
+   * filename character and must be left alone.
+   */
+  readonly rawText: string;
+  /**
+   * `absolute`, re-expressed as text relative to the link's own directory.
+   * Meaningful only when {@link withinRoot} is false and {@link portableAbsolute}
+   * is false: it recovers the relative form a POSIX symlink would have used
+   * for the same target (this is what pnpm itself writes on Linux), so the
+   * hash and archive do not bake in the checkout's absolute location.
+   */
+  readonly relativeToLink: string;
+}
+
+const WINDOWS_ROOTED = /^(?:[A-Za-z]:\/|\/\/)/;
+
+/**
+ * Whether an on-disk link target is an absolute path that means the same
+ * thing on any platform it is read on — a POSIX-style path with a single
+ * leading `/`, as opposed to a Windows drive-letter or UNC path.
+ * @param rawText - the on-disk link text, in either separator style
+ */
+function isPortableAbsolute(rawText: string): boolean {
+  const normalized = rawText.split("\\").join("/");
+  return normalized.startsWith("/") && !WINDOWS_ROOTED.test(normalized);
+}
+
+/**
+ * Whether `absolute` resolves inside `root`.
+ * @param absolute - absolute path to test
+ * @param root - candidate containing directory
+ */
+function isWithin(absolute: string, root: string): boolean {
+  const relative = path.relative(root, absolute);
+  return (
+    relative !== ".." &&
+    !relative.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relative)
+  );
+}
+
+/**
+ * Resolve a symlink's target against the asset root.
+ * Covers both relative targets and the absolute targets Windows junctions
+ * always carry (pnpm and npm workspaces link packages with junctions, since
+ * those need no special privilege), and normalizes the `\`-separated text
+ * Node writes for relative targets on Windows.
+ * @param linkPath - absolute path of the symlink
+ * @param root - asset root the target is checked against
+ */
+function resolveLinkTarget(linkPath: string, root: string): LinkTarget {
+  const linkText = fs.readlinkSync(linkPath);
+  const absolute = path.resolve(path.dirname(linkPath), linkText);
+
+  let containingRoot = root;
+  let containedPath = absolute;
+  let withinRoot = isWithin(absolute, root);
+  if (!withinRoot) {
+    // A root reached through a Windows junction or `subst` drive makes an
+    // in-root junction's own target look like it escapes: that target is
+    // reported against the real directory, never the reparse point, so it
+    // no longer shares a textual prefix with the un-resolved root. Retried
+    // only now, against real paths, so a tree with no reparse points (the
+    // common case) never pays for the extra syscalls and is never affected
+    // by a dangling link or a root that no longer exists.
+    try {
+      const realAbsolute = fs.realpathSync.native(absolute);
+      const realRoot = fs.realpathSync.native(root);
+      if (isWithin(realAbsolute, realRoot)) {
+        containingRoot = realRoot;
+        containedPath = realAbsolute;
+        withinRoot = true;
+      }
+    } catch {
+      // The target is dangling, or root no longer exists; the first check's
+      // answer stands.
+    }
+  }
+
+  return {
+    withinRoot,
+    relativeToRoot: withinRoot
+      ? path.relative(containingRoot, containedPath).split(path.sep).join("/")
+      : "",
+    absolute,
+    portableAbsolute: isPortableAbsolute(linkText),
+    rawText:
+      process.platform === "win32" ? linkText.split("\\").join("/") : linkText,
+    relativeToLink: path
+      .relative(path.dirname(linkPath), absolute)
+      .split(path.sep)
+      .join("/"),
+  };
+}
+
+/**
+ * Re-express a root-relative canonical link target (see {@link resolveLinkTarget})
+ * as text relative to the link's own directory, so it resolves the same way
+ * regardless of where the tree containing it is rooted.
+ * @param entryRelPath - `/`-separated path of the link itself, relative to the root
+ * @param canonicalTarget - the link's target, `/`-separated and relative to the root
+ */
+function relativeLinkText(
+  entryRelPath: string,
+  canonicalTarget: string,
+): string {
+  const slash = entryRelPath.lastIndexOf("/");
+  const entryDir = slash === -1 ? "" : entryRelPath.slice(0, slash);
+  const text = path.posix.relative(entryDir, canonicalTarget || ".");
+  return text === "" ? "." : text;
 }
 
 /**
@@ -98,11 +238,75 @@ export function copySync(
       return;
     }
     if (stat.isSymbolicLink()) {
-      fs.symlinkSync(fs.readlinkSync(sourcePath), path.resolve(dest, p));
+      copySymlink(sourcePath, relPath, p);
     } else if (stat.isFile()) {
       fs.copyFileSync(sourcePath, path.resolve(dest, p));
     } else if (stat.isDirectory()) {
       walkSubfolder(p, relPath);
+    }
+  }
+  /**
+   * Recreate a symlink at the destination.
+   * A target inside the asset root is re-expressed relative to the link's
+   * own directory, so the copy does not depend on where `src`/`dest` live.
+   * A target outside the root cannot be re-expressed that way, so it is
+   * recreated verbatim, pointing straight at the real location — this keeps
+   * working for a link that is already absolute and self-contained (a
+   * pnpm/npm junction, a Lambda-layer-style `/opt` link), and lets a
+   * dereferencing bundler still follow a relative escape from a filtered
+   * input copy, which could not resolve correctly if re-expressed relative
+   * to the scratch directory instead.
+   * @param sourcePath - absolute path of the source symlink
+   * @param relPath - `/`-separated path of the link, relative to the copy root
+   * @param p - path of the link relative to src/dest
+   */
+  function copySymlink(sourcePath: string, relPath: string, p: string) {
+    const link = resolveLinkTarget(sourcePath, src);
+    const destPath = path.resolve(dest, p);
+    let targetIsDirectory = false;
+    try {
+      targetIsDirectory = fs.statSync(sourcePath).isDirectory();
+    } catch {
+      // dangling link: fall through, treated as a file-type link below
+    }
+
+    if (!link.withinRoot) {
+      createLink(link.absolute, link.absolute, destPath, targetIsDirectory);
+      return;
+    }
+    const linkText = relativeLinkText(relPath, link.relativeToRoot);
+    const junctionFallbackTarget = path.resolve(dest, link.relativeToRoot);
+    createLink(linkText, junctionFallbackTarget, destPath, targetIsDirectory);
+  }
+
+  /**
+   * Create a symlink, falling back to a junction if `symlinkSync` hits
+   * EPERM on win32 for a directory target — a plain symlink there needs
+   * Developer Mode or elevation, but junctions do not. A file target has no
+   * such fallback, since junctions only represent directories.
+   * @param linkText - text written as the link's target
+   * @param junctionFallbackTarget - absolute target used for the win32
+   * junction fallback, which needs an absolute path
+   * @param destPath - path the link is created at
+   * @param targetIsDirectory - whether the target is a directory
+   */
+  function createLink(
+    linkText: string,
+    junctionFallbackTarget: string,
+    destPath: string,
+    targetIsDirectory: boolean,
+  ) {
+    try {
+      fs.symlinkSync(linkText, destPath, targetIsDirectory ? "dir" : "file");
+    } catch (err: any) {
+      if (process.platform !== "win32" || err.code !== "EPERM") {
+        throw err;
+      }
+      if (targetIsDirectory) {
+        fs.symlinkSync(junctionFallbackTarget, destPath, "junction");
+      } else {
+        throw assetSymlinkNeedsDeveloperMode(destPath, err);
+      }
     }
   }
   /**
@@ -128,54 +332,76 @@ export function copySync(
  * @param shouldExclude - entries to omit, see {@link CopySyncOptions.shouldExclude}
  * @param descendIntoExcludedDirectories - keep walking excluded directories,
  * see {@link CopySyncOptions.descendIntoExcludedDirectories}
+ * @param rejectEscapingSymlinks - reject a symlink whose target resolves
+ * outside `src` and is not a portable absolute path, rather than shipping a
+ * link that dangles once extracted elsewhere. Gated behind
+ * `canonicalAssetHashes`: a portable absolute target (a Lambda-layer-style
+ * `/opt` link) ships verbatim either way, since it means the same thing
+ * wherever the archive is extracted — but a Windows drive-letter or UNC
+ * target (what Windows always reports for a pnpm/npm junction) is rejected
+ * just like a relative escape, since on a POSIX extractor it has no leading
+ * `/` and resolves as a dangling relative path instead.
  */
 export function archiveSync(
   src: string,
   dest: string,
   shouldExclude?: ExcludePredicate,
   descendIntoExcludedDirectories = false,
+  rejectEscapingSymlinks = false,
 ) {
-  try {
-    const files: Record<string, [Uint8Array, ZipOptions]> = {};
-    const walk = (dir: string, prefix: string) => {
-      // Sorted so entry order — and therefore archive bytes — cannot depend
-      // on filesystem enumeration order; matches the canonical hash walk.
-      for (const entry of fs.readdirSync(dir).sort()) {
-        const full = path.join(dir, entry);
-        const zipPath = prefix ? `${prefix}/${entry}` : entry;
-        const stat = fs.lstatSync(full);
-        const excluded = !!shouldExclude?.(zipPath, stat.isDirectory());
-        if (
-          excluded &&
-          !(stat.isDirectory() && descendIntoExcludedDirectories)
-        ) {
-          continue;
-        }
-        if (stat.isSymbolicLink()) {
-          // Store the link target as the entry data with S_IFLNK attrs so
-          // extractors recreate the symlink instead of a copy of the target.
-          // Never recursing through links also makes cycles unreachable.
-          files[zipPath] = [
-            strToU8(fs.readlinkSync(full)),
-            {
-              os: ZIP_OS_UNIX,
-              attrs: zipAttrs(S_IFLNK | (stat.mode & PERM_MASK)),
-              level: 0,
-            },
-          ];
-        } else if (stat.isDirectory()) {
-          walk(full, zipPath);
-        } else {
-          files[zipPath] = [
-            fs.readFileSync(full),
-            {
-              os: ZIP_OS_UNIX,
-              attrs: zipAttrs(S_IFREG | (stat.mode & PERM_MASK)),
-            },
-          ];
-        }
+  const files: Record<string, [Uint8Array, ZipOptions]> = {};
+  const walk = (dir: string, prefix: string) => {
+    // Sorted so entry order — and therefore archive bytes — cannot depend
+    // on filesystem enumeration order; matches the canonical hash walk.
+    for (const entry of fs.readdirSync(dir).sort()) {
+      const full = path.join(dir, entry);
+      const zipPath = prefix ? `${prefix}/${entry}` : entry;
+      const stat = fs.lstatSync(full);
+      const excluded = !!shouldExclude?.(zipPath, stat.isDirectory());
+      if (excluded && !(stat.isDirectory() && descendIntoExcludedDirectories)) {
+        continue;
       }
-    };
+      if (stat.isSymbolicLink()) {
+        // Store the link target as the entry data with S_IFLNK attrs so
+        // extractors recreate the symlink instead of a copy of the target.
+        // Never recursing through links also makes cycles unreachable.
+        const link = resolveLinkTarget(full, src);
+        let targetText: string;
+        if (link.withinRoot) {
+          // Re-expressed relative to its own entry (see
+          // resolveLinkTarget/relativeLinkText) so it resolves the same way
+          // after extraction, regardless of where the link originally
+          // pointed on disk.
+          targetText = relativeLinkText(zipPath, link.relativeToRoot);
+        } else if (link.portableAbsolute) {
+          targetText = link.rawText;
+        } else if (rejectEscapingSymlinks) {
+          throw assetSymlinkEscapesRoot(full, link.rawText, src);
+        } else {
+          targetText = link.rawText;
+        }
+        files[zipPath] = [
+          strToU8(targetText),
+          {
+            os: ZIP_OS_UNIX,
+            attrs: zipAttrs(S_IFLNK | (stat.mode & PERM_MASK)),
+            level: 0,
+          },
+        ];
+      } else if (stat.isDirectory()) {
+        walk(full, zipPath);
+      } else {
+        files[zipPath] = [
+          fs.readFileSync(full),
+          {
+            os: ZIP_OS_UNIX,
+            attrs: zipAttrs(S_IFREG | (stat.mode & PERM_MASK)),
+          },
+        ];
+      }
+    }
+  };
+  try {
     walk(src, "");
     fs.writeFileSync(
       dest,
@@ -320,7 +546,22 @@ function legacyHashPath(
  * - files:      `F <mode> <relPath>\0<size>\0` + content, where `<mode>` is
  *               the octal permission mask (`0o7777` bits) that archiveSync
  *               preserves in zip external attributes,
- * - symlinks:   `L <mode> <relPath>\0<target byte length>\0` + target,
+ * - symlinks:   `L <mode> <relPath>\0<target byte length>\0` + target, where
+ *               `<target>` is, for a target inside the asset root, the
+ *               target resolved to a `/`-separated path relative to the
+ *               root (see {@link resolveLinkTarget}) — so the hash does not
+ *               depend on checkout location, and is not sensitive to
+ *               `\`-separated Windows link text within one operating
+ *               system. For a target outside the root that is itself a
+ *               portable absolute path (a POSIX path such as `/opt/...`),
+ *               `<target>` is the raw on-disk link text, since that already
+ *               means the same thing anywhere. For any other target outside
+ *               the root — including a Windows drive-letter or UNC path,
+ *               which Windows always reports as absolute even for an in-root
+ *               junction — `<target>` is instead the target re-expressed
+ *               relative to the link's own directory, recovering the form a
+ *               POSIX symlink would have used and keeping the checkout's
+ *               absolute location out of the hash,
  * - directories (including empty ones, which copySync materializes):
  *               `D <relPath>\0`, with no mode — neither archiveSync nor
  *               copySync preserves directory permissions,
@@ -352,7 +593,12 @@ function canonicalHashPath(
     const stat = isRoot ? fs.statSync(p) : fs.lstatSync(p);
     const mode = (stat.mode & PERM_MASK).toString(8);
     if (stat.isSymbolicLink()) {
-      const target = fs.readlinkSync(p);
+      const link = resolveLinkTarget(p, src);
+      const target = link.withinRoot
+        ? link.relativeToRoot
+        : link.portableAbsolute
+          ? link.rawText
+          : link.relativeToLink;
       hash.update(`L ${mode} ${relPath}\0${Buffer.byteLength(target)}\0`);
       hash.update(target);
     } else if (stat.isFile()) {
@@ -485,4 +731,46 @@ export function rmSyncWithRetry(target: string): void {
     maxRetries: RETRY_ATTEMPTS - 1,
     retryDelay: RETRY_BACKOFF_MS,
   });
+}
+
+/**
+ * Repoint a win32 junction fallback (see `copySync`'s `createLink`) that was
+ * created under `oldRoot` and then moved, folder and all, to `newRoot`.
+ *
+ * A junction stores an absolute target. `copySync` points that target at the
+ * copy it is building (`oldRoot`) so the result is self-contained, but a
+ * caller that stages into a sibling folder and renames it into place (so a
+ * failed build never leaves a reusable folder) moves the junction without
+ * moving the text inside it. This walks `newRoot` and rewrites any junction
+ * whose target still points under `oldRoot` to the same relative location
+ * under `newRoot` instead.
+ * @param newRoot - the folder's path after the move
+ * @param oldRoot - the folder's path before the move, as baked into any
+ * junction `copySync` created inside it
+ */
+export function reanchorJunctions(newRoot: string, oldRoot: string): void {
+  if (process.platform !== "win32" || newRoot === oldRoot) {
+    return;
+  }
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      const stat = fs.lstatSync(full);
+      if (stat.isSymbolicLink()) {
+        const target = fs.readlinkSync(full);
+        if (path.isAbsolute(target) && isWithin(target, oldRoot)) {
+          const relativeToOldRoot = path.relative(oldRoot, target);
+          fs.unlinkSync(full);
+          fs.symlinkSync(
+            path.join(newRoot, relativeToOldRoot),
+            full,
+            "junction",
+          );
+        }
+      } else if (stat.isDirectory()) {
+        walk(full);
+      }
+    }
+  };
+  walk(newRoot);
 }

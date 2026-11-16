@@ -269,6 +269,14 @@ export class AssetStaging extends Construct implements IAsset {
   private readonly bundler?: IAssetBundler;
 
   /**
+   * Whether the `canonicalAssetHashes` feature flag is enabled. Besides
+   * selecting the hash scheme (see `resolveAssetHash`), it gates rejecting a
+   * symlink that escapes the asset root from a zip archive — see
+   * `PackOptions.rejectEscapingSymlinks`.
+   */
+  private readonly canonicalAssetHashes: boolean;
+
+  /**
    * Output of an eager `OUTPUT`-hash build, carried to `stage()` for reuse.
    *
    * Undefined on every other path, where the build is deferred or absent.
@@ -300,6 +308,9 @@ export class AssetStaging extends Construct implements IAsset {
     this.isDirectory = props.packaging.producesDirectory;
     this.hashCache = hashCacheFor(this.node.root);
     this.bundler = props.bundler;
+    this.canonicalAssetHashes = !!this.node.tryGetContext(
+      CANONICAL_ASSET_HASHES,
+    );
 
     if (props.exclude?.length && props.ignoreStrategy) {
       throw assetStagingConflictingExcludeOptions(this.displayName);
@@ -341,7 +352,7 @@ export class AssetStaging extends Construct implements IAsset {
       case AssetHashType.SOURCE:
       case AssetHashType.OUTPUT:
       case undefined: {
-        const canonical = !!this.node.tryGetContext(CANONICAL_ASSET_HASHES);
+        const canonical = this.canonicalAssetHashes;
         const archive = this.packaging.omitsDirectoryEntries;
         const salt = this.node.tryGetContext(ASSET_HASH_SALT_CONTEXT_KEY);
 
@@ -575,6 +586,7 @@ export class AssetStaging extends Construct implements IAsset {
         source: this.sourcePath,
         target: targetPath,
         ignoreStrategy: this.ignoreStrategy,
+        rejectEscapingSymlinks: this.canonicalAssetHashes,
       });
       return;
     }
@@ -627,6 +639,7 @@ export class AssetStaging extends Construct implements IAsset {
     this.packaging.pack({
       source: produced,
       target: targetPath,
+      rejectEscapingSymlinks: this.canonicalAssetHashes,
     });
   }
 }
