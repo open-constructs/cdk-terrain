@@ -32,6 +32,36 @@ export const canCreateSymlinks: boolean = (() => {
 })();
 
 /**
+ * Whether this process can create a win32 junction. Unlike a plain symlink,
+ * a junction needs no privilege on Windows — that is the whole reason
+ * pnpm/npm workspaces use one — so this exercises real junction creation and
+ * resolution on CI runners without Developer Mode, rather than only the
+ * `fs.symlinkSync` EPERM path mocked elsewhere.
+ *
+ * Always false off win32: `type` is ignored there, so a "junction" would
+ * just be the plain symlink `canCreateSymlinks` already covers.
+ */
+export const canCreateJunctions: boolean = (() => {
+  if (process.platform !== "win32") {
+    return false;
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-junction-probe-"));
+  try {
+    fs.mkdirSync(path.join(dir, "target"));
+    fs.symlinkSync(
+      path.join(dir, "target"),
+      path.join(dir, "link"),
+      "junction",
+    );
+    return true;
+  } catch {
+    return false;
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+})();
+
+/**
  * Whether the system `unzip` binary is available.
  *
  * The archive tests that use it do so deliberately: they validate archives
@@ -55,6 +85,9 @@ export const hasPosixPermissions: boolean = process.platform !== "win32";
 
 /** `test` that is skipped unless symlinks can be created. */
 export const testIfSymlinks = canCreateSymlinks ? test : test.skip;
+
+/** `test` that is skipped unless a win32 junction can be created. */
+export const testIfJunctions = canCreateJunctions ? test : test.skip;
 
 /** `test` that is skipped unless the system `unzip` is available. */
 export const testIfUnzip = hasUnzip ? test : test.skip;

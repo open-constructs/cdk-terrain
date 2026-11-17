@@ -360,7 +360,7 @@ export class ConstructsMaker {
   public async filterAlreadyGenerated(
     constraints: TerraformDependencyConstraint[],
   ) {
-    let constraintsFile = "{}";
+    let constraintsFile: string;
     try {
       constraintsFile = await fs.readFile(
         path.join(this.codeMakerOutdir, "constraints.json"),
@@ -665,7 +665,7 @@ export class ConstructsMaker {
         provider,
       );
 
-      let entries: string[] = [];
+      let entries: string[];
       try {
         entries = await fs.readdir(providerFolder);
       } catch (e) {

@@ -247,6 +247,7 @@ describe("completion metric of handlers without an own emitter", () => {
       });
       mockDependencyManager.upgradeProvider.mockResolvedValue({
         addedLocalProvider: true,
+        updatedEntry: "hashicorp/aws@~>5.0",
       });
       mockGetLib.mockResolvedValue(undefined);
     });

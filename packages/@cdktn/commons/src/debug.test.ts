@@ -90,6 +90,28 @@ describe("collectDebugInformation()", () => {
   });
 });
 
+describe("getPackageVersion() for typescript with pnpm", () => {
+  it("reads the version from the cwd's entry when pnpm lists the whole workspace", async () => {
+    await withTempDir("debug.test", async () => {
+      fs.writeFileSync("pnpm-lock.yaml", "");
+      jest.mocked(exec).mockResolvedValueOnce(
+        JSON.stringify([
+          { name: "root", path: path.dirname(process.cwd()) },
+          {
+            name: "app",
+            path: process.cwd(),
+            dependencies: { cdktn: { version: "0.25.0" } },
+          },
+        ]),
+      );
+
+      await expect(getPackageVersion("typescript", "cdktn")).resolves.toBe(
+        "0.25.0",
+      );
+    });
+  });
+});
+
 describe("getPackageVersion() for csharp", () => {
   const dotnetOutput = (topLevel: string[], transitive: string[]) =>
     [

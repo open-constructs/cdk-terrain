@@ -160,6 +160,17 @@ export interface PackOptions {
    * @default - nothing is excluded
    */
   readonly ignoreStrategy?: IIgnoreStrategy;
+
+  /**
+   * Reject a symlink whose target resolves outside `source` and is not
+   * itself absolute, rather than packaging a link that dangles once the
+   * artifact is extracted elsewhere. Only `ZipPackaging` acts on this — a
+   * verbatim directory copy stays on the same machine, so such a link can
+   * still be followed there even though it is not portable.
+   *
+   * @default false
+   */
+  readonly rejectEscapingSymlinks?: boolean;
 }
 
 /**
@@ -212,6 +223,7 @@ class ZipPackaging implements IAssetPackaging {
             options.ignoreStrategy!.ignores({ relativePath, isDirectory })
         : undefined,
       options.ignoreStrategy?.pruneExcludedDirectories === false,
+      options.rejectEscapingSymlinks,
     );
   }
 }
@@ -256,6 +268,19 @@ export interface BundleOptions {
    * the bundler reads exactly the file set the asset hash was taken over.
    */
   readonly source: string;
+
+  /**
+   * Absolute path to the asset's source as given, before exclusions.
+   *
+   * Differs from `source` only for a directory source with `exclude` or
+   * `ignoreStrategy` set. Read inputs from `source`; use this to resolve what
+   * lies around the source (node_modules, lockfiles, symlink targets). Files
+   * read here that `source` lacks are not in a `SOURCE` hash: cover them with
+   * `bundlerKey`/`extraHash`, or use `AssetHashType.OUTPUT`.
+   *
+   * @default - same as `source`
+   */
+  readonly originalSource?: string;
 
   /**
    * A scratch directory the bundler may write into, owned and created by the
@@ -443,6 +468,10 @@ export class BundlerKey {
     return part.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
   }
 
+  private static escapeEnv(part: string): string {
+    return part.replace(/\\/g, "\\\\").replace(/=/g, "\\=");
+  }
+
   private constructor(private readonly parts: string[]) {}
 
   /**
@@ -453,13 +482,21 @@ export class BundlerKey {
   }
 
   /**
-   * Append `key=value` parts for a record, sorted by key so the result does
-   * not depend on property order.
+   * Append `env=key=value` parts for a record, sorted by key so the result
+   * does not depend on property order.
+   *
+   * The `env=` prefix keeps these parts in their own namespace, so they
+   * cannot collide with an unrelated `key=value` part passed to {@link add}.
+   * The key and value are escaped so an `=` inside either cannot be mistaken
+   * for the key/value separator.
    */
   public withEnv(entries: Record<string, string>): BundlerKey {
     const kept = Object.keys(entries)
       .sort()
-      .map((k) => `${k}=${entries[k]}`);
+      .map(
+        (k) =>
+          `env=${BundlerKey.escapeEnv(k)}=${BundlerKey.escapeEnv(entries[k])}`,
+      );
     return new BundlerKey([...this.parts, ...kept]);
   }
 
@@ -539,6 +576,7 @@ export class ChainBundler implements IAssetBundler {
       fs.mkdirSync(legOutputDir);
       const result = this.bundlers[i].bundle({
         source: options.source,
+        originalSource: options.originalSource,
         outputDir: legOutputDir,
       });
       if (!result.isDeclined) {

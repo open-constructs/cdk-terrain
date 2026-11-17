@@ -5,6 +5,7 @@ import * as path from "path";
 import * as chalk from "chalk";
 import indentString from "indent-string";
 import {
+  BUNDLING_STACKS_CONTEXT_KEY,
   CONTEXT_ENV,
   Manifest,
   StackManifest,
@@ -87,6 +88,12 @@ export class SynthStack {
     noColor = false,
     synthOrigin?: SynthOrigin,
     hcl = false,
+    // Stack selector patterns (as given to --stack / a stack name argument)
+    // this synth will go on to run. Forwarded to the app as
+    // `BUNDLING_STACKS_CONTEXT_KEY` so deferred bundler builds can skip
+    // stacks that won't be applied. Undefined means "all stacks", matching
+    // today's behavior.
+    bundlingStacks?: string[],
   ): Promise<SynthesizedStack[]> {
     // start performance timer
     const startTime = performance.now();
@@ -141,6 +148,12 @@ might fail while synthesizing with an out of memory error.`);
           [CONTEXT_ENV]: JSON.stringify({
             ...currentContext,
             cdktfRelativeModules: relativeModules,
+            // A variadic `[stacks...]` positional with none given resolves to
+            // `[]`, not `undefined`; treat that the same as "no selector" so
+            // every stack still bundles instead of none.
+            ...(bundlingStacks?.length
+              ? { [BUNDLING_STACKS_CONTEXT_KEY]: bundlingStacks }
+              : {}),
           }),
           SYNTH_HCL_OUTPUT: hcl.toString(),
         },
@@ -195,7 +208,7 @@ Command output on stdout:
     } catch (e: any) {
       const errorMessage = `ERROR: synthesis failed, because app was expected to call 'synth()', but didn't. Thus "${outdir}/${Manifest.fileName}"  was not created: ${e}`;
       if (graceful) {
-        throw new Error(errorMessage);
+        throw new Error(errorMessage, { cause: e });
       }
       logger.error(errorMessage);
       await this.synthErrorTelemetry(e, synthOrigin);
@@ -261,7 +274,7 @@ Command output on stdout:
     for (const stackName in manifest.stacks) {
       const stack = manifest.stacks[stackName];
       const filePath = path.join(outdir, stack.synthesizedStackPath);
-      let jsonContent: SynthesizedStackMetadata = {};
+      let jsonContent: SynthesizedStackMetadata;
       if (filePath.endsWith(".tf.json")) {
         jsonContent = JSON.parse(fs.readFileSync(filePath).toString());
       } else {

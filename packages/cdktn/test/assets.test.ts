@@ -189,6 +189,20 @@ describe("BundlerKey", () => {
     const prod = BundlerKey.of("build").withEnv({ NODE_ENV: "production" });
     expect(dev.toString()).not.toBe(prod.toString());
   });
+
+  test("withEnv entries cannot collide with an add() part in the same shape", () => {
+    const viaAdd = BundlerKey.of("tool").add("helper=busybox").toString();
+    const viaEnv = BundlerKey.of("tool")
+      .withEnv({ helper: "busybox" })
+      .toString();
+    expect(viaAdd).not.toBe(viaEnv);
+  });
+
+  test("an '=' inside an env key or value cannot collide two different records", () => {
+    const a = BundlerKey.of("x").withEnv({ a: "b=c" }).toString();
+    const b = BundlerKey.of("x").withEnv({ "a=b": "c" }).toString();
+    expect(a).not.toBe(b);
+  });
 });
 
 describe("BundleResult", () => {

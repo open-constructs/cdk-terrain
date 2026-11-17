@@ -347,6 +347,63 @@ it("supports resource and attribute references in lifecycle.replaceTriggeredBy",
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
+it("renders lifecycle.replaceTriggeredBy references unquoted in HCL", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+  new TestProvider(stack, "provider", {});
+
+  const other = new TestResource(stack, "other", { name: "other" });
+  const counted = new TestResource(stack, "counted", {
+    name: "counted",
+    count: 2,
+  });
+
+  new TestResource(stack, "simple", {
+    name: "foo",
+    lifecycle: {
+      replaceTriggeredBy: [
+        other,
+        other.stringValue,
+        `${other.fqn}.string_map["key"]`,
+        `${counted.fqn}[0]`,
+      ],
+    },
+  });
+
+  expect(Testing.synthHcl(stack)).toMatchInlineSnapshot(`
+    "terraform {
+    required_providers {
+      test = {
+    version = "~> 2.0"
+    }
+    }
+
+
+    }
+
+    provider "test" {
+    }
+    resource "test_resource" "other" {
+    name = "other"
+    }
+    resource "test_resource" "counted" {
+    name = "counted"
+    count = 2
+    }
+    resource "test_resource" "simple" {
+    name = "foo"
+    lifecycle {
+      replace_triggered_by = [
+    test_resource.other,
+    test_resource.other.string_value,
+    test_resource.other.string_map["key"],
+    test_resource.counted[0],
+    ]
+    }
+    }"
+  `);
+});
+
 test("includes import block when import is present", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");

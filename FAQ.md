@@ -52,6 +52,8 @@ Yes. CDK Terrain is designed to remain compatible with both Terraform and OpenTo
 
 CDK Terrain synthesizes standard Terraform configuration, allowing users to choose their preferred execution engine. At present, users can run CDK Terrain–generated output with either Terraform or OpenTofu without special configuration or feature gaps compared to the last CDKTF release.
 
+To run OpenTofu, set `TERRAFORM_BINARY_NAME=tofu`. A project that targets only OpenTofu should also say so in [`targetVersions`](https://cdktn.io/docs/create-and-deploy/configuration-file#declare-target-runtimes) in `cdktf.json`, for example `"targetVersions": { "opentofu": ">=1.6.0" }`. CDK Terrain then looks up provider versions on the OpenTofu Registry, links generated documentation there, and validates the functions and features you use against OpenTofu releases only. Provider sources such as `hashicorp/aws` need no registry hostname: each CLI resolves them against its own registry.
+
 One of the long-term goals of the CDK Terrain fork is to remove historical constraints that limited evolution in the original project, including slow adoption of newer Terraform features. Decisions about which features, versions, or execution engines to support will be guided by community needs, maintainer capacity, and ecosystem stability rather than fixed assumptions.
 
 The Open Construct Foundation intends to remain pragmatic and transparent in these decisions, with the goal of supporting both ecosystems where it is feasible and sustainable to do so.

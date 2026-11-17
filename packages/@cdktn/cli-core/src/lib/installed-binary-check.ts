@@ -3,7 +3,7 @@
 import * as semver from "semver";
 import {
   DEFAULT_TARGET_VERSIONS,
-  parseTerraformCliVersion,
+  TerraformCliProbe,
   TerraformTargetVersions,
 } from "@cdktn/commons";
 
@@ -14,19 +14,25 @@ import {
  * about to execute the binary anyway.
  *
  * Declared targets state the project's supported range; this check is the
- * explicit step that proves the local binary actually falls inside it.
+ * explicit step that proves the local binary actually falls inside it, so a
+ * binary it cannot identify fails too.
  */
 export function checkInstalledBinaryAgainstTargets(
-  versionOutput: string,
+  cli: TerraformCliProbe,
   declaredTargets: TerraformTargetVersions | undefined,
   binaryName: string,
 ): string[] {
   const targets = declaredTargets ?? DEFAULT_TARGET_VERSIONS;
-  const cli = parseTerraformCliVersion(versionOutput);
+
+  if (cli.name === "missing") {
+    return [
+      `The binary "${binaryName}" could not be found, so it could not be verified against the declared targetVersions`,
+    ];
+  }
 
   if (cli.name === "unknown" || !cli.version) {
     return [
-      `Could not determine whether ${binaryName} is Terraform or OpenTofu from its version output, unable to verify it against the declared targetVersions`,
+      `Could not determine whether ${binaryName} is Terraform or OpenTofu from its version output, so it could not be verified against the declared targetVersions`,
     ];
   }
 

@@ -71,6 +71,13 @@ describe("docsUrl", () => {
       ),
     ).toBe("https://search.opentofu.org/provider/hashicorp/random/v3.7.2/docs");
   });
+
+  // Checked against the API the page reads: DataDog/datadog 404s.
+  it("lowercases OpenTofu provider paths", () => {
+    expect(
+      OPENTOFU_REGISTRY.docsUrl("DataDog", "Datadog", "3.4.0", "provider"),
+    ).toBe("https://search.opentofu.org/provider/datadog/datadog/v3.4.0/docs");
+  });
 });
 
 describe("moduleDocsUrl", () => {
@@ -113,6 +120,50 @@ describe("moduleDocsUrl", () => {
   it("does not v-prefix the OpenTofu latest alias", () => {
     expect(OPENTOFU_REGISTRY.moduleDocsUrl(source)).toBe(
       "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/latest",
+    );
+  });
+
+  // Checked against the API the page reads: DataDog/... 404s.
+  it("lowercases OpenTofu module paths", () => {
+    expect(
+      OPENTOFU_REGISTRY.moduleDocsUrl(
+        "DataDog/log-lambda-forwarder-datadog/aws",
+        "1.1.0",
+      ),
+    ).toBe(
+      "https://search.opentofu.org/module/datadog/log-lambda-forwarder-datadog/aws/v1.1.0",
+    );
+  });
+});
+
+describe("moduleDocsUrl with a version that is not exact", () => {
+  const source = "terraform-aws-modules/eks/aws";
+
+  it.each(["~> 19.0", ">= 19.0, < 20.0", "> 19"])(
+    "links %s to the latest page",
+    (version) => {
+      expect(TERRAFORM_REGISTRY.moduleDocsUrl(source, version)).toBe(
+        "https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest",
+      );
+      expect(OPENTOFU_REGISTRY.moduleDocsUrl(source, version)).toBe(
+        "https://search.opentofu.org/module/terraform-aws-modules/eks/aws/latest",
+      );
+    },
+  );
+
+  it.each([
+    ["=19.21.0", "19.21.0"],
+    ["= 19.21.0", "19.21.0"],
+    ["19.21.0-beta.1", "19.21.0-beta.1"],
+    // Terraform pads a partial version: "19.0" allows only 19.0.0.
+    ["19.0", "19.0.0"],
+    ["=19", "19.0.0"],
+  ])("keeps the exact version in %s", (version, expected) => {
+    expect(TERRAFORM_REGISTRY.moduleDocsUrl(source, version)).toBe(
+      `https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/${expected}`,
+    );
+    expect(OPENTOFU_REGISTRY.moduleDocsUrl(source, version)).toBe(
+      `https://search.opentofu.org/module/terraform-aws-modules/eks/aws/v${expected}`,
     );
   });
 });

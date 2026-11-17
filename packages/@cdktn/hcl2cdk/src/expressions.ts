@@ -147,7 +147,7 @@ function getTfResourcePathFromNode(node: tex.ScopeTraversalExpression) {
   const segments = node.meta.traversal;
   let resource = segments[0].segment;
   let result = [];
-  let attributes = [];
+  let attributes;
 
   if (segments[0].segment === "data") {
     result.push(segments[0].segment);
@@ -287,7 +287,6 @@ function convertScopeTraversalExpressionToTs(
     tex.isIndexTraversalPart(seg),
   );
   let minAccessorIndex = numericAccessorIndex;
-  let mapAccessorIndex = -1;
   if (numericAccessorIndex === -1) {
     // only do this if we have to, if we already have a
     // numeric accessor, we don't have to do this additional work
@@ -310,8 +309,7 @@ function convertScopeTraversalExpressionToTs(
     }
 
     if (hasMapAccessor) {
-      mapAccessorIndex = originalParts - parts.length - 1;
-      minAccessorIndex = mapAccessorIndex;
+      minAccessorIndex = originalParts - parts.length - 1;
     }
   }
 

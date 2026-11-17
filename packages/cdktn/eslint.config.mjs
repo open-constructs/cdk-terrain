@@ -45,4 +45,24 @@ export default [
       ],
     },
   },
+  {
+    files: ["**/*.test.ts"],
+
+    rules: {
+      // Treat the testIf* aliases as test blocks.
+      "jest/no-standalone-expect": [
+        "error",
+        {
+          additionalTestBlockFunctions: [
+            "testIfSymlinks",
+            "testIfUnzip",
+            "testIfSymlinksAndUnzip",
+            "testIfPosixPermissions",
+            "testIfPosixPermissionsAndUnzip",
+            "testIfJunctions",
+          ],
+        },
+      ],
+    },
+  },
 ];

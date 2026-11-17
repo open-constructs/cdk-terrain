@@ -61,6 +61,87 @@ describe("SynthStack.telemetryPayload", () => {
   });
 });
 
+describe("SynthStack.synth forwards bundlingStacks as CDKTF_CONTEXT_JSON (#617)", () => {
+  let outdir: string;
+
+  beforeEach(() => {
+    outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktn-synth-stack-"));
+  });
+
+  afterEach(() => {
+    fs.removeSync(outdir);
+  });
+
+  // The app command below just records the context it was handed and writes
+  // an empty-but-valid manifest so SynthStack.synth can read it back. The
+  // script is written to a file rather than passed via `-e` to avoid a mess
+  // of nested shell/JS quoting around the temp-dir paths.
+  const appThatRecordsContext = (contextPath: string) => {
+    const scriptPath = path.join(outdir, "record-context.js");
+    fs.writeFileSync(
+      scriptPath,
+      `
+      const fs = require("fs");
+      const path = require("path");
+      fs.writeFileSync(${JSON.stringify(contextPath)}, process.env.CDKTF_CONTEXT_JSON);
+      fs.writeFileSync(
+        path.join(${JSON.stringify(outdir)}, "manifest.json"),
+        JSON.stringify({ version: "0.0", stacks: {} }),
+      );
+      `,
+    );
+    return `node ${JSON.stringify(scriptPath)}`;
+  };
+
+  it("omits the context key when bundlingStacks is undefined (no stack selector given)", async () => {
+    const contextPath = path.join(outdir, "context.json");
+    await SynthStack.synth(
+      new AbortController().signal,
+      appThatRecordsContext(contextPath),
+      outdir,
+    );
+
+    const context = JSON.parse(fs.readFileSync(contextPath, "utf-8"));
+    expect(context).not.toHaveProperty("cdktn:bundlingStacks");
+  });
+
+  it("omits the context key when bundlingStacks is an empty array (variadic positional given no stacks)", async () => {
+    const contextPath = path.join(outdir, "context.json");
+    await SynthStack.synth(
+      new AbortController().signal,
+      appThatRecordsContext(contextPath),
+      outdir,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [],
+    );
+
+    const context = JSON.parse(fs.readFileSync(contextPath, "utf-8"));
+    expect(context).not.toHaveProperty("cdktn:bundlingStacks");
+  });
+
+  it("forwards a non-empty bundlingStacks selector as the context key", async () => {
+    const contextPath = path.join(outdir, "context.json");
+    await SynthStack.synth(
+      new AbortController().signal,
+      appThatRecordsContext(contextPath),
+      outdir,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ["stack-a"],
+    );
+
+    const context = JSON.parse(fs.readFileSync(contextPath, "utf-8"));
+    expect(context["cdktn:bundlingStacks"]).toEqual(["stack-a"]);
+  });
+});
+
 describe("SynthStack.synth failure paths count the run before exiting", () => {
   const commons = jest.requireMock("@cdktn/commons") as {
     sendTelemetry: jest.Mock;

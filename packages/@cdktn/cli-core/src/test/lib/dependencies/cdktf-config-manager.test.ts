@@ -16,7 +16,7 @@ describe("CdktfConfigManager", () => {
   let originalCwd: string;
 
   const writeConfig = (
-    providers: string[],
+    providers: unknown[],
     targetVersions?: TerraformTargetVersions,
   ) =>
     fs.writeFileSync(
@@ -29,7 +29,7 @@ describe("CdktfConfigManager", () => {
       }),
     );
 
-  const readProviders = (): string[] =>
+  const readProviders = (): unknown[] =>
     JSON.parse(fs.readFileSync(path.join(projectDir, "cdktf.json"), "utf8"))
       .terraformProviders;
 
@@ -86,6 +86,44 @@ describe("CdktfConfigManager", () => {
         expect(readProviders()).toEqual([
           "registry.opentofu.org/hashicorp/random@=3.6.1",
         ]);
+      },
+    );
+
+    const objectEntry = {
+      name: "random",
+      source: "registry.opentofu.org/hashicorp/random",
+      version: "=3.6.0",
+    };
+
+    it.each([
+      [
+        "an object entry to a version",
+        objectEntry,
+        "=3.6.1",
+        { ...objectEntry, version: "=3.6.1" },
+      ],
+      [
+        "an object entry without a version",
+        objectEntry,
+        undefined,
+        { name: "random", source: "registry.opentofu.org/hashicorp/random" },
+      ],
+      [
+        "a string entry without a version",
+        "registry.opentofu.org/hashicorp/random@=3.6.0",
+        undefined,
+        "registry.opentofu.org/hashicorp/random",
+      ],
+    ])(
+      "upgrades %s in its own form",
+      async (_name, entry, version, expected) => {
+        writeConfig([entry], opentofu);
+
+        await new CdktfConfigManager().updateProvider(
+          new ProviderConstraint("random", version, OPENTOFU_REGISTRY),
+        );
+
+        expect(readProviders()).toEqual([expected]);
       },
     );
 

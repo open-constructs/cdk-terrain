@@ -15,4 +15,15 @@ export default [
     ],
   },
   ...rootConfig,
+  {
+    files: ["**/*.test.ts"],
+
+    rules: {
+      // Treat xstate's waitFor as an assertion.
+      "jest/expect-expect": [
+        "warn",
+        { assertFunctionNames: ["expect", "waitFor"] },
+      ],
+    },
+  },
 ];

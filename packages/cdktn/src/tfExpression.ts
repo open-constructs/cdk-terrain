@@ -488,7 +488,7 @@ export class OperatorExpression extends TFExpression {
         ? this.resolveArg(context, this.right)
         : undefined;
 
-    let expr = "";
+    let expr: string;
     switch (this.operator) {
       case "!": {
         expr = `!${left}`; // no braces needed as ! has highest precedence

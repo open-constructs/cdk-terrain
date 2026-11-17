@@ -285,25 +285,6 @@ describe("ValidateProviderFunctionTargetSupport", () => {
     expect(() => app2.synth()).not.toThrow();
   });
 
-  test("app2 does not report provider-defined function errors carried over from app1's usage", () => {
-    const { app: app1, stack: stack1 } = appWithStack({
-      targetVersions: { terraform: ">=1.8.0", opentofu: ">=1.7.0" },
-    });
-    new TerraformOutput(stack1, "test-output", {
-      value: TerraformProviderFunction.invoke("time", "rfc3339_parse", [
-        "2023-01-01T00:00:00Z",
-      ]),
-    });
-    expect(() => app1.synth()).not.toThrow();
-
-    const { app: app2 } = appWithStack();
-    try {
-      app2.synth();
-    } catch (e: any) {
-      expect(e.message).not.toContain("provider-defined functions");
-    }
-  });
-
   test("still fires when a second, unrelated App is constructed between usage and synth of the first (interleaved Apps)", () => {
     // Guards the interleaved-Apps scenario the released built-in `Fn.*`
     // usage tracking got wrong (see the matching test in

@@ -420,7 +420,7 @@ describe("output", () => {
     `);
   });
 
-  test("deeply nested map ", async () => {
+  test("deeply nested map", async () => {
     const app = Testing.app();
     const stack = new TerraformStack(app, "test");
 
@@ -1283,4 +1283,84 @@ test("import block", () => {
     id = "foo"
     }"
   `);
+});
+
+describe("backslashes in string literals", () => {
+  function synthLocal(value: string): string {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+    new TerraformLocal(stack, "value", value);
+    return Testing.synthHcl(stack);
+  }
+
+  test("a Windows path keeps its backslashes", () => {
+    expect(synthLocal("C:\\Users\\me\\project")).toContain(
+      'value = "C:\\\\Users\\\\me\\\\project"',
+    );
+  });
+
+  test("a trailing backslash does not escape the closing quote", () => {
+    expect(synthLocal("C:\\dir\\")).toContain('value = "C:\\\\dir\\\\"');
+  });
+
+  test("a quote after a backslash is escaped as well", () => {
+    expect(synthLocal('a\\"b')).toContain('value = "a\\\\\\"b"');
+  });
+
+  test("backslashes around an interpolation are escaped and the interpolation is not", () => {
+    expect(synthLocal("C:\\dir\\${var.name}\\x")).toContain(
+      'value = "C:\\\\dir\\\\${var.name}\\\\x"',
+    );
+  });
+
+  test("a string inside an interpolation is left as written", () => {
+    expect(synthLocal('${join("\\\\", var.parts)}')).toContain(
+      'value = "${join("\\\\", var.parts)}"',
+    );
+  });
+
+  test("a brace in a quoted string inside an interpolation does not end it", () => {
+    expect(synthLocal('x\\${lookup({a = "}"}, "a")}\\y')).toContain(
+      'value = "x\\\\${lookup({a = "}"}, "a")}\\\\y"',
+    );
+  });
+
+  test("a for directive with quoted strings is left as written", () => {
+    expect(synthLocal('%{ for s in ["a","b"] }${s}%{ endfor }')).toContain(
+      'value = "%{ for s in ["a","b"] }${s}%{ endfor }"',
+    );
+  });
+
+  test("an if directive with a quoted string is left as written", () => {
+    expect(synthLocal('%{ if var.env == "prod" }${var.x}%{ endif }')).toContain(
+      'value = "%{ if var.env == "prod" }${var.x}%{ endif }"',
+    );
+  });
+
+  test("a directive without an interpolation is left as written", () => {
+    expect(synthLocal('%{ if var.env == "prod" }yes%{ endif }')).toContain(
+      'value = "%{ if var.env == "prod" }yes%{ endif }"',
+    );
+  });
+
+  test("text around a directive is escaped and the directive is not", () => {
+    expect(
+      synthLocal('C:\\dir\\%{ if var.a == "x" }\\y%{ endif }\\z'),
+    ).toContain(
+      'value = "C:\\\\dir\\\\%{ if var.a == "x" }\\\\y%{ endif }\\\\z"',
+    );
+  });
+
+  test("an escaped directive (%%{) is text and its quotes are escaped", () => {
+    expect(synthLocal('%%{ if "x" }')).toContain('value = "%%{ if \\"x\\" }"');
+  });
+
+  test("a backend path on Windows is a valid HCL string", () => {
+    const app = Testing.app();
+    const stack = new TerraformStack(app, "test");
+    new b.LocalBackend(stack, { path: "C:\\Users\\me\\terraform.tfstate" });
+    expect(Testing.synthHcl(stack)).toContain(
+      'path = "C:\\\\Users\\\\me\\\\terraform.tfstate"',
+    );
+  });
 });

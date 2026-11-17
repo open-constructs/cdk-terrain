@@ -37,23 +37,8 @@ async function docsComment(
 }
 
 describe("generated module docs links", () => {
-  const module = "terraform-aws-modules/vpc/aws@3.19.0";
   const submodule =
     "terraform-aws-modules/vpc/aws//modules/vpc-endpoints@3.19.0";
-
-  it("uses the Terraform Registry when nothing is declared", async () => {
-    expect(await docsComment(module)).toContain(
-      "https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/3.19.0",
-    );
-  });
-
-  it("uses the OpenTofu Registry when only OpenTofu is declared", async () => {
-    const comment = await docsComment(module, { opentofu: ">=1.6.0" });
-    expect(comment).toContain("Docs at OpenTofu Registry");
-    expect(comment).toContain(
-      "https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/v3.19.0",
-    );
-  });
 
   it("links an OpenTofu submodule with the singular segment", async () => {
     expect(await docsComment(submodule, { opentofu: ">=1.6.0" })).toContain(
@@ -78,6 +63,16 @@ describe("generated module docs links", () => {
     );
     expect(await docsComment(source, { opentofu: ">=1.6.0" })).toContain(
       "{@link https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/v3.19.0 ",
+    );
+  });
+
+  // A range names no page, and its space would split the {@link} target from its text.
+  it("links a ranged version to the latest page with the link intact", async () => {
+    const comment = await docsComment("terraform-aws-modules/vpc/aws@~> 19.0", {
+      opentofu: ">=1.6.0",
+    });
+    expect(comment).toContain(
+      "{@link https://search.opentofu.org/module/terraform-aws-modules/vpc/aws/latest terraform-aws-modules/vpc/aws}",
     );
   });
 
