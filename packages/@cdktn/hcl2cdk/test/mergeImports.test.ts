@@ -41,7 +41,7 @@ describe("mergeImports", () => {
   it("declares every imported name once in the converted file", () => {
     const output = prettier.format(
       [mergeImports(generated, template), template].join("\n"),
-      { parser: "babel-ts" },
+      { parser: "babel" },
     );
 
     const importedNames = [
