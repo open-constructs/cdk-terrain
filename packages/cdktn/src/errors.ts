@@ -687,12 +687,17 @@ export const unknownProviderFeature = (feature: string) =>
 
 export const multipleOpenTofuEncryptions = (stackPath: string) =>
   new Error(
-    `The stack at '${stackPath}' already has an OpenTofuEncryption. OpenTofu allows one encryption block per configuration, so add every key provider and method to the existing one.`,
+    `The stack at '${stackPath}' already has an OpenTofuEncryption. OpenTofu allows one encryption block per configuration, so configure state, plan and remote state on the existing one.`,
   );
 
 export const openTofuEncryptionDuplicate = (address: string) =>
   new Error(
-    `OpenTofuEncryption already declares ${address}. Give each key provider and method of the same type its own name.`,
+    `OpenTofuEncryption uses two different objects named ${address}. Reuse one object, or give each key provider and method of the same type its own name.`,
+  );
+
+export const invalidOpenTofuRemoteStateSource = () =>
+  new Error(
+    `An OpenTofuEncryption remote state source needs exactly one of fromStack and dataSource.`,
   );
 
 export const invalidOpenTofuEncryptionIdentifier = (value: string) =>
