@@ -213,6 +213,60 @@ test("decrypts remote state per source, labelled with the data source's name", (
   });
 });
 
+test.each<[string, OpenTofuKeyProvider | undefined, string | undefined]>([
+  [
+    "fails synth when the default doesn't match the key provider the other stack encrypts with",
+    undefined,
+    "The stack at 'test' decrypts the state of the stack at 'network' with key_provider.pbkdf2.main, but that stack encrypts its state with key_provider.pbkdf2.network. OpenTofu finds the key by the key provider's type and name, so use a key provider with the same type and name, or the same encryptedMetadataAlias, in both stacks.",
+  ],
+  [
+    "fails synth when a source doesn't match the key provider the other stack encrypts with",
+    OpenTofuKeyProvider.pbkdf2("other", { passphrase: "n".repeat(16) }),
+    "The stack at 'test' decrypts the state of the stack at 'network' with key_provider.pbkdf2.other, but that stack encrypts its state with key_provider.pbkdf2.network.",
+  ],
+  [
+    "synthesizes when a source's key provider has the other stack's type and name",
+    OpenTofuKeyProvider.pbkdf2("network", { passphrase: "n".repeat(16) }),
+    undefined,
+  ],
+  [
+    "synthesizes when a source's key provider has the other stack's metadata key as its alias",
+    OpenTofuKeyProvider.pbkdf2("renamed", {
+      passphrase: "n".repeat(16),
+      encryptedMetadataAlias: "key_provider.pbkdf2.network",
+    }),
+    undefined,
+  ],
+])("%s", (_, sourceKeys, error) => {
+  const app = Testing.app({
+    context: { targetVersions: { opentofu: ">=1.9.0" } },
+  });
+  const network = new TerraformStack(app, "network");
+  const id = new TerraformVariable(network, "id", { type: "string" });
+  OpenTofuEncryption.withKeys(network, "encryption", {
+    keys: OpenTofuKeyProvider.pbkdf2("network", {
+      passphrase: "n".repeat(16),
+    }),
+  });
+  const consumer = new TerraformStack(app, "test");
+  new TerraformOutput(consumer, "network_id", { value: id.stringValue });
+  const encryption = OpenTofuEncryption.withKeys(consumer, "encryption", {
+    keys: passphraseKey(consumer),
+  });
+  if (sourceKeys) {
+    encryption.addRemoteStateSource({
+      fromStack: network,
+      method: OpenTofuEncryptionMethod.aesGcm("network", { keys: sourceKeys }),
+    });
+  }
+
+  if (error) {
+    expect(() => app.synth()).toThrow(error);
+  } else {
+    expect(() => app.synth()).not.toThrow();
+  }
+});
+
 test.each([false, true])(
   "withKeys encrypts state and plan and decrypts remote state, migrating from unencrypted: %s",
   (migrateFromUnencrypted) => {

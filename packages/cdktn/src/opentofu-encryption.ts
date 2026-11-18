@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { Construct } from "constructs";
 import { resolve } from "./_tokens";
-import { Tokenization } from "./tokens/token";
+import { Token, Tokenization } from "./tokens/token";
 import { Annotations } from "./annotations";
 import {
   invalidOpenTofuEncryptionIdentifier,
@@ -607,7 +607,54 @@ export class OpenTofuEncryption extends Construct {
         );
       }
     }
-    return result;
+    return [...result, ...this.validateRemoteStateKeys()];
+  }
+
+  // OpenTofu finds a key by the metadata key its state was written with, so the reader's key providers must match
+  private validateRemoteStateKeys(): string[] {
+    const errors: string[] = [];
+    const check = (
+      producer: TerraformStack,
+      target: OpenTofuEncryptionRemoteStateTarget,
+    ) => {
+      const written = metadataKeys(
+        producer.node.findAll().find(OpenTofuEncryption.isOpenTofuEncryption)
+          ?.state?.method,
+      );
+      if (!written?.length) return;
+      const readers = [target.method, target.fallback]
+        .filter((method) => method !== undefined)
+        .map(metadataKeys);
+      if (readers.some((keys) => keys === undefined)) return;
+      const read = readers.filter((keys) => keys!.length > 0) as string[][];
+      if (read.some((keys) => keys.every((key) => written.includes(key)))) {
+        return;
+      }
+      errors.push(
+        `The stack at '${this.stack.node.path}' decrypts the state of the stack at '${producer.node.path}' with ${read.flat().join(", ") || "no key provider"}, but that stack encrypts its state with ${written.join(", ")}. OpenTofu finds the key by the key provider's type and name, so use a key provider with the same type and name, or the same encryptedMetadataAlias, in both stacks.`,
+      );
+    };
+
+    const covered = new Set<TerraformStack>();
+    for (const source of this.remoteStateSources) {
+      if (source.fromStack) {
+        covered.add(source.fromStack);
+        check(source.fromStack, source);
+      }
+    }
+    const remoteState = this.remoteState;
+    if (remoteState) {
+      this.node.root.node
+        .findAll()
+        .filter(TerraformStack.isStack)
+        .filter(
+          (producer) =>
+            !covered.has(producer) &&
+            this.stack._incomingCrossStackDataSource(producer),
+        )
+        .forEach((producer) => check(producer, remoteState));
+    }
+    return errors;
   }
 
   private targets(): OpenTofuEncryptionRemoteStateTarget[] {
@@ -707,6 +754,27 @@ export class OpenTofuEncryption extends Construct {
       blocks: [...declarations, ...targets],
     };
   }
+}
+
+/**
+ * The keys under which a method's key providers store their metadata in the state.
+ * @param method - the method
+ * @returns the keys, or undefined if they can't be known, e.g. for something declared in `TF_ENCRYPTION`
+ */
+function metadataKeys(method?: OpenTofuEncryptionMethod): string[] | undefined {
+  if (!method?._config) return undefined;
+  const keys: string[] = [];
+  const pending = keyProvidersIn(method._config);
+  while (pending.length > 0) {
+    const keyProvider = pending.pop()!;
+    const alias = keyProvider._config?.encrypted_metadata_alias;
+    if (!keyProvider._config || Token.isUnresolved(alias)) return undefined;
+    const key = alias ?? `key_provider.${keyProvider.type}.${keyProvider.name}`;
+    if (keys.includes(key)) continue;
+    keys.push(key);
+    pending.push(...keyProvidersIn(keyProvider._config));
+  }
+  return keys;
 }
 
 /**
