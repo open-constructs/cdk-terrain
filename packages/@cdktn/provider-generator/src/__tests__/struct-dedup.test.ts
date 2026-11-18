@@ -111,7 +111,41 @@ const lookalikes = schema({
   },
 });
 
+// Enough structs that the resource's structs are sharded into their own files
+// (and imported back) even after same_a/same_b merge.
+const wideBlocks = new S();
+for (let i = 0; i < 100; i++) {
+  wideBlocks.listBlock({
+    name: `b${i}`,
+    block: leaf(`v${i}`, "string"),
+    minItems: 0,
+    maxItems: 9,
+  });
+}
+const wide = schema({
+  name: "dedup",
+  provider: new S().build(),
+  dataSources: {},
+  resources: {
+    wide: wideBlocks
+      .listBlock({
+        name: "same_a",
+        block: leaf("v", "string"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
+        name: "same_b",
+        block: leaf("v", "string"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .build(),
+  },
+});
+
 interface Exports {
+  files: Map<string, string>;
   interfaces: Map<string, string>;
   classes: Set<string>;
   functions: Set<string>;
@@ -127,6 +161,7 @@ async function generate(
   else process.env.CDKTN_STRUCT_DEDUP_MODE = mode;
   try {
     const exports: Exports = {
+      files: new Map(),
       interfaces: new Map(),
       classes: new Set(),
       functions: new Set(),
@@ -140,6 +175,7 @@ async function generate(
       })) {
         if (!file.endsWith(".ts")) continue;
         const source = fs.readFileSync(path.join(root, file), "utf8");
+        exports.files.set(file.split(path.sep).join("/"), source);
         for (const m of source.matchAll(
           /\nexport interface (\w+)[^{]*\{.*?\n\}/gs,
         )) {
@@ -219,6 +255,18 @@ describe("CDKTN_STRUCT_DEDUP_MODE", () => {
         [],
       );
     });
+  });
+
+  it("full imports a struct shared by top-level attributes once", async () => {
+    const { files } = await generate("full", wide);
+    expect(files.has("wide/index-structs/index.ts")).toBe(true);
+    const names = files
+      .get("wide/index.ts")!
+      .match(/import \{([^}]*)\} from '\.\/index-structs/)![1]
+      .split(",")
+      .map((n) => n.trim());
+    expect(names).toContain("WideSameA");
+    expect(names.filter((n, i) => names.indexOf(n) !== i)).toEqual([]);
   });
 
   it("rejects an unknown mode", async () => {
