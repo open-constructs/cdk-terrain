@@ -6,7 +6,9 @@ import * as path from "node:path";
 import {
   App,
   AnnotationMetadataEntryType,
+  DataResource,
   DataTerraformRemoteStateLocal,
+  Fn,
   LocalBackend,
   Manifest,
   OpenTofuEncryption,
@@ -150,6 +152,31 @@ test("writes the encryption block to settings.tofu with HCL output, with config 
   }
 }
 `);
+});
+
+test("writes expressions in settings.tofu unescaped and escapes only literal text", () => {
+  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const app = new App({
+    outdir,
+    hclOutput: true,
+    context: { targetVersions: { opentofu: ">=1.8.0" } },
+  });
+  const stack = new TerraformStack(app, "test");
+  const keys = (name: string, passphrase: string) =>
+    OpenTofuEncryptionMethod.aesGcm(name, {
+      keys: OpenTofuKeyProvider.pbkdf2(name, { passphrase }),
+    });
+  new OpenTofuEncryption(stack, "encryption", {
+    state: { method: keys("file", Fn.trimspace(Fn.file("pass.txt"))) },
+    plan: { method: keys("literal", 'a "quoted" \\ passphrase') },
+  });
+
+  app.synth();
+
+  // escaping the quotes inside ${...} makes OpenTofu fail with "Invalid character"
+  const settings = readStackFile(outdir, "settings.tofu");
+  expect(settings).toContain('passphrase = "${trimspace(file("pass.txt"))}"');
+  expect(settings).toContain('passphrase = "a \\"quoted\\" \\\\ passphrase"');
 });
 
 test("decrypts remote state per source, labelled with the data source's name", () => {
@@ -354,6 +381,32 @@ test.each<
       }),
   ],
   [
+    "a key provider uses a variable of another stack, which OpenTofu can't see",
+    { opentofu: ">=1.8.0" },
+    "key_provider.pbkdf2.main uses var.other_passphrase, which the stack at 'test' doesn't declare.",
+    (stack) => {
+      const other = new TerraformStack(stack.node.scope!, "other");
+      OpenTofuEncryption.withKeys(stack, "encryption", {
+        keys: OpenTofuKeyProvider.pbkdf2("main", {
+          passphrase: new TerraformVariable(other, "other_passphrase", {
+            type: "string",
+          }).stringValue,
+        }),
+      });
+    },
+  ],
+  [
+    "a key provider uses a resource, which OpenTofu can't evaluate in the encryption block",
+    { opentofu: ">=1.8.0" },
+    "key_provider.pbkdf2.main uses terraform_data.passphrase, but OpenTofu evaluates the encryption block before planning, so it can only use variables, locals and functions.",
+    (stack) =>
+      OpenTofuEncryption.withKeys(stack, "encryption", {
+        keys: OpenTofuKeyProvider.pbkdf2("main", {
+          passphrase: new DataResource(stack, "passphrase", { input: "x" }).id,
+        }),
+      }),
+  ],
+  [
     "an enforced target uses the unencrypted method, which OpenTofu rejects",
     { opentofu: ">=1.8.0" },
     "The state encryption is enforced, but uses method.unencrypted.migrate, which OpenTofu rejects when enforced.",
@@ -417,6 +470,20 @@ test.each<[string, (stack: TerraformStack) => void, string]>([
     "a method name that isn't an identifier, since references are written unquoted",
     () => OpenTofuEncryptionMethod.unencrypted("main } evil {"),
     `"main } evil {" isn't a valid OpenTofu encryption type or name.`,
+  ],
+  [
+    "a second remote state source for the same stack",
+    (stack) => {
+      const other = new TerraformStack(stack.node.scope!, "other");
+      const encryption = new OpenTofuEncryption(stack, "encryption");
+      const source = {
+        fromStack: other,
+        method: OpenTofuEncryptionMethod.unencrypted("other"),
+      };
+      encryption.addRemoteStateSource(source);
+      encryption.addRemoteStateSource(source);
+    },
+    "OpenTofuEncryption already has a remote state source for 'other'.",
   ],
   [
     "a remote state source without a data source or stack",

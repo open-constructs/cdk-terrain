@@ -5,11 +5,13 @@ import { resolve } from "./_tokens";
 import { Token, Tokenization } from "./tokens/token";
 import { Annotations } from "./annotations";
 import {
+  duplicateOpenTofuRemoteStateSource,
   invalidOpenTofuEncryptionIdentifier,
   invalidOpenTofuRemoteStateSource,
   multipleOpenTofuEncryptions,
   openTofuEncryptionDuplicate,
 } from "./errors";
+import { TerraformElement } from "./terraform-element";
 import { TerraformRemoteState } from "./terraform-remote-state";
 import { TerraformStack } from "./terraform-stack";
 import {
@@ -539,6 +541,17 @@ export class OpenTofuEncryption extends Construct {
     ) {
       throw invalidOpenTofuRemoteStateSource();
     }
+    if (
+      this.remoteStateSources.some(
+        (existing) =>
+          (source.fromStack && existing.fromStack === source.fromStack) ||
+          (source.dataSource && existing.dataSource === source.dataSource),
+      )
+    ) {
+      throw duplicateOpenTofuRemoteStateSource(
+        (source.fromStack ?? source.dataSource)!.node.path,
+      );
+    }
     this.remoteStateSources.push(source);
   }
 
@@ -579,7 +592,8 @@ export class OpenTofuEncryption extends Construct {
     );
 
     const requirements = new Map<string, Requirement>();
-    for (const keyProvider of this.used().keyProviders) {
+    const { keyProviders, methods } = this.used();
+    for (const keyProvider of keyProviders) {
       for (const requirement of keyProvider._requires) {
         requirements.set(requirement.feature, requirement);
       }
@@ -607,7 +621,49 @@ export class OpenTofuEncryption extends Construct {
         );
       }
     }
-    return [...result, ...this.validateRemoteStateKeys()];
+    return [
+      ...result,
+      ...this.validateReferences(keyProviders, methods),
+      ...this.validateRemoteStateKeys(),
+    ];
+  }
+
+  // OpenTofu evaluates the encryption block before planning, so it only sees the stack's own variables and locals
+  private validateReferences(
+    keyProviders: OpenTofuKeyProvider[],
+    methods: OpenTofuEncryptionMethod[],
+  ): string[] {
+    const declared = new Set(
+      this.stack.node
+        .findAll()
+        .filter(TerraformElement.isTerraformElement)
+        .map(
+          (element) => `${element["_elementType"]}.${element.friendlyUniqueId}`,
+        ),
+    );
+    const errors: string[] = [];
+    const check = (
+      kind: "key_provider" | "method",
+      element: OpenTofuKeyProvider | OpenTofuEncryptionMethod,
+    ) => {
+      const address = `${kind}.${element.type}.${element.name}`;
+      for (const reference of references(
+        declarationBlock(this, kind, element),
+      )) {
+        if (!reference.startsWith("var.") && !reference.startsWith("local.")) {
+          errors.push(
+            `${address} uses ${reference}, but OpenTofu evaluates the encryption block before planning, so it can only use variables, locals and functions.`,
+          );
+        } else if (!declared.has(reference)) {
+          errors.push(
+            `${address} uses ${reference}, which the stack at '${this.stack.node.path}' doesn't declare. The encryption block can only use the stack's own variables and locals, so declare one in this stack, e.g. with the same name, so that one TF_VAR_ environment variable sets both.`,
+          );
+        }
+      }
+    };
+    keyProviders.forEach((keyProvider) => check("key_provider", keyProvider));
+    methods.forEach((method) => check("method", method));
+    return errors;
   }
 
   // OpenTofu finds a key by the metadata key its state was written with, so the reader's key providers must match
@@ -755,6 +811,123 @@ export class OpenTofuEncryption extends Construct {
     };
   }
 }
+
+// The root and first attribute of each traversal in the `${...}` expressions of a block's attributes
+const EXPRESSION_REFERENCE =
+  /(?<![\w.)\]-])([A-Za-z_][\w-]*)\.([A-Za-z_][\w-]*)/g;
+const IGNORED_REFERENCE_ROOTS = ["path", "terraform"];
+
+/**
+ * Finds the references, such as `var.passphrase`, in the expressions of a block's attribute values.
+ * @param block - the block
+ * @returns the references, as root and first attribute
+ */
+function references(block: Block): string[] {
+  const found = new Set<string>();
+  const visit = (value: any): void => {
+    if (typeof value === "string") {
+      for (const segment of templateSegments(value)) {
+        if (!segment.expression) continue;
+        // quoted strings inside the expression aren't references
+        const code = segment.text.replace(/"(?:[^"\\]|\\.)*"/g, '""');
+        for (const [, root, attribute] of code.matchAll(EXPRESSION_REFERENCE)) {
+          if (!IGNORED_REFERENCE_ROOTS.includes(root)) {
+            found.add(`${root}.${attribute}`);
+          }
+        }
+      }
+    } else if (Array.isArray(value)) {
+      value.forEach(visit);
+    } else if (isPlainObject(value)) {
+      Object.values(value).forEach(visit);
+    }
+  };
+  visit(block.attributes);
+  block.blocks.forEach((child) =>
+    references(child).forEach((r) => found.add(r)),
+  );
+  return [...found];
+}
+
+/**
+ * Splits a template string into literal text and `${...}` expressions. `$${` is an escaped literal `${`.
+ * @param str - the string
+ * @returns the segments, in order
+ */
+function templateSegments(
+  str: string,
+): { text: string; expression: boolean }[] {
+  const segments: { text: string; expression: boolean }[] = [];
+  let literal = "";
+  let i = 0;
+  while (i < str.length) {
+    if (str.startsWith("$${", i)) {
+      literal += "$${";
+      i += 3;
+    } else if (str.startsWith("${", i)) {
+      const end = expressionEnd(str, i + 2);
+      if (end === -1) {
+        literal += str.slice(i);
+        break;
+      }
+      if (literal) segments.push({ text: literal, expression: false });
+      segments.push({ text: str.slice(i, end + 1), expression: true });
+      literal = "";
+      i = end + 1;
+    } else {
+      literal += str[i];
+      i += 1;
+    }
+  }
+  if (literal) segments.push({ text: literal, expression: false });
+  return segments;
+}
+
+/**
+ * Finds the `}` that closes an expression, skipping nested braces and quoted strings.
+ * @param str - the string
+ * @param start - the index after the opening `${`
+ * @returns the index of the closing `}`, or -1 if it isn't closed
+ */
+function expressionEnd(str: string, start: number): number {
+  let depth = 1;
+  for (let i = start; i < str.length; i++) {
+    const c = str[i];
+    if (c === '"') {
+      for (i++; i < str.length && str[i] !== '"'; i++) {
+        if (str[i] === "\\") i++;
+      }
+    } else if (c === "{") {
+      depth++;
+    } else if (c === "}" && --depth === 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Renders a string as an HCL quoted template. Literal text is escaped; `${...}` expressions are HCL already, so
+ * escaping the quotes inside them would break them.
+ * @param str - the string, e.g. a resolved token such as `${file("pass.txt")}`
+ * @returns the quoted template
+ */
+function renderHclString(str: string): string {
+  const body = templateSegments(str)
+    .map(({ text, expression }) =>
+      expression ? text : text.replace(/[\\"\n\r\t]/g, (c) => HCL_ESCAPES[c]),
+    )
+    .join("");
+  return `"${body}"`;
+}
+
+const HCL_ESCAPES: { [char: string]: string } = {
+  "\\": "\\\\",
+  '"': '\\"',
+  "\n": "\\n",
+  "\r": "\\r",
+  "\t": "\\t",
+};
 
 /**
  * The keys under which a method's key providers store their metadata in the state.
@@ -989,6 +1162,6 @@ function renderHclExpression(value: any): string {
     );
     return `{ ${entries.join(", ")} }`;
   }
-  // a JSON string literal is a valid HCL quoted template, so `${var.x}` keeps its meaning
+  if (typeof value === "string") return renderHclString(value);
   return JSON.stringify(value);
 }
