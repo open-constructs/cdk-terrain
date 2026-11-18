@@ -3,7 +3,7 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import { generateProviderBindingsFromSchema } from "..";
-import { AttributeType, mkdtemp } from "@cdktn/commons";
+import { AttributeType, Block, mkdtemp } from "@cdktn/commons";
 import { schema, SchemaBuilder as S } from "./edge-provider-schema/builder";
 
 const leaf = (name: string, type: AttributeType) =>
@@ -18,7 +18,10 @@ const nested = (type: AttributeType) =>
     })
     .asBlock();
 
-// same_a/same_b share one shape; deep_a/deep_b match only at the first level.
+const block = (name: string, b: Block) =>
+  new S().listBlock({ name, block: b, minItems: 0, maxItems: 9 }).asBlock();
+// same_a/same_b and twin_a/twin_b each share a shape (twins all the way down);
+// deep_a/deep_b match only at the first level.
 const fixture = schema({
   name: "dedup",
   provider: new S().build(),
@@ -38,6 +41,18 @@ const fixture = schema({
         maxItems: 9,
       })
       .listBlock({
+        name: "twin_a",
+        block: nested("bool"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
+        name: "twin_b",
+        block: nested("bool"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
         name: "deep_a",
         block: nested("string"),
         minItems: 0,
@@ -53,13 +68,60 @@ const fixture = schema({
   },
 });
 
+// Pairs whose fields match by name, type and optionality but whose mappers
+// differ. aws.security_group.ingress.* has entries in CUSTOM_DEFAULTS.
+const objects: AttributeType = ["list", ["object", { description: "string" }]];
+const lookalikes = schema({
+  name: "aws",
+  provider: new S().build(),
+  dataSources: {},
+  resources: {
+    aws_security_group: new S()
+      .attribute({ name: "ingress", type: objects })
+      .attribute({ name: "tag", type: objects })
+      .listBlock({
+        name: "as_block",
+        block: block("x", leaf("v", "string")),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
+        name: "as_attr",
+        block: new S()
+          .attribute({ name: "x", type: ["list", ["object", { v: "string" }]] })
+          .asBlock(),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
+        name: "write_only",
+        block: new S()
+          .attribute({ name: "s", type: "string", writeOnly: true })
+          .asBlock(),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
+        name: "plain",
+        block: leaf("s", "string"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .build(),
+  },
+});
+
 interface Exports {
   interfaces: Map<string, string>;
   classes: Set<string>;
   functions: Set<string>;
 }
 
-async function generate(mode?: string): Promise<Exports> {
+async function generate(
+  mode?: string,
+  provider = fixture,
+  providerName = "dedup",
+): Promise<Exports> {
   const previous = process.env.CDKTN_STRUCT_DEDUP_MODE;
   if (mode === undefined) delete process.env.CDKTN_STRUCT_DEDUP_MODE;
   else process.env.CDKTN_STRUCT_DEDUP_MODE = mode;
@@ -70,8 +132,8 @@ async function generate(mode?: string): Promise<Exports> {
       functions: new Set(),
     };
     await mkdtemp(async (dir) => {
-      await generateProviderBindingsFromSchema(dir, fixture);
-      const root = path.join(dir, "providers", "dedup");
+      await generateProviderBindingsFromSchema(dir, provider);
+      const root = path.join(dir, "providers", providerName);
       for (const file of fs.readdirSync(root, {
         recursive: true,
         encoding: "utf8",
@@ -113,6 +175,20 @@ describe("CDKTN_STRUCT_DEDUP_MODE", () => {
     expect(same.filter((n) => full.interfaces.has(n))).toHaveLength(1);
   });
 
+  it("full merges a shared shape at every level", () => {
+    const twins = [
+      "ShapesTwinA",
+      "ShapesTwinB",
+      "ShapesTwinAInner",
+      "ShapesTwinBInner",
+    ];
+    expect(twins.filter((n) => off.interfaces.has(n))).toEqual(twins);
+    expect(twins.filter((n) => full.interfaces.has(n))).toEqual([
+      "ShapesTwinA",
+      "ShapesTwinAInner",
+    ]);
+  });
+
   it("full keeps structs that differ only below the first level", () => {
     const deep = [
       "ShapesDeepA",
@@ -121,6 +197,28 @@ describe("CDKTN_STRUCT_DEDUP_MODE", () => {
       "ShapesDeepBInner",
     ];
     expect(deep.filter((n) => !full.interfaces.has(n))).toEqual([]);
+  });
+
+  describe("full keeps lookalike structs whose mappers differ", () => {
+    let lookalikesFull: Exports;
+
+    beforeAll(async () => {
+      lookalikesFull = await generate("full", lookalikes, "aws");
+    });
+
+    it.each([
+      ["a custom default", "SecurityGroupIngress", "SecurityGroupTag"],
+      [
+        "a block vs. an attribute",
+        "SecurityGroupAsBlock",
+        "SecurityGroupAsAttr",
+      ],
+      ["a write-only field", "SecurityGroupWriteOnly", "SecurityGroupPlain"],
+    ])("%s", (_, a, b) => {
+      expect([a, b].filter((n) => !lookalikesFull.interfaces.has(n))).toEqual(
+        [],
+      );
+    });
   });
 
   it("rejects an unknown mode", async () => {

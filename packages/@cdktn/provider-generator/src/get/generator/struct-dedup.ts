@@ -1,6 +1,8 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
+import { CUSTOM_DEFAULTS } from "./custom-defaults";
 import { AttributeModel } from "./models/attribute-model";
+import { structTypeModelOf } from "./models/attribute-type-model";
 import { Struct } from "./models/struct";
 
 /**
@@ -16,15 +18,10 @@ import { Struct } from "./models/struct";
  * emitting incorrect bindings.
  */
 
-// Only StructAttributeTypeModel owns `struct`; collections expose it as a
-// prototype getter onto their element type.
-function structHolder(type: any): any | undefined {
-  if (!type) return undefined;
-  if (Object.prototype.hasOwnProperty.call(type, "struct") && type.struct) {
-    return type;
-  }
-  if (type.elementType) return structHolder(type.elementType);
-  return undefined;
+function defaultOf(attr: AttributeModel): string {
+  return attr.terraformFullName in CUSTOM_DEFAULTS
+    ? `=${JSON.stringify(CUSTOM_DEFAULTS[attr.terraformFullName])}`
+    : "";
 }
 
 function signature(struct: Struct, stack: Struct[]): string {
@@ -33,23 +30,29 @@ function signature(struct: Struct, stack: Struct[]): string {
   const back = stack.indexOf(struct);
   if (back !== -1) return `@rec:${stack.length - back}`;
 
-  const next = [...stack, struct];
+  stack.push(struct);
   const parts = struct.attributes
     .map((a) => {
-      const holder = structHolder(a.type);
+      const holder = structTypeModelOf(a.type);
       const inner = holder
-        ? signature(holder.struct, next)
+        ? signature(holder.struct, stack)
         : a.type.storedClassType;
-      // typeModelType distinguishes list/set/map wrappers around one shape
+      // Everything that changes what is emitted for the attribute (`required`
+      // follows from optional/computed). typeModelType distinguishes
+      // list/set/map wrappers around one shape.
       return [
         a.terraformName,
         a.optional ? "?" : "",
         a.computed ? "c" : "",
+        a.isWriteOnly ? "wo" : "",
         a.type.typeModelType,
+        "isBlock" in a.type && a.type.isBlock ? "block" : "",
+        defaultOf(a),
         inner,
       ].join(":");
     })
     .sort();
+  stack.pop();
 
   // Flags that change what is emitted for an otherwise identical shape
   const flags = [
@@ -64,9 +67,8 @@ function signature(struct: Struct, stack: Struct[]): string {
 
 function collect(attributes: AttributeModel[], found: Set<Struct>): void {
   for (const attr of attributes) {
-    const holder = structHolder(attr.type);
-    if (!holder) continue;
-    const struct: Struct = holder.struct;
+    const struct = structTypeModelOf(attr.type)?.struct;
+    if (!struct) continue;
     if (found.has(struct)) continue; // also guards recursive structs
     found.add(struct);
     collect(struct.attributes, found);
@@ -79,14 +81,12 @@ function repoint(
   seen: Set<Struct>,
 ): void {
   for (const attr of attributes) {
-    const holder = structHolder(attr.type);
+    const holder = structTypeModelOf(attr.type);
     if (!holder) continue;
+    // every emitted name derives from `struct`
     const target = canonical.get(holder.struct);
-    if (target && target !== holder.struct) {
-      // readonly in TS only; every emitted name derives from `struct`
-      holder.struct = target;
-    }
-    const struct: Struct = holder.struct;
+    if (target) holder.struct = target;
+    const struct = holder.struct;
     if (seen.has(struct)) continue;
     seen.add(struct);
     repoint(struct.attributes, canonical, seen);
