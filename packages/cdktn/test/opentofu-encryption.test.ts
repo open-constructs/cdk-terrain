@@ -17,10 +17,12 @@ import {
   OpenTofuKeyProvider,
   OpenTofuPbkdf2KeyProvider,
   OpenTofuUnencryptedMethod,
+  TerraformIterator,
   TerraformOutput,
   TerraformStack,
   TerraformVariable,
   Testing,
+  Token,
 } from "../src";
 import { TerraformTargetVersions } from "../src/validations/target-versions";
 
@@ -172,6 +174,9 @@ test("writes expressions in settings.tofu unescaped and escapes only literal tex
   new OpenTofuEncryption(stack, "encryption", {
     state: { method: keys("file", Fn.trimspace(Fn.file("pass.txt"))) },
     plan: { method: keys("literal", 'a "quoted" \\ passphrase') },
+    remoteState: {
+      method: keys("directive", '%{ if "a" == "a" }bell\u0007%{ endif }'),
+    },
   });
 
   app.synth();
@@ -180,6 +185,40 @@ test("writes expressions in settings.tofu unescaped and escapes only literal tex
   const settings = readStackFile(outdir, "settings.tofu");
   expect(settings).toContain('passphrase = "${trimspace(file("pass.txt"))}"');
   expect(settings).toContain('passphrase = "a \\"quoted\\" \\\\ passphrase"');
+  // HCL doesn't accept raw control characters in a quoted template
+  expect(settings).toContain(
+    'passphrase = "%{ if "a" == "a" }bell\\u0007%{ endif }"',
+  );
+});
+
+test("accepts the loop variables of for expressions and directives, which aren't references", () => {
+  const stack = stackTargeting({ opentofu: ">=1.8.0" });
+  const parts = new TerraformVariable(stack, "parts", {
+    type: "list(object({ value = string }))",
+  });
+  const keys = (name: string, passphrase: string) =>
+    new OpenTofuAesGcmMethod(name, {
+      keys: new OpenTofuPbkdf2KeyProvider(name, { passphrase }),
+    });
+  new OpenTofuEncryption(stack, "encryption", {
+    // [for key, val in toset(var.parts): val.value]
+    state: {
+      method: keys(
+        "expression",
+        Fn.join(
+          "",
+          Token.asList(
+            TerraformIterator.fromList(parts.listValue).pluckProperty("value"),
+          ),
+        ),
+      ),
+    },
+    plan: {
+      method: keys("directive", "%{ for p in var.parts }${p.value}%{ endfor }"),
+    },
+  });
+
+  expect(() => Testing.fullSynth(stack)).not.toThrow();
 });
 
 test("decrypts remote state per source, labelled with the data source's name", () => {
@@ -414,6 +453,17 @@ test.each<
           passphrase: new DataResource(stack, "passphrase", {
             input: { value: "x" },
           }).id,
+        }),
+      }),
+  ],
+  [
+    "a key provider uses a resource in a template directive",
+    { opentofu: ">=1.8.0" },
+    "key_provider.pbkdf2.main uses terraform_data.flag, but OpenTofu evaluates the encryption block before planning",
+    (stack) =>
+      OpenTofuEncryption.withKeys(stack, "encryption", {
+        keys: new OpenTofuPbkdf2KeyProvider("main", {
+          passphrase: '%{ if terraform_data.flag.id != "" }a%{ endif }',
         }),
       }),
   ],

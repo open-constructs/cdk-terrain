@@ -24,9 +24,13 @@ export interface Block {
   readonly blocks: Block[];
 }
 
-// The root and first attribute of each traversal in the `${...}` expressions of a block's attributes
+// The root and first attribute of each traversal in a template's `${...}` and `%{...}` sequences
 const EXPRESSION_REFERENCE =
   /(?<![\w.)\]-])([A-Za-z_][\w-]*)\.([A-Za-z_][\w-]*)/g;
+
+// The variables a `for` expression or `%{ for }` directive declares, e.g. `key, val` in `[for key, val in ...]`
+const FOR_VARIABLES =
+  /(?<![\w.-])for\s+([A-Za-z_][\w-]*)(?:\s*,\s*([A-Za-z_][\w-]*))?\s+in(?![\w-])/g;
 
 const IGNORED_REFERENCE_ROOTS = ["path", "terraform"];
 
@@ -39,15 +43,18 @@ export function references(block: Block): string[] {
   const found = new Set<string>();
   const visit = (value: any): void => {
     if (typeof value === "string") {
-      for (const segment of templateSegments(value)) {
-        if (!segment.expression) continue;
-        // quoted strings inside the expression aren't references
-        const code = segment.text.replace(/"(?:[^"\\]|\\.)*"/g, '""');
-        for (const [, root, attribute] of code.matchAll(EXPRESSION_REFERENCE)) {
-          if (!IGNORED_REFERENCE_ROOTS.includes(root)) {
-            found.add(`${root}.${attribute}`);
-          }
-        }
+      // quoted strings inside an expression aren't references
+      const code = templateSegments(value)
+        .filter((segment) => segment.code)
+        .map((segment) => segment.text.replace(/"(?:[^"\\]|\\.)*"/g, '""'))
+        .join(" ");
+      const ignored = new Set(IGNORED_REFERENCE_ROOTS);
+      for (const [, key, val] of code.matchAll(FOR_VARIABLES)) {
+        ignored.add(key);
+        if (val) ignored.add(val);
+      }
+      for (const [, root, attribute] of code.matchAll(EXPRESSION_REFERENCE)) {
+        if (!ignored.has(root)) found.add(`${root}.${attribute}`);
       }
     } else if (Array.isArray(value)) {
       value.forEach(visit);
@@ -63,28 +70,27 @@ export function references(block: Block): string[] {
 }
 
 /**
- * Splits a template string into literal text and `${...}` expressions. `$${` is an escaped literal `${`.
+ * Splits a template string into literal text and the `${...}` interpolations and `%{...}` directives that hold
+ * code. `$${` and `%%{` are escaped literal `${` and `%{`.
  * @param str - the string
  * @returns the segments, in order
  */
-function templateSegments(
-  str: string,
-): { text: string; expression: boolean }[] {
-  const segments: { text: string; expression: boolean }[] = [];
+function templateSegments(str: string): { text: string; code: boolean }[] {
+  const segments: { text: string; code: boolean }[] = [];
   let literal = "";
   let i = 0;
   while (i < str.length) {
-    if (str.startsWith("$${", i)) {
-      literal += "$${";
+    if (str.startsWith("$${", i) || str.startsWith("%%{", i)) {
+      literal += str.slice(i, i + 3);
       i += 3;
-    } else if (str.startsWith("${", i)) {
-      const end = expressionEnd(str, i + 2);
+    } else if (str.startsWith("${", i) || str.startsWith("%{", i)) {
+      const end = codeEnd(str, i + 2);
       if (end === -1) {
         literal += str.slice(i);
         break;
       }
-      if (literal) segments.push({ text: literal, expression: false });
-      segments.push({ text: str.slice(i, end + 1), expression: true });
+      if (literal) segments.push({ text: literal, code: false });
+      segments.push({ text: str.slice(i, end + 1), code: true });
       literal = "";
       i = end + 1;
     } else {
@@ -92,17 +98,17 @@ function templateSegments(
       i += 1;
     }
   }
-  if (literal) segments.push({ text: literal, expression: false });
+  if (literal) segments.push({ text: literal, code: false });
   return segments;
 }
 
 /**
- * Finds the `}` that closes an expression, skipping nested braces and quoted strings.
+ * Finds the `}` that closes an interpolation or directive, skipping nested braces and quoted strings.
  * @param str - the string
- * @param start - the index after the opening `${`
+ * @param start - the index after the opening `${` or `%{`
  * @returns the index of the closing `}`, or -1 if it isn't closed
  */
-function expressionEnd(str: string, start: number): number {
+function codeEnd(str: string, start: number): number {
   let depth = 1;
   for (let i = start; i < str.length; i++) {
     const c = str[i];
@@ -120,16 +126,14 @@ function expressionEnd(str: string, start: number): number {
 }
 
 /**
- * Renders a string as an HCL quoted template. Literal text is escaped; `${...}` expressions are HCL already, so
- * escaping the quotes inside them would break them.
+ * Renders a string as an HCL quoted template. Literal text is escaped; `${...}` and `%{...}` sequences are HCL
+ * already, so escaping the quotes inside them would break them.
  * @param str - the string, e.g. a resolved token such as `${file("pass.txt")}`
  * @returns the quoted template
  */
 function renderHclString(str: string): string {
   const body = templateSegments(str)
-    .map(({ text, expression }) =>
-      expression ? text : text.replace(/[\\"\n\r\t]/g, (c) => HCL_ESCAPES[c]),
-    )
+    .map(({ text, code }) => (code ? text : escapeHclLiteral(text)))
     .join("");
   return `"${body}"`;
 }
@@ -141,6 +145,21 @@ const HCL_ESCAPES: { [char: string]: string } = {
   "\r": "\\r",
   "\t": "\\t",
 };
+
+/**
+ * Escapes literal text for an HCL quoted template, including control characters, which HCL doesn't accept raw.
+ * @param text - the text
+ * @returns the escaped text
+ */
+function escapeHclLiteral(text: string): string {
+  return Array.from(text, (c) => {
+    if (HCL_ESCAPES[c]) return HCL_ESCAPES[c];
+    const code = c.charCodeAt(0);
+    return code < 0x20 || code === 0x7f
+      ? `\\u${code.toString(16).padStart(4, "0")}`
+      : c;
+  }).join("");
+}
 
 /**
  * Finds the key providers that a key provider's or method's attributes reference.
