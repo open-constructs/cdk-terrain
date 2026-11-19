@@ -9,6 +9,13 @@ import {
 import { CUSTOM_DEFAULTS } from "../custom-defaults";
 import { sanitizedComment } from "../sanitized-comments";
 
+// Explicit overrides win over the schema-derived null default
+function defaultFor(att: AttributeModel) {
+  const customDefault = CUSTOM_DEFAULTS[att.terraformFullName];
+  if (customDefault !== undefined) return customDefault;
+  return att.nullWhenUnset ? null : undefined;
+}
+
 function titleCase(value: string) {
   return value[0].toUpperCase() + value.slice(1);
 }
@@ -243,7 +250,7 @@ export class AttributesEmitter {
     const type = att.type;
     const context = isStruct ? "struct!" : "this";
     const name = isStruct ? att.name : att.storageName;
-    const customDefault = CUSTOM_DEFAULTS[att.terraformFullName];
+    const customDefault = defaultFor(att);
 
     const varReference = `${context}.${name}${
       !isStruct &&
@@ -286,7 +293,7 @@ export class AttributesEmitter {
     const type = att.type;
     const context = isStruct ? "struct!" : "this";
     const name = isStruct ? att.name : att.storageName;
-    const customDefault = CUSTOM_DEFAULTS[att.terraformFullName];
+    const customDefault = defaultFor(att);
 
     const varReference = `${context}.${name}${
       !isStruct &&
