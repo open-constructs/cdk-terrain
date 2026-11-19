@@ -5,6 +5,7 @@ import * as fs from "fs";
 import * as semver from "semver";
 import { IConstruct } from "constructs";
 import { Annotations } from "../annotations";
+import { OpenTofuEncryption } from "../opentofu-encryption";
 import {
   resolveTargetVersions,
   TARGET_VERSIONS_CONTEXT_KEY,
@@ -15,9 +16,10 @@ type Product = keyof TerraformTargetVersions;
 
 /**
  * Names of the files, in the stack's working directory, that hold each product's `required_version`, in the stack's
- * output format. Terraform reads every `.tf` / `.tf.json` file in the directory and never reads `.tofu` /
- * `.tofu.json` files. OpenTofu 1.8+ loads the OpenTofu file in place of the Terraform file of the same format, and
- * OpenTofu 1.12+ only reads `required_version` from `.tofu` / `.tofu.json` files.
+ * output format. The OpenTofu file also holds the stack's `encryption` block. Terraform reads every `.tf` /
+ * `.tf.json` file in the directory and never reads `.tofu` / `.tofu.json` files. OpenTofu 1.8+ loads the OpenTofu
+ * file in place of the Terraform file of the same format, and OpenTofu 1.12+ only reads `required_version` from
+ * `.tofu` / `.tofu.json` files.
  */
 const SETTINGS_FILES: Record<"json" | "hcl", Record<Product, string>> = {
   json: { terraform: "settings.tf.json", opentofu: "settings.tofu.json" },
@@ -36,7 +38,7 @@ const OPENTOFU_TOFU_FILES_SINCE = "1.8.0";
  * @param scope - construct whose context is read, usually a stack
  * @returns true if the settings files should be written
  */
-export function writesRequiredVersion(scope: IConstruct): boolean {
+function writesRequiredVersion(scope: IConstruct): boolean {
   return scope.node.tryGetContext(TARGET_VERSIONS_CONTEXT_KEY) !== undefined;
 }
 
@@ -94,8 +96,43 @@ function opentofuReadingTerraformFile(opentofu: string): string {
 }
 
 /**
- * Writes a settings file for each product in `targetVersions` into the stack's working directory, in the stack's
- * output format:
+ * Writes the stack's settings files into its working directory, in the stack's output format. Each product in
+ * `targetVersions` gets a file with its `required_version`, and the OpenTofu file also gets the stack's `encryption`
+ * block. The OpenTofu file is written for an encryption block even when `targetVersions` isn't declared, so that a
+ * synth that skips validation doesn't silently drop the encryption.
+ * @param scope - construct whose `targetVersions` context is read and that receives warnings, usually a stack
+ * @param workingDirectory - absolute path of the stack's working directory
+ * @param hclOutput - whether to write `settings.tf` / `settings.tofu` instead of `settings.tf.json` /
+ * `settings.tofu.json`
+ * @param encryption - the stack's OpenTofu encryption, if it has one
+ */
+export function writeSettingsFiles(
+  scope: IConstruct,
+  workingDirectory: string,
+  hclOutput: boolean,
+  encryption?: OpenTofuEncryption,
+): void {
+  const files = SETTINGS_FILES[hclOutput ? "hcl" : "json"];
+  const constraints = writesRequiredVersion(scope)
+    ? requiredVersionConstraints(scope, files)
+    : new Map<Product, string | undefined>();
+  if (encryption && !constraints.has("opentofu")) {
+    constraints.set("opentofu", undefined);
+  }
+
+  for (const [product, requiredVersion] of constraints) {
+    const productEncryption = product === "opentofu" ? encryption : undefined;
+    fs.writeFileSync(
+      path.join(workingDirectory, files[product]),
+      hclOutput
+        ? renderHclSettings(requiredVersion, productEncryption?._toHcl())
+        : renderJsonSettings(requiredVersion, productEncryption?._toJson()),
+    );
+  }
+}
+
+/**
+ * Works out the `required_version` constraint for each settings file from `targetVersions`:
  *
  * - A product that isn't targeted gets no file, except that an OpenTofu-only project also writes its OpenTofu
  *   constraint to the Terraform file, which OpenTofu 1.6 and 1.7 read in place of the OpenTofu file.
@@ -106,21 +143,19 @@ function opentofuReadingTerraformFile(opentofu: string): string {
  * - If targeted OpenTofu releases before 1.8 would be rejected by the Terraform constraint, it adds a warning and
  *   skips the Terraform file.
  * @param scope - construct whose `targetVersions` context is read and that receives warnings, usually a stack
- * @param workingDirectory - absolute path of the stack's working directory
- * @param hclOutput - whether to write `settings.tf` / `settings.tofu` instead of `settings.tf.json` /
- * `settings.tofu.json`
+ * @param files - the settings file names in the stack's output format, for warnings
+ * @returns the constraint for each file to write; a file with an undefined constraint has no `required_version`
  */
-export function writeRequiredVersionFiles(
+function requiredVersionConstraints(
   scope: IConstruct,
-  workingDirectory: string,
-  hclOutput: boolean,
-): void {
+  files: Record<Product, string>,
+): Map<Product, string | undefined> {
+  const constraints = new Map<Product, string | undefined>();
   const { targets } = resolveTargetVersions(scope);
   if (!targets) {
-    return;
+    return constraints;
   }
 
-  const files = SETTINGS_FILES[hclOutput ? "hcl" : "json"];
   const { terraform, opentofu } = targets;
   const warnAboutAlternatives = (
     product: Product,
@@ -130,9 +165,6 @@ export function writeRequiredVersionFiles(
     Annotations.of(scope).addWarning(
       `targetVersions.${product} "${range}" uses "||", which can't be written as a required_version constraint, so ${files[product]} ${outcome}.`,
     );
-
-  // the constraint to write for each file; a file with an undefined constraint is written without required_version
-  const constraints = new Map<Product, string | undefined>();
 
   if (opentofu !== undefined) {
     const comparatorSets = new semver.Range(opentofu).set;
@@ -163,47 +195,52 @@ export function writeRequiredVersionFiles(
     constraints.set("terraform", constraints.get("opentofu"));
   }
 
-  for (const [product, requiredVersion] of constraints) {
-    fs.writeFileSync(
-      path.join(workingDirectory, files[product]),
-      hclOutput
-        ? renderHclSettings(requiredVersion)
-        : renderJsonSettings(requiredVersion),
-    );
-  }
+  return constraints;
 }
 
 /**
  * Renders a settings file as Terraform JSON configuration.
- * @param requiredVersion - the Terraform version constraint, or `undefined` for an empty configuration
- * @returns the file's content
+ * @param requiredVersion - the Terraform version constraint, or `undefined` for none
+ * @param encryption - the `encryption` block's content, or `undefined` for none
+ * @returns the file's content, an empty configuration when it has neither
  */
-function renderJsonSettings(requiredVersion: string | undefined): string {
-  const content =
-    requiredVersion === undefined
-      ? {}
-      : { terraform: { required_version: requiredVersion } };
+function renderJsonSettings(
+  requiredVersion: string | undefined,
+  encryption: object | undefined,
+): string {
+  const terraform = {
+    ...(requiredVersion !== undefined && { required_version: requiredVersion }),
+    ...(encryption !== undefined && { encryption }),
+  };
+  const content = Object.keys(terraform).length > 0 ? { terraform } : {};
   return JSON.stringify(content, null, 2);
 }
 
 /**
  * Renders a settings file as HCL.
- * @param requiredVersion - the Terraform version constraint, or `undefined` for an empty configuration
- * @returns the file's content
+ * @param requiredVersion - the Terraform version constraint, or `undefined` for none
+ * @param encryption - the `encryption` block, indented to sit inside the `terraform` block, or `undefined` for none
+ * @returns the file's content, empty when it has neither
  */
-function renderHclSettings(requiredVersion: string | undefined): string {
-  // a constraint holds only operators, versions, commas and spaces, so a JSON string literal is a valid HCL one
-  return requiredVersion === undefined
-    ? ""
-    : `terraform {\n  required_version = ${JSON.stringify(requiredVersion)}\n}\n`;
+function renderHclSettings(
+  requiredVersion: string | undefined,
+  encryption: string | undefined,
+): string {
+  const body = [
+    // a constraint holds only operators, versions, commas and spaces, so a JSON string literal is a valid HCL one
+    requiredVersion !== undefined &&
+      `  required_version = ${JSON.stringify(requiredVersion)}`,
+    encryption,
+  ].filter((line): line is string => typeof line === "string");
+  return body.length > 0 ? `terraform {\n${body.join("\n")}\n}\n` : "";
 }
 
 /**
  * Removes the settings files, in either format, written by a previous synth, so they don't outlive a change to
- * `targetVersions` or the output format.
+ * `targetVersions`, the stack's encryption or the output format.
  * @param workingDirectory - absolute path of the stack's working directory
  */
-export function removeRequiredVersionFiles(workingDirectory: string): void {
+export function removeSettingsFiles(workingDirectory: string): void {
   for (const files of Object.values(SETTINGS_FILES)) {
     for (const file of Object.values(files)) {
       fs.rmSync(path.join(workingDirectory, file), { force: true });
