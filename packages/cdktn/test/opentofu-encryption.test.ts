@@ -408,7 +408,9 @@ test.each<
     (stack) =>
       OpenTofuEncryption.withKeys(stack, "encryption", {
         keys: OpenTofuKeyProvider.pbkdf2("main", {
-          passphrase: new DataResource(stack, "passphrase", { input: "x" }).id,
+          passphrase: new DataResource(stack, "passphrase", {
+            input: { value: "x" },
+          }).id,
         }),
       }),
   ],
