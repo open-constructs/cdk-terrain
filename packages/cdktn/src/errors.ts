@@ -705,6 +705,14 @@ export const duplicateOpenTofuRemoteStateSource = (path: string) =>
     `OpenTofuEncryption already has a remote state source for '${path}'. OpenTofu decrypts each data source one way, so configure it once.`,
   );
 
+export const foreignOpenTofuRemoteStateSource = (
+  dataSource: string,
+  stack: string,
+) =>
+  new Error(
+    `The remote state data source at '${dataSource}' isn't in the stack at '${stack}'. OpenTofuEncryption can only decrypt its own stack's data sources; use fromStack for another stack's outputs.`,
+  );
+
 export const invalidOpenTofuEncryptionIdentifier = (value: string) =>
   new Error(
     `"${value}" isn't a valid OpenTofu encryption type or name. Use letters, digits, underscores and dashes, starting with a letter or underscore.`,

@@ -48,13 +48,19 @@ export function references(block: Block): string[] {
         .filter((segment) => segment.code)
         .map((segment) => segment.text.replace(/"(?:[^"\\]|\\.)*"/g, '""'))
         .join(" ");
-      const ignored = new Set(IGNORED_REFERENCE_ROOTS);
-      for (const [, key, val] of code.matchAll(FOR_VARIABLES)) {
-        ignored.add(key);
-        if (val) ignored.add(val);
-      }
-      for (const [, root, attribute] of code.matchAll(EXPRESSION_REFERENCE)) {
-        if (!ignored.has(root)) found.add(`${root}.${attribute}`);
+      const scopes = forScopes(code);
+      for (const match of code.matchAll(EXPRESSION_REFERENCE)) {
+        const [, root, attribute] = match;
+        const index = match.index!;
+        const declared = scopes.some(
+          (scope) =>
+            scope.start <= index &&
+            index < scope.end &&
+            scope.names.includes(root),
+        );
+        if (!declared && !IGNORED_REFERENCE_ROOTS.includes(root)) {
+          found.add(`${root}.${attribute}`);
+        }
       }
     } else if (Array.isArray(value)) {
       value.forEach(visit);
@@ -67,6 +73,86 @@ export function references(block: Block): string[] {
     references(child).forEach((r) => found.add(r)),
   );
   return [...found];
+}
+
+const FOR_DIRECTIVE = /%\{~?\s*(for|endfor)(?![\w-])/g;
+
+/**
+ * Finds where the variables of each `for` expression and `%{ for }` directive are in scope: from the `:` to the
+ * closing bracket of an expression, and from the end of a directive to its `%{ endfor }`.
+ * @param code - the template's code, with quoted strings emptied
+ * @returns the scopes, as variable names and a range of indices
+ */
+function forScopes(
+  code: string,
+): { names: string[]; start: number; end: number }[] {
+  const scopes: { names: string[]; start: number; end: number }[] = [];
+  for (const match of code.matchAll(FOR_VARIABLES)) {
+    const names = [match[1], match[2]].filter((name) => name !== undefined);
+    const before = code.slice(0, match.index).trimEnd();
+    const after = match.index! + match[0].length;
+    if (/%\{~?$/.test(before)) {
+      scopes.push({
+        names,
+        start: closingBracket(code, before.lastIndexOf("{")),
+        end: endForDirective(code, after),
+      });
+    } else if (before.endsWith("[") || before.endsWith("{")) {
+      const close = closingBracket(code, before.length - 1);
+      scopes.push({ names, start: bodyStart(code, after, close), end: close });
+    }
+  }
+  return scopes;
+}
+
+/**
+ * Finds the bracket that closes the one at `open`.
+ * @param code - the code
+ * @param open - the index of a `(`, `[` or `{`
+ * @returns the index of the closing bracket, or the code's length if it isn't closed
+ */
+function closingBracket(code: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < code.length; i++) {
+    if ("([{".includes(code[i])) depth++;
+    else if (")]}".includes(code[i]) && --depth === 0) return i;
+  }
+  return code.length;
+}
+
+/**
+ * Finds the `:` that starts a `for` expression's body, skipping those of conditionals in its collection.
+ * @param code - the code
+ * @param from - the index after the expression's `in`
+ * @param close - the index of the expression's closing bracket
+ * @returns the index of the `:`, or `from` if there isn't one
+ */
+function bodyStart(code: string, from: number, close: number): number {
+  let depth = 0;
+  let conditionals = 0;
+  for (let i = from; i < close; i++) {
+    const c = code[i];
+    if ("([{".includes(c)) depth++;
+    else if (")]}".includes(c)) depth--;
+    else if (depth === 0 && c === "?") conditionals++;
+    else if (depth === 0 && c === ":" && conditionals-- === 0) return i;
+  }
+  return from;
+}
+
+/**
+ * Finds the `%{ endfor }` that closes a `%{ for }` directive.
+ * @param code - the code
+ * @param from - an index inside the `%{ for }` directive
+ * @returns the index of the `%{ endfor }`, or the code's length if there isn't one
+ */
+function endForDirective(code: string, from: number): number {
+  let depth = 1;
+  for (const match of code.slice(from).matchAll(FOR_DIRECTIVE)) {
+    depth += match[1] === "for" ? 1 : -1;
+    if (depth === 0) return from + match.index!;
+  }
+  return code.length;
 }
 
 /**

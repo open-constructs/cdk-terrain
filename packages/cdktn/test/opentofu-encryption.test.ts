@@ -282,6 +282,42 @@ test("decrypts remote state per source, labelled with the data source's name", (
   });
 });
 
+test("writes and checks nothing for a fromStack source whose stack isn't referenced", () => {
+  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
+  const app = new App({
+    outdir,
+    context: { targetVersions: { opentofu: ">=1.8.0" } },
+  });
+  const network = new TerraformStack(app, "network");
+  OpenTofuEncryption.withKeys(network, "encryption", {
+    keys: new OpenTofuPbkdf2KeyProvider("network", {
+      passphrase: "n".repeat(16),
+    }),
+  });
+  const consumer = new TerraformStack(app, "test");
+  new OpenTofuEncryption(consumer, "encryption", {
+    remoteStateSources: [
+      {
+        fromStack: network,
+        // doesn't match network's key provider, and uses a resource
+        method: new OpenTofuAesGcmMethod("network", {
+          keys: new OpenTofuPbkdf2KeyProvider("other", {
+            passphrase: new DataResource(consumer, "passphrase", {
+              input: { value: "x" },
+            }).id,
+          }),
+        }),
+      },
+    ],
+  });
+
+  app.synth();
+
+  expect(readJson(outdir, "settings.tofu.json").terraform.encryption).toEqual(
+    {},
+  );
+});
+
 // a consumer that reads network's state, with the default remoteState or a source with the given key provider
 const consumerOfNetwork = (sourceKeys?: OpenTofuKeyProvider) => {
   const app = Testing.app({
@@ -467,6 +503,22 @@ test.each<
         }),
       }),
   ],
+  ...[
+    "${[for terraform_data in var.parts : terraform_data.value]}${terraform_data.flag.id}",
+    "%{ for terraform_data in var.parts }${terraform_data}%{ endfor }${terraform_data.flag.id}",
+  ].map<
+    [string, TerraformTargetVersions, string, (stack: TerraformStack) => void]
+  >((passphrase) => [
+    `a key provider uses a resource named like a loop variable outside its loop: ${passphrase}`,
+    { opentofu: ">=1.8.0" },
+    "key_provider.pbkdf2.main uses terraform_data.flag, but OpenTofu evaluates the encryption block before planning",
+    (stack) => {
+      new TerraformVariable(stack, "parts", { type: "list(string)" });
+      OpenTofuEncryption.withKeys(stack, "encryption", {
+        keys: new OpenTofuPbkdf2KeyProvider("main", { passphrase }),
+      });
+    },
+  ]),
   [
     "an enforced target uses the unencrypted method, which OpenTofu rejects",
     { opentofu: ">=1.8.0" },
@@ -545,6 +597,19 @@ test.each<[string, (stack: TerraformStack) => void, string]>([
       encryption.addRemoteStateSource(source);
     },
     "OpenTofuEncryption already has a remote state source for 'other'.",
+  ],
+  [
+    "a remote state source with another stack's data source",
+    (stack) => {
+      const other = new TerraformStack(stack.node.scope!, "other");
+      new OpenTofuEncryption(stack, "encryption").addRemoteStateSource({
+        dataSource: new DataTerraformRemoteStateLocal(other, "legacy", {
+          path: "legacy.tfstate",
+        }),
+        method: new OpenTofuUnencryptedMethod("legacy"),
+      });
+    },
+    "The remote state data source at 'other/legacy' isn't in the stack at 'test'.",
   ],
   [
     "a remote state source without a data source or stack",

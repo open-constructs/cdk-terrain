@@ -5,6 +5,7 @@ import { Token } from "../tokens/token";
 import { Annotations } from "../annotations";
 import {
   duplicateOpenTofuRemoteStateSource,
+  foreignOpenTofuRemoteStateSource,
   invalidOpenTofuRemoteStateSource,
   multipleOpenTofuEncryptions,
   openTofuEncryptionDuplicate,
@@ -254,6 +255,15 @@ export class OpenTofuEncryption extends Construct {
       throw invalidOpenTofuRemoteStateSource();
     }
     if (
+      source.dataSource &&
+      TerraformStack.of(source.dataSource) !== this.stack
+    ) {
+      throw foreignOpenTofuRemoteStateSource(
+        source.dataSource.node.path,
+        this.stack.node.path,
+      );
+    }
+    if (
       this.remoteStateSources.some(
         (existing) =>
           (source.fromStack && existing.fromStack === source.fromStack) ||
@@ -404,7 +414,7 @@ export class OpenTofuEncryption extends Construct {
     };
 
     const covered = new Set<TerraformStack>();
-    for (const source of this.remoteStateSources) {
+    for (const { source } of this.usedRemoteStateSources()) {
       if (source.fromStack) {
         covered.add(source.fromStack);
         check(source.fromStack, source);
@@ -430,8 +440,21 @@ export class OpenTofuEncryption extends Construct {
       this.state,
       this.plan,
       this.remoteState,
-      ...this.remoteStateSources,
+      ...this.usedRemoteStateSources().map(({ source }) => source),
     ].filter((target) => target !== undefined);
+  }
+
+  // A fromStack source has no data source until this stack references that stack
+  private usedRemoteStateSources(): {
+    source: OpenTofuEncryptionRemoteStateSource;
+    dataSource: TerraformRemoteState;
+  }[] {
+    return this.remoteStateSources.flatMap((source) => {
+      const dataSource = source.fromStack
+        ? this.stack._incomingCrossStackDataSource(source.fromStack)
+        : source.dataSource;
+      return dataSource ? [{ source, dataSource }] : [];
+    });
   }
 
   // The key providers and methods the targets use, rejecting different objects with the same address
@@ -492,19 +515,14 @@ export class OpenTofuEncryption extends Construct {
     if (this.remoteState) {
       remoteStateBlocks.push(targetBlock("default", [], this.remoteState));
     }
-    for (const source of this.remoteStateSources) {
-      const dataSource = source.fromStack
-        ? this.stack._incomingCrossStackDataSource(source.fromStack)
-        : source.dataSource;
-      if (dataSource) {
-        remoteStateBlocks.push(
-          targetBlock(
-            "remote_state_data_source",
-            [dataSource.friendlyUniqueId],
-            source,
-          ),
-        );
-      }
+    for (const { source, dataSource } of this.usedRemoteStateSources()) {
+      remoteStateBlocks.push(
+        targetBlock(
+          "remote_state_data_source",
+          [dataSource.friendlyUniqueId],
+          source,
+        ),
+      );
     }
     if (remoteStateBlocks.length > 0) {
       targets.push({
