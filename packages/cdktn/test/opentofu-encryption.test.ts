@@ -12,9 +12,15 @@ import {
   LocalBackend,
   Manifest,
   OpenTofuAesGcmMethod,
+  OpenTofuAwsKmsKeyProvider,
+  OpenTofuAzureVaultKeyProvider,
   OpenTofuEncryption,
   OpenTofuEncryptionMethod,
+  OpenTofuExternalKeyProvider,
+  OpenTofuExternalMethod,
+  OpenTofuGcpKmsKeyProvider,
   OpenTofuKeyProvider,
+  OpenTofuOpenBaoKeyProvider,
   OpenTofuPbkdf2KeyProvider,
   OpenTofuUnencryptedMethod,
   TerraformIterator,
@@ -111,7 +117,7 @@ test("writes the encryption block to settings.tofu.json only, with the key provi
   expect(readStackFile(outdir, "cdk.tf.json")).not.toContain("encryption");
 });
 
-test("writes the encryption block to settings.tofu with HCL output, with config objects as attributes", () => {
+test("writes the encryption block to settings.tofu with HCL output, with assume_role as an attribute and endpoints as a block", () => {
   const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
   const app = new App({
     outdir,
@@ -119,10 +125,12 @@ test("writes the encryption block to settings.tofu with HCL output, with config 
     context: { targetVersions: { opentofu: ">=1.10.0" } },
   });
   const stack = new TerraformStack(app, "test");
-  // assume_role is an attribute; OpenTofu rejects it as a block
-  const kms = OpenTofuKeyProvider.custom("aws_kms", "kms", {
-    kms_key_id: "alias/state",
-    assume_role: { role_arn: "arn:aws:iam::123456789012:role/state" },
+  // OpenTofu rejects assume_role as a block, and endpoints as an attribute
+  const kms = new OpenTofuAwsKmsKeyProvider("kms", {
+    kmsKeyId: "alias/state",
+    keySpec: "AES_256",
+    assumeRole: { roleArn: "arn:aws:iam::123456789012:role/state" },
+    endpoints: { sts: "https://sts.example.com" },
   });
   const chained = new OpenTofuPbkdf2KeyProvider("chained", { chain: kms });
   new OpenTofuEncryption(stack, "encryption", {
@@ -142,7 +150,11 @@ test("writes the encryption block to settings.tofu with HCL output, with config 
     }
     key_provider "aws_kms" "kms" {
       kms_key_id = "alias/state"
+      key_spec = "AES_256"
       assume_role = { "role_arn" = "arn:aws:iam::123456789012:role/state" }
+      endpoints {
+        sts = "https://sts.example.com"
+      }
     }
     method "aes_gcm" "main" {
       keys = key_provider.pbkdf2.chained
@@ -158,6 +170,294 @@ test("writes the encryption block to settings.tofu with HCL output, with config 
 }
 `);
 });
+
+// every field set; the expected names are OpenTofu 1.12's, and tofu init decodes this output
+test.each<
+  [
+    string,
+    string[],
+    () => OpenTofuKeyProvider | OpenTofuEncryptionMethod,
+    string[],
+  ]
+>([
+  [
+    "aws_kms",
+    ["key_provider", "aws_kms", "main"],
+    () =>
+      new OpenTofuAwsKmsKeyProvider("main", {
+        kmsKeyId: "alias/state",
+        keySpec: "AES_256",
+        accessKey: "a",
+        secretKey: "s",
+        token: "t",
+        region: "us-east-1",
+        profile: "p",
+        sharedCredentialsFiles: ["c"],
+        sharedConfigFiles: ["c"],
+        assumeRole: { roleArn: "arn" },
+        assumeRoleWithWebIdentity: { roleArn: "arn" },
+        allowedAccountIds: ["1"],
+        forbiddenAccountIds: ["2"],
+        stsRegion: "us-east-1",
+        maxRetries: 1,
+        retryMode: "standard",
+        skipCredentialsValidation: true,
+        skipRequestingAccountId: true,
+        skipMetadataApiCheck: true,
+        ec2MetadataServiceEndpoint: "http://169.254.169.254",
+        ec2MetadataServiceEndpointMode: "IPv4",
+        httpProxy: "http://proxy",
+        httpsProxy: "http://proxy",
+        noProxy: "localhost",
+        insecure: false,
+        customCaBundle: "ca.pem",
+        useDualstackEndpoint: false,
+        useFipsEndpoint: false,
+        endpoints: { iam: "http://iam", sts: "http://sts" },
+        encryptedMetadataAlias: "alias",
+      }),
+    [
+      "access_key",
+      "allowed_account_ids",
+      "assume_role",
+      "assume_role_with_web_identity",
+      "custom_ca_bundle",
+      "ec2_metadata_service_endpoint",
+      "ec2_metadata_service_endpoint_mode",
+      "encrypted_metadata_alias",
+      "endpoints",
+      "forbidden_account_ids",
+      "http_proxy",
+      "https_proxy",
+      "insecure",
+      "key_spec",
+      "kms_key_id",
+      "max_retries",
+      "no_proxy",
+      "profile",
+      "region",
+      "retry_mode",
+      "secret_key",
+      "shared_config_files",
+      "shared_credentials_files",
+      "skip_credentials_validation",
+      "skip_metadata_api_check",
+      "skip_requesting_account_id",
+      "sts_region",
+      "token",
+      "use_dualstack_endpoint",
+      "use_fips_endpoint",
+    ],
+  ],
+  [
+    "aws_kms assume_role",
+    ["key_provider", "aws_kms", "main", "assume_role"],
+    () =>
+      new OpenTofuAwsKmsKeyProvider("main", {
+        kmsKeyId: "alias/state",
+        keySpec: "AES_256",
+        assumeRole: {
+          roleArn: "arn",
+          duration: "1h",
+          externalId: "e",
+          policy: "{}",
+          policyArns: ["arn"],
+          sessionName: "s",
+          tags: { Team: "infra" },
+          transitiveTagKeys: ["Team"],
+        },
+      }),
+    [
+      "duration",
+      "external_id",
+      "policy",
+      "policy_arns",
+      "role_arn",
+      "session_name",
+      "tags",
+      "transitive_tag_keys",
+    ],
+  ],
+  [
+    "aws_kms assume_role_with_web_identity",
+    ["key_provider", "aws_kms", "main", "assume_role_with_web_identity"],
+    () =>
+      new OpenTofuAwsKmsKeyProvider("main", {
+        kmsKeyId: "alias/state",
+        keySpec: "AES_256",
+        assumeRoleWithWebIdentity: {
+          roleArn: "arn",
+          duration: "1h",
+          policy: "{}",
+          policyArns: ["arn"],
+          sessionName: "s",
+          webIdentityToken: "t",
+          webIdentityTokenFile: "f",
+        },
+      }),
+    [
+      "duration",
+      "policy",
+      "policy_arns",
+      "role_arn",
+      "session_name",
+      "web_identity_token",
+      "web_identity_token_file",
+    ],
+  ],
+  [
+    "gcp_kms",
+    ["key_provider", "gcp_kms", "main"],
+    () =>
+      new OpenTofuGcpKmsKeyProvider("main", {
+        kmsEncryptionKey: "projects/p/locations/l/keyRings/r/cryptoKeys/k",
+        keyLength: 32,
+        credentials: "c",
+        accessToken: "t",
+        impersonateServiceAccount: "sa",
+        impersonateServiceAccountDelegates: ["d"],
+        encryptedMetadataAlias: "alias",
+      }),
+    [
+      "access_token",
+      "credentials",
+      "encrypted_metadata_alias",
+      "impersonate_service_account",
+      "impersonate_service_account_delegates",
+      "key_length",
+      "kms_encryption_key",
+    ],
+  ],
+  [
+    "azure_vault",
+    ["key_provider", "azure_vault", "main"],
+    () =>
+      new OpenTofuAzureVaultKeyProvider("main", {
+        vaultUri: "https://v.vault.azure.net",
+        vaultKeyName: "k",
+        keyLength: 32,
+        symmetric: true,
+        symmetricKeySize: 256,
+        tenantId: "t",
+        subscriptionId: "s",
+        environment: "public",
+        metadataHost: "h",
+        useCli: false,
+        clientId: "c",
+        clientIdFilePath: "f",
+        clientSecret: "s",
+        clientSecretFilePath: "f",
+        clientCertificate: "c",
+        clientCertificatePassword: "p",
+        clientCertificatePath: "f",
+        useOidc: true,
+        oidcToken: "t",
+        oidcTokenFilePath: "f",
+        oidcRequestUrl: "http://oidc",
+        oidcRequestToken: "t",
+        useMsi: true,
+        msiEndpoint: "http://msi",
+        useAksWorkloadIdentity: false,
+        encryptedMetadataAlias: "alias",
+      }),
+    [
+      "client_certificate",
+      "client_certificate_password",
+      "client_certificate_path",
+      "client_id",
+      "client_id_file_path",
+      "client_secret",
+      "client_secret_file_path",
+      "encrypted_metadata_alias",
+      "environment",
+      "key_length",
+      "metadata_host",
+      "msi_endpoint",
+      "oidc_request_token",
+      "oidc_request_url",
+      "oidc_token",
+      "oidc_token_file_path",
+      "subscription_id",
+      "symmetric",
+      "symmetric_key_size",
+      "tenant_id",
+      "use_aks_workload_identity",
+      "use_cli",
+      "use_msi",
+      "use_oidc",
+      "vault_key_name",
+      "vault_uri",
+    ],
+  ],
+  [
+    "openbao",
+    ["key_provider", "openbao", "main"],
+    () =>
+      new OpenTofuOpenBaoKeyProvider("main", {
+        keyName: "k",
+        keyLength: 32,
+        transitEnginePath: "/transit",
+        address: "http://bao",
+        token: "t",
+        encryptedMetadataAlias: "alias",
+      }),
+    [
+      "address",
+      "encrypted_metadata_alias",
+      "key_length",
+      "key_name",
+      "token",
+      "transit_engine_path",
+    ],
+  ],
+  [
+    "external key provider",
+    ["key_provider", "external", "main"],
+    () =>
+      new OpenTofuExternalKeyProvider("main", {
+        command: ["keys"],
+        encryptedMetadataAlias: "alias",
+      }),
+    ["command", "encrypted_metadata_alias"],
+  ],
+  [
+    "external method",
+    ["method", "external", "main"],
+    () =>
+      new OpenTofuExternalMethod("main", {
+        keys: new OpenTofuPbkdf2KeyProvider("main", {
+          passphrase: "p".repeat(16),
+        }),
+        encryptCommand: ["encrypt"],
+        decryptCommand: ["decrypt"],
+      }),
+    ["decrypt_command", "encrypt_command", "keys"],
+  ],
+])(
+  "writes every %s attribute under OpenTofu's name",
+  (_, path, create, names) => {
+    const stack = stackTargeting({ opentofu: ">=1.11.0" });
+    const element = create();
+    new OpenTofuEncryption(stack, "encryption", {
+      state: {
+        method:
+          path[0] === "method"
+            ? (element as OpenTofuEncryptionMethod)
+            : new OpenTofuAesGcmMethod("main", {
+                keys: element as OpenTofuKeyProvider,
+              }),
+      },
+    });
+
+    const outdir = Testing.fullSynth(stack);
+
+    const written = path.reduce(
+      (block, key) => block[key],
+      readJson(outdir, "settings.tofu.json").terraform.encryption,
+    );
+    expect(Object.keys(written).sort()).toEqual(names);
+  },
+);
 
 test("writes expressions in settings.tofu unescaped and escapes only literal text", () => {
   const outdir = fs.mkdtempSync(path.join(os.tmpdir(), "cdktf.outdir."));
@@ -465,6 +765,19 @@ test.each<
       }),
   ],
   [
+    "a key provider needs a newer OpenTofu than the project targets",
+    { opentofu: ">=1.10.0" },
+    "The azure_vault key provider requires opentofu >=1.11.0, but the project targets opentofu >=1.10.0.",
+    (stack) =>
+      OpenTofuEncryption.withKeys(stack, "encryption", {
+        keys: new OpenTofuAzureVaultKeyProvider("main", {
+          vaultUri: "https://example.vault.azure.net",
+          vaultKeyName: "state",
+          keyLength: 32,
+        }),
+      }),
+  ],
+  [
     "a key provider uses a variable of another stack, which OpenTofu can't see",
     { opentofu: ">=1.8.0" },
     "key_provider.pbkdf2.main uses var.other_passphrase, which the stack at 'test' doesn't declare.",
@@ -519,6 +832,20 @@ test.each<
       });
     },
   ]),
+  [
+    "a method needs a newer OpenTofu than the project targets",
+    { opentofu: ">=1.9.0" },
+    "The external encryption method requires opentofu >=1.10.0, but the project targets opentofu >=1.9.0.",
+    (stack) =>
+      new OpenTofuEncryption(stack, "encryption", {
+        state: {
+          method: new OpenTofuExternalMethod("main", {
+            encryptCommand: ["encrypt"],
+            decryptCommand: ["decrypt"],
+          }),
+        },
+      }),
+  ],
   [
     "an enforced target uses the unencrypted method, which OpenTofu rejects",
     { opentofu: ">=1.8.0" },
