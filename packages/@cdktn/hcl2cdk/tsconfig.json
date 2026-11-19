@@ -30,7 +30,8 @@
     "incremental": true,
     "esModuleInterop": true,
     "rootDir": "./src",
-    "outDir": "./build"
+    "outDir": "./build",
+    "tsBuildInfoFile": "./build/tsconfig.tsbuildinfo"
   },
   "files": [
     "ambient.d.ts"
