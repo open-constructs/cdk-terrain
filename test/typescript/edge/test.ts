@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc
 // SPDX-License-Identifier: MPL-2.0
-import { QueryableStack, TestDriver, onlyJson } from "../../test-helper";
+import {
+  QueryableStack,
+  TestDriver,
+  expectSameSynth,
+  onlyJson,
+} from "../../test-helper";
 import * as path from "path";
 import * as fs from "fs-extra";
 
@@ -301,6 +306,34 @@ describe("edge provider test", () => {
           },
         });
       });
+    });
+  });
+
+  // list_block_resource's opt/req and singleopt/singlereq blocks each share a
+  // shape; the program's struct types for them must keep compiling.
+  describe("with compatible struct dedup bindings", () => {
+    let compat: TestDriver;
+
+    beforeAll(async () => {
+      compat = new TestDriver(__dirname);
+      await compat.setupTypescriptProject();
+      fs.copySync(
+        path.resolve(
+          __dirname,
+          "..",
+          "..",
+          "edge-provider-bindings",
+          "compat",
+          "providers",
+          "edge",
+        ),
+        path.resolve(compat.workingDirectory, ".gen", "providers", "edge"),
+      );
+      await compat.synth("fixed");
+    });
+
+    it("synthesizes every stack identically", () => {
+      expectSameSynth(driver, compat);
     });
   });
 });
