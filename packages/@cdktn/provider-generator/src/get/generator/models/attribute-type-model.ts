@@ -159,8 +159,19 @@ export class SimpleAttributeTypeModel implements AttributeTypeModel {
   }
 }
 
+/** The struct type model behind `type`, looking through collections. */
+export function structTypeModelOf(
+  type: AttributeTypeModel | undefined,
+): StructAttributeTypeModel | undefined {
+  if (type instanceof StructAttributeTypeModel) return type;
+  const element = (type as CollectionAttributeTypeModel | undefined)
+    ?.elementType;
+  return element ? structTypeModelOf(element) : undefined;
+}
+
 export class StructAttributeTypeModel implements AttributeTypeModel {
-  constructor(public readonly struct: Struct) {}
+  // Mutable so struct dedup can repoint it at the canonical struct.
+  constructor(public struct: Struct) {}
 
   get typeModelType() {
     return "struct";
@@ -222,7 +233,7 @@ export class ListAttributeTypeModel implements CollectionAttributeTypeModel {
   constructor(
     public readonly elementType: AttributeTypeModel,
     public readonly isSingleItem: boolean,
-    private readonly isBlock: boolean,
+    public readonly isBlock: boolean,
   ) {
     if (this.struct) {
       this.struct.isSingleItem = this.isSingleItem || false;
@@ -352,7 +363,7 @@ export class SetAttributeTypeModel implements CollectionAttributeTypeModel {
   constructor(
     public readonly elementType: AttributeTypeModel,
     public readonly isSingleItem: boolean,
-    private readonly isBlock: boolean,
+    public readonly isBlock: boolean,
   ) {
     if (this.struct) {
       this.struct.isSingleItem = this.isSingleItem || false;

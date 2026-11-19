@@ -28,6 +28,7 @@ import {
   SkippedAttributeTypeModel,
 } from "./models";
 import { detectAttributeLoops } from "./loop-detection";
+import { deduplicateStructs } from "./struct-dedup";
 import { shouldSkipAttribute } from "./skipped-attributes";
 
 // Can't be used in expressions like "export * as <keyword> from ... "
@@ -281,6 +282,18 @@ class Parser {
         disposeStructs(previousAttribute);
       },
     );
+
+    // Gated while the naming strategy is settled; unset means unchanged output.
+    const dedupMode = process.env.CDKTN_STRUCT_DEDUP_MODE;
+    if (dedupMode) {
+      if (dedupMode !== "full") {
+        throw new Error(
+          `Unknown CDKTN_STRUCT_DEDUP_MODE "${dedupMode}" (expected "full")`,
+        );
+      }
+      const removedStructs = deduplicateStructs(attributes);
+      this.structs = this.structs.filter((s) => !removedStructs.has(s));
+    }
 
     attributes = deduplicateAttributesWithSameName(attributes);
 
