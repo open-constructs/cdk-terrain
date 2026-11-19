@@ -11,9 +11,12 @@ import {
   Fn,
   LocalBackend,
   Manifest,
+  OpenTofuAesGcmMethod,
   OpenTofuEncryption,
   OpenTofuEncryptionMethod,
   OpenTofuKeyProvider,
+  OpenTofuPbkdf2KeyProvider,
+  OpenTofuUnencryptedMethod,
   TerraformOutput,
   TerraformStack,
   TerraformVariable,
@@ -48,7 +51,7 @@ const stackTargeting = (targetVersions?: TerraformTargetVersions) =>
   );
 
 const passphraseKey = (stack: TerraformStack) =>
-  OpenTofuKeyProvider.pbkdf2("main", {
+  new OpenTofuPbkdf2KeyProvider("main", {
     passphrase: new TerraformVariable(stack, "state_passphrase", {
       type: "string",
       sensitive: true,
@@ -57,13 +60,13 @@ const passphraseKey = (stack: TerraformStack) =>
 
 // a passphrase from a variable, aes_gcm, and an unencrypted fallback for migrating existing state
 const encryptWithPassphrase = (stack: TerraformStack) => {
-  const aes = OpenTofuEncryptionMethod.aesGcm("main", {
+  const aes = new OpenTofuAesGcmMethod("main", {
     keys: passphraseKey(stack),
   });
   return new OpenTofuEncryption(stack, "encryption", {
     state: {
       method: aes,
-      fallback: OpenTofuEncryptionMethod.unencrypted("migrate"),
+      fallback: new OpenTofuUnencryptedMethod("migrate"),
     },
     plan: { method: aes, enforced: true },
   });
@@ -119,11 +122,11 @@ test("writes the encryption block to settings.tofu with HCL output, with config 
     kms_key_id: "alias/state",
     assume_role: { role_arn: "arn:aws:iam::123456789012:role/state" },
   });
-  const chained = OpenTofuKeyProvider.pbkdf2("chained", { chain: kms });
+  const chained = new OpenTofuPbkdf2KeyProvider("chained", { chain: kms });
   new OpenTofuEncryption(stack, "encryption", {
     state: {
-      method: OpenTofuEncryptionMethod.aesGcm("main", { keys: chained }),
-      fallback: OpenTofuEncryptionMethod.unencrypted("migrate"),
+      method: new OpenTofuAesGcmMethod("main", { keys: chained }),
+      fallback: new OpenTofuUnencryptedMethod("migrate"),
     },
   });
 
@@ -163,8 +166,8 @@ test("writes expressions in settings.tofu unescaped and escapes only literal tex
   });
   const stack = new TerraformStack(app, "test");
   const keys = (name: string, passphrase: string) =>
-    OpenTofuEncryptionMethod.aesGcm(name, {
-      keys: OpenTofuKeyProvider.pbkdf2(name, { passphrase }),
+    new OpenTofuAesGcmMethod(name, {
+      keys: new OpenTofuPbkdf2KeyProvider(name, { passphrase }),
     });
   new OpenTofuEncryption(stack, "encryption", {
     state: { method: keys("file", Fn.trimspace(Fn.file("pass.txt"))) },
@@ -194,7 +197,7 @@ test("decrypts remote state per source, labelled with the data source's name", (
     path: "legacy.tfstate",
   });
 
-  const aes = OpenTofuEncryptionMethod.aesGcm("main", {
+  const aes = new OpenTofuAesGcmMethod("main", {
     keys: passphraseKey(consumer),
   });
   const encryption = new OpenTofuEncryption(consumer, "encryption", {
@@ -208,7 +211,7 @@ test("decrypts remote state per source, labelled with the data source's name", (
   });
   encryption.addRemoteStateSource({
     dataSource: legacy,
-    method: OpenTofuEncryptionMethod.unencrypted("legacy"),
+    method: new OpenTofuUnencryptedMethod("legacy"),
   });
 
   app.synth();
@@ -248,7 +251,7 @@ const consumerOfNetwork = (sourceKeys?: OpenTofuKeyProvider) => {
   const network = new TerraformStack(app, "network");
   const id = new TerraformVariable(network, "id", { type: "string" });
   OpenTofuEncryption.withKeys(network, "encryption", {
-    keys: OpenTofuKeyProvider.pbkdf2("network", {
+    keys: new OpenTofuPbkdf2KeyProvider("network", {
       passphrase: "n".repeat(16),
     }),
   });
@@ -260,7 +263,7 @@ const consumerOfNetwork = (sourceKeys?: OpenTofuKeyProvider) => {
   if (sourceKeys) {
     encryption.addRemoteStateSource({
       fromStack: network,
-      method: OpenTofuEncryptionMethod.aesGcm("network", { keys: sourceKeys }),
+      method: new OpenTofuAesGcmMethod("network", { keys: sourceKeys }),
     });
   }
   return app;
@@ -274,7 +277,7 @@ test.each<[string, OpenTofuKeyProvider | undefined, string]>([
   ],
   [
     "a source",
-    OpenTofuKeyProvider.pbkdf2("other", { passphrase: "n".repeat(16) }),
+    new OpenTofuPbkdf2KeyProvider("other", { passphrase: "n".repeat(16) }),
     "The stack at 'test' decrypts the state of the stack at 'network' with key_provider.pbkdf2.other, but that stack encrypts its state with key_provider.pbkdf2.network.",
   ],
 ])(
@@ -287,11 +290,11 @@ test.each<[string, OpenTofuKeyProvider | undefined, string]>([
 test.each<[string, OpenTofuKeyProvider]>([
   [
     "the other stack's type and name",
-    OpenTofuKeyProvider.pbkdf2("network", { passphrase: "n".repeat(16) }),
+    new OpenTofuPbkdf2KeyProvider("network", { passphrase: "n".repeat(16) }),
   ],
   [
     "the other stack's metadata key as its alias",
-    OpenTofuKeyProvider.pbkdf2("renamed", {
+    new OpenTofuPbkdf2KeyProvider("renamed", {
       passphrase: "n".repeat(16),
       encryptedMetadataAlias: "key_provider.pbkdf2.network",
     }),
@@ -381,7 +384,7 @@ test.each<
     "The pbkdf2 key provider's chain attribute requires opentofu >=1.10.0, but the project targets opentofu >=1.8.0.",
     (stack) =>
       OpenTofuEncryption.withKeys(stack, "encryption", {
-        keys: OpenTofuKeyProvider.pbkdf2("chained", {
+        keys: new OpenTofuPbkdf2KeyProvider("chained", {
           chain: passphraseKey(stack),
         }),
       }),
@@ -393,7 +396,7 @@ test.each<
     (stack) => {
       const other = new TerraformStack(stack.node.scope!, "other");
       OpenTofuEncryption.withKeys(stack, "encryption", {
-        keys: OpenTofuKeyProvider.pbkdf2("main", {
+        keys: new OpenTofuPbkdf2KeyProvider("main", {
           passphrase: new TerraformVariable(other, "other_passphrase", {
             type: "string",
           }).stringValue,
@@ -407,7 +410,7 @@ test.each<
     "key_provider.pbkdf2.main uses terraform_data.passphrase, but OpenTofu evaluates the encryption block before planning, so it can only use variables, locals and functions.",
     (stack) =>
       OpenTofuEncryption.withKeys(stack, "encryption", {
-        keys: OpenTofuKeyProvider.pbkdf2("main", {
+        keys: new OpenTofuPbkdf2KeyProvider("main", {
           passphrase: new DataResource(stack, "passphrase", {
             input: { value: "x" },
           }).id,
@@ -459,15 +462,15 @@ test.each<[string, (stack: TerraformStack) => void, string]>([
     "two different key providers with the same type and name",
     (stack) => {
       const keys = (passphrase: string) =>
-        OpenTofuKeyProvider.pbkdf2("main", { passphrase });
+        new OpenTofuPbkdf2KeyProvider("main", { passphrase });
       new OpenTofuEncryption(stack, "encryption", {
         state: {
-          method: OpenTofuEncryptionMethod.aesGcm("state", {
+          method: new OpenTofuAesGcmMethod("state", {
             keys: keys("a"),
           }),
         },
         plan: {
-          method: OpenTofuEncryptionMethod.aesGcm("plan", { keys: keys("b") }),
+          method: new OpenTofuAesGcmMethod("plan", { keys: keys("b") }),
         },
       });
       Testing.fullSynth(stack);
@@ -476,7 +479,7 @@ test.each<[string, (stack: TerraformStack) => void, string]>([
   ],
   [
     "a method name that isn't an identifier, since references are written unquoted",
-    () => OpenTofuEncryptionMethod.unencrypted("main } evil {"),
+    () => new OpenTofuUnencryptedMethod("main } evil {"),
     `"main } evil {" isn't a valid OpenTofu encryption type or name.`,
   ],
   [
@@ -486,7 +489,7 @@ test.each<[string, (stack: TerraformStack) => void, string]>([
       const encryption = new OpenTofuEncryption(stack, "encryption");
       const source = {
         fromStack: other,
-        method: OpenTofuEncryptionMethod.unencrypted("other"),
+        method: new OpenTofuUnencryptedMethod("other"),
       };
       encryption.addRemoteStateSource(source);
       encryption.addRemoteStateSource(source);
@@ -497,7 +500,7 @@ test.each<[string, (stack: TerraformStack) => void, string]>([
     "a remote state source without a data source or stack",
     (stack) =>
       new OpenTofuEncryption(stack, "encryption").addRemoteStateSource({
-        method: OpenTofuEncryptionMethod.unencrypted("migrate"),
+        method: new OpenTofuUnencryptedMethod("migrate"),
       }),
     "An OpenTofuEncryption remote state source needs exactly one of fromStack and dataSource.",
   ],

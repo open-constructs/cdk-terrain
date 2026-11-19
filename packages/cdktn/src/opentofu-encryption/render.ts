@@ -1,0 +1,338 @@
+// Copyright (c) HashiCorp, Inc
+// SPDX-License-Identifier: MPL-2.0
+import { Construct } from "constructs";
+import { resolve } from "../_tokens";
+import { Tokenization } from "../tokens/token";
+import { isKeyProvider, OpenTofuKeyProvider } from "./key-provider";
+import type { OpenTofuEncryptionMethod } from "./method";
+import type {
+  OpenTofuEncryptionRemoteStateTarget,
+  OpenTofuEncryptionTarget,
+} from "./opentofu-encryption";
+
+const TRAVERSAL = Symbol("traversal");
+
+// A reference such as `method.aes_gcm.main`, which OpenTofu only accepts as a bare traversal, never as `${...}`
+interface Traversal {
+  readonly [TRAVERSAL]: string;
+}
+
+export interface Block {
+  readonly type: string;
+  readonly labels: string[];
+  readonly attributes: { [key: string]: any };
+  readonly blocks: Block[];
+}
+
+// The root and first attribute of each traversal in the `${...}` expressions of a block's attributes
+const EXPRESSION_REFERENCE =
+  /(?<![\w.)\]-])([A-Za-z_][\w-]*)\.([A-Za-z_][\w-]*)/g;
+
+const IGNORED_REFERENCE_ROOTS = ["path", "terraform"];
+
+/**
+ * Finds the references, such as `var.passphrase`, in the expressions of a block's attribute values.
+ * @param block - the block
+ * @returns the references, as root and first attribute
+ */
+export function references(block: Block): string[] {
+  const found = new Set<string>();
+  const visit = (value: any): void => {
+    if (typeof value === "string") {
+      for (const segment of templateSegments(value)) {
+        if (!segment.expression) continue;
+        // quoted strings inside the expression aren't references
+        const code = segment.text.replace(/"(?:[^"\\]|\\.)*"/g, '""');
+        for (const [, root, attribute] of code.matchAll(EXPRESSION_REFERENCE)) {
+          if (!IGNORED_REFERENCE_ROOTS.includes(root)) {
+            found.add(`${root}.${attribute}`);
+          }
+        }
+      }
+    } else if (Array.isArray(value)) {
+      value.forEach(visit);
+    } else if (isPlainObject(value)) {
+      Object.values(value).forEach(visit);
+    }
+  };
+  visit(block.attributes);
+  block.blocks.forEach((child) =>
+    references(child).forEach((r) => found.add(r)),
+  );
+  return [...found];
+}
+
+/**
+ * Splits a template string into literal text and `${...}` expressions. `$${` is an escaped literal `${`.
+ * @param str - the string
+ * @returns the segments, in order
+ */
+function templateSegments(
+  str: string,
+): { text: string; expression: boolean }[] {
+  const segments: { text: string; expression: boolean }[] = [];
+  let literal = "";
+  let i = 0;
+  while (i < str.length) {
+    if (str.startsWith("$${", i)) {
+      literal += "$${";
+      i += 3;
+    } else if (str.startsWith("${", i)) {
+      const end = expressionEnd(str, i + 2);
+      if (end === -1) {
+        literal += str.slice(i);
+        break;
+      }
+      if (literal) segments.push({ text: literal, expression: false });
+      segments.push({ text: str.slice(i, end + 1), expression: true });
+      literal = "";
+      i = end + 1;
+    } else {
+      literal += str[i];
+      i += 1;
+    }
+  }
+  if (literal) segments.push({ text: literal, expression: false });
+  return segments;
+}
+
+/**
+ * Finds the `}` that closes an expression, skipping nested braces and quoted strings.
+ * @param str - the string
+ * @param start - the index after the opening `${`
+ * @returns the index of the closing `}`, or -1 if it isn't closed
+ */
+function expressionEnd(str: string, start: number): number {
+  let depth = 1;
+  for (let i = start; i < str.length; i++) {
+    const c = str[i];
+    if (c === '"') {
+      for (i++; i < str.length && str[i] !== '"'; i++) {
+        if (str[i] === "\\") i++;
+      }
+    } else if (c === "{") {
+      depth++;
+    } else if (c === "}" && --depth === 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Renders a string as an HCL quoted template. Literal text is escaped; `${...}` expressions are HCL already, so
+ * escaping the quotes inside them would break them.
+ * @param str - the string, e.g. a resolved token such as `${file("pass.txt")}`
+ * @returns the quoted template
+ */
+function renderHclString(str: string): string {
+  const body = templateSegments(str)
+    .map(({ text, expression }) =>
+      expression ? text : text.replace(/[\\"\n\r\t]/g, (c) => HCL_ESCAPES[c]),
+    )
+    .join("");
+  return `"${body}"`;
+}
+
+const HCL_ESCAPES: { [char: string]: string } = {
+  "\\": "\\\\",
+  '"': '\\"',
+  "\n": "\\n",
+  "\r": "\\r",
+  "\t": "\\t",
+};
+
+/**
+ * Finds the key providers that a key provider's or method's attributes reference.
+ * @param value - the attributes, or part of them
+ * @returns the key providers
+ */
+export function keyProvidersIn(value: any): OpenTofuKeyProvider[] {
+  if (isKeyProvider(value)) return [value];
+  if (Array.isArray(value)) return value.flatMap(keyProvidersIn);
+  if (isPlainObject(value)) {
+    return Object.values(value).flatMap(keyProvidersIn);
+  }
+  return [];
+}
+
+/**
+ * Builds a reference to a key provider or method.
+ * @param kind - what the reference points to
+ * @param ref - the key provider or method
+ * @returns the reference
+ */
+function traversal(
+  kind: "key_provider" | "method",
+  ref: { readonly type: string; readonly name: string },
+): Traversal {
+  return { [TRAVERSAL]: `${kind}.${ref.type}.${ref.name}` };
+}
+
+/**
+ * Checks whether the value is a reference built by {@link traversal}.
+ * @param value - any value
+ * @returns true for a reference
+ */
+function isTraversal(value: any): value is Traversal {
+  return typeof value === "object" && value !== null && TRAVERSAL in value;
+}
+
+/**
+ * Checks whether the value is an object other than an array, a reference, a key provider or a token.
+ * @param value - any value
+ * @returns true for a plain object
+ */
+function isPlainObject(value: any): value is { [key: string]: any } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !isTraversal(value) &&
+    !isKeyProvider(value) &&
+    !Tokenization.isResolvable(value)
+  );
+}
+
+/**
+ * Resolves the tokens in a key provider's or method's attributes, and turns key providers into references.
+ * @param scope - the scope to resolve tokens in
+ * @param value - the attributes, or part of them
+ * @returns the resolved value
+ */
+function resolveAttribute(scope: Construct, value: any): any {
+  if (isKeyProvider(value)) return traversal("key_provider", value);
+  if (Array.isArray(value)) return value.map((v) => resolveAttribute(scope, v));
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, resolveAttribute(scope, v)]),
+    );
+  }
+  return resolve(scope, value);
+}
+
+/**
+ * Builds the `key_provider` or `method` block declaring a key provider or method.
+ * @param scope - the scope to resolve tokens in
+ * @param kind - the block type
+ * @param element - the key provider or method
+ * @returns the block
+ */
+export function declarationBlock(
+  scope: Construct,
+  kind: "key_provider" | "method",
+  element: OpenTofuKeyProvider | OpenTofuEncryptionMethod,
+): Block {
+  return {
+    type: kind,
+    labels: [element.type, element.name],
+    attributes: resolveAttribute(scope, element._config),
+    blocks: [],
+  };
+}
+
+/**
+ * Builds the block of a target, e.g. `state`.
+ * @param type - the block type
+ * @param labels - the block labels
+ * @param target - the target
+ * @returns the block
+ */
+export function targetBlock(
+  type: string,
+  labels: string[],
+  target: OpenTofuEncryptionTarget | OpenTofuEncryptionRemoteStateTarget,
+): Block {
+  const attributes: { [key: string]: any } = {
+    method: traversal("method", target.method),
+  };
+  if ("enforced" in target && target.enforced !== undefined) {
+    attributes.enforced = target.enforced;
+  }
+  const blocks: Block[] = target.fallback
+    ? [
+        {
+          type: "fallback",
+          labels: [],
+          attributes: { method: traversal("method", target.fallback) },
+          blocks: [],
+        },
+      ]
+    : [];
+  return { type, labels, attributes, blocks };
+}
+
+/**
+ * Converts references to the bare strings Terraform JSON configuration expects.
+ * @param value - an attribute value
+ * @returns the JSON value
+ */
+function toJsonValue(value: any): any {
+  if (isTraversal(value)) return value[TRAVERSAL];
+  if (Array.isArray(value)) return value.map(toJsonValue);
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, toJsonValue(v)]),
+    );
+  }
+  return value;
+}
+
+/**
+ * Renders a block's content as Terraform JSON configuration, nesting labelled blocks by type and labels.
+ * @param block - the block
+ * @returns the JSON object
+ */
+export function blockToJson(block: Block): { [key: string]: any } {
+  const json = toJsonValue(block.attributes);
+  for (const child of block.blocks) {
+    const path = [child.type, ...child.labels];
+    let parent = json;
+    for (const key of path.slice(0, -1)) {
+      parent = parent[key] ??= {};
+    }
+    parent[path[path.length - 1]] = blockToJson(child);
+  }
+  return json;
+}
+
+/**
+ * Renders a block as HCL.
+ * @param block - the block
+ * @param indent - the block's indentation
+ * @returns the block's lines
+ */
+export function blockToHcl(block: Block, indent: string): string[] {
+  const header = [block.type, ...block.labels.map((l) => JSON.stringify(l))];
+  const inner = `${indent}  `;
+  const lines = [
+    ...Object.entries(block.attributes).map(
+      ([key, value]) => `${inner}${key} = ${renderHclExpression(value)}`,
+    ),
+    ...block.blocks.flatMap((child) => blockToHcl(child, inner)),
+  ];
+  if (lines.length === 0) return [`${indent}${header.join(" ")} {}`];
+  return [`${indent}${header.join(" ")} {`, ...lines, `${indent}}`];
+}
+
+/**
+ * Renders an attribute value as an HCL expression.
+ * @param value - the value
+ * @returns the expression
+ */
+function renderHclExpression(value: any): string {
+  if (isTraversal(value)) return value[TRAVERSAL];
+  if (Array.isArray(value)) {
+    return `[${value.map(renderHclExpression).join(", ")}]`;
+  }
+  if (isPlainObject(value)) {
+    const entries = Object.entries(value).map(
+      ([k, v]) => `${JSON.stringify(k)} = ${renderHclExpression(v)}`,
+    );
+    return `{ ${entries.join(", ")} }`;
+  }
+  if (typeof value === "string") return renderHclString(value);
+  return JSON.stringify(value);
+}
