@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as fs from "fs-extra";
 import * as path from "path";
+import * as ts from "typescript";
 import { generateProviderBindingsFromSchema } from "..";
 import { AttributeType, Block, mkdtemp } from "@cdktn/commons";
 import { schema, SchemaBuilder as S } from "./edge-provider-schema/builder";
@@ -111,6 +112,37 @@ const lookalikes = schema({
   },
 });
 
+// The same object under list(list(...)) and list(set(...)). The wrapper chain
+// reaches the signature through the inner struct's nestingMode.
+const wrapped = (inner: "list" | "set") =>
+  new S()
+    .attribute({
+      name: "x",
+      type: ["list", [inner, ["object", { v: "string" }]]],
+    })
+    .asBlock();
+const wrappers = schema({
+  name: "dedup",
+  provider: new S().build(),
+  dataSources: {},
+  resources: {
+    wrappers: new S()
+      .listBlock({
+        name: "lists",
+        block: wrapped("list"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .listBlock({
+        name: "sets",
+        block: wrapped("set"),
+        minItems: 0,
+        maxItems: 9,
+      })
+      .build(),
+  },
+});
+
 // Enough structs that the resource's structs are sharded into their own files
 // (and imported back) even after same_a/same_b merge.
 const wideBlocks = new S();
@@ -151,49 +183,101 @@ interface Exports {
   functions: Set<string>;
 }
 
-async function generate(
-  mode?: string,
-  provider = fixture,
-  providerName = "dedup",
-): Promise<Exports> {
+async function withBindings<T>(
+  mode: string | undefined,
+  provider: typeof fixture,
+  providerName: string,
+  inspect: (root: string) => T,
+): Promise<T> {
   const previous = process.env.CDKTN_STRUCT_DEDUP_MODE;
   if (mode === undefined) delete process.env.CDKTN_STRUCT_DEDUP_MODE;
   else process.env.CDKTN_STRUCT_DEDUP_MODE = mode;
   try {
+    let result!: T;
+    await mkdtemp(async (dir) => {
+      await generateProviderBindingsFromSchema(dir, provider);
+      result = inspect(path.join(dir, "providers", providerName));
+    });
+    return result;
+  } finally {
+    if (previous === undefined) delete process.env.CDKTN_STRUCT_DEDUP_MODE;
+    else process.env.CDKTN_STRUCT_DEDUP_MODE = previous;
+  }
+}
+
+function generate(
+  mode?: string,
+  provider = fixture,
+  providerName = "dedup",
+): Promise<Exports> {
+  return withBindings(mode, provider, providerName, (root) => {
     const exports: Exports = {
       files: new Map(),
       interfaces: new Map(),
       classes: new Set(),
       functions: new Set(),
     };
-    await mkdtemp(async (dir) => {
-      await generateProviderBindingsFromSchema(dir, provider);
-      const root = path.join(dir, "providers", providerName);
-      for (const file of fs.readdirSync(root, {
-        recursive: true,
-        encoding: "utf8",
-      })) {
-        if (!file.endsWith(".ts")) continue;
-        const source = fs.readFileSync(path.join(root, file), "utf8");
-        exports.files.set(file.split(path.sep).join("/"), source);
-        for (const m of source.matchAll(
-          /\nexport interface (\w+)[^{]*\{.*?\n\}/gs,
-        )) {
-          exports.interfaces.set(m[1], m[0]);
-        }
-        for (const m of source.matchAll(/\nexport class (\w+)/g)) {
-          exports.classes.add(m[1]);
-        }
-        for (const m of source.matchAll(/\nexport function (\w+)/g)) {
-          exports.functions.add(m[1]);
-        }
+    for (const file of fs.readdirSync(root, {
+      recursive: true,
+      encoding: "utf8",
+    })) {
+      if (!file.endsWith(".ts")) continue;
+      const source = fs.readFileSync(path.join(root, file), "utf8");
+      exports.files.set(file.split(path.sep).join("/"), source);
+      for (const m of source.matchAll(
+        /\nexport interface (\w+)[^{]*\{.*?\n\}/gs,
+      )) {
+        exports.interfaces.set(m[1], m[0]);
       }
-    });
+      for (const m of source.matchAll(/\nexport class (\w+)/g)) {
+        exports.classes.add(m[1]);
+      }
+      for (const m of source.matchAll(/\nexport function (\w+)/g)) {
+        exports.functions.add(m[1]);
+      }
+    }
     return exports;
-  } finally {
-    if (previous === undefined) delete process.env.CDKTN_STRUCT_DEDUP_MODE;
-    else process.env.CDKTN_STRUCT_DEDUP_MODE = previous;
-  }
+  });
+}
+
+// Type-checks generated bindings the way jsii compiles them (strict, no unused locals).
+function typeErrors(
+  mode: string,
+  provider: typeof fixture,
+  providerName: string,
+): Promise<string[]> {
+  const cdktn = path.dirname(require.resolve("cdktn/package.json"));
+  const constructs = path.dirname(
+    require.resolve("constructs/package.json", { paths: [cdktn] }),
+  );
+  return withBindings(mode, provider, providerName, (root) => {
+    const files = fs
+      .readdirSync(root, { recursive: true, encoding: "utf8" })
+      .filter((f) => f.endsWith(".ts"))
+      .map((f) => path.join(root, f));
+    const program = ts.createProgram(files, {
+      noEmit: true,
+      strict: true,
+      noUnusedLocals: true,
+      skipLibCheck: true,
+      types: ["node"],
+      typeRoots: [
+        path.dirname(path.dirname(require.resolve("@types/node/package.json"))),
+      ],
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      paths: {
+        cdktn: [path.join(cdktn, "lib/index.d.ts")],
+        constructs: [path.join(constructs, "lib/index.d.ts")],
+      },
+    });
+    return ts
+      .getPreEmitDiagnostics(program)
+      .map((d) =>
+        ts.flattenDiagnosticMessageText(d.messageText, "\n").slice(0, 200),
+      );
+  });
 }
 
 describe("CDKTN_STRUCT_DEDUP_MODE", () => {
@@ -267,6 +351,25 @@ describe("CDKTN_STRUCT_DEDUP_MODE", () => {
       .map((n) => n.trim());
     expect(names).toContain("WideSameA");
     expect(names.filter((n, i) => names.indexOf(n) !== i)).toEqual([]);
+  });
+
+  it("full keeps structs that differ only in an inner collection wrapper", async () => {
+    const { interfaces } = await generate("full", wrappers);
+    const kept = [
+      "WrappersLists",
+      "WrappersSets",
+      "WrappersListsX",
+      "WrappersSetsX",
+    ];
+    expect(kept.filter((n) => !interfaces.has(n))).toEqual([]);
+  });
+
+  it.each([
+    ["fixture", fixture, "dedup"],
+    ["lookalikes", lookalikes, "aws"],
+    ["wide", wide, "dedup"],
+  ] as const)("full output for %s type-checks", async (_, provider, name) => {
+    expect(await typeErrors("full", provider, name)).toEqual([]);
   });
 
   it("rejects an unknown mode", async () => {

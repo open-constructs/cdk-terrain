@@ -38,8 +38,8 @@ function signature(struct: Struct, stack: Struct[]): string {
         ? signature(holder.struct, stack)
         : a.type.storedClassType;
       // Everything that changes what is emitted for the attribute (`required`
-      // follows from optional/computed). typeModelType distinguishes
-      // list/set/map wrappers around one shape.
+      // follows from optional/computed). typeModelType is the outer wrapper;
+      // inner ones reach `inner` via the struct's nestingMode (listlist, setlist, ...).
       return [
         a.terraformName,
         a.optional ? "?" : "",
