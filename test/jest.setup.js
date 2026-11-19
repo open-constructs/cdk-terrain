@@ -13,3 +13,6 @@ global.beforeAll = function beforeAllWithDefaultTimeout(setup, timeout = DEFAULT
 };
 
 jest.retryTimes(1)
+
+// remove the temp dirs TestDriver.switchToTempDir() and shadowBinary() created for this test file
+afterAll(() => require("./test-helper").removeTempDirs());
