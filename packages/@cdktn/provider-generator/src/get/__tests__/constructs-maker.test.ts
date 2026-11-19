@@ -8,9 +8,45 @@ import {
   ConstructsMakerModuleTarget,
   ConstructsMakerProviderTarget,
 } from "@cdktn/commons";
-import { ConstructsMaker, determineGoModuleName } from "../constructs-maker";
+import {
+  ConstructsMaker,
+  determineGoModuleName,
+  pacmakArgs,
+} from "../constructs-maker";
 
 describe("constructsMaker", () => {
+  describe("pacmakArgs", () => {
+    const base = { entrypoint: "index.ts", deps: [], moduleKey: "test" };
+    const golang = {
+      outdir: ".",
+      moduleName: "cdk.tf/test",
+      packageName: "test",
+    };
+
+    it("disables runtime type checking when Go is the only target", () => {
+      expect(pacmakArgs({ ...base, golang })).toEqual([
+        "--code-only",
+        "--no-runtime-type-checking",
+      ]);
+    });
+
+    it("keeps runtime type checking for non-Go targets", () => {
+      expect(
+        pacmakArgs({ ...base, python: { outdir: ".", moduleName: "test" } }),
+      ).toEqual(["--code-only"]);
+    });
+
+    it("keeps runtime type checking when Go is combined with another target", () => {
+      expect(
+        pacmakArgs({
+          ...base,
+          golang,
+          csharp: { outdir: ".", namespace: "Test" },
+        }),
+      ).toEqual(["--code-only"]);
+    });
+  });
+
   describe("determineGoModuleName", () => {
     let tmpDir: string;
     let emptySubDir: string, validSubdir: string, invalidSubdir: string;
