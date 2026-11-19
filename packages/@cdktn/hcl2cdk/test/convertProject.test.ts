@@ -31,13 +31,16 @@ const createFiles = (cwd: string, files: [string, string][]) => {
   });
 };
 
+// The app compiles main.ts with tsc before running it: tsx would only strip the
+// types, so a type error in the converted code (such as a duplicated import)
+// would not fail the test.
 const createTSCdkProject = (cwd: string) =>
   createFiles(cwd, [
     [
       "cdktf.json",
       `{
 "language": "typescript",
-"app": "npx tsx main.ts",
+"app": "npm run --silent compile && node main.js",
 "terraformProviders": [],
 "terraformModules": [],
 "context": {}}`,
@@ -88,7 +91,6 @@ app.synth();`,
         },
         "devDependencies": {
           "@types/node": "^22.20.1",
-          "tsx": "4.23.13",
           "typescript": "^5.4.5",
           "cdktn-cli": "${CDKTF_CLI}"
         }
