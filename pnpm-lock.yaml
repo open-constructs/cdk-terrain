@@ -340,8 +340,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -368,8 +368,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -396,8 +396,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -424,8 +424,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -452,8 +452,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -472,13 +472,13 @@ importers:
     dependencies:
       '@cdktn/provider-aws':
         specifier: 24.1.0
-        version: 24.1.0(cdktn@packages+cdktn)(constructs@10.6.0)
+        version: 24.1.0(cdktn@packages+cdktn)(constructs@10.8.1)
       cdktn:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -505,8 +505,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -533,8 +533,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -559,13 +559,13 @@ importers:
     dependencies:
       '@cdktn/provider-azurerm':
         specifier: 16.1.0
-        version: 16.1.0(cdktn@packages+cdktn)(constructs@10.6.0)
+        version: 16.1.0(cdktn@packages+cdktn)(constructs@10.8.1)
       cdktn:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -592,8 +592,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -620,8 +620,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -648,8 +648,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -676,8 +676,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -704,8 +704,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -732,8 +732,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -757,8 +757,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -785,8 +785,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -813,8 +813,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -841,8 +841,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -869,8 +869,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -894,8 +894,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -922,8 +922,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/cdktn
       constructs:
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.1
+        version: 10.8.1
     devDependencies:
       '@types/jest':
         specifier: 30.0.0
@@ -974,8 +974,8 @@ importers:
         specifier: 4.4.0
         version: 4.4.0
       codemaker:
-        specifier: 1.140.0
-        version: 1.140.0
+        specifier: 1.143.0
+        version: 1.143.0
       constructs:
         specifier: 10.8.1
         version: 10.8.1
@@ -1056,8 +1056,8 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       codemaker:
-        specifier: 1.140.0
-        version: 1.140.0
+        specifier: 1.143.0
+        version: 1.143.0
       cross-spawn:
         specifier: ^7.0.6
         version: 7.0.6
@@ -1151,8 +1151,8 @@ importers:
         specifier: workspace:*
         version: link:../../cdktn
       codemaker:
-        specifier: 1.140.0
-        version: 1.140.0
+        specifier: 1.143.0
+        version: 1.143.0
       deep-equal:
         specifier: ^2.2.3
         version: 2.2.3
@@ -1166,8 +1166,8 @@ importers:
         specifier: ^0.24.7
         version: 0.24.7
       jsii-rosetta:
-        specifier: ~6.0.0
-        version: 6.0.16(supports-color@8.1.1)
+        specifier: ~6.0.25
+        version: 6.0.25(supports-color@8.1.1)
       prettier:
         specifier: 2.8.8
         version: 2.8.8
@@ -1240,8 +1240,8 @@ importers:
         specifier: workspace:*
         version: link:../../cdktn
       codemaker:
-        specifier: 1.140.0
-        version: 1.140.0
+        specifier: 1.143.0
+        version: 1.143.0
       constructs:
         specifier: 10.8.1
         version: 10.8.1
@@ -1252,11 +1252,11 @@ importers:
         specifier: ^13.0.6
         version: 13.0.6
       jsii:
-        specifier: ~6.0.0
-        version: 6.0.12(supports-color@8.1.1)
+        specifier: ~6.0.25
+        version: 6.0.25(supports-color@8.1.1)
       jsii-pacmak:
-        specifier: 1.140.0
-        version: 1.140.0(jsii-rosetta@6.0.16(supports-color@8.1.1))
+        specifier: 1.143.0
+        version: 1.143.0(jsii-rosetta@6.0.25(supports-color@8.1.1))
     devDependencies:
       '@types/fs-extra':
         specifier: 11.0.4
@@ -1327,11 +1327,11 @@ importers:
         specifier: 10.6.0
         version: 10.6.0
       jsii:
-        specifier: ~6.0.0
-        version: 6.0.12(supports-color@8.1.1)
+        specifier: ~6.0.25
+        version: 6.0.25(supports-color@8.1.1)
       jsii-pacmak:
-        specifier: 1.140.0
-        version: 1.140.0(jsii-rosetta@6.0.16(supports-color@8.1.1))
+        specifier: 1.143.0
+        version: 1.143.0(jsii-rosetta@6.0.25(supports-color@8.1.1))
       typescript:
         specifier: ~6.0.0
         version: 6.0.3
@@ -1375,11 +1375,11 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       jsii:
-        specifier: ~6.0.0
-        version: 6.0.12(supports-color@8.1.1)
+        specifier: ~6.0.25
+        version: 6.0.25(supports-color@8.1.1)
       jsii-pacmak:
-        specifier: 1.140.0
-        version: 1.140.0(jsii-rosetta@6.0.16(supports-color@8.1.1))
+        specifier: 1.143.0
+        version: 1.143.0(jsii-rosetta@6.0.25(supports-color@8.1.1))
       punycode:
         specifier: 2.3.1
         version: 2.3.1
@@ -1473,11 +1473,11 @@ importers:
         version: 10.8.1
     devDependencies:
       jsii-docgen:
-        specifier: ^10.12.6
-        version: 10.12.6(jsii-rosetta@6.0.16(supports-color@8.1.1))
+        specifier: ^10.13.4
+        version: 10.13.4(jsii-rosetta@6.0.25(supports-color@8.1.1))
       jsii-rosetta:
-        specifier: ~6.0.0
-        version: 6.0.16(supports-color@8.1.1)
+        specifier: ~6.0.25
+        version: 6.0.25(supports-color@8.1.1)
       remark-parse:
         specifier: ^11.0.0
         version: 11.0.0(supports-color@8.1.1)
@@ -2967,8 +2967,16 @@ packages:
     resolution: {integrity: sha512-NTiY2Nd9ZtACPZjaU+k9+oiaD191Yw0FoiUR7bB+NoOtB5nMEhrLKn5O/PYmCIZGK0G1JaJs+PmLcyj68J6RKw==}
     engines: {node: '>= 14.17.0'}
 
+  '@jsii/check-node@1.143.0':
+    resolution: {integrity: sha512-4BawLEyDtjSteM7PRamldWBpLv6yJ1hW6JTBSFMN1Z2fcE2UbN19r+UQ6IvpIRlYapiI1ILYUGhIK39YvqE04Q==}
+    engines: {node: '>= 14.17.0'}
+
   '@jsii/spec@1.140.0':
     resolution: {integrity: sha512-1rGS+iJtejQ3ybSJfV0if9PzZuSQmORbVF3MkqE0csatF//Rj8raCqptZLMX6rkdfZ8C2Jsw5hU4PrmuCzBk6A==}
+    engines: {node: '>= 14.17.0'}
+
+  '@jsii/spec@1.143.0':
+    resolution: {integrity: sha512-37FQ1/6yzFBYVMSFkeDajUNjf/9OVgyi1zRh6aMGFjKfgiagVDoI83Pn2h5i3WgJzDXx556+BFevYtfYoS1dqg==}
     engines: {node: '>= 14.17.0'}
 
   '@keyv/bigmap@1.3.1':
@@ -4614,8 +4622,8 @@ packages:
     resolution: {integrity: sha512-QVb0dM5HvG+uaxitm8wONl7jltx8dqhfU33DcqtOZcLSVIKSDDLDi7+0LbAKiyI8hD9u42m2YxXSkMGWThaecQ==}
     engines: {iojs: '>= 1.0.0', node: '>= 0.12.0'}
 
-  codemaker@1.140.0:
-    resolution: {integrity: sha512-/EPlxI+2i9ji7aZac2kLEUyjzfgHWBl8hDZ98T6BnED9mTLRInCNToA0vqgZPcTotiP6g6YNeZo7cBAc90Ok9A==}
+  codemaker@1.143.0:
+    resolution: {integrity: sha512-4wt2JJLtIMDN6Pfp2N1vAe0l1aJ90k2UxwrBIyN7uBwSfTeTkKcu/hmmPa3ruH+LiSE+oZpX0Lpleih0Gmalqw==}
     engines: {node: '>= 14.17.0'}
 
   collect-v8-coverage@1.0.3:
@@ -6195,31 +6203,36 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  jsii-docgen@10.12.6:
-    resolution: {integrity: sha512-MShAZLUkLLO2B8UG4rm7nlLRaBY7ePdZVagl1I4d0r9qnResexL7cqJN4qEmxB7qsRZhpCY2tLhb3wlpZlH3cg==}
+  jsii-docgen@10.13.4:
+    resolution: {integrity: sha512-xj8fh9pqlthZg22RA6YEqVcdUhHgYkwThBSDNump3gFs4mvVWlf5Lu+hV5CV08ptGiT7FA1EaicP3UpYT2I59A==}
     hasBin: true
     peerDependencies:
       jsii-rosetta: ^1.85.0 || ~5.0.14 || ~5.1.2 || ~5.2.0 || ~5.3.0 || ~5.4.0 || ~5.5.0 || ~5.6.0 || ~5.7.0 || ~5.8.0 || ~5.9.1 || ~6.0.0
 
-  jsii-pacmak@1.140.0:
-    resolution: {integrity: sha512-BHv63POC099uGm08UM7L5UZUanN3rfESzWv54xpwhamiIJ+zlw0+6Sj790LP2skRkezTdTj8Qj6mhU5Kxfko7g==}
+  jsii-pacmak@1.143.0:
+    resolution: {integrity: sha512-Uyl/MRBNYc416AIJdxu+T+OdfksyxL78YZOzb3D3bQAh4+dO6AIdUeD4ojYSc9L5zEnoNCpBXw4AfbfqdRcU5A==}
     engines: {node: '>= 14.17.0'}
     hasBin: true
     peerDependencies:
       jsii-rosetta: '>=5.9.0'
 
-  jsii-reflect@1.140.0:
-    resolution: {integrity: sha512-8bRD6WSQfWrB6/31sz92bi21HWaMVzvxZUgaJt/IiT3RqGKc57dO+idekn8WNpTBneE9vVhj24UDExHH8YfJAQ==}
+  jsii-reflect@1.143.0:
+    resolution: {integrity: sha512-lN+m5cRFzxF4TYJp2XS6qHRtDal6PMO/+aEojcg2y97Q128ynbNQfri/zO9CWFp/m0sm+XkRqQbTsdZVPBiMNg==}
     engines: {node: '>= 14.17.0'}
     hasBin: true
 
-  jsii-rosetta@6.0.16:
-    resolution: {integrity: sha512-BK5R8A9mfXa3kZiDEbs8ywDXJSgaJ+hvkMn6ZU+r0c2NDGdNWZuzPHoMhF7VsfBEjxTtu/hhcjQ/vpIPBVchwA==}
+  jsii-rosetta@6.0.25:
+    resolution: {integrity: sha512-RHTnW4yiodm5UMd14tQivs4arSDZ7i9adLqtzMnSn1ApJjOH04UPgLyDJ/7o05H5TDF4TCH1uGUxALfHsBuheA==}
     engines: {node: '>= 20.16.0'}
     hasBin: true
 
   jsii@6.0.12:
     resolution: {integrity: sha512-QGi87rQ853gJhjc2+M/UHHRAhIPxShGmhtZPGgVA1vmmPEOn0kKiP+3pWziDmPNZojXtgpCCdfF8neOMWUA+yA==}
+    engines: {node: '>= 20.16.0'}
+    hasBin: true
+
+  jsii@6.0.25:
+    resolution: {integrity: sha512-wkpb5ZIWpw4GhmEqEsDSQfkGBkTcJSF0Uy4zP8oNInww1UfPlSlNCdGQfA1pPtlBW1FHbUyAhyzh41r5R0NYJw==}
     engines: {node: '>= 20.16.0'}
     hasBin: true
 
@@ -6786,8 +6799,8 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
-  oo-ascii-tree@1.140.0:
-    resolution: {integrity: sha512-swJJN43RwwtZAtNQu03W8rqNtTUvq9T4eGU4KupRq7I9/R3exHobbF/OOm5sl6tGcumsQrNU97NBx7x+LEIPgA==}
+  oo-ascii-tree@1.143.0:
+    resolution: {integrity: sha512-tMgHaPcFgtJbfStU9qNgvch8DjYs5+V7gO0VGrtwRZPpaQe7l/wd87rGBXjm3+gEEQ5mT24aVAdvKyQg/IjWdQ==}
     engines: {node: '>= 14.17.0'}
 
   open@10.1.0:
@@ -7489,12 +7502,11 @@ packages:
     resolution: {integrity: sha512-eLoXW/DHyl62zxY4SCaIgnRhuMr6ri4juEYARS8E6sCEqzKpOiE521Ucofdx+KnDZl5xmvGYaaKCk5FEOxJCoQ==}
     engines: {node: '>= 0.4'}
 
-  stream-chain@4.2.5:
-    resolution: {integrity: sha512-Wtyq3bNE3ggLR0v2vftqvuhltym3WbZAkZpfIrkr5F/6vpeUmWmwTgXa16zD87gpahwJ/Qulq3zVfUlgIc0J2A==}
-    engines: {node: '>=22'}
+  stream-chain@4.4.2:
+    resolution: {integrity: sha512-6WQtf7XW70N8/IXV4DfpTswi0VHTahsB0nO5UlLGp5HarJN+Q7VHT5HvBMlH9x0x77e+kJFnQkhkCdvFkwv2Vw==}
 
-  stream-json@3.7.0:
-    resolution: {integrity: sha512-rCSBdcBP/bPk6T8QFcxAj1MSzAuc5i49cYW6IE7sYObNEPccBJIUiL6fU9c9BWt40aJK0siVynLX7lWaW8alXw==}
+  stream-json@3.9.0:
+    resolution: {integrity: sha512-kL2w6owYCdzCRApK9/9HI7Vgrd+0iWE5tTGc8P/AS2AdPoHcFTQwUek66sbMpfaX73lgHvDN+u1AoRC/dzB1Hw==}
 
   stream-shift@1.0.3:
     resolution: {integrity: sha512-76ORR0DO1o1hlKwTbi/DM3EXWGf3ZJYO8cXX5RJwnul2DEg2oyoZyjLNoQM8WsvZiFKCRfC1O0J7iCvie3RZmQ==}
@@ -9316,15 +9328,15 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@cdktn/provider-aws@24.1.0(cdktn@packages+cdktn)(constructs@10.6.0)':
+  '@cdktn/provider-aws@24.1.0(cdktn@packages+cdktn)(constructs@10.8.1)':
     dependencies:
       cdktn: link:packages/cdktn
-      constructs: 10.6.0
+      constructs: 10.8.1
 
-  '@cdktn/provider-azurerm@16.1.0(cdktn@packages+cdktn)(constructs@10.6.0)':
+  '@cdktn/provider-azurerm@16.1.0(cdktn@packages+cdktn)(constructs@10.8.1)':
     dependencies:
       cdktn: link:packages/cdktn
-      constructs: 10.6.0
+      constructs: 10.8.1
 
   '@clack/core@1.4.3':
     dependencies:
@@ -10120,9 +10132,16 @@ snapshots:
   '@jsii/check-node@1.140.0':
     dependencies:
       chalk: 4.1.2
-      semver: 7.8.5
+      semver: 7.8.6
+
+  '@jsii/check-node@1.143.0':
+    dependencies:
+      chalk: 4.1.2
+      semver: 7.8.6
 
   '@jsii/spec@1.140.0': {}
+
+  '@jsii/spec@1.143.0': {}
 
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
@@ -11912,7 +11931,7 @@ snapshots:
 
   co@4.6.0: {}
 
-  codemaker@1.140.0:
+  codemaker@1.143.0:
     dependencies:
       camelcase: 6.3.0
       decamelize: 5.0.1
@@ -14023,55 +14042,55 @@ snapshots:
 
   jsesc@3.1.0: {}
 
-  jsii-docgen@10.12.6(jsii-rosetta@6.0.16(supports-color@8.1.1)):
+  jsii-docgen@10.13.4(jsii-rosetta@6.0.25(supports-color@8.1.1)):
     dependencies:
-      '@jsii/spec': 1.140.0
+      '@jsii/spec': 1.143.0
       case: 1.6.3
       fast-glob: 3.3.3
       fs-extra: 10.1.0
-      jsii-reflect: 1.140.0
-      jsii-rosetta: 6.0.16(supports-color@8.1.1)
+      jsii-reflect: 1.143.0
+      jsii-rosetta: 6.0.25(supports-color@8.1.1)
       json-stream-stringify: 3.1.7
-      semver: 7.8.5
+      semver: 7.8.6
       yargs: 16.2.2
 
-  jsii-pacmak@1.140.0(jsii-rosetta@6.0.16(supports-color@8.1.1)):
+  jsii-pacmak@1.143.0(jsii-rosetta@6.0.25(supports-color@8.1.1)):
     dependencies:
-      '@jsii/check-node': 1.140.0
-      '@jsii/spec': 1.140.0
+      '@jsii/check-node': 1.143.0
+      '@jsii/spec': 1.143.0
       clone: 2.1.2
-      codemaker: 1.140.0
+      codemaker: 1.143.0
       commonmark: 0.31.2
       escape-string-regexp: 4.0.0
       fs-extra: 10.1.0
-      jsii-reflect: 1.140.0
-      jsii-rosetta: 6.0.16(supports-color@8.1.1)
-      semver: 7.8.5
+      jsii-reflect: 1.143.0
+      jsii-rosetta: 6.0.25(supports-color@8.1.1)
+      semver: 7.8.6
       spdx-license-list: 6.12.0
       xmlbuilder: 15.1.1
       yargs: 17.7.3
 
-  jsii-reflect@1.140.0:
+  jsii-reflect@1.143.0:
     dependencies:
-      '@jsii/check-node': 1.140.0
-      '@jsii/spec': 1.140.0
+      '@jsii/check-node': 1.143.0
+      '@jsii/spec': 1.143.0
       chalk: 4.1.2
       fs-extra: 10.1.0
-      oo-ascii-tree: 1.140.0
+      oo-ascii-tree: 1.143.0
       yargs: 17.7.3
 
-  jsii-rosetta@6.0.16(supports-color@8.1.1):
+  jsii-rosetta@6.0.25(supports-color@8.1.1):
     dependencies:
-      '@jsii/check-node': 1.140.0
-      '@jsii/spec': 1.140.0
+      '@jsii/check-node': 1.143.0
+      '@jsii/spec': 1.143.0
       '@xmldom/xmldom': 0.9.12
       chalk: 4.1.2
       commonmark: 0.31.2
       fast-glob: 3.3.3
       jsii: 6.0.12(supports-color@8.1.1)
-      semver: 7.8.5
+      semver: 7.8.6
       semver-intersect: 1.5.0
-      stream-json: 3.7.0
+      stream-json: 3.9.0
       typescript: 6.0.3
       workerpool: 6.5.1
       yargs: 17.7.3
@@ -14086,7 +14105,24 @@ snapshots:
       chalk: 4.1.2
       fast-deep-equal: 3.1.3
       log4js: 6.9.1(supports-color@8.1.1)
-      semver: 7.8.5
+      semver: 7.8.6
+      semver-intersect: 1.5.0
+      sort-json: 2.0.1
+      spdx-license-list: 6.12.0
+      typescript: 6.0.3
+      yargs: 17.7.3
+    transitivePeerDependencies:
+      - supports-color
+
+  jsii@6.0.25(supports-color@8.1.1):
+    dependencies:
+      '@jsii/check-node': 1.143.0
+      '@jsii/spec': 1.143.0
+      case: 1.6.3
+      chalk: 4.1.2
+      fast-deep-equal: 3.1.3
+      log4js: 6.9.1(supports-color@8.1.1)
+      semver: 7.8.6
       semver-intersect: 1.5.0
       sort-json: 2.0.1
       spdx-license-list: 6.12.0
@@ -14876,7 +14912,7 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  oo-ascii-tree@1.140.0: {}
+  oo-ascii-tree@1.143.0: {}
 
   open@10.1.0:
     dependencies:
@@ -15688,11 +15724,11 @@ snapshots:
       es-errors: 1.3.0
       internal-slot: 1.1.0
 
-  stream-chain@4.2.5: {}
+  stream-chain@4.4.2: {}
 
-  stream-json@3.7.0:
+  stream-json@3.9.0:
     dependencies:
-      stream-chain: 4.2.5
+      stream-chain: 4.4.2
 
   stream-shift@1.0.3:
     optional: true
