@@ -46,7 +46,7 @@
     "cdktn": "workspace:*",
     "codemaker": "1.140.0",
     "deep-equal": "^2.2.3",
-    "glob": "^13.0.6",
+    "glob": "^14.0.6",
     "graphology": "^0.26.0",
     "graphology-types": "^0.24.7",
     "jsii-rosetta": "~6.0.0",
