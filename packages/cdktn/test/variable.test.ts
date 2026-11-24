@@ -231,6 +231,66 @@ test("sensitive variable", () => {
   expect(Testing.synth(stack)).toMatchSnapshot();
 });
 
+test("ephemeral variable", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "string",
+    ephemeral: true,
+  });
+  expect(Testing.synth(stack)).toMatchSnapshot();
+});
+
+test("ephemeral is preserved in HCL output", () => {
+  const app = Testing.app();
+  const stack = new TerraformStack(app, "test");
+
+  new TerraformVariable(stack, "test-variable", {
+    type: "string",
+    ephemeral: true,
+  });
+
+  expect(Testing.synthHcl(stack)).toContain("ephemeral = true");
+});
+
+describe("ephemeral variables validate against targetVersions", () => {
+  test("fails when the declared targets predate ephemeral variables", () => {
+    const app = Testing.app({
+      context: { targetVersions: { opentofu: ">=1.10.0" } },
+    });
+    const stack = new TerraformStack(app, "test");
+    new TerraformVariable(stack, "test-variable", {
+      type: "string",
+      ephemeral: true,
+    });
+
+    expect(() => Testing.synth(stack, true))
+      .toThrowErrorMatchingInlineSnapshot(`
+     "Validation failed with the following errors:
+       [test/test-variable] The ephemeral variable requires opentofu >=1.11.0, but the project targets opentofu >=1.10.0.
+
+     If you wish to ignore these validations, pass 'skipValidation: true' to your App configuration.
+     "
+    `);
+  });
+
+  test("targets at the minimum versions pass", () => {
+    const app = Testing.app({
+      context: {
+        targetVersions: { terraform: ">=1.10.0", opentofu: ">=1.11.0" },
+      },
+    });
+    const stack = new TerraformStack(app, "test");
+    new TerraformVariable(stack, "test-variable", {
+      type: "string",
+      ephemeral: true,
+    });
+
+    expect(() => Testing.synth(stack, true)).not.toThrow();
+  });
+});
+
 test("variable with variable default", () => {
   const app = Testing.app();
   const stack = new TerraformStack(app, "test");

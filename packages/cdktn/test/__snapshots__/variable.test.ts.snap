@@ -50,6 +50,17 @@ exports[`description 1`] = `
 }"
 `;
 
+exports[`ephemeral variable 1`] = `
+"{
+  "variable": {
+    "test-variable": {
+      "ephemeral": true,
+      "type": "string"
+    }
+  }
+}"
+`;
+
 exports[`map collection type 1`] = `
 "{
   "variable": {

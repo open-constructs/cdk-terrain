@@ -8,6 +8,7 @@ import { ref } from "./tfExpression";
 import { IResolvable } from "./tokens/resolvable";
 import { ITerraformAddressable } from "./terraform-addressable";
 import { TerraformVariableValidationConfig } from "./terraform-conditions";
+import { ValidateFeatureTargetSupport } from "./validations";
 
 /**
  * Type constraint keywords and constructors for the `type` argument of a TerraformVariable.
@@ -98,6 +99,11 @@ export interface TerraformVariableConfig {
   readonly nullable?: boolean;
 
   /**
+   * The ephemeral argument in a variable block keeps the value of the variable out of the plan and state files.
+   */
+  readonly ephemeral?: boolean;
+
+  /**
    * Specify arbitrary custom validation rules for a particular variable using a validation block nested within the corresponding variable block
    */
   readonly validation?: TerraformVariableValidationConfig[];
@@ -116,6 +122,7 @@ export class TerraformVariable
   public readonly type?: string;
   public readonly sensitive?: boolean;
   public readonly nullable?: boolean;
+  public readonly ephemeral?: boolean;
   private _validation?: TerraformVariableValidationConfig[];
 
   constructor(scope: Construct, id: string, config: TerraformVariableConfig) {
@@ -126,7 +133,17 @@ export class TerraformVariable
     this.type = config.type;
     this.sensitive = config.sensitive;
     this.nullable = config.nullable;
+    this.ephemeral = config.ephemeral;
     this._validation = config.validation;
+
+    if (config.ephemeral) {
+      this.node.addValidation(
+        new ValidateFeatureTargetSupport(this, "The ephemeral variable", {
+          terraform: ">=1.10.0",
+          opentofu: ">=1.11.0",
+        }),
+      );
+    }
   }
 
   public get stringValue(): string {
@@ -191,6 +208,11 @@ export class TerraformVariable
         type: "simple",
         storageClassType: "boolean",
       },
+      ephemeral: {
+        value: this.ephemeral,
+        type: "simple",
+        storageClassType: "boolean",
+      },
       validation: {
         value: this.validation?.map((validation) => ({
           error_message: validation.errorMessage,
@@ -214,6 +236,7 @@ export class TerraformVariable
       type: this.type,
       sensitive: this.sensitive,
       nullable: this.nullable,
+      ephemeral: this.ephemeral,
       validation: this.validation?.map((validation) => ({
         error_message: validation.errorMessage,
         condition: validation.condition,
