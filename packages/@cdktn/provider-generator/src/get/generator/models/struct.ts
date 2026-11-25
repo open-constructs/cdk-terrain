@@ -86,7 +86,8 @@ export class Struct {
       }
     });
 
-    return types;
+    // deduplicated attributes can share a struct
+    return [...new Set(types)];
   }
 
   public get exportCount(): number {
