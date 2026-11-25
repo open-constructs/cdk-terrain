@@ -573,6 +573,18 @@ export class TerraformStack extends Construct {
     return remoteState;
   }
 
+  /**
+   * The data source registerIncomingCrossStackReference added for references to fromStack, if any.
+   * @param fromStack - the stack the references point to
+   * @returns the data source
+   * @internal
+   */
+  public _incomingCrossStackDataSource(
+    fromStack: TerraformStack,
+  ): TerraformRemoteState | undefined {
+    return this.crossStackDataSources[fromStack.node.path];
+  }
+
   // Check here for loops in the dependency graph
   public dependsOn(stack: TerraformStack): boolean {
     return (
