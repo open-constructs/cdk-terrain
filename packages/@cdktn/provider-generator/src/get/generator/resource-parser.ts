@@ -328,11 +328,14 @@ class Parser {
     }
 
     if (Array.isArray(attributeType)) {
-      if (attributeType.length !== 2) {
+      const [kind, type] = attributeType;
+
+      if (
+        attributeType.length !== 2 &&
+        !(kind === "object" && attributeType.length === 3)
+      ) {
         throw new Error(`unexpected array`);
       }
-
-      const [kind, type] = attributeType;
 
       if (kind === "set" || kind === "list") {
         const elementType = this.renderAttributeType(
@@ -360,10 +363,15 @@ class Parser {
         for (const [name, type] of Object.entries(objAttributes)) {
           attributes[name] = { type };
         }
+        // Terraform requires every key of an object type to be present
+        // unless it is listed in the optional attributes (third element)
+        const optionalAttrs =
+          attributeType.length === 3 ? attributeType[2] : [];
         const struct = this.addAnonymousStruct(
           scope,
           attributes,
           parentKind ?? kind,
+          (name) => !optionalAttrs.includes(name),
         );
         return new StructAttributeTypeModel(struct);
       }
@@ -639,6 +647,7 @@ class Parser {
     scope: Scope[],
     attrs: { [name: string]: Attribute } | undefined,
     nesting_mode: string,
+    nullWhenUnset: (name: string) => boolean = () => false,
   ) {
     let attributes = new Array<AttributeModel>();
     const parent = scope[scope.length - 1];
@@ -683,6 +692,7 @@ class Parser {
             provider: parent.isProvider,
             required: required,
             isWriteOnly: !!att.write_only,
+            nullWhenUnset: nullWhenUnset(terraformName),
           }),
         );
       }
