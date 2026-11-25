@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as path from "path";
 import * as fs from "fs-extra";
-import { QueryableStack, TestDriver, onlyJson } from "../../test-helper";
+import {
+  QueryableStack,
+  TestDriver,
+  expectSameSynth,
+  onlyJson,
+} from "../../test-helper";
 
 describe("Golang edge provider test", () => {
   let driver: TestDriver;
@@ -306,6 +311,37 @@ describe("Golang edge provider test", () => {
           },
         });
       });
+    });
+  });
+
+  // list_block_resource's opt/req and singleopt/singlereq blocks each share a
+  // shape; the program's struct types for them must keep compiling.
+  describe("with compatible struct dedup bindings", () => {
+    let compat: TestDriver;
+
+    beforeAll(async () => {
+      compat = new TestDriver(__dirname);
+      await compat.setupGoProject({
+        cb: (dir) => {
+          fs.copySync(
+            path.resolve(
+              __dirname,
+              "..",
+              "..",
+              "edge-provider-bindings",
+              "compat",
+              "go",
+              "edge",
+            ),
+            path.resolve(dir, "generated", "hashicorp", "edge"),
+          );
+        },
+      });
+      await compat.synth("fixed");
+    });
+
+    it("synthesizes every stack identically", () => {
+      expectSameSynth(driver, compat);
     });
   });
 });

@@ -7,6 +7,7 @@ import { downcaseFirst } from "../../../util";
 import * as path from "path";
 import { STRUCT_SHARDING_THRESHOLD } from "../models/resource-model";
 import { AttributeModel } from "../models/attribute-model";
+import { structTypeModelOf } from "../models/attribute-type-model";
 import { sanitizedComment } from "../sanitized-comments";
 
 export class StructEmitter {
@@ -77,7 +78,7 @@ export class StructEmitter {
     }
     this.code.closeBlock();
 
-    if (!(struct instanceof ConfigStruct)) {
+    if (!(struct instanceof ConfigStruct) && !struct.interfaceOnly) {
       this.emitToTerraformFunction(struct);
       this.emitToHclTerraformFunction(struct);
     }
@@ -91,7 +92,7 @@ export class StructEmitter {
         // We use the interface here for the configuration / inputs of a resource / nested block
         this.emitInterface(resource, struct);
         // And we use the class for the attributes / outputs of a resource / nested block
-        if (!struct.isProvider) {
+        if (!struct.isProvider && !struct.interfaceOnly) {
           this.emitClass(struct);
         }
       }
@@ -143,21 +144,23 @@ export class StructEmitter {
       // find all structs that need to be imported in this file
       structs.forEach((struct) => {
         struct.attributes.forEach((att) => {
-          const structTypeName = att.type.struct?.name;
-          const fileToImport = structImports[structTypeName ?? ""];
+          const attTypeStruct = att.type.struct;
+          if (!attTypeStruct) return;
+          // With compatible dedup the declared input type and the shared
+          // machinery can live in different shard files.
+          const declared =
+            structTypeModelOf(att.type)?.declaredStruct ?? attTypeStruct;
+          const attReferences = struct.interfaceOnly
+            ? att.isAssignable
+              ? [declared.name]
+              : []
+            : (att.getReferencedTypes(struct instanceof ConfigStruct) ?? []);
 
-          if (fileToImport && fileToImport !== structFilename) {
-            const attTypeStruct = att.type.struct;
-            if (!attTypeStruct)
-              throw new Error(`${structTypeName} is not a struct`);
-
-            structsToImport[fileToImport] ??= [];
-
-            const attReferences = att.getReferencedTypes(
-              struct instanceof ConfigStruct,
-            );
-            if (attReferences) {
-              structsToImport[fileToImport].push(...attReferences);
+          for (const ref of attReferences) {
+            const owner = ref === declared.name ? declared : attTypeStruct;
+            const fileToImport = structImports[owner.name];
+            if (fileToImport && fileToImport !== structFilename) {
+              (structsToImport[fileToImport] ??= []).push(ref);
             }
           }
         });
@@ -170,7 +173,18 @@ export class StructEmitter {
 
       this.code.openFile(namespacedFilePath);
       // the structs only makes use of cdktn not constructs
-      this.code.line(`import * as cdktn from 'cdktn';`);
+      // (a shard of plain interfaces may not use it, and jsii rejects unused imports)
+      if (
+        structs.some(
+          (s) =>
+            !s.interfaceOnly ||
+            s.assignableAttributes.some((a) =>
+              a.typeDefinition.includes("cdktn."),
+            ),
+        )
+      ) {
+        this.code.line(`import * as cdktn from 'cdktn';`);
+      }
       Object.entries(structsToImport).forEach(([fileToImport, structs]) => {
         const target = path.basename(fileToImport, ".ts");
         this.code.line(
@@ -185,7 +199,7 @@ export class StructEmitter {
           // We use the interface here for the configuration / inputs of a resource / nested block
           this.emitInterface(resource, struct);
           // And we use the class for the attributes / outputs of a resource / nested block
-          if (!struct.isProvider) {
+          if (!struct.isProvider && !struct.interfaceOnly) {
             this.emitClass(struct);
           }
         }
