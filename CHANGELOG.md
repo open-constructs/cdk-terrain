@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.25.2](https://github.com/open-constructs/cdk-terrain/compare/v0.25.1...v0.25.2) (2026-11-25)
+
+
+### Features
+
+* **lib:** support ephemeral input variables ([#631](https://github.com/open-constructs/cdk-terrain/issues/631)) ([5231b5f](https://github.com/open-constructs/cdk-terrain/commit/5231b5f9bf4541275e50cc1aed01e36ef3555af4))
+
+
+### Bug Fixes
+
+* **hcl2cdk:** don't duplicate the template's imports in convertProject output ([#607](https://github.com/open-constructs/cdk-terrain/issues/607)) ([7d379de](https://github.com/open-constructs/cdk-terrain/commit/7d379defbd03b5f5f98fa7d843d66102963d59e2))
+* keep tsbuildinfo inside build/ ([#628](https://github.com/open-constructs/cdk-terrain/issues/628)) ([4928559](https://github.com/open-constructs/cdk-terrain/commit/4928559fd0adbab2ddb89c7a9a9c3fb7df36422d))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump follow-redirects, picomatch and zod to clear 6 advisories ([#635](https://github.com/open-constructs/cdk-terrain/issues/635)) ([d193ef1](https://github.com/open-constructs/cdk-terrain/commit/d193ef16f0f6c9222c99cbabc32810972219da0e))
+* **deps:** bump glob to 14 and minimatch to 11 ([#634](https://github.com/open-constructs/cdk-terrain/issues/634)) ([1f18cea](https://github.com/open-constructs/cdk-terrain/commit/1f18cea35eabcdf39f17f3b126f4da066cfbe800))
+
 ## [0.25.1](https://github.com/open-constructs/cdk-terrain/compare/v0.25.0...v0.25.1) (2026-11-16)
 
 
