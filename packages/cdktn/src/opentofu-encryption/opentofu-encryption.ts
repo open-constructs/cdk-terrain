@@ -315,8 +315,8 @@ export class OpenTofuEncryption extends Construct {
 
     const requirements = new Map<string, Requirement>();
     const { keyProviders, methods } = this.used();
-    for (const keyProvider of keyProviders) {
-      for (const requirement of keyProvider._requires) {
+    for (const element of [...keyProviders, ...methods]) {
+      for (const requirement of element._requires) {
         requirements.set(requirement.feature, requirement);
       }
     }

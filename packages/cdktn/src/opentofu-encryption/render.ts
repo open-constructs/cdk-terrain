@@ -11,6 +11,30 @@ import type {
 } from "./opentofu-encryption";
 
 const TRAVERSAL = Symbol("traversal");
+const NESTED_BLOCK = Symbol("block");
+
+// An attribute that OpenTofu reads as a nested block, e.g. aws_kms endpoints
+interface NestedBlock {
+  readonly [NESTED_BLOCK]: { [key: string]: any };
+}
+
+/**
+ * Marks attributes that OpenTofu reads as a nested block.
+ * @param body - the block's attributes
+ * @returns the block
+ */
+export function nestedBlock(body: { [key: string]: any }): NestedBlock {
+  return { [NESTED_BLOCK]: body };
+}
+
+/**
+ * Checks whether the value was built by {@link nestedBlock}.
+ * @param value - any value
+ * @returns true for a nested block
+ */
+function isNestedBlock(value: any): value is NestedBlock {
+  return typeof value === "object" && value !== null && NESTED_BLOCK in value;
+}
 
 // A reference such as `method.aes_gcm.main`, which OpenTofu only accepts as a bare traversal, never as `${...}`
 interface Traversal {
@@ -254,6 +278,7 @@ function escapeHclLiteral(text: string): string {
  */
 export function keyProvidersIn(value: any): OpenTofuKeyProvider[] {
   if (isKeyProvider(value)) return [value];
+  if (isNestedBlock(value)) return keyProvidersIn(value[NESTED_BLOCK]);
   if (Array.isArray(value)) return value.flatMap(keyProvidersIn);
   if (isPlainObject(value)) {
     return Object.values(value).flatMap(keyProvidersIn);
@@ -294,6 +319,7 @@ function isPlainObject(value: any): value is { [key: string]: any } {
     value !== null &&
     !Array.isArray(value) &&
     !isTraversal(value) &&
+    !isNestedBlock(value) &&
     !isKeyProvider(value) &&
     !Tokenization.isResolvable(value)
   );
@@ -330,11 +356,26 @@ export function declarationBlock(
   kind: "key_provider" | "method",
   element: OpenTofuKeyProvider | OpenTofuEncryptionMethod,
 ): Block {
+  const attributes: { [key: string]: any } = {};
+  const blocks: Block[] = [];
+  for (const [key, value] of Object.entries(element._config ?? {})) {
+    if (value === undefined) continue;
+    if (isNestedBlock(value)) {
+      blocks.push({
+        type: key,
+        labels: [],
+        attributes: resolveAttribute(scope, value[NESTED_BLOCK]),
+        blocks: [],
+      });
+    } else {
+      attributes[key] = resolveAttribute(scope, value);
+    }
+  }
   return {
     type: kind,
     labels: [element.type, element.name],
-    attributes: resolveAttribute(scope, element._config),
-    blocks: [],
+    attributes,
+    blocks,
   };
 }
 
